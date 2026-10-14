@@ -52,18 +52,19 @@
       admin: ['SYSTEM_MANAGE']
     },
 
-    getBaseUrl: function () {
-      const parts = window.location.pathname.split('/').filter(Boolean);
-      const projectName = 'PRSPRO';
+getBaseUrl: function () {
+  const parts = window.location.pathname.split('/').filter(Boolean);
+  const projectName = 'PRSPRO2';
 
-      if (parts.length &&
-          parts[0].toLowerCase() === projectName.toLowerCase()) {
-        return new URL('/' + parts[0] + '/', window.location.origin);
-      }
+  if (
+    parts.length &&
+    parts[0].toLowerCase() === projectName.toLowerCase()
+  ) {
+    return new URL('/' + parts[0] + '/', window.location.origin);
+  }
 
-      return new URL('/', window.location.origin);
-    },
-
+  return new URL('/PRSPRO2/', window.location.origin);
+},
     resolveUrl: function (path) {
       path = String(path || '').trim();
       if (!path) throw new Error('مسیر فایل خالی است.');
