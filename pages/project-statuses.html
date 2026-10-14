@@ -1,0 +1,53 @@
+
+<section class="page-section">
+  <div class="page-header">
+    <div>
+      <h2>وضعیت‌های پروژه</h2>
+      <p>تعریف و مدیریت وضعیت‌های قابل استفاده در تولید</p>
+    </div>
+    <div class="page-header-actions">
+      <button type="button" class="btn btn-primary" id="project-status-create">
+        + وضعیت جدید
+      </button>
+    </div>
+  </div>
+
+  <div id="project-status-message" class="alert" hidden></div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="filter-bar">
+        <div class="filter-group">
+          <label for="project-status-search">جستجو</label>
+          <input type="search" id="project-status-search"
+                 class="form-control" placeholder="نام وضعیت...">
+        </div>
+      </div>
+
+      <div id="project-status-loading" class="loading-state">
+        در حال بارگذاری وضعیت‌ها...
+      </div>
+      <div id="project-status-error" class="alert alert-danger" hidden></div>
+
+      <div id="project-status-table-wrap" class="table-wrapper" hidden>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>نام وضعیت</th>
+              <th>کد</th>
+              <th>وضعیت</th>
+              <th>عملیات</th>
+            </tr>
+          </thead>
+          <tbody id="project-status-table"></tbody>
+        </table>
+      </div>
+
+      <div id="project-status-empty" class="table-empty" hidden>
+        هنوز وضعیتی ثبت نشده است.
+      </div>
+    </div>
+  </div>
+</section>
+
+<script src="js/modules/project-statuses.js"></script>

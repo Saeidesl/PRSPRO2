@@ -1,0 +1,485 @@
+
+(function () {
+  'use strict';
+
+  window.PMS = window.PMS || {};
+  window.PMS.Modules = window.PMS.Modules || {};
+
+  const Router = {
+    pages: {
+      login: 'pages/login.html',
+      dashboard: 'pages/dashboard.html',
+      projects: 'pages/projects.html',
+      'project-detail': 'pages/project-detail.html',
+      events: 'pages/events.html',
+      workflows: 'pages/workflows.html',
+      'project-statuses': 'pages/project-statuses.html',
+      'event-types': 'pages/event-types.html',
+      attachments: 'pages/attachments.html',
+      reports: 'pages/reports.html',
+      users: 'pages/users.html',
+      departments: 'pages/departments.html',
+      roles: 'pages/roles.html',
+      permissions: 'pages/permissions.html',
+      audit: 'pages/audit.html',
+      settings: 'pages/settings.html',
+      admin: 'pages/admin.html'
+    },
+
+    currentPage: null,
+    layoutRendered: false,
+    handling: false,
+    permissions: [],
+    permissionsLoaded: false,
+    permissionsRequest: null,
+
+    routePermissions: {
+      dashboard: ['REPORT_VIEW'],
+      projects: ['PROJECT_VIEW'],
+      'project-detail': ['PROJECT_VIEW'],
+      events: ['EVENT_VIEW', 'EVENT_CREATE'],
+      workflows: ['WORKFLOW_MANAGE'],
+      'project-statuses': ['PROJECT_STATUS_MANAGE'],
+      'event-types': ['EVENT_TYPE_MANAGE'],
+      attachments: ['ATTACHMENT_VIEW', 'ATTACHMENT_UPLOAD'],
+      reports: ['REPORT_VIEW'],
+      users: ['USER_VIEW', 'USER_CREATE', 'USER_EDIT'],
+      departments: ['DEPARTMENT_MANAGE'],
+      roles: ['ROLE_MANAGE'],
+      permissions: ['PERMISSION_MANAGE'],
+      audit: ['REPORT_VIEW'],
+      settings: ['SETTINGS_MANAGE'],
+      admin: ['SYSTEM_MANAGE']
+    },
+
+    getBaseUrl: function () {
+      const parts = window.location.pathname.split('/').filter(Boolean);
+      const projectName = 'PRSPRO';
+
+      if (parts.length &&
+          parts[0].toLowerCase() === projectName.toLowerCase()) {
+        return new URL('/' + parts[0] + '/', window.location.origin);
+      }
+
+      return new URL('/', window.location.origin);
+    },
+
+    resolveUrl: function (path) {
+      path = String(path || '').trim();
+      if (!path) throw new Error('مسیر فایل خالی است.');
+
+      if (/^(https?:)?\/\//i.test(path)) {
+        return new URL(path, window.location.href).href;
+      }
+
+      if (/^[a-zA-Z][a-zA-Z\d+.-]*:/.test(path)) {
+        return new URL(path).href;
+      }
+
+      return new URL(path.replace(/^\/+/, ''), Router.getBaseUrl()).href;
+    },
+
+    isLoggedIn: function () {
+      return !!(
+        window.PMS.Session &&
+        typeof window.PMS.Session.isAuthenticated === 'function' &&
+        window.PMS.Session.isAuthenticated()
+      );
+    },
+
+    getUser: function () {
+      if (window.PMS.Session &&
+          typeof window.PMS.Session.getUser === 'function') {
+        return window.PMS.Session.getUser() || {};
+      }
+
+      return {};
+    },
+
+    isAdmin: function () {
+      const user = Router.getUser();
+
+      return (
+        user.IsAdmin === true ||
+        String(user.IsAdmin).toLowerCase() === 'true' ||
+        String(user.DepartmentCode || '').trim().toUpperCase() === 'ADMIN'
+      );
+    },
+
+    getHomeRoute: function () {
+      return 'events';
+    },
+
+    loadPermissions: async function () {
+      if (Router.isAdmin()) {
+        Router.permissions = [];
+        Router.permissionsLoaded = true;
+        return true;
+      }
+
+      if (Router.permissionsLoaded) return true;
+      if (Router.permissionsRequest) return Router.permissionsRequest;
+
+      Router.permissionsRequest = (async function () {
+        try {
+          if (!window.PMS.Api ||
+              typeof window.PMS.Api.get !== 'function') {
+            throw new Error('سرویس API در دسترس نیست.');
+          }
+
+          const response = await window.PMS.Api.get('/auth/me/permissions');
+
+          let data = response &&
+            Object.prototype.hasOwnProperty.call(response, 'data')
+            ? response.data
+            : response;
+
+          if (data && data.success === false) {
+            throw new Error(
+              data.error && data.error.message
+                ? data.error.message
+                : 'دریافت دسترسی‌ها ناموفق بود.'
+            );
+          }
+
+          if (data && data.data) data = data.data;
+
+          let list = [];
+
+          if (Array.isArray(data)) {
+            list = data;
+          } else if (data && Array.isArray(data.permissions)) {
+            list = data.permissions;
+          } else if (data && Array.isArray(data.items)) {
+            list = data.items;
+          }
+
+          Router.permissions = list.map(function (item) {
+            if (typeof item === 'string') return item;
+
+            return item &&
+              (item.Code || item.PermissionCode || item.code || '');
+          }).filter(Boolean);
+
+          Router.permissionsLoaded = true;
+          return true;
+        } catch (error) {
+          console.error('خطا در دریافت دسترسی‌ها:', error);
+          Router.permissions = [];
+          Router.permissionsLoaded = false;
+          return false;
+        } finally {
+          Router.permissionsRequest = null;
+        }
+      })();
+
+      return Router.permissionsRequest;
+    },
+
+    hasRouteAccess: function (route) {
+      if (Router.isAdmin()) return true;
+
+      const mainRoute = String(route || '').split('/')[0];
+
+      if (!Router.pages[mainRoute] || !Router.permissionsLoaded) {
+        return false;
+      }
+
+      const required = Router.routePermissions[mainRoute] || [];
+
+      return required.some(function (permission) {
+        return Router.permissions.indexOf(permission) !== -1;
+      });
+    },
+
+    init: function () {
+      window.addEventListener('hashchange', function () {
+        Router.handle();
+      });
+
+      Router.handle();
+    },
+
+    handle: async function () {
+      if (Router.handling) return;
+      Router.handling = true;
+
+      try {
+        let route = window.location.hash.replace(/^#/, '').trim();
+
+        if (!route) route = Router.getHomeRoute();
+
+        let mainRoute = route.split('/')[0];
+
+        if (!Router.pages[mainRoute]) {
+          route = Router.getHomeRoute();
+          mainRoute = 'events';
+        }
+
+        if (!Router.isLoggedIn() && mainRoute !== 'login') {
+          Router.changeRoute('login', true);
+          route = 'login';
+          mainRoute = 'login';
+        }
+
+        if (Router.isLoggedIn() && mainRoute === 'login') {
+          route = Router.getHomeRoute();
+          mainRoute = 'events';
+          Router.changeRoute(route, true);
+        }
+
+        if (mainRoute === 'login') {
+          await Router.loadLogin();
+          return;
+        }
+
+        if (!Router.isLoggedIn()) return;
+
+        const permissionsOk = await Router.loadPermissions();
+
+        if (!permissionsOk || !Router.hasRouteAccess(route)) {
+          route = 'events';
+          mainRoute = 'events';
+          Router.changeRoute('events', true);
+
+          if (!Router.hasRouteAccess('events')) {
+            if (!Router.layoutRendered) Router.renderLayout();
+
+            const content = document.getElementById('page-content');
+
+            if (content) {
+              content.innerHTML =
+                '<div class="alert alert-danger">' +
+                'شما به هیچ صفحه قابل‌نمایشی دسترسی ندارید. ' +
+                'از مدیر سامانه بخواهید دسترسی مناسب را برای نقش شما فعال کند.' +
+                '</div>';
+            }
+
+            return;
+          }
+        }
+
+        if (!Router.layoutRendered) Router.renderLayout();
+
+        await Router.loadPage(mainRoute, route);
+      } catch (error) {
+        console.error('Router Error:', error);
+      } finally {
+        Router.handling = false;
+      }
+    },
+
+    changeRoute: function (route, replace) {
+      const target = '#' + (route || Router.getHomeRoute());
+
+      if (window.location.hash === target) return;
+
+      if (replace) {
+        window.history.replaceState(
+          null,
+          '',
+          window.location.pathname + window.location.search + target
+        );
+      } else {
+        window.location.hash = route;
+      }
+    },
+
+    renderLayout: function () {
+      if (!window.PMS.Layout ||
+          typeof window.PMS.Layout.render !== 'function') {
+        console.error('PMS.Layout.render پیدا نشد.');
+        return;
+      }
+
+      window.PMS.Layout.render();
+      Router.layoutRendered = true;
+
+      if (typeof window.PMS.Layout.setActiveRoute === 'function') {
+        window.PMS.Layout.setActiveRoute();
+      }
+    },
+
+    loadLogin: async function () {
+      const app = document.getElementById('app');
+
+      if (!app) {
+        console.error('عنصر app پیدا نشد.');
+        return;
+      }
+
+      try {
+        const pageUrl = Router.resolveUrl(Router.pages.login);
+        const response = await fetch(pageUrl, { cache: 'no-store' });
+
+        if (!response.ok) {
+          throw new Error(
+            'خطا در بارگذاری صفحه ورود: ' +
+            response.status + ' - ' + pageUrl
+          );
+        }
+
+        app.innerHTML = await response.text();
+        Router.layoutRendered = false;
+
+        await Router.executePageScripts(app);
+        Router.initPageModule('login');
+      } catch (error) {
+        console.error('Login Router Error:', error);
+
+        app.innerHTML =
+          '<div class="alert alert-danger">' +
+          'خطا در بارگذاری صفحه ورود. کنسول مرورگر را بررسی کنید.' +
+          '</div>';
+      }
+    },
+
+    loadPage: async function (page, route) {
+      const content = document.getElementById('page-content');
+
+      if (!content) {
+        console.error('page-content پیدا نشد.');
+        return;
+      }
+
+      const pagePath = Router.pages[page];
+
+      if (!pagePath) {
+        console.error('مسیر صفحه تعریف نشده است:', page);
+        return;
+      }
+
+      if (!Router.hasRouteAccess(route)) {
+        Router.changeRoute('events', true);
+        return;
+      }
+
+      try {
+        const pageUrl = Router.resolveUrl(pagePath);
+        const response = await fetch(pageUrl, { cache: 'no-store' });
+
+        if (!response.ok) {
+          throw new Error(
+            'خطا در بارگذاری صفحه: ' +
+            response.status + ' - ' + pageUrl
+          );
+        }
+
+        content.innerHTML = await response.text();
+        Router.currentPage = route;
+
+        await Router.executePageScripts(content);
+
+        if (window.PMS.Layout &&
+            typeof window.PMS.Layout.setActiveRoute === 'function') {
+          window.PMS.Layout.setActiveRoute();
+        }
+
+        Router.initPageModule(page);
+      } catch (error) {
+        console.error('Router Error:', error);
+
+        content.innerHTML =
+          '<div class="alert alert-danger">' +
+          'خطا در بارگذاری صفحه. کنسول مرورگر را بررسی کنید.' +
+          '</div>';
+      }
+    },
+
+    executePageScripts: async function (container) {
+      const scripts = Array.from(container.querySelectorAll('script'));
+
+      for (const oldScript of scripts) {
+        const newScript = document.createElement('script');
+
+        Array.from(oldScript.attributes).forEach(function (attribute) {
+          newScript.setAttribute(attribute.name, attribute.value);
+        });
+
+        if (oldScript.hasAttribute('src')) {
+          newScript.src = Router.resolveUrl(oldScript.getAttribute('src'));
+          newScript.async = false;
+        } else {
+          newScript.textContent = oldScript.textContent;
+        }
+
+        const loaded = new Promise(function (resolve, reject) {
+          if (!newScript.hasAttribute('src')) {
+            resolve();
+            return;
+          }
+
+          newScript.onload = resolve;
+
+          newScript.onerror = function () {
+            reject(
+              new Error('بارگذاری اسکریپت ناموفق بود: ' + newScript.src)
+            );
+          };
+        });
+
+        oldScript.parentNode.replaceChild(newScript, oldScript);
+
+        if (newScript.hasAttribute('src')) await loaded;
+      }
+    },
+
+    initPageModule: function (page) {
+      const moduleMap = {
+        dashboard: 'Dashboard',
+        projects: 'Projects',
+        'project-detail': 'ProjectDetail',
+        events: 'Events',
+        workflows: 'Workflows',
+        'project-statuses': 'ProjectStatuses',
+        'event-types': 'EventTypes',
+        attachments: 'Attachments',
+        reports: 'Reports',
+        users: 'Users',
+        departments: 'Departments',
+        roles: 'Roles',
+        permissions: 'Permissions',
+        audit: 'Audit',
+        settings: 'Settings',
+        admin: 'Admin',
+        login: 'Auth'
+      };
+
+      const moduleName = moduleMap[page];
+      if (!moduleName) return;
+
+      const module = window.PMS.Modules[moduleName];
+
+      if (!module || typeof module.init !== 'function') {
+        console.warn('ماژول صفحه پیدا نشد:', moduleName);
+        return;
+      }
+
+      try {
+        module.init();
+      } catch (error) {
+        console.error('خطا در اجرای init ماژول:', moduleName, error);
+      }
+    },
+
+    go: function (route) {
+      window.location.hash = route || Router.getHomeRoute();
+    },
+
+    getCurrentRoute: function () {
+      return window.location.hash.replace(/^#/, '').trim() ||
+        Router.getHomeRoute();
+    },
+
+    navigate: function (route, replace) {
+      route = route || Router.getHomeRoute();
+      Router.changeRoute(route, !!replace);
+
+      if (Router.getCurrentRoute() === route && !Router.handling) {
+        Router.handle();
+      }
+    }
+  };
+
+  window.PMS.Router = Router;
+})();
