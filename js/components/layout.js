@@ -241,7 +241,7 @@
       `;
 
       this.bindEvents();
-      if (PMS.Theme) PMS.Theme.bindControl();
+      // Theme controls use a delegated document-level click handler in theme.js.
       this.updateUser();
       this.bindSyncStatus();
       this.setActiveRoute();
