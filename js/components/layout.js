@@ -227,7 +227,7 @@
                   </div>
                 </div>
 
-                <button type="button" class="theme-toggle" id="theme-toggle-button" aria-label="تغییر به تم تیره" aria-pressed="false" title="تغییر تم">
+                <button type="button" class="theme-toggle" id="theme-toggle-button" data-theme-toggle aria-label="تغییر به تم تیره" aria-pressed="false" title="تغییر تم">
                   <span class="theme-toggle-icon" aria-hidden="true">☾</span>
                   <span class="theme-toggle-label">تیره</span>
                 </button>
