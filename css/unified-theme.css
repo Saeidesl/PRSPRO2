@@ -468,3 +468,37 @@ html[data-theme="dark"] .modal-overlay { background: rgba(1,4,9,.76) !important;
   color: var(--color-text) !important;
   border-color: var(--color-border) !important;
 }
+
+
+/* Remaining shared primitives from the legacy theme layer. */
+.page-header h1,.page-header h2,.page-header h3,
+.card-header h1,.card-header h2,.card-header h3,
+.card-body h1,.card-body h2,.card-body h3,.card-body h4 {
+  color: var(--color-text) !important;
+}
+.card-footer,.section-footer,.panel-footer {
+  background: var(--color-surface-alt) !important;
+  color: var(--color-text-secondary) !important;
+  border-color: var(--color-border) !important;
+}
+.btn-danger {
+  background: var(--color-danger-bg) !important;
+  color: var(--color-danger) !important;
+  border-color: var(--color-border) !important;
+}
+.btn-danger:hover:not(:disabled) { background: var(--color-surface-hover) !important; border-color: var(--color-danger) !important; }
+.btn-success {
+  background: var(--color-success-bg) !important;
+  color: var(--color-success) !important;
+  border-color: var(--color-border) !important;
+}
+.btn-success:hover:not(:disabled) { background: var(--color-surface-hover) !important; border-color: var(--color-success) !important; }
+input[type="file"] { color: var(--color-text-secondary) !important; }
+input:disabled,select:disabled,textarea:disabled {
+  color: var(--color-text-muted) !important;
+  background: var(--color-surface-alt) !important;
+  border-color: var(--color-border) !important;
+  opacity: .78;
+}
+hr,.divider,.separator { border-color: var(--color-border) !important; }
+::selection { background: var(--color-primary-light); color: var(--color-text); }
