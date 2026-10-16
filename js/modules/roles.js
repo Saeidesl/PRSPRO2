@@ -203,13 +203,13 @@
 
   const styles = `
     #pms-role-modal .rp-layout {
-      color:var(--text-color, #222);
+      color:var(--color-text);
       font-size:14px;
     }
     #pms-role-modal .rp-tabs {
       display:flex;
       gap:8px;
-      border-bottom:1px solid #ddd;
+      border-bottom:1px solid var(--color-border);
       margin-bottom:18px;
     }
     #pms-role-modal .rp-tab {
@@ -219,11 +219,11 @@
       padding:12px 16px;
       cursor:pointer;
       font-weight:600;
-      color:#555;
+      color:var(--color-text-secondary);
     }
     #pms-role-modal .rp-tab.active {
-      color:#1769aa;
-      border-bottom-color:#1769aa;
+      color:var(--color-primary);
+      border-bottom-color:var(--color-primary);
     }
     #pms-role-modal .rp-panel[hidden] {
       display:none !important;
@@ -239,17 +239,17 @@
       width:100%;
       max-width:360px;
       padding:10px 12px;
-      border:1px solid #ccc;
+      border:1px solid var(--color-border);
       border-radius:8px;
       box-sizing:border-box;
     }
     #pms-role-modal .rp-summary {
-      color:#666;
+      color:var(--color-text-secondary);
       font-size:13px;
       margin-right:auto;
     }
     #pms-role-modal .rp-list {
-      border:1px solid #e1e5e9;
+      border:1px solid var(--color-border);
       border-radius:9px;
       overflow:auto;
       max-height:390px;
@@ -259,7 +259,7 @@
       align-items:flex-start;
       gap:10px;
       padding:12px;
-      border-bottom:1px solid #edf0f2;
+      border-bottom:1px solid var(--color-border-light);
       cursor:pointer;
       margin:0;
     }
@@ -267,7 +267,7 @@
       border-bottom:0;
     }
     #pms-role-modal .rp-item:hover {
-      background:#f7f9fb;
+      background:var(--color-surface-hover);
     }
     #pms-role-modal .rp-item input {
       margin-top:4px;
@@ -282,7 +282,7 @@
       overflow-wrap:anywhere;
     }
     #pms-role-modal .rp-item-meta {
-      color:#777;
+      color:var(--color-text-muted);
       font-size:12px;
       margin-top:4px;
       overflow-wrap:anywhere;
@@ -297,13 +297,13 @@
       padding:10px 12px;
       border-radius:7px;
       margin-bottom:14px;
-      background:#f1f5f9;
-      color:#334155;
+      background:var(--color-info-bg);
+      color:var(--color-text-secondary);
     }
     #pms-role-modal .rp-empty {
       padding:28px 14px;
       text-align:center;
-      color:#777;
+      color:var(--color-text-muted);
     }
     #pms-role-modal .rp-close-row {
       display:flex;
@@ -368,7 +368,7 @@
           gap:12px;margin-bottom:8px;">
           <div>
             <h3 style="margin:0 0 5px;">مدیریت دسترسی‌های نقش</h3>
-            <div style="font-size:13px;color:#777;">
+            <div style="font-size:13px;color:var(--color-text-muted);">
               دسترسی‌های موردنیاز این نقش را انتخاب و مدیریت کن.
             </div>
           </div>
