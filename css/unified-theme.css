@@ -356,3 +356,40 @@ html[data-theme="dark"] .modal-overlay { background: rgba(1,4,9,.76) !important;
 }
 
 #user-create-error, #user-edit-error { color: var(--color-danger) !important; }
+
+
+/* Higher-specificity legacy modal controls, including permission editors. */
+.modal-content label, .modal-content .form-label, .modal label, .modal .form-label {
+  color: var(--color-text-secondary) !important;
+}
+.modal-content input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.modal-content select, .modal-content textarea,
+.modal input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.modal select, .modal textarea {
+  color: var(--color-input-text) !important;
+  background: var(--color-input-bg) !important;
+  border-color: var(--color-border) !important;
+}
+.modal-content input::placeholder, .modal-content textarea::placeholder,
+.modal input::placeholder, .modal textarea::placeholder {
+  color: var(--color-placeholder) !important;
+}
+.modal-content select option, .modal select option {
+  color: var(--color-text) !important;
+  background: var(--color-surface) !important;
+}
+.modal-header h1, .modal-header h2, .modal-header h3, .modal-title,
+.modal-body h1, .modal-body h2, .modal-body h3, .modal-body h4 {
+  color: var(--color-text) !important;
+}
+.modal-body p, .modal-body small { color: var(--color-text-secondary) !important; }
+.modal-header button, .modal-close, .close-modal {
+  color: var(--color-text-secondary) !important;
+  background: var(--color-surface-alt) !important;
+  border-color: var(--color-border) !important;
+}
+.modal-header button:hover, .modal-close:hover, .close-modal:hover {
+  color: var(--color-text) !important;
+  background: var(--color-surface-hover) !important;
+  border-color: var(--color-primary) !important;
+}
