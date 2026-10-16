@@ -4,6 +4,7 @@
 
   var STORAGE_KEY = 'pms-theme';
   var root = document.documentElement;
+
   var Theme = {
     getSystemTheme: function () {
       return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -23,7 +24,7 @@
       var themeColor = document.querySelector('meta[name="theme-color"]');
       if (themeColor) themeColor.setAttribute('content', selected === 'dark' ? '#0d1117' : '#ffffff');
       if (persist !== false) {
-        try { window.localStorage.setItem(STORAGE_KEY, selected); } catch (error) { /* Storage may be blocked. */ }
+        try { window.localStorage.setItem(STORAGE_KEY, selected); } catch (error) {}
       }
       this.updateControl();
       return selected;
@@ -40,24 +41,30 @@
         button.setAttribute('title', dark ? 'تم تیره فعال است؛ برای تم روشن کلیک کنید' : 'تم روشن فعال است؛ برای تم تیره کلیک کنید');
         var icon = button.querySelector('.theme-toggle-icon');
         var label = button.querySelector('.theme-toggle-label');
-        if (icon) icon.textContent = dark ? '☀' : '☾';
-        if (label) label.textContent = dark ? 'روشن' : 'تیره';
+        var iconText = dark ? '☀' : '☾';
+        var labelText = dark ? 'روشن' : 'تیره';
+        // Avoid rewriting identical text: doing so triggers MutationObserver again.
+        if (icon && icon.textContent !== iconText) icon.textContent = iconText;
+        if (label && label.textContent !== labelText) label.textContent = labelText;
       });
-    },
-    bindControl: function () {
-      this.updateControl();
     },
     init: function () {
       document.addEventListener('click', function (event) {
-        var button = event.target.closest && event.target.closest('[data-theme-toggle], #theme-toggle-button');
+        var target = event.target;
+        var button = target && target.closest && target.closest('[data-theme-toggle], #theme-toggle-button');
         if (button) Theme.toggle();
       });
+
       if (window.MutationObserver) {
-        var observer = new MutationObserver(function () { Theme.updateControl(); });
+        var observer = new MutationObserver(function () {
+          Theme.updateControl();
+        });
         observer.observe(document.documentElement, { childList: true, subtree: true });
       }
+
       var stored = this.getStoredTheme();
       this.apply(stored || this.getSystemTheme(), false);
+
       if (window.matchMedia) {
         var media = window.matchMedia('(prefers-color-scheme: dark)');
         var onSystemChange = function (event) {
