@@ -33,6 +33,12 @@
     },
 
     bindEvents: function () {
+      const createButton = document.getElementById('event-create-button');
+      if (createButton) {
+        createButton.hidden = !(PMS.Router &&
+          PMS.Router.hasPermission('EVENT_CREATE'));
+      }
+
       document.addEventListener('click', function (event) {
         const target = event.target;
 
