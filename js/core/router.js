@@ -35,15 +35,15 @@
 
     routePermissions: {
       dashboard: ['REPORT_VIEW'],
-      projects: ['PROJECT_VIEW', 'PROJECT_CREATE'],
+      projects: ['PROJECT_VIEW'],
       'project-detail': ['PROJECT_VIEW'],
-      events: ['EVENT_VIEW', 'EVENT_CREATE'],
+      events: ['EVENT_VIEW'],
       workflows: ['WORKFLOW_MANAGE'],
       'project-statuses': ['PROJECT_STATUS_MANAGE'],
-      'event-types': ['EVENT_TYPE_MANAGE'],
+      'event-types': ['EVENT_TYPE_MANAGE', 'EVENT_CREATE'],
       attachments: ['ATTACHMENT_VIEW'],
       reports: ['REPORT_VIEW'],
-      users: ['USER_VIEW', 'USER_CREATE', 'USER_EDIT'],
+      users: ['USER_VIEW'],
       departments: ['DEPARTMENT_MANAGE'],
       roles: ['ROLE_MANAGE'],
       permissions: ['PERMISSION_MANAGE'],
@@ -177,6 +177,20 @@ getBaseUrl: function () {
       return Router.permissionsRequest;
     },
 
+    hasPermission: function (permission) {
+      if (Router.isAdmin()) return true;
+      return Boolean(Router.permissionsLoaded &&
+        Router.permissions.indexOf(String(permission || '')) !== -1);
+    },
+
+    hasAnyPermission: function (permissions) {
+      if (Router.isAdmin()) return true;
+      return Array.isArray(permissions) &&
+        permissions.some(function (permission) {
+          return Router.hasPermission(permission);
+        });
+    },
+
     hasRouteAccess: function (route) {
       if (Router.isAdmin()) return true;
 
@@ -188,9 +202,7 @@ getBaseUrl: function () {
 
       const required = Router.routePermissions[mainRoute] || [];
 
-      return required.some(function (permission) {
-        return Router.permissions.indexOf(permission) !== -1;
-      });
+      return Router.hasAnyPermission(required);
     },
 
     init: function () {
