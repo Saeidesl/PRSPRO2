@@ -527,7 +527,7 @@
 
           min-width: 0;
           color: var(--explorer-text);
-          color-scheme: dark;
+          color-scheme: inherit;
         }
 
         #dashboard-project-explorer,
