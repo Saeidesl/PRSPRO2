@@ -265,6 +265,20 @@ getBaseUrl: function () {
         await Router.loadPage(mainRoute, route);
       } catch (error) {
         console.error('Router Error:', error);
+
+        const content = document.getElementById('page-content');
+        if (content) {
+          const message = error && error.message
+            ? error.message
+            : 'خطای نامشخص هنگام باز کردن صفحه.';
+          content.innerHTML =
+            '<div class="alert alert-danger" role="alert" style="direction:rtl;text-align:right;padding:16px">' +
+            '<strong>صفحه باز نشد.</strong><br>' +
+            String(message).replace(/[&<>"]/g, function (character) {
+              return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[character];
+            }) +
+            '</div>';
+        }
       } finally {
         Router.handling = false;
       }
@@ -293,11 +307,26 @@ getBaseUrl: function () {
         return;
       }
 
-      window.PMS.Layout.render();
-      Router.layoutRendered = true;
+      try {
+        window.PMS.Layout.render();
+      } catch (error) {
+        console.error('خطا در ساختار ظاهری صفحه:', error);
+      }
+
+      // If the shell was created, continue to the requested page even if
+      // a non-essential layout initializer failed.
+      Router.layoutRendered = !!document.getElementById('page-content');
+
+      if (!Router.layoutRendered) {
+        throw new Error('ساختار اصلی صفحه ساخته نشد؛ عنصر page-content در دسترس نیست.');
+      }
 
       if (typeof window.PMS.Layout.setActiveRoute === 'function') {
-        window.PMS.Layout.setActiveRoute();
+        try {
+          window.PMS.Layout.setActiveRoute();
+        } catch (error) {
+          console.warn('به‌روزرسانی منوی فعال انجام نشد:', error);
+        }
       }
     },
 
