@@ -217,6 +217,8 @@
           loadWorkflowSteps(workflow);
         } else if (this.dataset.action === 'add-step') {
           showCreateStepModal(workflow);
+        } else if (this.dataset.action === 'edit-workflow') {
+          showCreateWorkflowModal(workflow);
         }
       });
     });
@@ -280,6 +282,12 @@
                     data-id="${escapeAttribute(id)}">
               + افزودن مرحله
             </button>
+            <button type="button"
+                    class="btn btn-light btn-sm"
+                    data-action="edit-workflow"
+                    data-id="${escapeAttribute(id)}">
+              ویرایش فرآیند
+            </button>
           </div>
         </div>
       </article>
@@ -290,9 +298,12 @@
   // ایجاد فرآیند
   // ------------------------------------------
 
-  function showCreateWorkflowModal() {
+  function showCreateWorkflowModal(workflowToEdit) {
+    const editing = Boolean(workflowToEdit);
+    const workflowId = editing ? getId(workflowToEdit) : '';
+
     openModal({
-      title: 'ایجاد فرآیند جدید',
+      title: editing ? 'ویرایش فرآیند' : 'ایجاد فرآیند جدید',
       content: `
         <div style="margin-bottom:18px;color:var(--text-muted,#64748b);font-size:13px">
           ابتدا مشخصات فرآیند را ثبت کن. سپس می‌توانی مراحل تولید را به ترتیب اضافه کنی.
@@ -307,6 +318,7 @@
                    type="text"
                    maxlength="150"
                    required
+                   value="${editing ? escapeAttribute(getName(workflowToEdit)) : ''}"
                    placeholder="مثلاً فرآیند تولید لباس">
           </div>
 
@@ -318,6 +330,7 @@
                    type="text"
                    maxlength="80"
                    required
+                   value="${editing ? escapeAttribute(getCode(workflowToEdit) === '-' ? '' : getCode(workflowToEdit)) : ''}"
                    placeholder="مثلاً GARMENT_PRODUCTION">
             <small style="display:block;margin-top:5px;color:var(--text-muted,#64748b)">
               کدی کوتاه و قابل‌شناسایی وارد کن.
@@ -328,7 +341,7 @@
 
           <div class="modal-footer"
                style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-start">
-            <button type="submit" class="btn btn-primary">ثبت فرآیند</button>
+            <button type="submit" class="btn btn-primary">${editing ? 'ذخیره تغییرات' : 'ثبت فرآیند'}</button>
             <button type="button" class="btn btn-light" data-close-modal>انصراف</button>
           </div>
         </form>
@@ -359,14 +372,21 @@
           submit.textContent = 'در حال ثبت...';
 
           try {
-            await PMS.Api.post('/workflows', {
-              Name: name,
-              Code: code
-            });
+            if (editing) {
+              await PMS.Api.put('/workflows/' + encodeURIComponent(workflowId), {
+                Name: name,
+                Code: code
+              });
+            } else {
+              await PMS.Api.post('/workflows', {
+                Name: name,
+                Code: code
+              });
+            }
 
             invalidateCache(CACHE_KEY);
             closeModal(overlay);
-            showMessage('فرآیند با موفقیت ثبت شد.', 'success');
+            showMessage(editing ? 'تغییرات فرآیند ذخیره شد.' : 'فرآیند با موفقیت ثبت شد.', 'success');
             await loadWorkflows();
           } catch (error) {
             showFormMessage(
@@ -380,7 +400,7 @@
 
             if (submit.isConnected) {
               submit.disabled = false;
-              submit.textContent = 'ثبت فرآیند';
+              submit.textContent = editing ? 'ذخیره تغییرات' : 'ثبت فرآیند';
             }
           }
         });
