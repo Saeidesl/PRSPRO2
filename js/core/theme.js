@@ -32,28 +32,26 @@
       return this.apply(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark', true);
     },
     updateControl: function () {
-      var button = document.getElementById('theme-toggle-button');
-      if (!button) return;
+      var buttons = document.querySelectorAll('[data-theme-toggle], #theme-toggle-button');
       var dark = root.getAttribute('data-theme') === 'dark';
-      button.setAttribute('aria-label', dark ? 'تغییر به تم روشن' : 'تغییر به تم تیره');
-      button.setAttribute('aria-pressed', dark ? 'true' : 'false');
-      button.setAttribute('title', dark ? 'تم تیره فعال است؛ برای تم روشن کلیک کنید' : 'تم روشن فعال است؛ برای تم تیره کلیک کنید');
-      var icon = button.querySelector('.theme-toggle-icon');
-      var label = button.querySelector('.theme-toggle-label');
-      if (icon) icon.textContent = dark ? '☀' : '☾';
-      if (label) label.textContent = dark ? 'روشن' : 'تیره';
+      buttons.forEach(function (button) {
+        button.setAttribute('aria-label', dark ? 'تغییر به تم روشن' : 'تغییر به تم تیره');
+        button.setAttribute('aria-pressed', dark ? 'true' : 'false');
+        button.setAttribute('title', dark ? 'تم تیره فعال است؛ برای تم روشن کلیک کنید' : 'تم روشن فعال است؛ برای تم تیره کلیک کنید');
+        var icon = button.querySelector('.theme-toggle-icon');
+        var label = button.querySelector('.theme-toggle-label');
+        if (icon) icon.textContent = dark ? '☀' : '☾';
+        if (label) label.textContent = dark ? 'روشن' : 'تیره';
+      });
     },
     bindControl: function () {
-      var button = document.getElementById('theme-toggle-button');
-      if (!button || button.dataset.themeBound === 'true') {
-        this.updateControl();
-        return;
-      }
-      button.dataset.themeBound = 'true';
-      button.addEventListener('click', function () { Theme.toggle(); });
       this.updateControl();
     },
     init: function () {
+      document.addEventListener('click', function (event) {
+        var button = event.target.closest && event.target.closest('[data-theme-toggle], #theme-toggle-button');
+        if (button) Theme.toggle();
+      });
       var stored = this.getStoredTheme();
       this.apply(stored || this.getSystemTheme(), false);
       if (window.matchMedia) {
