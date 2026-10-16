@@ -13,10 +13,7 @@
     content="سامانه مدیریت و پیگیری فرآیند تولید"
   >
 
-  <meta
-    name="theme-color"
-    content="#2563eb"
-  >
+  <meta name="theme-color" content="#ffffff">\n\n  <script>\n    (function () {\n      try {\n        var saved = localStorage.getItem("pms-theme");\n        var theme = saved === "light" || saved === "dark" ? saved :\n          (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");\n        document.documentElement.setAttribute("data-theme", theme);\n      } catch (error) { document.documentElement.setAttribute("data-theme", "light"); }\n    })();\n  </script>
 
   <title>مدیریت تولید</title>
 
@@ -29,7 +26,7 @@
   <link rel="stylesheet" href="css/responsive.css">
 <link rel="stylesheet" href="css/events.css">
   <link rel="stylesheet" href="css/dark-theme.css">
-  <link rel="stylesheet" href="css/login.css">
+  <link rel="stylesheet" href="css/login.css">\n  <link rel="stylesheet" href="css/unified-theme.css">
 </head>
 
 <body>
@@ -49,8 +46,7 @@
   <script src="js/core/session.js"></script>
   <script src="js/core/permissions.js"></script>
 
-  <!-- Components -->
-  <script src="js/components/layout.js"></script>
+  <!-- Theme controller must load before the application layout -->\n  <script src="js/core/theme.js"></script>\n\n  <!-- Components -->\n  <script src="js/components/layout.js"></script>
   <script src="js/components/modal.js"></script>
   <script src="js/components/alert.js"></script>
   <script src="js/components/loading.js"></script>
