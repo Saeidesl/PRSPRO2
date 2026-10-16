@@ -133,6 +133,15 @@
 
 
     load: async function () {
+      if (!MODULE.can('ATTACHMENT_VIEW')) {
+        this.state.attachments = [];
+        if (Cache) Cache.remove(this.cacheKey);
+        this.render();
+        const loading = document.getElementById('attachments-loading');
+        if (loading) loading.hidden = true;
+        return;
+      }
+
 
       const cached =
         Cache
