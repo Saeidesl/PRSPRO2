@@ -190,6 +190,13 @@
 
         if (token) params.set('token', token);
 
+        if (options.params && typeof options.params === 'object') {
+          Object.keys(options.params).forEach(function (key) {
+            const value = options.params[key];
+            if (value !== undefined && value !== null) params.set(key, String(value));
+          });
+        }
+
         const usePostOverride =
           actualMethod === 'PUT' || actualMethod === 'DELETE';
 
