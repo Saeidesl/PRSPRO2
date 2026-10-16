@@ -393,3 +393,23 @@ html[data-theme="dark"] .modal-overlay { background: rgba(1,4,9,.76) !important;
   background: var(--color-surface-hover) !important;
   border-color: var(--color-primary) !important;
 }
+
+
+/* Remaining explorer details, metadata chips and compact timeline. */
+#dashboard-project-explorer .dashboard-compact-event-description {
+  background: var(--color-surface-alt) !important;
+  color: var(--color-text-secondary) !important;
+  border-color: var(--color-border) !important;
+}
+#dashboard-project-explorer .dashboard-compact-event-data span {
+  background: var(--color-surface-alt) !important;
+  color: var(--color-text-secondary) !important;
+  border-color: var(--color-border) !important;
+}
+#dashboard-project-explorer .dashboard-compact-timeline::before { background: var(--color-border) !important; }
+#dashboard-project-explorer .dashboard-compact-event::before { border-color: var(--color-surface) !important; }
+#dashboard-project-explorer .dashboard-detail-link:hover { color: var(--color-primary-hover) !important; }
+#dashboard-project-explorer .dashboard-project-choice.selected { box-shadow: inset -3px 0 0 var(--color-primary) !important; }
+#dashboard-project-explorer .dashboard-project-base-item,
+#dashboard-project-explorer .dashboard-project-choice,
+#dashboard-project-explorer .dashboard-compact-event { box-shadow: var(--shadow-sm) !important; }
