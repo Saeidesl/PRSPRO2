@@ -98,15 +98,32 @@
 }
 
 /* وضعیت‌های مختلف */
-.status-active {\n  background: var(--color-success-bg);\n  color: var(--color-success);\n}
+.status-active {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
 
-.status-inactive {\n  background: var(--color-surface-hover);\n  color: var(--color-text-secondary);\n}
+.status-inactive {
+  background: var(--color-surface-hover);
+  color: var(--color-text-secondary);
+}
 
-.status-completed {\n  background: var(--color-info-bg);\n  color: var(--color-info);\n}
+.status-completed {
+  background: var(--color-info-bg);
+  color: var(--color-info);
+}
 
-.status-on-hold {\n  background: var(--color-warning-bg);\n  color: var(--color-warning);\n}
+.status-on-hold {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
 
-.status-cancelled,\n.status-void,\n.status-deleted {\n  background: var(--color-danger-bg);\n  color: var(--color-danger);\n}
+.status-cancelled,
+.status-void,
+.status-deleted {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
 
 /* نمایش در صفحه‌های کوچک */
 @media (max-width: 768px) {
