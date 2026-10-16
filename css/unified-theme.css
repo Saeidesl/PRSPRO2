@@ -503,3 +503,205 @@ input:disabled,select:disabled,textarea:disabled {
 }
 hr,.divider,.separator { border-color: var(--color-border) !important; }
 ::selection { background: var(--color-primary-light); color: var(--color-text); }
+
+
+/* =========================================================
+   Cross-page consistency layer — all pages and dynamic UI
+   ========================================================= */
+:root {
+  --color-focus-ring: color-mix(in srgb, var(--color-primary) 34%, transparent);
+  --color-row-selected: color-mix(in srgb, var(--color-primary) 13%, var(--color-surface));
+  --color-login-background: #f1f5f9;
+  --color-login-decoration: rgba(37, 99, 235, .10);
+  --color-login-card-border: var(--color-border);
+  --color-chart-grid: var(--color-border);
+  --color-chart-label: var(--color-text-secondary);
+  --control-height: 42px;
+  --control-radius: var(--radius-md);
+}
+:root[data-theme="dark"] {
+  --color-login-background: #0d1117;
+  --color-login-decoration: rgba(88, 166, 255, .10);
+  --color-login-card-border: var(--color-border);
+  --color-row-selected: color-mix(in srgb, var(--color-primary) 22%, var(--color-surface));
+}
+html { color-scheme: light; }
+html[data-theme="dark"] { color-scheme: dark; }
+html, body, #app { min-height: 100%; }
+body {
+  background-color: var(--color-background);
+  color: var(--color-text);
+  font-family: var(--font-family);
+  line-height: 1.75;
+}
+button, input, select, textarea { font: inherit; }
+a { color: var(--color-link); }
+a:hover { color: var(--color-primary-hover); }
+:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+::selection { background: var(--color-primary-light); color: var(--color-text); }
+
+/* Native and dynamically generated controls */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+select, textarea {
+  color: var(--color-input-text);
+  background-color: var(--color-input-bg);
+  border-color: var(--color-border);
+  border-radius: var(--control-radius);
+}
+input::placeholder, textarea::placeholder { color: var(--color-placeholder); opacity: 1; }
+select option, optgroup {
+  color: var(--color-input-text);
+  background: var(--color-surface);
+}
+input[type="checkbox"], input[type="radio"] { accent-color: var(--color-primary); }
+input:disabled, select:disabled, textarea:disabled {
+  color: var(--color-text-muted) !important;
+  background: var(--color-surface-alt) !important;
+  border-color: var(--color-border) !important;
+}
+button:disabled, .btn:disabled { opacity: .58; }
+button, .btn, input, select, textarea {
+  transition: background-color .16s ease, color .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* Shared surfaces, even when produced by module JavaScript */
+.card, .panel, .stat-card, .summary-card, .section-card, .form-card,
+.table-wrapper, .empty-state, .settings-section, .report-card {
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+.card, .panel, .stat-card, .summary-card, .section-card, .form-card,
+.settings-section, .report-card {
+  background-color: var(--color-surface);
+}
+.card-header, .panel-header, .section-header, .modal-header, .modal-footer,
+.card-footer, .panel-footer {
+  color: var(--color-text);
+  border-color: var(--color-border) !important;
+}
+.card-header, .panel-header, .section-header, .card-footer, .panel-footer {
+  background-color: var(--color-surface-alt);
+}
+.page-header h1, .page-header h2, .page-header h3,
+.card h1, .card h2, .card h3, .card h4,
+.modal h1, .modal h2, .modal h3, .modal h4,
+label, legend { color: var(--color-text); }
+small, .muted, .text-muted, .form-hint, .help-text, .field-hint {
+  color: var(--color-text-muted);
+}
+
+/* Tables and selected rows */
+table, .data-table, .table, .table-wrapper {
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+table th, .data-table th, .table th {
+  color: var(--color-text-secondary);
+  background: var(--color-surface-alt);
+  border-color: var(--color-border);
+}
+table td, .data-table td, .table td {
+  color: var(--color-text);
+  border-color: var(--color-border-light);
+}
+table tbody tr:hover, .data-table tbody tr:hover, .table tbody tr:hover {
+  background-color: var(--color-surface-hover);
+}
+table tr.selected, table tr[aria-selected="true"],
+.data-table tr.selected, .data-table tr[aria-selected="true"] {
+  background-color: var(--color-row-selected);
+}
+
+/* Dialogs, popovers, menus and generated messages */
+.modal, .modal-content, .modal-dialog, .modal-panel, [role="dialog"] .modal-content {
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
+}
+.dropdown-menu, .dropdown-content, .popover, .tooltip, [role="menu"] {
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
+  box-shadow: var(--shadow-md);
+}
+.dropdown-menu a, [role="menu"] a { color: var(--color-text); }
+.dropdown-menu a:hover, [role="menu"] a:hover {
+  color: var(--color-text);
+  background-color: var(--color-surface-hover);
+}
+.toast, .alert, .message, .notification {
+  border-color: var(--color-border);
+}
+.alert-success, .toast-success, .message-success {
+  color: var(--color-success);
+  background-color: var(--color-success-bg);
+}
+.alert-warning, .toast-warning, .message-warning {
+  color: var(--color-warning);
+  background-color: var(--color-warning-bg);
+}
+.alert-danger, .alert-error, .toast-error, .toast-danger, .message-error {
+  color: var(--color-danger);
+  background-color: var(--color-danger-bg);
+}
+.alert-info, .toast-info, .message-info {
+  color: var(--color-info);
+  background-color: var(--color-info-bg);
+}
+
+/* Keep existing class names and operation semantics; normalize their appearance. */
+.theme-toggle {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+.theme-toggle:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-primary);
+}
+.theme-toggle:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+.theme-toggle-icon { line-height: 1; }
+.app-header, .app-sidebar, .sidebar-header, .sidebar-footer {
+  border-color: var(--color-border);
+}
+.app-header { background: var(--color-surface); color: var(--color-text); }
+.app-sidebar { background: var(--color-sidebar); color: var(--color-sidebar-text); }
+.sidebar-nav-link { color: var(--color-sidebar-muted); }
+.sidebar-nav-link:hover { background: var(--color-sidebar-hover); color: var(--color-sidebar-text); }
+.sidebar-nav-link.active {
+  background: var(--color-sidebar-active);
+  color: var(--color-sidebar-active-text);
+  border-color: var(--color-border);
+}
+.status-idle, .status-cached, .status-updated, .status-error, .status-fetching {
+  border-color: var(--color-border);
+}
+svg text, .chart-label, .recharts-text { fill: var(--color-chart-label); }
+svg .recharts-cartesian-grid line, .chart-grid line { stroke: var(--color-chart-grid); }
+canvas { max-width: 100%; }
+@media (max-width: 768px) {
+  .app-header-right { gap: var(--space-8); }
+  .theme-toggle-label { display: inline; }
+  .page-section { padding: var(--space-16); }
+}
