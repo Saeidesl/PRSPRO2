@@ -726,8 +726,9 @@
 
     box.textContent = message;
     box.hidden = false;
-    box.style.background = isError ? '#fef2f2' : '#f0fdf4';
-    box.style.color = isError ? '#b42318' : '#166534';
+    box.classList.add('alert');
+    box.classList.toggle('alert-danger', Boolean(isError));
+    box.classList.toggle('alert-success', !isError);
   }
 
   function setBusy(modal, busy) {
