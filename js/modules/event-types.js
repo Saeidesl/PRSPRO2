@@ -63,7 +63,7 @@
 
     if (createButton) {
       createButton.hidden = !(PMS.Router &&
-        PMS.Router.hasAnyPermission(['EVENT_TYPE_MANAGE', 'EVENT_CREATE']));
+        PMS.Router.hasPermission('EVENT_TYPE_MANAGE'));
     }
 
     if (createButton && !createButton.dataset.bound) {
