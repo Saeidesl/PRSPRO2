@@ -12,7 +12,7 @@
   justify-content: center;
   padding: 20px;
   overflow-y: auto;
-  background: rgba(8, 15, 28, 0.72);
+  background: var(--color-overlay);
   -webkit-backdrop-filter: blur(7px);
   backdrop-filter: blur(7px);
   color: var(--color-text);
@@ -40,7 +40,7 @@
   border-radius: 20px;
   background: var(--color-surface);
   color: var(--color-text);
-  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.42);
+  box-shadow: var(--shadow-overlay);
   animation: event-panel-in 220ms ease-out;
   scrollbar-width: thin;
   scrollbar-color: var(--color-border) transparent;
@@ -296,13 +296,13 @@
   border-color: var(--color-primary);
   background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
   color: #fff;
-  box-shadow: 0 7px 18px rgba(2, 132, 199, 0.18);
+  box-shadow: var(--shadow-md);
 }
 
 #event-create-modal .event-modal-button-primary:hover:not(:disabled) {
   border-color: var(--color-primary);
   background: linear-gradient(135deg, var(--color-primary), var(--color-primary));
-  box-shadow: 0 9px 22px rgba(2, 132, 199, 0.25);
+  box-shadow: var(--shadow-md);
 }
 
 #event-create-modal .event-modal-button:disabled,
@@ -374,7 +374,7 @@
   flex: 0 0 27px;
   width: 27px;
   height: 27px;
-  border: 3px solid rgba(125, 211, 252, 0.22);
+  border: 3px solid var(--color-border);
   border-top-color: var(--color-primary);
   border-left-color: var(--color-primary);
   border-radius: 50%;
