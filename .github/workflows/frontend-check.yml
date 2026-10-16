@@ -1,0 +1,28 @@
+name: Frontend JavaScript Syntax
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+      - feat/frontend-standardization
+
+jobs:
+  syntax-check:
+    name: Check JavaScript syntax
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Validate JavaScript files
+        shell: bash
+        run: |
+          set -euo pipefail
+          find . -type f -name '*.js' -not -path './node_modules/*' -print0 |
+            xargs -0 -r -n1 node --check
