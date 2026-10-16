@@ -101,8 +101,7 @@
       element.style.gap =
         '12px';
 
-      element.style.background =
-        'rgba(255,255,255,.75)';
+      element.classList.add('pms-loading-overlay');
 
       document.body.appendChild(
         element
