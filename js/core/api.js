@@ -3,7 +3,7 @@
   'use strict';
 
   const API_BASE_URL =
-    'https://script.google.com/macros/s/AKfycbyIYLLT4QjEHRZZcx-jAZwLSwzdrDewhJbNlXxgaVL2h_3zZgRUT0qpp0Qzm65lC-MMMw/exec';
+    'https://script.googleusercontent.com/macros/echo?user_content_key=AUkAhnRnlLAFStUbNrwrqjldwM65SiHFQKUTm8Q21pNYGepDLQxUgJIft98IJEMrZMg-G0orL85Bdw-lLEvsN3oglUnkiMmKrcG6BXnwTolMlmqiml-E1A5ilblIyjQpq3GUeV75H0mhVVFgXe2dkyU3W0HbOAcpFjtA7pBbWBsEHxOKIUc9e476RR1Hx8kC1g2XQM47G9wp5K9RKb5Sq_tvFbL6bBh1thV5CyM07UZZF7XpvbY2H9wPnA17jr83aVdk5jEtZRigd6Egd_pFiSFqp5k_OiTWYA&lib=MF9OKU-kFtfO3U7qzKau1AnO2iu_L2FkJ';
 
   const TOKEN_KEY = 'pms_api_token';
 
