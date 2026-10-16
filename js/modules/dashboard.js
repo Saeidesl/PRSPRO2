@@ -902,7 +902,7 @@
         }
 
         #dashboard-project-explorer .btn-secondary:hover {
-          color: #fff;
+          color: var(--color-text);
           background: var(--color-surface-hover);
           border-color: var(--color-border);
         }
