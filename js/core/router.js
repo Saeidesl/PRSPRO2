@@ -37,7 +37,7 @@
       dashboard: ['REPORT_VIEW'],
       projects: ['PROJECT_VIEW'],
       'project-detail': ['PROJECT_VIEW'],
-      events: ['EVENT_VIEW'],
+      events: ['EVENT_VIEW', 'EVENT_CREATE'],
       workflows: ['WORKFLOW_MANAGE'],
       'project-statuses': ['PROJECT_STATUS_MANAGE'],
       'event-types': ['EVENT_TYPE_MANAGE'],
