@@ -227,7 +227,11 @@
                   </div>
                 </div>
 
-                <button type="button" class="theme-toggle" id="theme-toggle-button" aria-label="تغییر به تم تیره" aria-pressed="false" title="تغییر تم">\n                  <span class="theme-toggle-icon" aria-hidden="true">☾</span>\n                  <span class="theme-toggle-label">تیره</span>\n                </button>\n                <button type="button" class="btn btn-light btn-sm" id="logout-button">خروج</button>
+                <button type="button" class="theme-toggle" id="theme-toggle-button" aria-label="تغییر به تم تیره" aria-pressed="false" title="تغییر تم">
+                  <span class="theme-toggle-icon" aria-hidden="true">☾</span>
+                  <span class="theme-toggle-label">تیره</span>
+                </button>
+                <button type="button" class="btn btn-light btn-sm" id="logout-button">خروج</button>
               </div>
             </header>
 
@@ -236,7 +240,9 @@
         </div>
       `;
 
-      this.bindEvents();\n      if (PMS.Theme) PMS.Theme.bindControl();\n      this.updateUser();
+      this.bindEvents();
+      if (PMS.Theme) PMS.Theme.bindControl();
+      this.updateUser();
       this.bindSyncStatus();
       this.setActiveRoute();
       this.loadPermissions();
