@@ -562,7 +562,7 @@
       return `
         <tr>
           <td style="width:70px;text-align:center">
-            <span style="display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;border-radius:50%;background:var(--surface-muted,#f1f5f9)">
+            <span style="display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;border-radius:50%;background:var(--color-surface-alt)">
               ${escapeHtml(order)}
             </span>
           </td>
