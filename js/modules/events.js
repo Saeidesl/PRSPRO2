@@ -22,6 +22,13 @@
 
     init: function () {
       this.bindEvents();
+
+      const createButton = document.getElementById('event-create-button');
+      if (createButton && PMS.Router &&
+          typeof PMS.Router.hasPermission === 'function') {
+        createButton.hidden = !PMS.Router.hasPermission('EVENT_CREATE');
+      }
+
       this.load();
     },
 
@@ -102,10 +109,22 @@
 
     load: async function () {
       const loading = document.getElementById('events-loading');
+      const canViewEvents = !!(
+        PMS.Router &&
+        typeof PMS.Router.hasPermission === 'function' &&
+        PMS.Router.hasPermission('EVENT_VIEW')
+      );
 
-      const cachedEvents = PMS.Cache.get(CACHE_KEY);
+      const cachedEvents = canViewEvents
+        ? PMS.Cache.get(CACHE_KEY)
+        : null;
       const cachedProjects = PMS.Cache.get(PROJECTS_CACHE_KEY);
       const cachedTypes = PMS.Cache.get(EVENT_TYPES_CACHE_KEY);
+
+      if (!canViewEvents) {
+        this.events = [];
+        PMS.Cache.remove(CACHE_KEY);
+      }
 
       if (cachedEvents !== null) this.events = this.normalize(cachedEvents);
       if (cachedProjects !== null) this.projects = this.normalize(cachedProjects);
@@ -123,19 +142,26 @@
       }
 
       try {
-        const results = await Promise.all([
-          PMS.Api.getCached('/events', CACHE_KEY, {
-            onRefresh: function (data) {
-              Events.events = Events.normalize(data);
-              Events.renderFilters();
-              Events.applyFilters();
-            },
-            onError: function (error, isBackground) {
-              if (!isBackground && cachedEvents === null) {
-                Events.showError(error);
+        const requests = [];
+
+        if (canViewEvents) {
+          requests.push(
+            PMS.Api.getCached('/events', CACHE_KEY, {
+              onRefresh: function (data) {
+                Events.events = Events.normalize(data);
+                Events.renderFilters();
+                Events.applyFilters();
+              },
+              onError: function (error, isBackground) {
+                if (!isBackground && cachedEvents === null) {
+                  Events.showError(error);
+                }
               }
-            }
-          }),
+            })
+          );
+        }
+
+        requests.push(
           PMS.Api.getCached('/projects', PROJECTS_CACHE_KEY, {
             onRefresh: function (data) {
               Events.projects = Events.normalize(data);
@@ -150,18 +176,28 @@
               Events.applyFilters();
             }
           })
-        ]);
+        );
 
-        if (results[0] && results[0].cached === false) {
-          this.events = this.normalize(results[0].data);
+        const results = await Promise.all(requests);
+        let resultIndex = 0;
+
+        if (canViewEvents) {
+          const eventsResult = results[resultIndex++];
+          if (eventsResult && eventsResult.cached === false) {
+            this.events = this.normalize(eventsResult.data);
+          }
+        } else {
+          this.events = [];
         }
 
-        if (results[1] && results[1].cached === false) {
-          this.projects = this.normalize(results[1].data);
+        const projectsResult = results[resultIndex++];
+        if (projectsResult && projectsResult.cached === false) {
+          this.projects = this.normalize(projectsResult.data);
         }
 
-        if (results[2] && results[2].cached === false) {
-          this.eventTypes = this.normalize(results[2].data);
+        const typesResult = results[resultIndex++];
+        if (typesResult && typesResult.cached === false) {
+          this.eventTypes = this.normalize(typesResult.data);
         }
 
         this.renderFilters();
