@@ -61,6 +61,11 @@
 
     const createButton = document.getElementById('event-type-create-button');
 
+    if (createButton) {
+      createButton.hidden = !(PMS.Router &&
+        PMS.Router.hasAnyPermission(['EVENT_TYPE_MANAGE', 'EVENT_CREATE']));
+    }
+
     if (createButton && !createButton.dataset.bound) {
       createButton.dataset.bound = 'true';
 
