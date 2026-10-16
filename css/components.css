@@ -90,12 +90,14 @@
 }
 
 .btn-secondary {
-  background: var(--color-text-secondary);
-  color: #ffffff;
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+  border-color: var(--color-border);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: #374151;
+  background: var(--color-surface-hover);
+  border-color: var(--color-primary);
 }
 
 .btn-light {
