@@ -13,10 +13,7 @@
         return;
       }
 
-      if (form.dataset.authInitialized === 'true') {
-        return;
-      }
-
+      if (form.dataset.authInitialized === 'true') return;
       form.dataset.authInitialized = 'true';
 
       form.addEventListener('submit', async function (event) {
@@ -25,52 +22,47 @@
         const usernameInput = form.querySelector('[name="username"]');
         const passwordInput = form.querySelector('[name="password"]');
         const submitButton = form.querySelector('[type="submit"]');
+        const message = document.getElementById('login-error') ||
+          document.getElementById('login-message');
 
-        const username = usernameInput
-          ? usernameInput.value.trim()
-          : '';
+        const username = usernameInput ? usernameInput.value.trim() : '';
+        const password = passwordInput ? passwordInput.value : '';
+        const originalButtonText = submitButton ? submitButton.textContent : '';
 
-        const password = passwordInput
-          ? passwordInput.value
-          : '';
+        if (message) {
+          message.textContent = '';
+          message.classList.add('hidden');
+          message.style.display = '';
+        }
 
         try {
           if (submitButton) {
             submitButton.disabled = true;
+            submitButton.textContent = 'در حال ورود...';
           }
 
           const data = await Auth.login(username, password);
-
           const user = data.user || {};
           const isAdmin =
             user.IsAdmin === true ||
             String(user.IsAdmin).toLowerCase() === 'true' ||
             String(user.DepartmentCode || '').trim().toUpperCase() === 'ADMIN';
 
-          await PMS.Router.navigate(
-            isAdmin ? 'dashboard' : 'events',
-            true
-          );
-
+          await PMS.Router.navigate(isAdmin ? 'dashboard' : 'events', true);
         } catch (error) {
           console.error('Login Error:', error);
 
-          const message =
-            document.getElementById('login-error') ||
-            document.getElementById('login-message');
-
           if (message) {
-            message.textContent =
-              error.message || 'ورود ناموفق بود.';
-
+            message.textContent = error.message || 'ورود ناموفق بود.';
+            message.classList.remove('hidden');
             message.style.display = 'block';
           } else {
             alert(error.message || 'ورود ناموفق بود.');
           }
-
         } finally {
           if (submitButton) {
             submitButton.disabled = false;
+            submitButton.textContent = originalButtonText || 'ورود';
           }
         }
       });
@@ -114,13 +106,8 @@
     },
 
     logout: async function () {
-      // ابتدا نشست محلی را پاک می‌کنیم تا درخواست‌های جدید
-      // با نشست قبلی ارسال نشوند.
       try {
-        if (
-          PMS.Permissions &&
-          typeof PMS.Permissions.clear === 'function'
-        ) {
+        if (PMS.Permissions && typeof PMS.Permissions.clear === 'function') {
           PMS.Permissions.clear();
         }
       } catch (error) {
@@ -128,26 +115,19 @@
       }
 
       try {
-        if (
-          PMS.Session &&
-          typeof PMS.Session.clear === 'function'
-        ) {
+        if (PMS.Session && typeof PMS.Session.clear === 'function') {
           PMS.Session.clear();
         }
       } catch (error) {
         console.error('پاک‌سازی نشست محلی انجام نشد:', error);
       }
 
-      // تلاش برای بستن نشست سرور؛ خطای سرور نباید مانع خروج شود.
       try {
         if (PMS.Api && typeof PMS.Api.post === 'function') {
           await PMS.Api.post('/auth/logout', {});
         }
       } catch (error) {
-        console.warn(
-          'بستن نشست سرور انجام نشد؛ نشست محلی پاک شده است.',
-          error
-        );
+        console.warn('بستن نشست سرور انجام نشد؛ نشست محلی پاک شده است.', error);
       }
 
       if (PMS.Router && typeof PMS.Router.navigate === 'function') {
