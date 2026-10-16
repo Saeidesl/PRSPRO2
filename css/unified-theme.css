@@ -1,0 +1,504 @@
+/* Unified PMS design system — GitHub Primer-inspired, RTL-first.
+   All semantic colors are defined by the active theme on <html data-theme="...">.
+   Loaded last intentionally to neutralize legacy page-specific styles. */
+:root {
+  color-scheme: light;
+  --color-canvas-default: #ffffff;
+  --color-canvas-subtle: #f6f8fa;
+  --color-canvas-inset: #eff2f5;
+  --color-background: var(--color-canvas-subtle);
+  --color-surface: var(--color-canvas-default);
+  --color-surface-alt: var(--color-canvas-subtle);
+  --color-surface-hover: #eef2f6;
+  --color-text: #1f2328;
+  --color-text-secondary: #59636e;
+  --color-text-muted: #6e7781;
+  --color-link: #0969da;
+  --color-primary: #0969da;
+  --color-primary-hover: #0550ae;
+  --color-primary-light: #ddf4ff;
+  --color-border: #d1d9e0;
+  --color-border-light: #eaeef2;
+  --color-success: #1a7f37;
+  --color-warning: #9a6700;
+  --color-danger: #cf222e;
+  --color-info: #0969da;
+  --color-success-bg: #dafbe1;
+  --color-warning-bg: #fff8c5;
+  --color-danger-bg: #ffebe9;
+  --color-info-bg: #ddf4ff;
+  --color-input-bg: #ffffff;
+  --color-input-text: #1f2328;
+  --color-placeholder: #818b98;
+  --color-sidebar: #f6f8fa;
+  --color-sidebar-text: #1f2328;
+  --color-sidebar-muted: #59636e;
+  --color-sidebar-hover: #eaeef2;
+  --color-sidebar-active: #ddf4ff;
+  --color-sidebar-active-text: #0550ae;
+  --shadow-sm: 0 1px 0 rgba(31,35,40,.04);
+  --shadow-md: 0 8px 24px rgba(140,149,159,.18);
+  --shadow-overlay: 0 16px 48px rgba(31,35,40,.18);
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --transition-theme: background-color .16s ease, color .16s ease, border-color .16s ease;
+  --border-color: var(--color-border);
+  --primary-color: var(--color-primary);
+  --card-bg: var(--color-surface);
+  --text-color: var(--color-text);
+  --muted-color: var(--color-text-muted);
+  --soft-bg: var(--color-surface-alt);
+  --surface-muted: var(--color-surface-alt);
+  --text-muted: var(--color-text-muted);
+  --color-secondary: var(--color-text-secondary);
+  --color-primary-soft: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  --radius-xl: 16px;
+  --shadow-lg: var(--shadow-overlay);
+  --transition-fast: .18s ease;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-canvas-default: #161b22;
+  --color-canvas-subtle: #0d1117;
+  --color-canvas-inset: #010409;
+  --color-background: var(--color-canvas-subtle);
+  --color-surface: var(--color-canvas-default);
+  --color-surface-alt: #212830;
+  --color-surface-hover: #292f36;
+  --color-text: #e6edf3;
+  --color-text-secondary: #b1bac4;
+  --color-text-muted: #8b949e;
+  --color-link: #58a6ff;
+  --color-primary: #238636;
+  --color-primary-hover: #2ea043;
+  --color-primary-light: #12261e;
+  --color-border: #30363d;
+  --color-border-light: #21262d;
+  --color-success: #3fb950;
+  --color-warning: #d29922;
+  --color-danger: #f85149;
+  --color-info: #58a6ff;
+  --color-success-bg: #12261e;
+  --color-warning-bg: #2d2305;
+  --color-danger-bg: #341a1c;
+  --color-info-bg: #0c2d6b;
+  --color-input-bg: #0d1117;
+  --color-input-text: #e6edf3;
+  --color-placeholder: #7d8590;
+  --color-sidebar: #161b22;
+  --color-sidebar-text: #e6edf3;
+  --color-sidebar-muted: #b1bac4;
+  --color-sidebar-hover: #21262d;
+  --color-sidebar-active: #1f3a5f;
+  --color-sidebar-active-text: #cae8ff;
+  --shadow-sm: 0 1px 0 rgba(1,4,9,.35);
+  --shadow-md: 0 8px 24px rgba(1,4,9,.45);
+  --shadow-overlay: 0 16px 48px rgba(1,4,9,.72);
+}
+html { background: var(--color-background); color-scheme: light; }
+html[data-theme="dark"] { color-scheme: dark; }
+body, #app, .app-layout, .app-main, .page-content, .page-section, .page-container {
+  background-color: var(--color-background);
+  color: var(--color-text);
+  transition: var(--transition-theme);
+}
+body { font-family: var(--font-family, Tahoma, Arial, sans-serif); }
+a { color: var(--color-link); }
+a:hover { color: var(--color-primary-hover); }
+h1,h2,h3,h4,h5,h6,p,small,label,legend,dt,dd { color: inherit; }
+.text-muted,.text-secondary,.help-text,.form-text,.header-user-meta,.sidebar-user-role { color: var(--color-text-muted); }
+
+/* Shared application chrome */
+.app-sidebar { background: var(--color-sidebar) !important; color: var(--color-sidebar-text) !important; border-left: 1px solid var(--color-border); }
+.sidebar-header,.sidebar-footer { border-color: var(--color-border) !important; }
+.sidebar-brand-title,.sidebar-user-name { color: var(--color-sidebar-text) !important; }
+.sidebar-brand-subtitle,.sidebar-user-role { color: var(--color-sidebar-muted) !important; }
+.sidebar-user { background: var(--color-surface-alt) !important; border: 1px solid var(--color-border); }
+.sidebar-user-avatar { background: var(--color-surface-hover) !important; color: var(--color-text) !important; border-color: var(--color-border) !important; }
+.sidebar-nav-link { color: var(--color-sidebar-muted) !important; }
+.sidebar-nav-link:hover { background: var(--color-sidebar-hover) !important; color: var(--color-sidebar-text) !important; }
+.sidebar-nav-link.active { background: var(--color-sidebar-active) !important; color: var(--color-sidebar-active-text) !important; border-color: var(--color-border) !important; box-shadow: none !important; }
+.app-header { background: var(--color-surface) !important; color: var(--color-text) !important; border-bottom-color: var(--color-border) !important; box-shadow: var(--shadow-sm) !important; }
+.app-header-title,.header-user-name { color: var(--color-text) !important; }
+.header-user-meta { color: var(--color-text-muted) !important; }
+.header-user { border-color: var(--color-border) !important; }
+.header-user-avatar { background: var(--color-primary-light) !important; color: var(--color-primary) !important; border-color: var(--color-border) !important; box-shadow: none !important; }
+.sidebar-toggle,#logout-button { background: var(--color-surface) !important; color: var(--color-text) !important; border: 1px solid var(--color-border) !important; }
+.sidebar-toggle:hover,#logout-button:hover { background: var(--color-surface-hover) !important; color: var(--color-text) !important; border-color: var(--color-primary) !important; }
+
+/* Sync state badges retain meaning while adapting to each theme */
+.header-sync-status,.header-sync-status.status-idle { background: var(--color-surface-alt) !important; color: var(--color-text-secondary) !important; border-color: var(--color-border) !important; }
+.header-sync-status.status-cached { background: var(--color-warning-bg) !important; color: var(--color-warning) !important; border-color: var(--color-border) !important; }
+.header-sync-status.status-fetching { background: var(--color-info-bg) !important; color: var(--color-info) !important; border-color: var(--color-border) !important; }
+.header-sync-status.status-updated { background: var(--color-success-bg) !important; color: var(--color-success) !important; border-color: var(--color-border) !important; }
+.header-sync-status.status-error { background: var(--color-danger-bg) !important; color: var(--color-danger) !important; border-color: var(--color-border) !important; }
+
+/* Common surfaces */
+.card,.stat-card,.filter-bar,.detail-item,.timeline-content,.table-wrapper,.page-container,
+.dashboard-section,.dashboard-card,.settings-card,.report-card,.panel,.section-card {
+  background: var(--color-surface) !important;
+  color: var(--color-text) !important;
+  border-color: var(--color-border) !important;
+  box-shadow: var(--shadow-sm);
+}
+.card-header,.modal-header,.modal-footer,.table-toolbar,.table-footer {
+  background: var(--color-surface-alt) !important;
+  color: var(--color-text) !important;
+  border-color: var(--color-border) !important;
+}
+.card-body,.modal-body { color: var(--color-text); }
+.stat-card:hover { border-color: var(--color-primary) !important; }
+.stat-card-value { color: var(--color-primary) !important; }
+.stat-card-label,.timeline-meta,.timeline-description { color: var(--color-text-secondary) !important; }
+
+/* Buttons */
+.btn,.button,button.btn { transition: var(--transition-theme), box-shadow .16s ease; }
+.btn-primary { background: var(--color-primary) !important; color: #fff !important; border-color: var(--color-primary) !important; }
+.btn-primary:hover:not(:disabled) { background: var(--color-primary-hover) !important; border-color: var(--color-primary-hover) !important; }
+.btn-secondary { background: var(--color-surface-hover) !important; color: var(--color-text) !important; border-color: var(--color-border) !important; }
+.btn-secondary:hover:not(:disabled),.btn-light:hover:not(:disabled) { background: var(--color-surface-hover) !important; border-color: var(--color-primary) !important; }
+.btn-light { background: var(--color-surface) !important; color: var(--color-text) !important; border-color: var(--color-border) !important; }
+
+/* Forms and native controls */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+select,textarea,.form-control,.form-select,.filter-group input,.filter-group select {
+  background-color: var(--color-input-bg) !important;
+  color: var(--color-input-text) !important;
+  border-color: var(--color-border) !important;
+}
+input::placeholder,textarea::placeholder,.form-control::placeholder { color: var(--color-placeholder) !important; opacity: 1; }
+input:focus,select:focus,textarea:focus,.form-control:focus,.form-select:focus {
+  border-color: var(--color-primary) !important;
+  outline-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 22%, transparent) !important;
+}
+input[type="checkbox"],input[type="radio"] { accent-color: var(--color-primary); }
+select option { background: var(--color-surface); color: var(--color-text); }
+fieldset,legend { border-color: var(--color-border); }
+label { color: var(--color-text-secondary); }
+
+/* Tables */
+table,.table,.data-table { color: var(--color-text) !important; border-color: var(--color-border) !important; }
+table thead,table thead tr,.table thead,.data-table thead { background: var(--color-surface-alt) !important; color: var(--color-text) !important; }
+table th,.table th,.data-table th { background: var(--color-surface-alt) !important; color: var(--color-text-secondary) !important; border-color: var(--color-border) !important; }
+table td,.table td,.data-table td { background: var(--color-surface) !important; color: var(--color-text) !important; border-color: var(--color-border-light) !important; }
+table tbody tr:hover td,.table tbody tr:hover td,.data-table tbody tr:hover td { background: var(--color-surface-hover) !important; }
+table tbody tr.selected td,table tbody tr[aria-selected="true"] td,.data-table tr.selected td { background: var(--color-primary-light) !important; }
+.table-empty,.table-empty td { background: var(--color-surface) !important; color: var(--color-text-muted) !important; }
+
+/* Alerts, badges and project status colors */
+.alert,.badge,.status-badge,.project-status,.status-label { border-color: var(--color-border); }
+.alert-danger,.alert-error,.status-danger { background: var(--color-danger-bg) !important; color: var(--color-danger) !important; border-color: var(--color-border) !important; }
+.alert-success,.status-success { background: var(--color-success-bg) !important; color: var(--color-success) !important; border-color: var(--color-border) !important; }
+.alert-warning,.status-warning { background: var(--color-warning-bg) !important; color: var(--color-warning) !important; border-color: var(--color-border) !important; }
+.alert-info,.status-info { background: var(--color-info-bg) !important; color: var(--color-info) !important; border-color: var(--color-border) !important; }
+
+/* Dialogs, menus, tooltips and overlays */
+.modal-overlay { background: rgba(31,35,40,.42) !important; }
+html[data-theme="dark"] .modal-overlay { background: rgba(1,4,9,.76) !important; }
+.modal-overlay .modal,.modal,.modal-content,.modal-dialog {
+  background: var(--color-surface) !important; color: var(--color-text) !important; border-color: var(--color-border) !important; box-shadow: var(--shadow-overlay) !important;
+}
+.modal-overlay .modal-header,.modal .modal-header { background: var(--color-surface-alt) !important; color: var(--color-text) !important; border-color: var(--color-border) !important; }
+.modal-overlay .modal-body,.modal .modal-body { background: var(--color-surface) !important; color: var(--color-text) !important; }
+.modal-overlay .modal-footer,.modal .modal-footer { background: var(--color-surface-alt) !important; color: var(--color-text) !important; border-color: var(--color-border) !important; }
+.dropdown-menu,.dropdown-content,.select-dropdown,[role="menu"],[role="listbox"],.tooltip,.popover {
+  background: var(--color-surface) !important; color: var(--color-text) !important; border-color: var(--color-border) !important; box-shadow: var(--shadow-md);
+}
+.dropdown-menu a,.dropdown-content a,[role="menu"] button,[role="option"] { color: var(--color-text) !important; }
+.dropdown-menu a:hover,.dropdown-content a:hover,[role="menu"] button:hover,[role="option"]:hover { background: var(--color-surface-hover) !important; }
+
+/* Login and standalone pages */
+.login-page { color: var(--color-text) !important; background: var(--color-background) !important; }
+.login-card { background: var(--color-surface) !important; color: var(--color-text) !important; border-color: var(--color-border) !important; box-shadow: var(--shadow-md) !important; }
+.login-card h1,.login-card h2,.login-header,.login-form label { color: var(--color-text) !important; }
+.login-error { background: var(--color-danger-bg) !important; color: var(--color-danger) !important; border-color: var(--color-border) !important; }
+
+/* Existing dynamic widgets and injected legacy styles */
+#dashboard-explorer-styles ~ *, .dashboard-explorer,.dashboard-explorer * { border-color: var(--color-border); }
+.pms-timeline,.pms-timeline *,.rp-empty,.et-field-list,.et-field-list * { border-color: var(--color-border); }
+.events-filter-content,.events-filter-section,.event-form-section,.event-details-section { background-color: var(--color-surface); color: var(--color-text); }
+[style*="background:#fff"],[style*="background: #fff"],[style*="background:#ffffff"],[style*="background: #ffffff"] { background-color: var(--color-surface) !important; }
+[style*="color:#222"],[style*="color: #222"],[style*="color:#333"],[style*="color: #333"] { color: var(--color-text) !important; }
+
+/* Theme control */
+.theme-toggle {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  min-height: 38px; padding: 7px 11px; border: 1px solid var(--color-border);
+  border-radius: var(--radius-md); background: var(--color-surface);
+  color: var(--color-text); font: inherit; font-size: 12px; font-weight: 600;
+  white-space: nowrap; cursor: pointer; transition: var(--transition-theme);
+}
+.theme-toggle:hover { background: var(--color-surface-hover); border-color: var(--color-primary); }
+.theme-toggle:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+.theme-toggle-icon { font-size: 16px; line-height: 1; }
+.theme-toggle-label { line-height: 1.5; }
+@media (max-width: 520px) {
+  .theme-toggle { min-height: 31px; padding: 5px 7px; gap: 4px; font-size: 10px; border-radius: 9px; }
+  .theme-toggle-icon { font-size: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,*::before,*::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+}
+
+
+/* Dynamic dashboard explorer: neutralize its legacy dark-only palette. */
+#dashboard-project-explorer { color-scheme: inherit !important; }
+#dashboard-project-explorer .dashboard-explorer-card,
+#dashboard-project-explorer .dashboard-project-list-panel,
+#dashboard-project-explorer .dashboard-project-detail-panel,
+#dashboard-project-explorer .dashboard-project-choice,
+#dashboard-project-explorer .dashboard-project-base-item,
+#dashboard-project-explorer .dashboard-compact-event,
+#dashboard-project-explorer .dashboard-compact-event-card {
+  background: var(--color-surface) !important;
+  color: var(--color-text) !important;
+  border-color: var(--color-border) !important;
+}
+#dashboard-project-explorer .dashboard-project-choice:hover,
+#dashboard-project-explorer .dashboard-project-choice.selected,
+#dashboard-project-explorer .dashboard-project-base-item:hover,
+#dashboard-project-explorer .dashboard-compact-event:hover {
+  background: var(--color-surface-hover) !important;
+  color: var(--color-text) !important;
+  border-color: var(--color-primary) !important;
+}
+#dashboard-project-explorer h3,
+#dashboard-project-explorer h4,
+#dashboard-project-explorer strong,
+#dashboard-project-explorer .dashboard-project-choice strong,
+#dashboard-project-explorer .dashboard-project-base-item strong {
+  color: var(--color-text) !important;
+}
+#dashboard-project-explorer p,
+#dashboard-project-explorer span,
+#dashboard-project-explorer label,
+#dashboard-project-explorer small { color: var(--color-text-secondary); }
+#dashboard-project-explorer input,
+#dashboard-project-explorer select,
+#dashboard-project-explorer textarea {
+  background: var(--color-input-bg) !important;
+  color: var(--color-input-text) !important;
+  border-color: var(--color-border) !important;
+}
+#pms-loading-overlay {
+  background: color-mix(in srgb, var(--color-surface) 88%, transparent) !important;
+  color: var(--color-text) !important;
+}
+#pms-alert-container .pms-alert,
+#pms-alert-container [role="alert"] { box-shadow: var(--shadow-md); }
+
+
+/* Event creation/details modals had a legacy dark-only palette. */
+#event-create-modal, #event-details-modal {
+  background: color-mix(in srgb, var(--color-canvas-subtle) 72%, transparent) !important;
+  color: var(--color-text) !important;
+}
+#event-create-modal .event-modal-panel, #event-details-modal .event-modal-panel,
+#event-details-modal .event-detail-card,
+#event-details-modal .event-modal-table,
+#event-create-modal .event-checkbox-label,
+#event-create-modal .event-modal-close, #event-details-modal .event-modal-close {
+  background: var(--color-surface) !important;
+  color: var(--color-text) !important;
+  border-color: var(--color-border) !important;
+}
+#event-create-modal .event-modal-heading h3, #event-details-modal .event-modal-heading h3,
+#event-create-modal .event-section-title, #event-details-modal .event-section-title,
+#event-details-modal .event-detail-value { color: var(--color-text) !important; }
+#event-create-modal .event-modal-kicker, #event-details-modal .event-detail-label { color: var(--color-primary) !important; }
+#event-create-modal .event-modal-subtitle, #event-create-modal .event-muted,
+#event-details-modal .event-muted, #event-create-modal .event-inline-loading,
+#event-details-modal .event-loading-state { color: var(--color-text-muted) !important; }
+#event-create-modal .event-field > label, #event-details-modal label { color: var(--color-text-secondary) !important; }
+#event-create-modal input:not([type="checkbox"]), #event-create-modal select,
+#event-create-modal textarea, #event-details-modal input:not([type="checkbox"]),
+#event-details-modal select, #event-details-modal textarea {
+  background: var(--color-input-bg) !important;
+  color: var(--color-input-text) !important;
+  border-color: var(--color-border) !important;
+}
+#event-create-modal input::placeholder, #event-create-modal textarea::placeholder { color: var(--color-placeholder) !important; }
+#event-create-modal input:focus, #event-create-modal select:focus, #event-create-modal textarea:focus {
+  background: var(--color-input-bg) !important;
+  border-color: var(--color-primary) !important;
+}
+#event-create-modal select option { background: var(--color-surface) !important; color: var(--color-text) !important; }
+#event-create-modal .event-modal-button, #event-details-modal .event-modal-button,
+#event-create-modal .event-modal-close:hover, #event-details-modal .event-modal-close:hover {
+  background: var(--color-surface-alt) !important;
+  color: var(--color-text) !important;
+  border-color: var(--color-border) !important;
+}
+#event-create-modal .event-modal-button-primary { background: var(--color-primary) !important; color: #fff !important; border-color: var(--color-primary) !important; }
+#event-create-modal .event-modal-button-primary:hover:not(:disabled) { background: var(--color-primary-hover) !important; }
+#event-create-modal .event-modal-error, #event-details-modal .event-modal-error {
+  background: var(--color-danger-bg) !important; color: var(--color-danger) !important; border-color: var(--color-border) !important;
+}
+#event-create-modal .event-submit-progress { background: var(--color-info-bg) !important; border-color: var(--color-border) !important; }
+#event-create-modal .event-submit-progress strong, #event-create-modal .event-submit-progress p { color: var(--color-text-secondary) !important; }
+#event-details-modal .event-modal-table th { background: var(--color-surface-alt) !important; color: var(--color-text-secondary) !important; border-color: var(--color-border) !important; }
+#event-details-modal .event-modal-table td { background: var(--color-surface) !important; color: var(--color-text) !important; border-color: var(--color-border-light) !important; }
+.event-toast { background: var(--color-success-bg) !important; color: var(--color-success) !important; border-color: var(--color-border) !important; }
+.event-toast-warning { background: var(--color-warning-bg) !important; color: var(--color-warning) !important; border-color: var(--color-border) !important; }
+
+
+/* Login primary action uses the same button token as the rest of the app. */
+.login-button {
+  background: var(--color-primary) !important;
+  color: #fff !important;
+  border-color: var(--color-primary) !important;
+}
+.login-button:hover:not(:disabled) {
+  background: var(--color-primary-hover) !important;
+  border-color: var(--color-primary-hover) !important;
+}
+
+#user-create-error, #user-edit-error { color: var(--color-danger) !important; }
+
+
+/* Higher-specificity legacy modal controls, including permission editors. */
+.modal-content label, .modal-content .form-label, .modal label, .modal .form-label {
+  color: var(--color-text-secondary) !important;
+}
+.modal-content input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.modal-content select, .modal-content textarea,
+.modal input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.modal select, .modal textarea {
+  color: var(--color-input-text) !important;
+  background: var(--color-input-bg) !important;
+  border-color: var(--color-border) !important;
+}
+.modal-content input::placeholder, .modal-content textarea::placeholder,
+.modal input::placeholder, .modal textarea::placeholder {
+  color: var(--color-placeholder) !important;
+}
+.modal-content select option, .modal select option {
+  color: var(--color-text) !important;
+  background: var(--color-surface) !important;
+}
+.modal-header h1, .modal-header h2, .modal-header h3, .modal-title,
+.modal-body h1, .modal-body h2, .modal-body h3, .modal-body h4 {
+  color: var(--color-text) !important;
+}
+.modal-body p, .modal-body small { color: var(--color-text-secondary) !important; }
+.modal-header button, .modal-close, .close-modal {
+  color: var(--color-text-secondary) !important;
+  background: var(--color-surface-alt) !important;
+  border-color: var(--color-border) !important;
+}
+.modal-header button:hover, .modal-close:hover, .close-modal:hover {
+  color: var(--color-text) !important;
+  background: var(--color-surface-hover) !important;
+  border-color: var(--color-primary) !important;
+}
+
+
+/* Remaining explorer details, metadata chips and compact timeline. */
+#dashboard-project-explorer .dashboard-compact-event-description {
+  background: var(--color-surface-alt) !important;
+  color: var(--color-text-secondary) !important;
+  border-color: var(--color-border) !important;
+}
+#dashboard-project-explorer .dashboard-compact-event-data span {
+  background: var(--color-surface-alt) !important;
+  color: var(--color-text-secondary) !important;
+  border-color: var(--color-border) !important;
+}
+#dashboard-project-explorer .dashboard-compact-timeline::before { background: var(--color-border) !important; }
+#dashboard-project-explorer .dashboard-compact-event::before { border-color: var(--color-surface) !important; }
+#dashboard-project-explorer .dashboard-detail-link:hover { color: var(--color-primary-hover) !important; }
+#dashboard-project-explorer .dashboard-project-choice.selected { box-shadow: inset -3px 0 0 var(--color-primary) !important; }
+#dashboard-project-explorer .dashboard-project-base-item,
+#dashboard-project-explorer .dashboard-project-choice,
+#dashboard-project-explorer .dashboard-compact-event { box-shadow: var(--shadow-sm) !important; }
+
+
+.login-theme-toggle { display: flex; width: fit-content; margin: 0 0 16px auto; }
+
+
+/* Status labels and pagination classes used by older modules. */
+.badge,.status-badge,.status-label {
+  background: var(--color-surface-alt) !important;
+  color: var(--color-text-secondary) !important;
+  border-color: var(--color-border) !important;
+}
+.badge-success,.status-active,.status-completed,.status-success {
+  background: var(--color-success-bg) !important;
+  color: var(--color-success) !important;
+  border-color: var(--color-border) !important;
+}
+.badge-warning,.status-on-hold,.status-pending,.status-warning {
+  background: var(--color-warning-bg) !important;
+  color: var(--color-warning) !important;
+  border-color: var(--color-border) !important;
+}
+.badge-danger,.status-cancelled,.status-void,.status-deleted,.status-inactive,.status-danger {
+  background: var(--color-danger-bg) !important;
+  color: var(--color-danger) !important;
+  border-color: var(--color-border) !important;
+}
+.badge-info,.status-info,.status-fetching {
+  background: var(--color-info-bg) !important;
+  color: var(--color-info) !important;
+  border-color: var(--color-border) !important;
+}
+.pagination,.table-pagination,.filter-bar,.search-bar {
+  background: var(--color-surface) !important;
+  color: var(--color-text-secondary) !important;
+  border-color: var(--color-border) !important;
+}
+.pagination button,.pagination a,.table-pagination button,.table-pagination a {
+  background: var(--color-surface) !important;
+  color: var(--color-text) !important;
+  border-color: var(--color-border) !important;
+}
+.pagination button:hover,.pagination a:hover,.table-pagination button:hover,.table-pagination a:hover {
+  background: var(--color-surface-hover) !important;
+  border-color: var(--color-primary) !important;
+}
+.pagination .active,.table-pagination .active {
+  background: var(--color-primary) !important;
+  color: #fff !important;
+  border-color: var(--color-primary) !important;
+}
+.page-section:has(#dashboard-recent-projects) .dashboard-sections h3 {
+  background: var(--color-surface-alt) !important;
+  color: var(--color-text) !important;
+  border-color: var(--color-border) !important;
+}
+
+
+/* Remaining shared primitives from the legacy theme layer. */
+.page-header h1,.page-header h2,.page-header h3,
+.card-header h1,.card-header h2,.card-header h3,
+.card-body h1,.card-body h2,.card-body h3,.card-body h4 {
+  color: var(--color-text) !important;
+}
+.card-footer,.section-footer,.panel-footer {
+  background: var(--color-surface-alt) !important;
+  color: var(--color-text-secondary) !important;
+  border-color: var(--color-border) !important;
+}
+.btn-danger {
+  background: var(--color-danger-bg) !important;
+  color: var(--color-danger) !important;
+  border-color: var(--color-border) !important;
+}
+.btn-danger:hover:not(:disabled) { background: var(--color-surface-hover) !important; border-color: var(--color-danger) !important; }
+.btn-success {
+  background: var(--color-success-bg) !important;
+  color: var(--color-success) !important;
+  border-color: var(--color-border) !important;
+}
+.btn-success:hover:not(:disabled) { background: var(--color-surface-hover) !important; border-color: var(--color-success) !important; }
+input[type="file"] { color: var(--color-text-secondary) !important; }
+input:disabled,select:disabled,textarea:disabled {
+  color: var(--color-text-muted) !important;
+  background: var(--color-surface-alt) !important;
+  border-color: var(--color-border) !important;
+  opacity: .78;
+}
+hr,.divider,.separator { border-color: var(--color-border) !important; }
+::selection { background: var(--color-primary-light); color: var(--color-text); }

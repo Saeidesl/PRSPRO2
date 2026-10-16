@@ -146,7 +146,7 @@
           aria-modal="true"
           aria-labelledby="project-create-title"
           style="
-            background:#fff;
+            background:var(--color-surface);
             width:100%;
             max-width:560px;
             max-height:90vh;
@@ -155,7 +155,7 @@
             padding:24px;
             box-sizing:border-box;
             direction:rtl;
-            color:#222;
+            color:var(--color-text);
           "
         >
           <div style="

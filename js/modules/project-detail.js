@@ -921,7 +921,7 @@
           top: 14px;
           bottom: 18px;
           width: 2px;
-          background: var(--border-color, #e2e8f0);
+          background: var(--color-border);
         }
 
         .pms-timeline-item {
@@ -936,17 +936,17 @@
           width: 16px;
           height: 16px;
           border-radius: 50%;
-          background: var(--primary-color, #2563eb);
-          border: 3px solid var(--card-bg, #fff);
-          box-shadow: 0 0 0 1px var(--border-color, #cbd5e1);
+          background: var(--color-primary);
+          border: 3px solid var(--color-surface);
+          box-shadow: 0 0 0 1px var(--color-border);
           z-index: 1;
         }
 
         .pms-timeline-card {
-          border: 1px solid var(--border-color, #e2e8f0);
+          border: 1px solid var(--color-border);
           border-radius: 12px;
           padding: 16px;
-          background: var(--card-bg, #fff);
+          background: var(--color-surface);
           box-shadow: 0 2px 8px rgba(15, 23, 42, .04);
           min-width: 0;
         }
@@ -963,21 +963,21 @@
         .pms-timeline-title {
           font-size: 16px;
           font-weight: 700;
-          color: var(--text-color, #0f172a);
+          color: var(--color-text);
         }
 
         .pms-timeline-date {
           margin-top: 5px;
           font-size: 12px;
-          color: var(--muted-color, #64748b);
+          color: var(--color-text-muted);
         }
 
         .pms-timeline-status {
           display: inline-block;
           border-radius: 20px;
           padding: 4px 9px;
-          background: var(--soft-bg, #f1f5f9);
-          color: var(--text-color, #334155);
+          background: var(--color-surface-alt);
+          color: var(--color-text);
           font-size: 11px;
         }
 
@@ -986,8 +986,8 @@
           flex-wrap: wrap;
           gap: 10px 24px;
           padding: 12px 0;
-          border-top: 1px solid var(--border-color, #e2e8f0);
-          border-bottom: 1px solid var(--border-color, #e2e8f0);
+          border-top: 1px solid var(--color-border);
+          border-bottom: 1px solid var(--color-border);
         }
 
         .pms-timeline-meta-item,
@@ -1001,13 +1001,13 @@
 
         .pms-timeline-meta-item span,
         .pms-timeline-dynamic-item span {
-          color: var(--muted-color, #64748b);
+          color: var(--color-text-muted);
           font-size: 11px;
         }
 
         .pms-timeline-meta-item strong,
         .pms-timeline-dynamic-item strong {
-          color: var(--text-color, #334155);
+          color: var(--color-text);
           font-size: 13px;
           font-weight: 600;
         }
@@ -1017,7 +1017,7 @@
           white-space: pre-wrap;
           overflow-wrap: anywhere;
           line-height: 1.9;
-          color: var(--text-color, #334155);
+          color: var(--color-text);
           font-size: 13px;
         }
 
@@ -1025,7 +1025,7 @@
           margin-top: 15px;
           padding: 12px;
           border-radius: 8px;
-          background: var(--soft-bg, #f8fafc);
+          background: var(--color-surface-alt);
         }
 
         .pms-timeline-dynamic > strong {
@@ -1046,7 +1046,7 @@
           flex-wrap: wrap;
           gap: 8px 16px;
           margin-top: 14px;
-          color: var(--muted-color, #64748b);
+          color: var(--color-text-muted);
           font-size: 11px;
         }
 
