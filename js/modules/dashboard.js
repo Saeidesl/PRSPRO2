@@ -541,8 +541,8 @@
           color: var(--explorer-text);
           background: linear-gradient(
             145deg,
-            rgba(31, 39, 52, 0.98),
-            rgba(24, 30, 40, 0.98)
+            var(--color-surface),
+            var(--color-surface-alt)
           );
           border: 1px solid var(--explorer-border);
           border-radius: var(--explorer-radius);
@@ -630,7 +630,7 @@
         #dashboard-project-explorer #dashboard-project-search:focus {
           background: var(--color-surface-alt);
           border-color: var(--explorer-primary);
-          box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 10%, transparent);
         }
 
         #dashboard-project-explorer .dashboard-project-list {
@@ -679,14 +679,14 @@
           background:
             linear-gradient(
               100deg,
-              rgba(14, 165, 233, 0.17),
-              rgba(99, 102, 241, 0.08)
+              color-mix(in srgb, var(--color-primary) 17%, transparent),
+              color-mix(in srgb, var(--color-primary) 8%, transparent)
             ),
             var(--color-surface);
           border-color: color-mix(in srgb, var(--color-primary) 45%, transparent);
           box-shadow:
             inset -3px 0 0 var(--explorer-primary),
-            0 3px 12px rgba(0, 0, 0, 0.12);
+            var(--shadow-sm);
         }
 
         #dashboard-project-explorer .dashboard-project-choice strong {
@@ -789,7 +789,7 @@
 
         #dashboard-project-explorer .dashboard-compact-event:hover {
           border-color: var(--color-border);
-          box-shadow: 0 5px 16px rgba(0, 0, 0, 0.12);
+          box-shadow: var(--shadow-sm);
         }
 
         #dashboard-project-explorer .dashboard-compact-event::before {
@@ -801,7 +801,7 @@
           background: var(--explorer-primary);
           border: 2px solid var(--color-surface);
           border-radius: 50%;
-          box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 10%, transparent);
           content: "";
         }
 
