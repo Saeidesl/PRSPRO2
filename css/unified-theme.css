@@ -335,3 +335,15 @@ html[data-theme="dark"] .modal-overlay { background: rgba(1,4,9,.76) !important;
 #event-details-modal .event-modal-table td { background: var(--color-surface) !important; color: var(--color-text) !important; border-color: var(--color-border-light) !important; }
 .event-toast { background: var(--color-success-bg) !important; color: var(--color-success) !important; border-color: var(--color-border) !important; }
 .event-toast-warning { background: var(--color-warning-bg) !important; color: var(--color-warning) !important; border-color: var(--color-border) !important; }
+
+
+/* Login primary action uses the same button token as the rest of the app. */
+.login-button {
+  background: var(--color-primary) !important;
+  color: #fff !important;
+  border-color: var(--color-primary) !important;
+}
+.login-button:hover:not(:disabled) {
+  background: var(--color-primary-hover) !important;
+  border-color: var(--color-primary-hover) !important;
+}
