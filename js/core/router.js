@@ -35,7 +35,7 @@
 
     routePermissions: {
       dashboard: ['REPORT_VIEW'],
-      projects: ['PROJECT_VIEW'],
+      projects: ['PROJECT_VIEW', 'PROJECT_CREATE'],
       'project-detail': ['PROJECT_VIEW'],
       events: ['EVENT_VIEW', 'EVENT_CREATE'],
       workflows: ['WORKFLOW_MANAGE'],
