@@ -182,29 +182,13 @@
   line-height: 1.8;
 }
 
-.alert-danger {
-  background: #fef2f2;
-  color: #991b1b;
-  border-color: #fecaca;
-}
+.alert-danger {\n  background: var(--color-danger-bg);\n  color: var(--color-danger);\n  border-color: var(--color-border);\n}
 
-.alert-success {
-  background: #f0fdf4;
-  color: #166534;
-  border-color: #bbf7d0;
-}
+.alert-success {\n  background: var(--color-success-bg);\n  color: var(--color-success);\n  border-color: var(--color-border);\n}
 
-.alert-warning {
-  background: #fffbeb;
-  color: #92400e;
-  border-color: #fde68a;
-}
+.alert-warning {\n  background: var(--color-warning-bg);\n  color: var(--color-warning);\n  border-color: var(--color-border);\n}
 
-.alert-info {
-  background: #eff6ff;
-  color: #1e40af;
-  border-color: #bfdbfe;
-}
+.alert-info {\n  background: var(--color-info-bg);\n  color: var(--color-info);\n  border-color: var(--color-border);\n}
 
 /* ================================
    LOADING
