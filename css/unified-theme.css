@@ -705,3 +705,37 @@ canvas { max-width: 100%; }
   .theme-toggle-label { display: inline; }
   .page-section { padding: var(--space-16); }
 }
+
+
+/* Final normalization pass: avoid legacy dark-only surface treatments. */
+body {
+  background-image: none;
+}
+html, body {
+  background-color: var(--color-background);
+}
+.app-main, .app-main-content, .main-content, .main-content-inner,
+.app-content, .page-content, .page-container, .page-section {
+  color: var(--color-text);
+}
+.btn:not(.btn-primary):not(.btn-light):not(.btn-danger):not(.btn-success):not(.btn-warning):not(.btn-info):not(.theme-toggle) {
+  background-color: var(--color-surface-hover);
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+.btn:not(.btn-primary):not(.btn-light):not(.btn-danger):not(.btn-success):not(.btn-warning):not(.btn-info):not(.theme-toggle):hover:not(:disabled) {
+  background-color: var(--color-surface-alt);
+  color: var(--color-text);
+  border-color: var(--color-primary);
+}
+.btn:disabled, button:disabled, input:disabled, select:disabled, textarea:disabled {
+  cursor: not-allowed;
+}
+.table-responsive {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.table-responsive > table {
+  min-width: 100%;
+}
