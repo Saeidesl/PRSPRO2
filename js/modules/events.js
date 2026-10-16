@@ -58,6 +58,13 @@
           return;
         }
 
+        const voidButton = target.closest('.event-void-button');
+        if (voidButton) {
+          event.preventDefault();
+          Events.voidEvent(voidButton.dataset.eventId);
+          return;
+        }
+
         const detailsButton = target.closest('.event-details-button');
         if (detailsButton) {
           event.preventDefault();
@@ -663,6 +670,14 @@
           html += '<p class="event-muted">اطلاعات اختصاصی برای این رویداد ثبت نشده است.</p>';
         }
 
+        const canEdit = Boolean(PMS.Router &&
+          (PMS.Router.isAdmin() ||
+            (Array.isArray(PMS.Router.permissions) &&
+             PMS.Router.permissions.indexOf('EVENT_EDIT') !== -1)));
+        if (canEdit && String(event.Status || '').toUpperCase() === 'ACTIVE') {
+          html += '<div class="form-actions"><button type="button" class="btn btn-danger event-void-button" data-event-id="' +
+            this.escape(eventId) + '">ابطال رویداد</button></div>';
+        }
         const content = document.getElementById('event-details-content');
         if (content) content.innerHTML = html;
       } catch (error) {
@@ -679,6 +694,39 @@
 
           content.appendChild(message);
         }
+      }
+    },
+
+    voidEvent: async function (eventId) {
+      if (!eventId) return;
+      const router = PMS.Router;
+      const allowed = Boolean(router &&
+        (router.isAdmin() ||
+          (Array.isArray(router.permissions) &&
+           router.permissions.indexOf('EVENT_EDIT') !== -1)));
+      if (!allowed) {
+        alert('شما مجوز ابطال رویداد را ندارید.');
+        return;
+      }
+
+      const reason = window.prompt('دلیل ابطال رویداد را وارد کنید:');
+      if (reason === null) return;
+      if (!reason.trim()) {
+        alert('وارد کردن دلیل ابطال الزامی است.');
+        return;
+      }
+      if (!window.confirm('آیا از ابطال این رویداد مطمئن هستید؟')) return;
+
+      try {
+        await PMS.Api.put('/events/' + encodeURIComponent(eventId) + '/void', {
+          reason: reason.trim()
+        });
+        PMS.Api.invalidateMany([CACHE_KEY]);
+        await this.reloadEvents();
+        this.showSuccessNotice('رویداد با موفقیت باطل شد.');
+        this.openDetails(eventId);
+      } catch (error) {
+        alert('ابطال رویداد ناموفق بود: ' + this.errorMessage(error));
       }
     },
 
