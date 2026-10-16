@@ -1,4 +1,3 @@
-
 <div class="login-page">
   <div class="login-card">
     <button type="button" class="theme-toggle login-theme-toggle" data-theme-toggle aria-label="تغییر به تم تیره" aria-pressed="false">
@@ -46,43 +45,3 @@
 </div>
 
 <script src="js/modules/auth.js"></script>
-
-<script>
-(function () {
-  const form = document.getElementById('login-form');
-  const button = document.getElementById('login-button');
-  const errorBox = document.getElementById('login-error');
-
-  if (!form || !button || !errorBox) return;
-
-  form.addEventListener('submit', async function (event) {
-    event.preventDefault();
-
-    errorBox.textContent = '';
-    errorBox.classList.add('hidden');
-
-    const username = document.getElementById('login-username').value.trim();
-    const password = document.getElementById('login-password').value;
-
-    if (!username || !password) {
-      errorBox.textContent = 'نام کاربری و رمز عبور را وارد کنید.';
-      errorBox.classList.remove('hidden');
-      return;
-    }
-
-    button.disabled = true;
-    button.textContent = 'در حال ورود...';
-
-    try {
-      await PMS.Auth.login(username, password);
-      await PMS.Router.navigate('dashboard', true);
-    } catch (error) {
-      errorBox.textContent = error.message || 'ورود به سامانه انجام نشد.';
-      errorBox.classList.remove('hidden');
-    } finally {
-      button.disabled = false;
-      button.textContent = 'ورود';
-    }
-  });
-})();
-</script>
