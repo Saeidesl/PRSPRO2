@@ -1,0 +1,64 @@
+name: Frontend checks
+
+on:
+  push:
+    branches:
+      - "feat/**"
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  frontend-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Check JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          find js -type f -name '*.js' -print0 | while IFS= read -r -d '' file; do
+            echo "Checking $file"
+            node --check "$file"
+          done
+
+      - name: Verify local assets and CSS block balance
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const html = fs.readFileSync('index.html', 'utf8');
+          const refs = [...html.matchAll(/(?:src|href)=["']([^"']+)["']/g)]
+            .map(match => match[1])
+            .filter(ref => /^(css|js)\//.test(ref));
+          const missing = refs.filter(ref => !fs.existsSync(ref));
+          if (missing.length) {
+            console.error('Missing local assets:', missing.join(', '));
+            process.exit(1);
+          }
+
+          const cssFiles = fs.readdirSync('css')
+            .filter(file => file.endsWith('.css'))
+            .map(file => path.join('css', file));
+          for (const file of cssFiles) {
+            const source = fs.readFileSync(file, 'utf8')
+              .replace(/\/\*[\s\S]*?\*\//g, '')
+              .replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g, '""');
+            let depth = 0;
+            for (const char of source) {
+              if (char === '{') depth++;
+              if (char === '}') depth--;
+              if (depth < 0) throw new Error(file + ': unexpected closing brace');
+            }
+            if (depth !== 0) throw new Error(file + ': unbalanced CSS braces (' + depth + ')');
+          }
+          console.log('All referenced assets exist and CSS braces are balanced.');
+          NODE
