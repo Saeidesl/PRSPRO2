@@ -45,6 +45,7 @@
     const createButton = document.getElementById('user-create-button');
 
     if (createButton) {
+      createButton.hidden = !(PMS.Router && PMS.Router.hasPermission('USER_CREATE'));
       createButton.addEventListener('click', openCreateForm);
     }
   }

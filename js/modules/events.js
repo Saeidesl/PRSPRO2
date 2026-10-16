@@ -26,13 +26,25 @@
       const createButton = document.getElementById('event-create-button');
       if (createButton && PMS.Router &&
           typeof PMS.Router.hasPermission === 'function') {
-        createButton.hidden = !PMS.Router.hasPermission('EVENT_CREATE');
+        createButton.hidden = !(
+          PMS.Router.hasPermission('EVENT_CREATE') &&
+          PMS.Router.hasPermission('PROJECT_VIEW')
+        );
       }
 
       this.load();
     },
 
     bindEvents: function () {
+      const createButton = document.getElementById('event-create-button');
+      if (createButton) {
+        createButton.hidden = !(
+          PMS.Router &&
+          PMS.Router.hasPermission('EVENT_CREATE') &&
+          PMS.Router.hasPermission('PROJECT_VIEW')
+        );
+      }
+
       document.addEventListener('click', function (event) {
         const target = event.target;
 
@@ -55,6 +67,13 @@
         if (target.closest('#event-create-button')) {
           event.preventDefault();
           Events.openForm();
+          return;
+        }
+
+        const voidButton = target.closest('.event-void-button');
+        if (voidButton) {
+          event.preventDefault();
+          Events.voidEvent(voidButton.dataset.eventId);
           return;
         }
 
@@ -109,21 +128,32 @@
 
     load: async function () {
       const loading = document.getElementById('events-loading');
-      const canViewEvents = !!(
-        PMS.Router &&
-        typeof PMS.Router.hasPermission === 'function' &&
-        PMS.Router.hasPermission('EVENT_VIEW')
-      );
+      const can = function (permission) {
+        return !!(
+          PMS.Router &&
+          typeof PMS.Router.hasPermission === 'function' &&
+          PMS.Router.hasPermission(permission)
+        );
+      };
+      const canViewEvents = can('EVENT_VIEW');
+      const canViewProjects = can('PROJECT_VIEW');
+      const canLoadEventTypes = can('EVENT_CREATE') || can('EVENT_TYPE_MANAGE');
 
-      const cachedEvents = canViewEvents
-        ? PMS.Cache.get(CACHE_KEY)
-        : null;
-      const cachedProjects = PMS.Cache.get(PROJECTS_CACHE_KEY);
-      const cachedTypes = PMS.Cache.get(EVENT_TYPES_CACHE_KEY);
+      const cachedEvents = canViewEvents ? PMS.Cache.get(CACHE_KEY) : null;
+      const cachedProjects = canViewProjects ? PMS.Cache.get(PROJECTS_CACHE_KEY) : null;
+      const cachedTypes = canLoadEventTypes ? PMS.Cache.get(EVENT_TYPES_CACHE_KEY) : null;
 
       if (!canViewEvents) {
         this.events = [];
         PMS.Cache.remove(CACHE_KEY);
+      }
+      if (!canViewProjects) {
+        this.projects = [];
+        PMS.Cache.remove(PROJECTS_CACHE_KEY);
+      }
+      if (!canLoadEventTypes) {
+        this.eventTypes = [];
+        PMS.Cache.remove(EVENT_TYPES_CACHE_KEY);
       }
 
       if (cachedEvents !== null) this.events = this.normalize(cachedEvents);
@@ -141,69 +171,80 @@
         if (loading) loading.hidden = true;
       }
 
-      try {
-        const requests = [];
-
-        if (canViewEvents) {
-          requests.push(
-            PMS.Api.getCached('/events', CACHE_KEY, {
-              onRefresh: function (data) {
-                Events.events = Events.normalize(data);
-                Events.renderFilters();
-                Events.applyFilters();
-              },
-              onError: function (error, isBackground) {
-                if (!isBackground && cachedEvents === null) {
-                  Events.showError(error);
-                }
-              }
-            })
-          );
+      const loadResource = async function (request, onError) {
+        if (!request) return null;
+        try {
+          return await request;
+        } catch (error) {
+          if (typeof onError === 'function') onError(error);
+          return null;
         }
+      };
 
-        requests.push(
-          PMS.Api.getCached('/projects', PROJECTS_CACHE_KEY, {
-            onRefresh: function (data) {
-              Events.projects = Events.normalize(data);
-              Events.renderFilters();
-              Events.applyFilters();
-            }
-          }),
-          PMS.Api.getCached('/event-types', EVENT_TYPES_CACHE_KEY, {
-            onRefresh: function (data) {
-              Events.eventTypes = Events.normalize(data);
-              Events.renderFilters();
-              Events.applyFilters();
-            }
-          })
-        );
+      try {
+        const results = await Promise.all([
+          canViewEvents
+            ? loadResource(
+                PMS.Api.getCached('/events', CACHE_KEY, {
+                  onRefresh: function (data) {
+                    Events.events = Events.normalize(data);
+                    Events.renderFilters();
+                    Events.applyFilters();
+                  },
+                  onError: function (error, isBackground) {
+                    if (!isBackground && cachedEvents === null) {
+                      Events.showError(error);
+                    }
+                  }
+                }),
+                function (error) {
+                  if (cachedEvents === null) Events.showError(error);
+                }
+              )
+            : Promise.resolve(null),
+          canViewProjects
+            ? loadResource(
+                PMS.Api.getCached('/projects', PROJECTS_CACHE_KEY, {
+                  onRefresh: function (data) {
+                    Events.projects = Events.normalize(data);
+                    Events.renderFilters();
+                    Events.applyFilters();
+                  }
+                })
+              )
+            : Promise.resolve(null),
+          canLoadEventTypes
+            ? loadResource(
+                PMS.Api.getCached('/event-types', EVENT_TYPES_CACHE_KEY, {
+                  onRefresh: function (data) {
+                    Events.eventTypes = Events.normalize(data);
+                    Events.renderFilters();
+                    Events.applyFilters();
+                  }
+                })
+              )
+            : Promise.resolve(null)
+        ]);
 
-        const results = await Promise.all(requests);
-        let resultIndex = 0;
-
-        if (canViewEvents) {
-          const eventsResult = results[resultIndex++];
-          if (eventsResult && eventsResult.cached === false) {
-            this.events = this.normalize(eventsResult.data);
-          }
-        } else {
+        const eventsResult = results[0];
+        if (canViewEvents && eventsResult && eventsResult.cached === false) {
+          this.events = this.normalize(eventsResult.data);
+        } else if (!canViewEvents) {
           this.events = [];
         }
 
-        const projectsResult = results[resultIndex++];
+        const projectsResult = results[1];
         if (projectsResult && projectsResult.cached === false) {
           this.projects = this.normalize(projectsResult.data);
         }
 
-        const typesResult = results[resultIndex++];
+        const typesResult = results[2];
         if (typesResult && typesResult.cached === false) {
           this.eventTypes = this.normalize(typesResult.data);
         }
 
         this.renderFilters();
         this.applyFilters();
-      } catch (error) {
-        if (cachedEvents === null) this.showError(error);
       } finally {
         if (loading) loading.hidden = true;
       }
@@ -663,6 +704,14 @@
           html += '<p class="event-muted">اطلاعات اختصاصی برای این رویداد ثبت نشده است.</p>';
         }
 
+        const canEdit = Boolean(PMS.Router &&
+          (PMS.Router.isAdmin() ||
+            (Array.isArray(PMS.Router.permissions) &&
+             PMS.Router.permissions.indexOf('EVENT_EDIT') !== -1)));
+        if (canEdit && String(event.Status || '').toUpperCase() === 'ACTIVE') {
+          html += '<div class="form-actions"><button type="button" class="btn btn-danger event-void-button" data-event-id="' +
+            this.escape(eventId) + '">ابطال رویداد</button></div>';
+        }
         const content = document.getElementById('event-details-content');
         if (content) content.innerHTML = html;
       } catch (error) {
@@ -679,6 +728,39 @@
 
           content.appendChild(message);
         }
+      }
+    },
+
+    voidEvent: async function (eventId) {
+      if (!eventId) return;
+      const router = PMS.Router;
+      const allowed = Boolean(router &&
+        (router.isAdmin() ||
+          (Array.isArray(router.permissions) &&
+           router.permissions.indexOf('EVENT_EDIT') !== -1)));
+      if (!allowed) {
+        alert('شما مجوز ابطال رویداد را ندارید.');
+        return;
+      }
+
+      const reason = window.prompt('دلیل ابطال رویداد را وارد کنید:');
+      if (reason === null) return;
+      if (!reason.trim()) {
+        alert('وارد کردن دلیل ابطال الزامی است.');
+        return;
+      }
+      if (!window.confirm('آیا از ابطال این رویداد مطمئن هستید؟')) return;
+
+      try {
+        await PMS.Api.put('/events/' + encodeURIComponent(eventId) + '/void', {
+          reason: reason.trim()
+        });
+        PMS.Api.invalidateMany([CACHE_KEY]);
+        await this.reloadEvents();
+        this.showSuccessNotice('رویداد با موفقیت باطل شد.');
+        this.openDetails(eventId);
+      } catch (error) {
+        alert('ابطال رویداد ناموفق بود: ' + this.errorMessage(error));
       }
     },
 
