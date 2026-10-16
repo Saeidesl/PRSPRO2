@@ -108,7 +108,7 @@
 
 .btn-light:hover:not(:disabled) {
   background: var(--color-surface-hover);
-  border-color: #cbd5e1;
+  border-color: var(--color-border);
 }
 
 .btn-sm {
@@ -430,7 +430,7 @@ body.modal-open {
   background: var(--color-surface) !important;
   color: var(--color-text);
   border-radius: 12px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-overlay);
 }
 
 .modal-overlay .modal-header {
@@ -440,7 +440,7 @@ body.modal-open {
 }
 
 .modal-overlay .modal-body {
-  background: #ffffff;
+  background: var(--color-surface);
   padding: 20px;
 }
 
