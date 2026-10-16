@@ -301,3 +301,34 @@
     transition: none;
   }
 }
+
+/* Login surface follows the same active application theme. */
+.login-page {
+  background:
+    radial-gradient(circle at 12% 15%, var(--color-login-decoration), transparent 32%),
+    radial-gradient(circle at 88% 85%, var(--color-login-decoration), transparent 34%),
+    var(--color-login-background);
+}
+.login-page::before, .login-page::after {
+  border-color: var(--color-border);
+  opacity: .45;
+}
+.login-card {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-color: var(--color-login-card-border);
+  box-shadow: var(--shadow-overlay);
+}
+.login-logo { border-color: var(--color-surface-alt); }
+.login-button {
+  background: var(--color-primary);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+}
+.login-button:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+  box-shadow: var(--shadow-md);
+}
+.login-button:focus-visible {
+  outline-color: var(--color-focus-ring);
+}
