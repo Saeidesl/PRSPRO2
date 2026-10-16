@@ -197,8 +197,7 @@ table tbody tr.selected td,table tbody tr[aria-selected="true"] td,.data-table t
 .alert-info,.status-info { background: var(--color-info-bg) !important; color: var(--color-info) !important; border-color: var(--color-border) !important; }
 
 /* Dialogs, menus, tooltips and overlays */
-.modal-overlay { background: rgba(31,35,40,.42) !important; }
-html[data-theme="dark"] .modal-overlay { background: rgba(1,4,9,.76) !important; }
+.modal-overlay { background: var(--color-overlay) !important; }
 .modal-overlay .modal,.modal,.modal-content,.modal-dialog {
   background: var(--color-surface) !important; color: var(--color-text) !important; border-color: var(--color-border) !important; box-shadow: var(--shadow-overlay) !important;
 }
