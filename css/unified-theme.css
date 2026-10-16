@@ -49,6 +49,13 @@
   --text-color: var(--color-text);
   --muted-color: var(--color-text-muted);
   --soft-bg: var(--color-surface-alt);
+  --surface-muted: var(--color-surface-alt);
+  --text-muted: var(--color-text-muted);
+  --color-secondary: var(--color-text-secondary);
+  --color-primary-soft: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  --radius-xl: 16px;
+  --shadow-lg: var(--shadow-overlay);
+  --transition-fast: .18s ease;
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
@@ -347,3 +354,5 @@ html[data-theme="dark"] .modal-overlay { background: rgba(1,4,9,.76) !important;
   background: var(--color-primary-hover) !important;
   border-color: var(--color-primary-hover) !important;
 }
+
+#user-create-error, #user-edit-error { color: var(--color-danger) !important; }
