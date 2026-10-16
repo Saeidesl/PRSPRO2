@@ -120,7 +120,11 @@
     // فرم ایجاد پروژه
     // ========================================================
 
-    openCreateForm: async function () {
+    openCreateForm: async function (projectToEdit) {
+      const editing = Boolean(projectToEdit);
+      const projectId = editing
+        ? String(projectToEdit.ID || projectToEdit.Id || projectToEdit.id || '')
+        : '';
       if (this.modal) {
         this.modal.remove();
       }
@@ -167,7 +171,7 @@
             margin-bottom:20px;
           ">
             <h3 id="project-create-title" style="margin:0;">
-              ایجاد پروژه جدید
+              ${editing ? 'ویرایش پروژه' : 'ایجاد پروژه جدید'}
             </h3>
 
             <button
@@ -287,6 +291,16 @@
       const form = modal.querySelector('#project-create-form');
       const workflowSelect = modal.querySelector('#new-project-workflow');
 
+      modal.querySelector('#project-create-title').textContent =
+        editing ? 'ویرایش پروژه' : 'ایجاد پروژه جدید';
+      modal.querySelector('#project-create-submit').textContent =
+        editing ? 'ذخیره تغییرات' : 'ثبت پروژه';
+      if (editing) {
+        modal.querySelector('#new-project-code').value = projectToEdit.ProjectCode || '';
+        modal.querySelector('#new-project-title').value = projectToEdit.Title || '';
+        modal.querySelector('#new-project-description').value = projectToEdit.Description || '';
+      }
+
       const closeModal = () => {
         if (this.isSaving) {
           return;
@@ -325,7 +339,7 @@
 
       form.addEventListener('submit', (event) => {
         event.preventDefault();
-        this.createProject(modal);
+        this.createProject(modal, projectToEdit);
       });
 
       try {
@@ -367,6 +381,10 @@
               </option>
             `;
           }).join('');
+
+        if (editing) {
+          workflowSelect.value = String(projectToEdit.WorkflowID || '');
+        }
 
       } catch (error) {
         workflowSelect.innerHTML =
@@ -418,7 +436,11 @@
     // ثبت پروژه
     // ========================================================
 
-    createProject: async function (modal) {
+    createProject: async function (modal, projectToEdit) {
+      const editing = Boolean(projectToEdit);
+      const projectId = editing
+        ? String(projectToEdit.ID || projectToEdit.Id || projectToEdit.id || '')
+        : '';
       if (this.isSaving) {
         return;
       }
@@ -456,30 +478,34 @@
 
       this.isSaving = true;
       submitButton.disabled = true;
-      submitButton.textContent = 'در حال ثبت...';
+      submitButton.textContent = editing ? 'در حال ذخیره...' : 'در حال ثبت...';
 
       this.clearFormError(modal);
 
       try {
-        const response = await window.PMS.Api.post('/projects', project);
+        const response = editing
+          ? await window.PMS.Api.put('/projects/' + encodeURIComponent(projectId), project)
+          : await window.PMS.Api.post('/projects', project);
 
-        const created = this.extractCreatedProject(response);
+        const saved = this.extractCreatedProject(response) ||
+          (editing ? Object.assign({}, projectToEdit, project, { ID: projectId }) : null);
 
-        if (!created || !(created.ID || created.Id || created.id)) {
+        if (!saved || !(saved.ID || saved.Id || saved.id)) {
           throw new Error(
             this.getErrorMessage(response) ||
-            'پاسخ سرور برای ثبت پروژه معتبر نیست.'
+            (editing ? 'پاسخ سرور برای ویرایش پروژه معتبر نیست.' : 'پاسخ سرور برای ثبت پروژه معتبر نیست.')
           );
         }
 
-        const createdId = String(created.ID || created.Id || created.id);
-
-        const exists = this.projects.some((item) => {
-          return String(item.ID || item.Id || item.id) === createdId;
+        const savedId = String(saved.ID || saved.Id || saved.id);
+        const existingIndex = this.projects.findIndex((item) => {
+          return String(item.ID || item.Id || item.id) === savedId;
         });
 
-        if (!exists) {
-          this.projects.unshift(created);
+        if (existingIndex >= 0) {
+          this.projects[existingIndex] = saved;
+        } else {
+          this.projects.unshift(saved);
         }
 
         // فهرست فعلی را بلافاصله به‌روز می‌کنیم.
@@ -491,7 +517,8 @@
           this.modal = null;
         }
 
-        alert('پروژه با موفقیت ثبت شد.');
+        window.PMS.Api.invalidate(CACHE_KEY);
+        alert(editing ? 'تغییرات پروژه ذخیره شد.' : 'پروژه با موفقیت ثبت شد.');
 
         // دریافت دوباره فهرست از سرور برای هماهنگ‌شدن اطلاعات.
         this.loadProjects();
@@ -506,7 +533,7 @@
 
         if (submitButton.isConnected) {
           submitButton.disabled = false;
-          submitButton.textContent = 'ثبت پروژه';
+          submitButton.textContent = editing ? 'ذخیره تغییرات' : 'ثبت پروژه';
         }
       }
     },
@@ -685,6 +712,10 @@
               >
                 مشاهده
               </button>
+              ${window.PMS.Router.hasPermission('PROJECT_EDIT') ? `
+                <button type="button" class="btn btn-sm btn-light project-edit-button"
+                  data-project-id="${this.escape(id)}">ویرایش</button>
+              ` : ''}
             </td>
           </tr>
         `;
@@ -701,13 +732,19 @@
       container.querySelectorAll('.project-view-button').forEach((button) => {
         button.addEventListener('click', () => {
           const id = button.getAttribute('data-project-id');
+          if (!id) return;
+          window.location.hash = '#project-detail/' + encodeURIComponent(id);
+        });
+      });
 
-          if (!id) {
-            return;
-          }
-
-          window.location.hash =
-            '#project-detail/' + encodeURIComponent(id);
+      container.querySelectorAll('.project-edit-button').forEach((button) => {
+        button.addEventListener('click', () => {
+          if (!window.PMS.Router.hasPermission('PROJECT_EDIT')) return;
+          const id = button.getAttribute('data-project-id');
+          const project = this.projects.find((item) =>
+            String(item.ID || item.Id || item.id || '') === String(id || '')
+          );
+          if (project) this.openCreateForm(project);
         });
       });
     },
