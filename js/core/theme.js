@@ -20,6 +20,8 @@
       var selected = theme === 'dark' ? 'dark' : 'light';
       root.setAttribute('data-theme', selected);
       root.style.colorScheme = selected;
+      var themeColor = document.querySelector('meta[name="theme-color"]');
+      if (themeColor) themeColor.setAttribute('content', selected === 'dark' ? '#0d1117' : '#ffffff');
       if (persist !== false) {
         try { window.localStorage.setItem(STORAGE_KEY, selected); } catch (error) { /* Storage may be blocked. */ }
       }
