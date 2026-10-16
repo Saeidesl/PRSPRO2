@@ -132,7 +132,7 @@
         'position:fixed',
         'inset:0',
         'z-index:9999',
-        'background:rgba(0,0,0,0.45)',
+        'background:var(--color-overlay)',
         'display:flex',
         'align-items:center',
         'justify-content:center',
@@ -187,7 +187,7 @@
           <form id="project-create-form">
             <div class="filter-group" style="margin-bottom:16px;">
               <label for="new-project-code">
-                کد پروژه <span style="color:#c00;">*</span>
+                کد پروژه <span style="color:var(--color-danger);">*</span>
               </label>
 
               <input
@@ -204,7 +204,7 @@
 
             <div class="filter-group" style="margin-bottom:16px;">
               <label for="new-project-title">
-                عنوان پروژه <span style="color:#c00;">*</span>
+                عنوان پروژه <span style="color:var(--color-danger);">*</span>
               </label>
 
               <input
@@ -221,7 +221,7 @@
 
             <div class="filter-group" style="margin-bottom:16px;">
               <label for="new-project-workflow">
-                گردش کار <span style="color:#c00;">*</span>
+                گردش کار <span style="color:var(--color-danger);">*</span>
               </label>
 
               <select
@@ -233,7 +233,7 @@
                 <option value="">در حال دریافت گردش کارها...</option>
               </select>
 
-              <small style="display:block;margin-top:6px;color:#666;">
+              <small style="display:block;margin-top:6px;color:var(--color-text-secondary);">
                 پروژه از اولین مرحله گردش کار انتخاب‌شده شروع می‌شود.
               </small>
             </div>

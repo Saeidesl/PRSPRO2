@@ -12,7 +12,7 @@
   justify-content: center;
   padding: 20px;
   overflow-y: auto;
-  background: rgba(8, 15, 28, 0.72);
+  background: var(--color-overlay);
   -webkit-backdrop-filter: blur(7px);
   backdrop-filter: blur(7px);
   color: var(--color-text);
@@ -40,7 +40,7 @@
   border-radius: 20px;
   background: var(--color-surface);
   color: var(--color-text);
-  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.42);
+  box-shadow: var(--shadow-overlay);
   animation: event-panel-in 220ms ease-out;
   scrollbar-width: thin;
   scrollbar-color: var(--color-border) transparent;
@@ -58,7 +58,7 @@
   gap: 16px;
   margin-bottom: 24px;
   padding-bottom: 20px;
-  border-bottom: 1px solid #303d50;
+  border-bottom: 1px solid var(--color-border);
 }
 
 #event-create-modal .event-modal-heading h3,
@@ -220,7 +220,7 @@
 #event-create-modal textarea:focus {
   border-color: var(--color-primary);
   background: var(--color-input-bg);
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 18%, transparent);
 }
 
 #event-create-modal input[type="checkbox"] {
@@ -243,7 +243,7 @@
   min-height: 45px;
   margin: 0;
   padding: 10px 12px;
-  border: 1px solid #344258;
+  border: 1px solid var(--color-border);
   border-radius: 11px;
   background: var(--color-surface-alt);
   color: var(--color-text);
@@ -257,7 +257,7 @@
   gap: 12px;
   margin-top: 26px;
   padding-top: 20px;
-  border-top: 1px solid #303d50;
+  border-top: 1px solid var(--color-border);
 }
 
 #event-create-modal .event-modal-button,
@@ -296,13 +296,13 @@
   border-color: var(--color-primary);
   background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
   color: #fff;
-  box-shadow: 0 7px 18px rgba(2, 132, 199, 0.18);
+  box-shadow: var(--shadow-md);
 }
 
 #event-create-modal .event-modal-button-primary:hover:not(:disabled) {
   border-color: var(--color-primary);
   background: linear-gradient(135deg, var(--color-primary), var(--color-primary));
-  box-shadow: 0 9px 22px rgba(2, 132, 199, 0.25);
+  box-shadow: var(--shadow-md);
 }
 
 #event-create-modal .event-modal-button:disabled,
@@ -374,7 +374,7 @@
   flex: 0 0 27px;
   width: 27px;
   height: 27px;
-  border: 3px solid rgba(125, 211, 252, 0.22);
+  border: 3px solid var(--color-border);
   border-top-color: var(--color-primary);
   border-left-color: var(--color-primary);
   border-radius: 50%;
@@ -401,7 +401,7 @@
   align-items: center;
   gap: 12px;
   min-height: 70px;
-  color: #a9b9cd;
+  color: var(--color-text-secondary);
   font-size: 13px;
   line-height: 1.8;
 }
@@ -428,7 +428,7 @@
 #event-details-modal .event-detail-card {
   min-width: 0;
   padding: 14px;
-  border: 1px solid #344258;
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   background: var(--color-surface);
 }
@@ -456,21 +456,21 @@
 #event-details-modal .event-modal-table-wrap {
   width: 100%;
   overflow-x: auto;
-  border: 1px solid #344258;
+  border: 1px solid var(--color-border);
   border-radius: 12px;
 }
 
 #event-details-modal .event-modal-table {
   width: 100%;
   border-collapse: collapse;
-  background: #172231;
+  background: var(--color-input-bg);
   color: var(--color-text);
 }
 
 #event-details-modal .event-modal-table th,
 #event-details-modal .event-modal-table td {
   padding: 12px 14px;
-  border-bottom: 1px solid #303d50;
+  border-bottom: 1px solid var(--color-border);
   text-align: right;
   font-size: 13px;
   line-height: 1.8;
@@ -503,7 +503,7 @@
   border-radius: 13px;
   background: var(--color-success-bg);
   color: var(--color-success);
-  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-overlay);
   font-size: 13px;
   line-height: 1.9;
   opacity: 0;

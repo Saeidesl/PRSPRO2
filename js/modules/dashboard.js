@@ -511,17 +511,17 @@
 
       style.textContent = `
         #dashboard-project-explorer {
-          --explorer-bg: var(--color-surface, #191f29);
-          --explorer-panel: var(--color-surface-alt, #202836);
-          --explorer-panel-hover: var(--color-surface-hover, #283344);
-          --explorer-text: var(--color-text, #e8edf5);
-          --explorer-muted: var(--color-text-secondary, #a1adbf);
-          --explorer-subtle: var(--color-text-muted, #758399);
-          --explorer-border: var(--color-border, #2b3545);
-          --explorer-border-light: var(--color-border-light, #354154);
-          --explorer-primary: var(--color-primary, #38bdf8);
-          --explorer-primary-hover: var(--color-primary-hover, #0ea5e9);
-          --explorer-primary-soft: var(--color-primary-soft, rgba(56, 189, 248, 0.13));
+          --explorer-bg: var(--color-surface, var(--color-surface));
+          --explorer-panel: var(--color-surface-alt, var(--color-surface-alt));
+          --explorer-panel-hover: var(--color-surface-hover, var(--color-surface-hover));
+          --explorer-text: var(--color-text, var(--color-text));
+          --explorer-muted: var(--color-text-secondary, var(--color-text-secondary));
+          --explorer-subtle: var(--color-text-muted, var(--color-text-muted));
+          --explorer-border: var(--color-border, var(--color-border));
+          --explorer-border-light: var(--color-border-light, var(--color-border-light));
+          --explorer-primary: var(--color-primary, var(--color-primary));
+          --explorer-primary-hover: var(--color-primary-hover, var(--color-primary-hover));
+          --explorer-primary-soft: var(--color-primary-soft, var(--color-primary-soft));
           --explorer-radius: var(--radius-lg, 16px);
           --explorer-shadow: var(--shadow-sm, 0 3px 12px rgba(0, 0, 0, 0.16));
 
@@ -541,8 +541,8 @@
           color: var(--explorer-text);
           background: linear-gradient(
             145deg,
-            rgba(31, 39, 52, 0.98),
-            rgba(24, 30, 40, 0.98)
+            var(--color-surface),
+            var(--color-surface-alt)
           );
           border: 1px solid var(--explorer-border);
           border-radius: var(--explorer-radius);
@@ -590,7 +590,7 @@
           min-width: 0;
           padding: 15px;
           color: var(--explorer-text);
-          background: rgba(17, 21, 28, 0.55);
+          background: color-mix(in srgb, var(--color-background) 58%, transparent);
           border: 1px solid var(--explorer-border);
           border-radius: 12px;
         }
@@ -610,7 +610,7 @@
           margin: 0 0 12px;
           padding: 9px 12px;
           color: var(--explorer-text);
-          background: #141b25;
+          background: var(--color-surface);
           border: 1px solid var(--explorer-border-light);
           border-radius: 10px;
           outline: none;
@@ -628,9 +628,9 @@
         }
 
         #dashboard-project-explorer #dashboard-project-search:focus {
-          background: #171f2b;
+          background: var(--color-surface-alt);
           border-color: var(--explorer-primary);
-          box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 10%, transparent);
         }
 
         #dashboard-project-explorer .dashboard-project-list {
@@ -641,7 +641,7 @@
           overflow-y: auto;
           padding: 1px 2px 1px 4px;
           scrollbar-width: thin;
-          scrollbar-color: #3b485c #171d27;
+          scrollbar-color: var(--color-border) var(--color-background);
         }
 
         #dashboard-project-explorer .dashboard-project-choice {
@@ -651,7 +651,7 @@
           padding: 11px 12px;
           text-align: right;
           color: var(--explorer-text);
-          background: #191f29;
+          background: var(--color-surface);
           border: 1px solid var(--explorer-border);
           border-radius: 10px;
           cursor: pointer;
@@ -664,8 +664,8 @@
         }
 
         #dashboard-project-explorer .dashboard-project-choice:hover {
-          background: #222c3b;
-          border-color: #40536c;
+          background: var(--color-surface-hover);
+          border-color: var(--color-border);
           transform: translateX(-2px);
         }
 
@@ -675,24 +675,24 @@
         }
 
         #dashboard-project-explorer .dashboard-project-choice.selected {
-          color: #e8edf5;
+          color: var(--color-text);
           background:
             linear-gradient(
               100deg,
-              rgba(14, 165, 233, 0.17),
-              rgba(99, 102, 241, 0.08)
+              color-mix(in srgb, var(--color-primary) 17%, transparent),
+              color-mix(in srgb, var(--color-primary) 8%, transparent)
             ),
-            #191f29;
-          border-color: rgba(56, 189, 248, 0.45);
+            var(--color-surface);
+          border-color: color-mix(in srgb, var(--color-primary) 45%, transparent);
           box-shadow:
             inset -3px 0 0 var(--explorer-primary),
-            0 3px 12px rgba(0, 0, 0, 0.12);
+            var(--shadow-sm);
         }
 
         #dashboard-project-explorer .dashboard-project-choice strong {
           display: block;
           margin-bottom: 5px;
-          color: #e8edf5;
+          color: var(--color-text);
           font-size: 13px;
           font-weight: 750;
           line-height: 1.9;
@@ -710,7 +710,7 @@
         #dashboard-project-explorer .dashboard-selected-project-base > h3 {
           margin: 0 0 15px;
           padding-bottom: 12px;
-          color: #f1f5f9;
+          color: var(--color-text);
           border-bottom: 1px solid var(--explorer-border);
           font-size: 18px;
           font-weight: 800;
@@ -729,7 +729,7 @@
           min-width: 0;
           padding: 11px 12px;
           color: var(--explorer-text);
-          background: linear-gradient(145deg, #222c3b, #191f29);
+          background: linear-gradient(145deg, var(--color-surface-hover), var(--color-surface));
           border: 1px solid var(--explorer-border);
           border-radius: 10px;
           overflow-wrap: anywhere;
@@ -745,7 +745,7 @@
 
         #dashboard-project-explorer .dashboard-project-base-item strong {
           display: block;
-          color: #e8edf5;
+          color: var(--color-text);
           font-size: 12px;
           font-weight: 750;
           line-height: 1.9;
@@ -754,7 +754,7 @@
 
         #dashboard-project-explorer .dashboard-selected-project-base h4 {
           margin: 20px 0 12px;
-          color: #e8f0fa;
+          color: var(--color-text);
           font-size: 14px;
           font-weight: 800;
         }
@@ -770,7 +770,7 @@
           right: 4px;
           bottom: 8px;
           width: 2px;
-          background: #354154;
+          background: var(--color-border-light);
           content: "";
         }
 
@@ -779,8 +779,8 @@
           margin-bottom: 10px;
           padding: 12px 13px;
           color: var(--explorer-text);
-          background: linear-gradient(145deg, #202836, #191f29);
-          border: 1px solid #303c4f;
+          background: linear-gradient(145deg, var(--color-surface-alt), var(--color-surface));
+          border: 1px solid var(--color-border);
           border-radius: 11px;
           transition:
             border-color 0.18s ease,
@@ -788,8 +788,8 @@
         }
 
         #dashboard-project-explorer .dashboard-compact-event:hover {
-          border-color: #40536c;
-          box-shadow: 0 5px 16px rgba(0, 0, 0, 0.12);
+          border-color: var(--color-border);
+          box-shadow: var(--shadow-sm);
         }
 
         #dashboard-project-explorer .dashboard-compact-event::before {
@@ -799,9 +799,9 @@
           width: 9px;
           height: 9px;
           background: var(--explorer-primary);
-          border: 2px solid #191f29;
+          border: 2px solid var(--color-surface);
           border-radius: 50%;
-          box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 10%, transparent);
           content: "";
         }
 
@@ -814,7 +814,7 @@
         }
 
         #dashboard-project-explorer .dashboard-compact-event-title {
-          color: #e8edf5;
+          color: var(--color-text);
           font-size: 13px;
           font-weight: 750;
           line-height: 1.9;
@@ -840,9 +840,9 @@
         #dashboard-project-explorer .dashboard-compact-event-description {
           margin-top: 8px;
           padding: 9px 11px;
-          color: #cbd5e1;
-          background: rgba(17, 21, 28, 0.5);
-          border: 1px solid rgba(53, 65, 84, 0.6);
+          color: var(--color-text-secondary);
+          background: color-mix(in srgb, var(--color-background) 52%, transparent);
+          border: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
           border-radius: 8px;
           font-size: 12px;
           line-height: 2;
@@ -860,9 +860,9 @@
         #dashboard-project-explorer .dashboard-compact-event-data span {
           max-width: 100%;
           padding: 5px 8px;
-          color: #cbd5e1;
-          background: #283344;
-          border: 1px solid #354154;
+          color: var(--color-text-secondary);
+          background: var(--color-surface-hover);
+          border: 1px solid var(--color-border-light);
           border-radius: 7px;
           font-size: 11px;
           line-height: 1.9;
@@ -882,7 +882,7 @@
         }
 
         #dashboard-project-explorer .dashboard-detail-link:hover {
-          color: #7dd3fc;
+          color: var(--color-primary);
           text-decoration: underline;
         }
 
@@ -896,15 +896,15 @@
         }
 
         #dashboard-project-explorer .btn-secondary {
-          color: #d5deeb;
-          background: #252f3e;
-          border-color: #3b485c;
+          color: var(--color-text-secondary);
+          background: var(--color-surface-alt);
+          border-color: var(--color-border);
         }
 
         #dashboard-project-explorer .btn-secondary:hover {
-          color: #fff;
-          background: #303d50;
-          border-color: #53647c;
+          color: var(--color-text);
+          background: var(--color-surface-hover);
+          border-color: var(--color-border);
         }
 
         #dashboard-project-explorer [hidden] {

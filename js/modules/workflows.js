@@ -185,12 +185,12 @@
            style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px">
         <div>
           <h3 style="margin:0 0 5px">فرآیندهای تولید</h3>
-          <div style="color:var(--text-muted,#64748b);font-size:13px">
+          <div style="color:var(--color-text-muted);font-size:13px">
             هر فرآیند مسیر و ترتیب مراحل تولید را مشخص می‌کند.
           </div>
         </div>
         <span class="workflow-count"
-              style="font-size:13px;color:var(--text-muted,#64748b)">
+              style="font-size:13px;color:var(--color-text-muted)">
           ${filtered.length} فرآیند
         </span>
       </div>
@@ -234,7 +234,7 @@
         <div class="card-body" style="padding:18px">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
             <div style="min-width:0">
-              <div style="font-size:11px;color:var(--text-muted,#64748b);margin-bottom:6px">
+              <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:6px">
                 فرآیند تولید
               </div>
               <h4 style="margin:0 0 10px;overflow-wrap:anywhere;font-size:17px">
@@ -246,10 +246,10 @@
             </div>
           </div>
 
-          <div style="border-top:1px solid var(--border-color,#e2e8f0);padding-top:12px;margin-top:12px">
+          <div style="border-top:1px solid var(--color-border);padding-top:12px;margin-top:12px">
             <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px">
               <div>
-                <div style="font-size:12px;color:var(--text-muted,#64748b);margin-bottom:4px">
+                <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:4px">
                   کد فرآیند
                 </div>
                 <div style="font-size:13px;overflow-wrap:anywhere">
@@ -257,7 +257,7 @@
                 </div>
               </div>
               <div>
-                <div style="font-size:12px;color:var(--text-muted,#64748b);margin-bottom:4px">
+                <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:4px">
                   نسخه
                 </div>
                 <div style="font-size:13px">
@@ -294,7 +294,7 @@
     openModal({
       title: 'ایجاد فرآیند جدید',
       content: `
-        <div style="margin-bottom:18px;color:var(--text-muted,#64748b);font-size:13px">
+        <div style="margin-bottom:18px;color:var(--color-text-muted);font-size:13px">
           ابتدا مشخصات فرآیند را ثبت کن. سپس می‌توانی مراحل تولید را به ترتیب اضافه کنی.
         </div>
 
@@ -319,7 +319,7 @@
                    maxlength="80"
                    required
                    placeholder="مثلاً GARMENT_PRODUCTION">
-            <small style="display:block;margin-top:5px;color:var(--text-muted,#64748b)">
+            <small style="display:block;margin-top:5px;color:var(--color-text-muted)">
               کدی کوتاه و قابل‌شناسایی وارد کن.
             </small>
           </div>
@@ -397,21 +397,21 @@
       title: 'افزودن مرحله جدید',
       content: `
         <div class="card"
-             style="margin-bottom:18px;background:var(--surface-muted,#f8fafc)">
+             style="margin-bottom:18px;background:var(--color-surface-alt)">
           <div class="card-body" style="padding:14px">
-            <div style="font-size:12px;color:var(--text-muted,#64748b);margin-bottom:5px">
+            <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:5px">
               فرآیند انتخاب‌شده
             </div>
             <div style="font-weight:600;overflow-wrap:anywhere">
               ${escapeHtml(getName(workflow))}
             </div>
-            <div style="font-size:12px;color:var(--text-muted,#64748b);margin-top:5px">
+            <div style="font-size:12px;color:var(--color-text-muted);margin-top:5px">
               کد: ${escapeHtml(getCode(workflow))}
             </div>
           </div>
         </div>
 
-        <p style="font-size:13px;color:var(--text-muted,#64748b);margin-bottom:18px">
+        <p style="font-size:13px;color:var(--color-text-muted);margin-bottom:18px">
           نام و کد مرحله را وارد کن. ترتیب مراحل مطابق تنظیمات ثبت‌شده در سیستم نمایش داده می‌شود.
         </p>
 
@@ -562,7 +562,7 @@
       return `
         <tr>
           <td style="width:70px;text-align:center">
-            <span style="display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;border-radius:50%;background:var(--surface-muted,#f1f5f9)">
+            <span style="display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;border-radius:50%;background:var(--color-surface-alt)">
               ${escapeHtml(order)}
             </span>
           </td>
@@ -577,15 +577,15 @@
       title: 'مراحل فرآیند',
       content: `
         <div class="card"
-             style="margin-bottom:18px;background:var(--surface-muted,#f8fafc)">
+             style="margin-bottom:18px;background:var(--color-surface-alt)">
           <div class="card-body" style="padding:14px">
-            <div style="font-size:12px;color:var(--text-muted,#64748b);margin-bottom:5px">
+            <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:5px">
               فرآیند انتخاب‌شده
             </div>
             <div style="font-weight:600;overflow-wrap:anywhere">
               ${escapeHtml(getName(workflow))}
             </div>
-            <div style="font-size:12px;color:var(--text-muted,#64748b);margin-top:5px">
+            <div style="font-size:12px;color:var(--color-text-muted);margin-top:5px">
               کد: ${escapeHtml(getCode(workflow))}
               <span style="margin-inline-start:10px">تعداد مراحل: ${sortedSteps.length}</span>
             </div>
@@ -594,7 +594,7 @@
 
         <div style="margin-bottom:12px">
           <h4 style="margin:0 0 5px">ترتیب مراحل تولید</h4>
-          <p style="font-size:13px;color:var(--text-muted,#64748b);margin:0">
+          <p style="font-size:13px;color:var(--color-text-muted);margin:0">
             مراحل ثبت‌شده برای این فرآیند در جدول زیر نمایش داده می‌شوند.
           </p>
         </div>
@@ -618,7 +618,7 @@
             <div style="font-size:15px;font-weight:600;margin-bottom:8px">
               هنوز مرحله‌ای ثبت نشده است
             </div>
-            <div style="font-size:13px;color:var(--text-muted,#64748b);margin-bottom:16px">
+            <div style="font-size:13px;color:var(--color-text-muted);margin-bottom:16px">
               برای تعریف مسیر تولید، اولین مرحله را اضافه کن.
             </div>
           </div>
@@ -792,7 +792,7 @@
     }
 
     if (!value) {
-      return '<span style="color:var(--text-muted,#64748b)">-</span>';
+      return '<span style="color:var(--color-text-muted)">-</span>';
     }
 
     return escapeHtml(status);

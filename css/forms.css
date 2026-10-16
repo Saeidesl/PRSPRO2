@@ -65,7 +65,7 @@
 .form-group select:hover,
 .form-group textarea:hover,
 .form-control:hover {
-  border-color: #cbd5e1;
+  border-color: var(--color-border);
 }
 
 .form-group input:focus,
@@ -73,7 +73,7 @@
 .form-group textarea:focus,
 .form-control:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 12%, transparent);
 }
 
 .form-group input:disabled,
@@ -136,7 +136,7 @@ textarea.form-control {
 .form-group select:invalid:focus,
 .form-group textarea:invalid:focus {
   border-color: var(--color-danger);
-  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-danger) 10%, transparent);
 }
 
 /* اصلاح فرم‌های داخل پنجره مودال */

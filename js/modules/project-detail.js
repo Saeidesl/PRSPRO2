@@ -947,7 +947,7 @@
           border-radius: 12px;
           padding: 16px;
           background: var(--color-surface);
-          box-shadow: 0 2px 8px rgba(15, 23, 42, .04);
+          box-shadow: var(--shadow-sm);
           min-width: 0;
         }
 

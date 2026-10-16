@@ -1,60 +1,16 @@
-/* =========================================================
-   PMS — DARK CHARCOAL DESIGN SYSTEM
-   Persian Production Management
-   این فایل فقط ظاهر را تغییر می‌دهد.
-   ========================================================= */
 
-:root {
-  color-scheme: dark;
-
-  --color-background: #11151c;
-  --color-surface: #191f29;
-  --color-surface-alt: #202836;
-  --color-surface-hover: #283344;
-
-  --color-primary: #38bdf8;
-  --color-primary-hover: #0ea5e9;
-  --color-primary-soft: rgba(56, 189, 248, 0.13);
-
-  --color-secondary: #94a3b8;
-  --color-success: #34d399;
-  --color-warning: #fbbf24;
-  --color-danger: #fb7185;
-  --color-info: #60a5fa;
-
-  --color-text: #e8edf5;
-  --color-text-secondary: #a1adbf;
-  --color-text-muted: #758399;
-
-  --color-border: #2b3545;
-  --color-border-light: #354154;
-
-  --sidebar-width: 264px;
-  --header-height: 72px;
-
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
-
-  --shadow-sm: 0 3px 12px rgba(0, 0, 0, 0.16);
-  --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.22);
-  --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.3);
-
-  --transition-fast: 0.18s ease;
-}
 
 /* =========================================================
    BASE
    ========================================================= */
 
-html {
+:where(:root[data-theme="dark"]){
   min-height: 100%;
   background: var(--color-background);
   scroll-behavior: smooth;
 }
 
-body {
+:where(:root[data-theme="dark"]) body{
   min-height: 100vh;
   margin: 0;
   background:
@@ -71,22 +27,19 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-* {
+:where(:root[data-theme="dark"]) *{
   box-sizing: border-box;
 }
 
-button,
-input,
-select,
-textarea {
+:where(:root[data-theme="dark"]) button, :where(:root[data-theme="dark"]) input, :where(:root[data-theme="dark"]) select, :where(:root[data-theme="dark"]) textarea{
   font: inherit;
 }
 
-button {
+:where(:root[data-theme="dark"]) button{
   -webkit-tap-highlight-color: transparent;
 }
 
-a {
+:where(:root[data-theme="dark"]) a{
   color: var(--color-primary);
   text-decoration: none;
   transition:
@@ -94,21 +47,21 @@ a {
     background var(--transition-fast);
 }
 
-a:hover {
+:where(:root[data-theme="dark"]) a:hover{
   color: #7dd3fc;
 }
 
-::selection {
+:where(:root[data-theme="dark"]) ::selection{
   color: #fff;
   background: rgba(14, 165, 233, 0.4);
 }
 
-:focus-visible {
+:where(:root[data-theme="dark"]) :focus-visible{
   outline: 2px solid var(--color-primary);
   outline-offset: 3px;
 }
 
-[hidden] {
+:where(:root[data-theme="dark"]) [hidden]{
   display: none !important;
 }
 
@@ -116,30 +69,25 @@ a:hover {
    APPLICATION LAYOUT
    ========================================================= */
 
-#app,
-.app-layout {
+:where(:root[data-theme="dark"]) #app, :where(:root[data-theme="dark"]) .app-layout{
   min-height: 100vh;
   background: transparent;
 }
 
-.app-layout {
+:where(:root[data-theme="dark"]) .app-layout{
   color: var(--color-text);
 }
 
-.app-main,
-.app-main-content,
-.main-content {
+:where(:root[data-theme="dark"]) .app-main, :where(:root[data-theme="dark"]) .app-main-content, :where(:root[data-theme="dark"]) .main-content{
   min-width: 0;
   background: transparent;
 }
 
-.app-content,
-.page-content,
-.main-content-inner {
+:where(:root[data-theme="dark"]) .app-content, :where(:root[data-theme="dark"]) .page-content, :where(:root[data-theme="dark"]) .main-content-inner{
   min-width: 0;
 }
 
-.page-section {
+:where(:root[data-theme="dark"]) .page-section{
   min-width: 0;
   padding: 24px;
   animation: darkThemeFadeIn 0.25s ease both;
@@ -160,7 +108,7 @@ a:hover {
    SIDEBAR
    ========================================================= */
 
-.app-sidebar {
+:where(:root[data-theme="dark"]) .app-sidebar{
   background: #151b25 !important;
   color: #dce5f2;
   border-left: 1px solid #273244;
@@ -169,36 +117,36 @@ a:hover {
   scrollbar-color: #3a4659 transparent;
 }
 
-.sidebar-header {
+:where(:root[data-theme="dark"]) .sidebar-header{
   min-height: var(--header-height);
   border-bottom: 1px solid var(--color-border) !important;
   background: rgba(255, 255, 255, 0.012);
 }
 
-.sidebar-brand-icon {
+:where(:root[data-theme="dark"]) .sidebar-brand-icon{
   background: linear-gradient(135deg, #0284c7, #6366f1) !important;
   border: 1px solid rgba(125, 211, 252, 0.25);
   box-shadow: 0 5px 18px rgba(14, 165, 233, 0.2);
 }
 
-.sidebar-brand-title {
+:where(:root[data-theme="dark"]) .sidebar-brand-title{
   color: #f1f5f9 !important;
   font-weight: 800;
 }
 
-.sidebar-brand-subtitle {
+:where(:root[data-theme="dark"]) .sidebar-brand-subtitle{
   color: #8da0b9 !important;
 }
 
-.sidebar-nav {
+:where(:root[data-theme="dark"]) .sidebar-nav{
   padding: 18px 12px;
 }
 
-.sidebar-nav-list {
+:where(:root[data-theme="dark"]) .sidebar-nav-list{
   gap: 5px;
 }
 
-.sidebar-nav-link {
+:where(:root[data-theme="dark"]) .sidebar-nav-link{
   min-height: 43px;
   border: 1px solid transparent;
   border-radius: 11px;
@@ -210,14 +158,14 @@ a:hover {
     transform var(--transition-fast);
 }
 
-.sidebar-nav-link:hover {
+:where(:root[data-theme="dark"]) .sidebar-nav-link:hover{
   color: #f1f5f9 !important;
   background: #222c3b !important;
   border-color: #303d50;
   transform: translateX(-2px);
 }
 
-.sidebar-nav-link.active {
+:where(:root[data-theme="dark"]) .sidebar-nav-link.active{
   color: #7dd3fc !important;
   background:
     linear-gradient(
@@ -230,20 +178,20 @@ a:hover {
   font-weight: 700;
 }
 
-.sidebar-nav-icon {
+:where(:root[data-theme="dark"]) .sidebar-nav-icon{
   color: inherit;
 }
 
-.sidebar-footer {
+:where(:root[data-theme="dark"]) .sidebar-footer{
   border-top: 1px solid var(--color-border) !important;
 }
 
-.sidebar-user {
+:where(:root[data-theme="dark"]) .sidebar-user{
   background: #202836 !important;
   border: 1px solid #2d394b;
 }
 
-.sidebar-user-avatar {
+:where(:root[data-theme="dark"]) .sidebar-user-avatar{
   background: #26354a;
   color: #7dd3fc;
   border-color: #3b4b61 !important;
@@ -253,10 +201,7 @@ a:hover {
    HEADER / TOP BAR
    ========================================================= */
 
-.app-header,
-.main-header,
-.page-topbar,
-.topbar {
+:where(:root[data-theme="dark"]) .app-header, :where(:root[data-theme="dark"]) .main-header, :where(:root[data-theme="dark"]) .page-topbar, :where(:root[data-theme="dark"]) .topbar{
   color: var(--color-text);
   background: rgba(25, 31, 41, 0.94);
   border-bottom: 1px solid var(--color-border);
@@ -264,15 +209,13 @@ a:hover {
   backdrop-filter: blur(14px);
 }
 
-#app-header-title {
+:where(:root[data-theme="dark"]) #app-header-title{
   color: #f1f5f9;
   font-weight: 800;
   letter-spacing: -0.2px;
 }
 
-.app-header button,
-.main-header button,
-.topbar button {
+:where(:root[data-theme="dark"]) .app-header button, :where(:root[data-theme="dark"]) .main-header button, :where(:root[data-theme="dark"]) .topbar button{
   color: var(--color-text-secondary);
 }
 
@@ -280,7 +223,7 @@ a:hover {
    PAGE HEADERS
    ========================================================= */
 
-.page-header {
+:where(:root[data-theme="dark"]) .page-header{
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -289,26 +232,24 @@ a:hover {
   margin-bottom: 24px;
 }
 
-.page-header h1,
-.page-header h2,
-.page-header h3 {
+:where(:root[data-theme="dark"]) .page-header h1, :where(:root[data-theme="dark"]) .page-header h2, :where(:root[data-theme="dark"]) .page-header h3{
   margin: 0 0 5px;
   color: #f1f5f9;
   font-weight: 800;
   letter-spacing: -0.35px;
 }
 
-.page-header h2 {
+:where(:root[data-theme="dark"]) .page-header h2{
   font-size: 23px;
 }
 
-.page-header p {
+:where(:root[data-theme="dark"]) .page-header p{
   margin: 0;
   color: var(--color-text-secondary);
   font-size: 12px;
 }
 
-.page-header-actions {
+:where(:root[data-theme="dark"]) .page-header-actions{
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -319,11 +260,7 @@ a:hover {
    CARDS
    ========================================================= */
 
-.card,
-.stat-card,
-.dashboard-card,
-.panel,
-.modal-content {
+:where(:root[data-theme="dark"]) .card, :where(:root[data-theme="dark"]) .stat-card, :where(:root[data-theme="dark"]) .dashboard-card, :where(:root[data-theme="dark"]) .panel, :where(:root[data-theme="dark"]) .modal-content{
   color: var(--color-text);
   background: linear-gradient(
     145deg,
@@ -335,7 +272,7 @@ a:hover {
   box-shadow: var(--shadow-sm);
 }
 
-.card {
+:where(:root[data-theme="dark"]) .card{
   overflow: hidden;
   transition:
     border-color var(--transition-fast),
@@ -343,32 +280,29 @@ a:hover {
     transform var(--transition-fast);
 }
 
-.card:hover {
+:where(:root[data-theme="dark"]) .card:hover{
   border-color: #3b4b61;
   box-shadow: var(--shadow-md);
 }
 
-.card-header {
+:where(:root[data-theme="dark"]) .card-header{
   padding: 17px 20px;
   color: #eaf1fa;
   background: rgba(255, 255, 255, 0.018);
   border-bottom: 1px solid var(--color-border);
 }
 
-.card-header h2,
-.card-header h3,
-.card-body h2,
-.card-body h3 {
+:where(:root[data-theme="dark"]) .card-header h2, :where(:root[data-theme="dark"]) .card-header h3, :where(:root[data-theme="dark"]) .card-body h2, :where(:root[data-theme="dark"]) .card-body h3{
   margin-top: 0;
   color: #eaf1fa;
   font-weight: 750;
 }
 
-.card-body {
+:where(:root[data-theme="dark"]) .card-body{
   padding: 20px;
 }
 
-.card-footer {
+:where(:root[data-theme="dark"]) .card-footer{
   padding: 14px 20px;
   background: rgba(255, 255, 255, 0.018);
   border-top: 1px solid var(--color-border);
@@ -378,20 +312,19 @@ a:hover {
    DASHBOARD STATISTICS
    ========================================================= */
 
-.dashboard-grid {
+:where(:root[data-theme="dark"]) .dashboard-grid{
   gap: 16px;
 }
 
-.dashboard-grid > *,
-.dashboard-sections > * {
+:where(:root[data-theme="dark"]) .dashboard-grid > *, :where(:root[data-theme="dark"]) .dashboard-sections > *{
   min-width: 0;
 }
 
-.dashboard-sections {
+:where(:root[data-theme="dark"]) .dashboard-sections{
   gap: 18px;
 }
 
-.stat-card {
+:where(:root[data-theme="dark"]) .stat-card{
   position: relative;
   overflow: hidden;
   padding: 20px;
@@ -402,7 +335,7 @@ a:hover {
     box-shadow var(--transition-fast);
 }
 
-.stat-card::before {
+:where(:root[data-theme="dark"]) .stat-card::before{
   position: absolute;
   top: 0;
   right: 0;
@@ -413,23 +346,19 @@ a:hover {
   opacity: 0.85;
 }
 
-.stat-card:hover {
+:where(:root[data-theme="dark"]) .stat-card:hover{
   transform: translateY(-3px);
   border-color: #40536c;
   box-shadow: var(--shadow-md);
 }
 
-.stat-card h3,
-.stat-card .stat-title,
-.stat-card .card-title {
+:where(:root[data-theme="dark"]) .stat-card h3, :where(:root[data-theme="dark"]) .stat-card .stat-title, :where(:root[data-theme="dark"]) .stat-card .card-title{
   color: var(--color-text-secondary);
   font-size: 12px;
   font-weight: 600;
 }
 
-.stat-card .stat-value,
-.stat-card .stat-number,
-.stat-card .card-value {
+:where(:root[data-theme="dark"]) .stat-card .stat-value, :where(:root[data-theme="dark"]) .stat-card .stat-number, :where(:root[data-theme="dark"]) .stat-card .card-value{
   color: #f1f5f9;
   font-size: 27px;
   font-weight: 800;
@@ -441,7 +370,7 @@ a:hover {
    BUTTONS
    ========================================================= */
 
-.btn {
+:where(:root[data-theme="dark"]) .btn{
   min-height: 36px;
   display: inline-flex;
   align-items: center;
@@ -462,62 +391,62 @@ a:hover {
     box-shadow var(--transition-fast);
 }
 
-.btn:hover {
+:where(:root[data-theme="dark"]) .btn:hover{
   background: #303c4f;
   border-color: #53647c;
   color: #fff;
 }
 
-.btn:active {
+:where(:root[data-theme="dark"]) .btn:active{
   transform: translateY(1px);
 }
 
-.btn:disabled {
+:where(:root[data-theme="dark"]) .btn:disabled{
   opacity: 0.55;
   cursor: not-allowed;
   transform: none;
 }
 
-.btn-primary {
+:where(:root[data-theme="dark"]) .btn-primary{
   color: #071723 !important;
   background: linear-gradient(135deg, #38bdf8, #22d3ee) !important;
   border-color: transparent !important;
   box-shadow: 0 4px 13px rgba(34, 211, 238, 0.12);
 }
 
-.btn-primary:hover {
+:where(:root[data-theme="dark"]) .btn-primary:hover{
   background: linear-gradient(135deg, #7dd3fc, #67e8f9) !important;
   box-shadow: 0 6px 18px rgba(34, 211, 238, 0.2);
 }
 
-.btn-secondary {
+:where(:root[data-theme="dark"]) .btn-secondary{
   color: #d5deeb !important;
   background: #252f3e !important;
   border-color: #3b485c !important;
 }
 
-.btn-secondary:hover {
+:where(:root[data-theme="dark"]) .btn-secondary:hover{
   background: #303d50 !important;
   border-color: #53647c !important;
 }
 
-.btn-danger {
+:where(:root[data-theme="dark"]) .btn-danger{
   color: #fecdd3 !important;
   background: rgba(244, 63, 94, 0.12) !important;
   border-color: rgba(251, 113, 133, 0.25) !important;
 }
 
-.btn-danger:hover {
+:where(:root[data-theme="dark"]) .btn-danger:hover{
   background: rgba(244, 63, 94, 0.2) !important;
 }
 
-.btn-success {
+:where(:root[data-theme="dark"]) .btn-success{
   color: #a7f3d0 !important;
   background: rgba(16, 185, 129, 0.12) !important;
   border-color: rgba(52, 211, 153, 0.25) !important;
 }
 
-.btn-sm {
+:where(:root[data-theme="dark"]) .btn-sm{
   min-height: 29px;
   padding: 5px 10px;
   border-radius: 8px;
@@ -528,14 +457,12 @@ a:hover {
    FORMS / INPUTS
    ========================================================= */
 
-.form-group,
-.form-field {
+:where(:root[data-theme="dark"]) .form-group, :where(:root[data-theme="dark"]) .form-field{
   min-width: 0;
   margin-bottom: 17px;
 }
 
-label,
-.form-label {
+:where(:root[data-theme="dark"]) label, :where(:root[data-theme="dark"]) .form-label{
   display: inline-block;
   margin-bottom: 7px;
   color: #cbd5e1;
@@ -543,9 +470,7 @@ label,
   font-weight: 650;
 }
 
-input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
-select,
-textarea {
+:where(:root[data-theme="dark"]) input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), :where(:root[data-theme="dark"]) select, :where(:root[data-theme="dark"]) textarea{
   width: 100%;
   min-height: 41px;
   padding: 10px 12px;
@@ -560,57 +485,48 @@ textarea {
     background var(--transition-fast);
 }
 
-textarea {
+:where(:root[data-theme="dark"]) textarea{
   min-height: 100px;
   resize: vertical;
 }
 
-input::placeholder,
-textarea::placeholder {
+:where(:root[data-theme="dark"]) input::placeholder, :where(:root[data-theme="dark"]) textarea::placeholder{
   color: #718096;
   opacity: 1;
 }
 
-input:not([type="checkbox"]):not([type="radio"]):focus,
-select:focus,
-textarea:focus {
+:where(:root[data-theme="dark"]) input:not([type="checkbox"]):not([type="radio"]):focus, :where(:root[data-theme="dark"]) select:focus, :where(:root[data-theme="dark"]) textarea:focus{
   background: #171f2b;
   border-color: #38bdf8;
   box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
 }
 
-input:disabled,
-select:disabled,
-textarea:disabled {
+:where(:root[data-theme="dark"]) input:disabled, :where(:root[data-theme="dark"]) select:disabled, :where(:root[data-theme="dark"]) textarea:disabled{
   color: #8390a4;
   background: #1c2430;
   cursor: not-allowed;
 }
 
-input[type="checkbox"],
-input[type="radio"] {
+:where(:root[data-theme="dark"]) input[type="checkbox"], :where(:root[data-theme="dark"]) input[type="radio"]{
   accent-color: #38bdf8;
 }
 
-input[type="file"] {
+:where(:root[data-theme="dark"]) input[type="file"]{
   max-width: 100%;
   color: var(--color-text-secondary);
 }
 
-select option {
+:where(:root[data-theme="dark"]) select option{
   color: #e5edf7;
   background: #1b2330;
 }
 
-.help-text,
-.form-help,
-.field-help {
+:where(:root[data-theme="dark"]) .help-text, :where(:root[data-theme="dark"]) .form-help, :where(:root[data-theme="dark"]) .field-help{
   color: var(--color-text-muted);
   font-size: 11px;
 }
 
-.form-actions,
-.modal-actions {
+:where(:root[data-theme="dark"]) .form-actions, :where(:root[data-theme="dark"]) .modal-actions{
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -622,7 +538,7 @@ select option {
    TABLES
    ========================================================= */
 
-.table-wrapper {
+:where(:root[data-theme="dark"]) .table-wrapper{
   width: 100%;
   overflow-x: auto;
   border: 1px solid var(--color-border);
@@ -632,7 +548,7 @@ select option {
   scrollbar-color: #46546a transparent;
 }
 
-.data-table {
+:where(:root[data-theme="dark"]) .data-table{
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
@@ -640,7 +556,7 @@ select option {
   font-size: 12px;
 }
 
-.data-table thead th {
+:where(:root[data-theme="dark"]) .data-table thead th{
   padding: 13px 14px;
   color: #a9bbd1;
   background: #202938;
@@ -650,7 +566,7 @@ select option {
   white-space: nowrap;
 }
 
-.data-table tbody td {
+:where(:root[data-theme="dark"]) .data-table tbody td{
   padding: 12px 14px;
   color: #d5deea;
   background: transparent;
@@ -658,25 +574,24 @@ select option {
   vertical-align: middle;
 }
 
-.data-table tbody tr {
+:where(:root[data-theme="dark"]) .data-table tbody tr{
   transition: background var(--transition-fast);
 }
 
-.data-table tbody tr:hover td {
+:where(:root[data-theme="dark"]) .data-table tbody tr:hover td{
   background: rgba(56, 189, 248, 0.045);
 }
 
-.data-table tbody tr:last-child td {
+:where(:root[data-theme="dark"]) .data-table tbody tr:last-child td{
   border-bottom: 0;
 }
 
-.data-table th,
-.data-table td {
+:where(:root[data-theme="dark"]) .data-table th, :where(:root[data-theme="dark"]) .data-table td{
   max-width: 360px;
   overflow-wrap: anywhere;
 }
 
-.table-empty {
+:where(:root[data-theme="dark"]) .table-empty{
   padding: 28px 18px;
   color: #8d9bb0;
   text-align: center;
@@ -687,9 +602,7 @@ select option {
    STATUS BADGES
    ========================================================= */
 
-.badge,
-.status-badge,
-.status-label {
+:where(:root[data-theme="dark"]) .badge, :where(:root[data-theme="dark"]) .status-badge, :where(:root[data-theme="dark"]) .status-label{
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -705,32 +618,25 @@ select option {
   white-space: nowrap;
 }
 
-.badge-success,
-.status-active,
-.status-completed {
+:where(:root[data-theme="dark"]) .badge-success, :where(:root[data-theme="dark"]) .status-active, :where(:root[data-theme="dark"]) .status-completed{
   color: #6ee7b7;
   background: rgba(16, 185, 129, 0.11);
   border-color: rgba(52, 211, 153, 0.22);
 }
 
-.badge-warning,
-.status-on-hold,
-.status-pending {
+:where(:root[data-theme="dark"]) .badge-warning, :where(:root[data-theme="dark"]) .status-on-hold, :where(:root[data-theme="dark"]) .status-pending{
   color: #fcd34d;
   background: rgba(245, 158, 11, 0.1);
   border-color: rgba(251, 191, 36, 0.22);
 }
 
-.badge-danger,
-.status-cancelled,
-.status-deleted,
-.status-inactive {
+:where(:root[data-theme="dark"]) .badge-danger, :where(:root[data-theme="dark"]) .status-cancelled, :where(:root[data-theme="dark"]) .status-deleted, :where(:root[data-theme="dark"]) .status-inactive{
   color: #fda4af;
   background: rgba(244, 63, 94, 0.1);
   border-color: rgba(251, 113, 133, 0.22);
 }
 
-.badge-info {
+:where(:root[data-theme="dark"]) .badge-info{
   color: #93c5fd;
   background: rgba(59, 130, 246, 0.12);
   border-color: rgba(96, 165, 250, 0.22);
@@ -740,7 +646,7 @@ select option {
    ALERTS / NOTICES
    ========================================================= */
 
-.alert {
+:where(:root[data-theme="dark"]) .alert{
   margin-bottom: 16px;
   padding: 12px 15px;
   border: 1px solid var(--color-border);
@@ -749,25 +655,25 @@ select option {
   background: #202938;
 }
 
-.alert-info {
+:where(:root[data-theme="dark"]) .alert-info{
   color: #bae6fd;
   background: rgba(14, 165, 233, 0.09);
   border-color: rgba(56, 189, 248, 0.22);
 }
 
-.alert-success {
+:where(:root[data-theme="dark"]) .alert-success{
   color: #a7f3d0;
   background: rgba(16, 185, 129, 0.09);
   border-color: rgba(52, 211, 153, 0.22);
 }
 
-.alert-warning {
+:where(:root[data-theme="dark"]) .alert-warning{
   color: #fde68a;
   background: rgba(245, 158, 11, 0.09);
   border-color: rgba(251, 191, 36, 0.22);
 }
 
-.alert-danger {
+:where(:root[data-theme="dark"]) .alert-danger{
   color: #fecdd3;
   background: rgba(244, 63, 94, 0.09);
   border-color: rgba(251, 113, 133, 0.22);
@@ -777,44 +683,41 @@ select option {
    MODALS / DIALOGS
    ========================================================= */
 
-.modal-overlay,
-.modal-backdrop {
+:where(:root[data-theme="dark"]) .modal-overlay, :where(:root[data-theme="dark"]) .modal-backdrop{
   background: rgba(3, 7, 13, 0.76);
   backdrop-filter: blur(5px);
 }
 
-.modal,
-.modal-dialog {
+:where(:root[data-theme="dark"]) .modal, :where(:root[data-theme="dark"]) .modal-dialog{
   color: var(--color-text);
 }
 
-.modal-content {
+:where(:root[data-theme="dark"]) .modal-content{
   border-color: #354154;
   border-radius: 18px;
   box-shadow: var(--shadow-lg);
   overflow: hidden;
 }
 
-.modal-header {
+:where(:root[data-theme="dark"]) .modal-header{
   padding: 17px 21px;
   color: #f1f5f9;
   background: #202836;
   border-bottom: 1px solid var(--color-border);
 }
 
-.modal-header h2,
-.modal-header h3 {
+:where(:root[data-theme="dark"]) .modal-header h2, :where(:root[data-theme="dark"]) .modal-header h3{
   margin: 0;
   color: #f1f5f9;
   font-weight: 800;
 }
 
-.modal-body {
+:where(:root[data-theme="dark"]) .modal-body{
   padding: 21px;
   background: #191f29;
 }
 
-.modal-footer {
+:where(:root[data-theme="dark"]) .modal-footer{
   padding: 15px 21px;
   background: #171d27;
   border-top: 1px solid var(--color-border);
@@ -824,28 +727,26 @@ select option {
    TIMELINE / PROJECT DETAILS
    ========================================================= */
 
-.pms-timeline {
+:where(:root[data-theme="dark"]) .pms-timeline{
   color: var(--color-text);
 }
 
-.pms-timeline-item {
+:where(:root[data-theme="dark"]) .pms-timeline-item{
   border-color: #354154;
 }
 
-.pms-timeline-content,
-.pms-timeline-card {
+:where(:root[data-theme="dark"]) .pms-timeline-content, :where(:root[data-theme="dark"]) .pms-timeline-card{
   color: #dbe5f2;
   background: #202836;
   border: 1px solid #303c4f;
   border-radius: 12px;
 }
 
-.pms-timeline-title {
+:where(:root[data-theme="dark"]) .pms-timeline-title{
   color: #f1f5f9;
 }
 
-.pms-timeline-date,
-.pms-timeline-meta {
+:where(:root[data-theme="dark"]) .pms-timeline-date, :where(:root[data-theme="dark"]) .pms-timeline-meta{
   color: #9aa9bd;
 }
 
@@ -853,20 +754,17 @@ select option {
    LOADING STATES
    ========================================================= */
 
-.app-loading,
-.loading-state {
+:where(:root[data-theme="dark"]) .app-loading, :where(:root[data-theme="dark"]) .loading-state{
   color: var(--color-text-secondary);
   background: transparent;
 }
 
-.loading-spinner {
+:where(:root[data-theme="dark"]) .loading-spinner{
   border-color: #354154;
   border-top-color: #38bdf8;
 }
 
-hr,
-.divider,
-.separator {
+:where(:root[data-theme="dark"]) hr, :where(:root[data-theme="dark"]) .divider, :where(:root[data-theme="dark"]) .separator{
   border: 0;
   border-top: 1px solid var(--color-border);
 }
@@ -875,28 +773,23 @@ hr,
    PAGINATION / FILTERS / SEARCH
    ========================================================= */
 
-.pagination,
-.table-pagination,
-.filter-bar,
-.search-bar {
+:where(:root[data-theme="dark"]) .pagination, :where(:root[data-theme="dark"]) .table-pagination, :where(:root[data-theme="dark"]) .filter-bar, :where(:root[data-theme="dark"]) .search-bar{
   color: var(--color-text-secondary);
 }
 
-.pagination button,
-.pagination a {
+:where(:root[data-theme="dark"]) .pagination button, :where(:root[data-theme="dark"]) .pagination a{
   border: 1px solid var(--color-border);
   border-radius: 8px;
   background: #202836;
   color: #dbe5f2;
 }
 
-.pagination button:hover,
-.pagination a:hover {
+:where(:root[data-theme="dark"]) .pagination button:hover, :where(:root[data-theme="dark"]) .pagination a:hover{
   background: #2b3749;
   border-color: #46566d;
 }
 
-.pagination .active {
+:where(:root[data-theme="dark"]) .pagination .active{
   color: #071723;
   background: #38bdf8;
   border-color: #38bdf8;
@@ -906,27 +799,27 @@ hr,
    SCROLLBARS
    ========================================================= */
 
-* {
+:where(:root[data-theme="dark"]) *{
   scrollbar-width: thin;
   scrollbar-color: #3b485c #171d27;
 }
 
-::-webkit-scrollbar {
+:where(:root[data-theme="dark"]) ::-webkit-scrollbar{
   width: 9px;
   height: 9px;
 }
 
-::-webkit-scrollbar-track {
+:where(:root[data-theme="dark"]) ::-webkit-scrollbar-track{
   background: #171d27;
 }
 
-::-webkit-scrollbar-thumb {
+:where(:root[data-theme="dark"]) ::-webkit-scrollbar-thumb{
   background: #3b485c;
   border: 2px solid #171d27;
   border-radius: 10px;
 }
 
-::-webkit-scrollbar-thumb:hover {
+:where(:root[data-theme="dark"]) ::-webkit-scrollbar-thumb:hover{
   background: #52637b;
 }
 
@@ -935,93 +828,88 @@ hr,
    ========================================================= */
 
 @media (max-width: 1100px) {
-  .page-section {
+  :where(:root[data-theme="dark"]) .page-section{
     padding: 20px;
   }
 
-  .card-body {
+  :where(:root[data-theme="dark"]) .card-body{
     padding: 17px;
   }
 
-  .dashboard-grid {
+  :where(:root[data-theme="dark"]) .dashboard-grid{
     gap: 12px;
   }
 }
 
 @media (max-width: 768px) {
-  :root {
-    --header-height: 60px;
-  }
 
-  .page-section {
+  :where(:root[data-theme="dark"]) .page-section{
     padding: 14px;
   }
 
-  .page-header {
+  :where(:root[data-theme="dark"]) .page-header{
     align-items: flex-start;
     margin-bottom: 18px;
   }
 
-  .page-header h2 {
+  :where(:root[data-theme="dark"]) .page-header h2{
     font-size: 20px;
   }
 
-  .page-header-actions {
+  :where(:root[data-theme="dark"]) .page-header-actions{
     width: 100%;
   }
 
-  .page-header-actions .btn {
+  :where(:root[data-theme="dark"]) .page-header-actions .btn{
     flex: 1;
   }
 
-  .card {
+  :where(:root[data-theme="dark"]) .card{
     border-radius: 13px;
   }
 
-  .card-body {
+  :where(:root[data-theme="dark"]) .card-body{
     padding: 14px;
   }
 
-  .stat-card {
+  :where(:root[data-theme="dark"]) .stat-card{
     padding: 15px;
   }
 
-  .stat-card .stat-value,
-  .stat-card .stat-number,
-  .stat-card .card-value {
+  :where(:root[data-theme="dark"]) .stat-card .stat-value, :where(:root[data-theme="dark"]) .stat-card .stat-number, :where(:root[data-theme="dark"]) .stat-card .card-value{
     font-size: 23px;
   }
 
-  .data-table {
+  :where(:root[data-theme="dark"]) .data-table{
     min-width: 620px;
   }
 
-  .modal-content {
+  :where(:root[data-theme="dark"]) .modal-content{
     width: calc(100% - 20px);
     max-height: calc(100vh - 24px);
     overflow-y: auto;
     margin: 12px auto;
   }
 
-  .modal-body {
+  :where(:root[data-theme="dark"]) .modal-body{
     padding: 15px;
   }
 }
 
 @media (max-width: 480px) {
-  .page-section {
+  :where(:root[data-theme="dark"]) .page-section{
     padding: 10px;
   }
 
-  .page-header h2 {
+  :where(:root[data-theme="dark"]) .page-header h2{
     font-size: 18px;
   }
 
-  .btn {
+  :where(:root[data-theme="dark"]) .btn{
     padding: 8px 11px;
   }
 
-  .form-actions .btn {
+  :where(:root[data-theme="dark"]) .form-actions .btn{
     flex: 1 1 auto;
   }
 }
@@ -1031,9 +919,7 @@ hr,
    ========================================================= */
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  :where(:root[data-theme="dark"]) *, :where(:root[data-theme="dark"]) *::before, :where(:root[data-theme="dark"]) *::after{
     scroll-behavior: auto !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
@@ -1047,14 +933,14 @@ hr,
    ========================================================= */
 
 /* فضای کلی داشبورد */
-.page-section:has(#dashboard-recent-projects) {
+:where(:root[data-theme="dark"]) .page-section:has(#dashboard-recent-projects){
   max-width: 1680px;
   margin-inline: auto;
   padding: 28px;
 }
 
 /* سربرگ داشبورد */
-.page-section:has(#dashboard-recent-projects) .page-header {
+:where(:root[data-theme="dark"]) .page-section:has(#dashboard-recent-projects) .page-header{
   position: relative;
   margin-bottom: 26px;
   padding: 22px 24px;
@@ -1070,26 +956,26 @@ hr,
   border-radius: 18px;
 }
 
-.page-section:has(#dashboard-recent-projects) .page-header h2 {
+:where(:root[data-theme="dark"]) .page-section:has(#dashboard-recent-projects) .page-header h2{
   font-size: 25px;
   letter-spacing: -0.6px;
 }
 
-.page-section:has(#dashboard-recent-projects) .page-header p {
+:where(:root[data-theme="dark"]) .page-section:has(#dashboard-recent-projects) .page-header p{
   margin-top: 5px;
   line-height: 2;
   color: #a5b4c8;
 }
 
 /* کارت‌های آماری */
-.page-section:has(#dashboard-recent-projects) .dashboard-grid {
+:where(:root[data-theme="dark"]) .page-section:has(#dashboard-recent-projects) .dashboard-grid{
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
   margin-bottom: 22px;
 }
 
-.page-section:has(#dashboard-recent-projects) .dashboard-grid > * {
+:where(:root[data-theme="dark"]) .page-section:has(#dashboard-recent-projects) .dashboard-grid > *{
   position: relative;
   min-width: 0;
   min-height: 125px;
@@ -1105,14 +991,14 @@ hr,
     box-shadow 0.2s ease;
 }
 
-.page-section:has(#dashboard-recent-projects) .dashboard-grid > *:hover {
+:where(:root[data-theme="dark"]) .page-section:has(#dashboard-recent-projects) .dashboard-grid > *:hover{
   transform: translateY(-3px);
   border-color: #42617b;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
 }
 
 /* جزئیات تزئینی کارت‌های آماری */
-.page-section:has(#dashboard-recent-projects) .dashboard-grid > *::before {
+:where(:root[data-theme="dark"]) .page-section:has(#dashboard-recent-projects) .dashboard-grid > *::before{
   position: absolute;
   top: 0;
   right: 0;
@@ -1123,7 +1009,7 @@ hr,
 }
 
 /* بخش آخرین پروژه‌ها و رویدادها */
-.page-section:has(#dashboard-recent-projects) .dashboard-sections {
+:where(:root[data-theme="dark"]) .page-section:has(#dashboard-recent-projects) .dashboard-sections{
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
   align-items: start;
@@ -1131,7 +1017,7 @@ hr,
   margin-top: 22px !important;
 }
 
-.page-section:has(#dashboard-recent-projects) .dashboard-sections > .card {
+:where(:root[data-theme="dark"]) .page-section:has(#dashboard-recent-projects) .dashboard-sections > .card{
   min-width: 0;
   overflow: hidden;
   background: #1b222e;
@@ -1140,11 +1026,11 @@ hr,
   box-shadow: 0 5px 20px rgba(0, 0, 0, 0.12);
 }
 
-.page-section:has(#dashboard-recent-projects) .dashboard-sections .card-body {
+:where(:root[data-theme="dark"]) .page-section:has(#dashboard-recent-projects) .dashboard-sections .card-body{
   padding: 0;
 }
 
-.page-section:has(#dashboard-recent-projects) .dashboard-sections h3 {
+:where(:root[data-theme="dark"]) .page-section:has(#dashboard-recent-projects) .dashboard-sections h3{
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1157,7 +1043,7 @@ hr,
   background: rgba(255, 255, 255, 0.018);
 }
 
-.page-section:has(#dashboard-recent-projects) .dashboard-sections h3::before {
+:where(:root[data-theme="dark"]) .page-section:has(#dashboard-recent-projects) .dashboard-sections h3::before{
   width: 4px;
   height: 19px;
   flex: 0 0 4px;
@@ -1167,89 +1053,88 @@ hr,
 }
 
 /* جدول‌های داخل داشبورد */
-.page-section:has(#dashboard-recent-projects) .dashboard-sections .table-wrapper {
+:where(:root[data-theme="dark"]) .page-section:has(#dashboard-recent-projects) .dashboard-sections .table-wrapper{
   border: 0;
   border-radius: 0;
   background: transparent;
 }
 
-.page-section:has(#dashboard-recent-projects) .dashboard-sections .data-table {
+:where(:root[data-theme="dark"]) .page-section:has(#dashboard-recent-projects) .dashboard-sections .data-table{
   font-size: 11px;
 }
 
-.page-section:has(#dashboard-recent-projects) .dashboard-sections .data-table thead th {
+:where(:root[data-theme="dark"]) .page-section:has(#dashboard-recent-projects) .dashboard-sections .data-table thead th{
   padding: 12px 15px;
   background: #202938;
   color: #9fb2c9;
 }
 
-.page-section:has(#dashboard-recent-projects) .dashboard-sections .data-table tbody td {
+:where(:root[data-theme="dark"]) .page-section:has(#dashboard-recent-projects) .dashboard-sections .data-table tbody td{
   padding: 13px 15px;
   line-height: 1.9;
 }
 
-.page-section:has(#dashboard-recent-projects) .dashboard-sections .data-table tbody tr:hover td {
+:where(:root[data-theme="dark"]) .page-section:has(#dashboard-recent-projects) .dashboard-sections .data-table tbody tr:hover td{
   background: rgba(56, 189, 248, 0.055);
 }
 
 /* پیام‌های وضعیت داشبورد */
-.page-section:has(#dashboard-recent-projects) #dashboard-cache-info,
-.page-section:has(#dashboard-recent-projects) #dashboard-error {
+:where(:root[data-theme="dark"]) .page-section:has(#dashboard-recent-projects) #dashboard-cache-info, :where(:root[data-theme="dark"]) .page-section:has(#dashboard-recent-projects) #dashboard-error{
   border-radius: 12px;
 }
 
 /* اسکرول افقی جدول در نمایشگرهای کوچک */
-.page-section:has(#dashboard-recent-projects) .table-wrapper {
+:where(:root[data-theme="dark"]) .page-section:has(#dashboard-recent-projects) .table-wrapper{
   max-width: 100%;
   overflow-x: auto;
 }
 
 /* تبلت */
 @media (max-width: 1000px) {
-  .page-section:has(#dashboard-recent-projects) {
+  :where(:root[data-theme="dark"]) .page-section:has(#dashboard-recent-projects){
     padding: 20px;
   }
 
-  .page-section:has(#dashboard-recent-projects) .dashboard-grid {
+  :where(:root[data-theme="dark"]) .page-section:has(#dashboard-recent-projects) .dashboard-grid{
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .page-section:has(#dashboard-recent-projects) .dashboard-sections {
+  :where(:root[data-theme="dark"]) .page-section:has(#dashboard-recent-projects) .dashboard-sections{
     grid-template-columns: minmax(0, 1fr);
   }
 }
 
 /* موبایل */
 @media (max-width: 600px) {
-  .page-section:has(#dashboard-recent-projects) {
+  :where(:root[data-theme="dark"]) .page-section:has(#dashboard-recent-projects){
     padding: 12px;
   }
 
-  .page-section:has(#dashboard-recent-projects) .page-header {
+  :where(:root[data-theme="dark"]) .page-section:has(#dashboard-recent-projects) .page-header{
     padding: 17px;
     border-radius: 14px;
   }
 
-  .page-section:has(#dashboard-recent-projects) .page-header h2 {
+  :where(:root[data-theme="dark"]) .page-section:has(#dashboard-recent-projects) .page-header h2{
     font-size: 21px;
   }
 
-  .page-section:has(#dashboard-recent-projects) .dashboard-grid {
+  :where(:root[data-theme="dark"]) .page-section:has(#dashboard-recent-projects) .dashboard-grid{
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
   }
 
-  .page-section:has(#dashboard-recent-projects) .dashboard-grid > * {
+  :where(:root[data-theme="dark"]) .page-section:has(#dashboard-recent-projects) .dashboard-grid > *{
     min-height: 105px;
     padding: 13px;
     border-radius: 13px;
   }
 
-  .page-section:has(#dashboard-recent-projects) .dashboard-sections {
+  :where(:root[data-theme="dark"]) .page-section:has(#dashboard-recent-projects) .dashboard-sections{
     gap: 13px;
   }
 
-  .page-section:has(#dashboard-recent-projects) .dashboard-sections h3 {
+  :where(:root[data-theme="dark"]) .page-section:has(#dashboard-recent-projects) .dashboard-sections h3{
     padding: 15px;
   }
 }
@@ -1260,10 +1145,7 @@ hr,
    ========================================================= */
 
 /* لایه پشت مودال */
-.modal-overlay,
-.modal-backdrop,
-.modal-overlay.show,
-.modal-backdrop.show {
+:where(:root[data-theme="dark"]) .modal-overlay, :where(:root[data-theme="dark"]) .modal-backdrop, :where(:root[data-theme="dark"]) .modal-overlay.show, :where(:root[data-theme="dark"]) .modal-backdrop.show{
   position: fixed;
   inset: 0;
   z-index: 9998;
@@ -1277,12 +1159,11 @@ hr,
 }
 
 /* بدنه اصلی مودال */
-.modal,
-.modal-dialog {
+:where(:root[data-theme="dark"]) .modal, :where(:root[data-theme="dark"]) .modal-dialog{
   color: var(--color-text);
 }
 
-.modal-content {
+:where(:root[data-theme="dark"]) .modal-content{
   width: 100%;
   max-width: 680px;
   max-height: calc(100vh - 40px);
@@ -1298,7 +1179,7 @@ hr,
 }
 
 /* عنوان مودال */
-.modal-header {
+:where(:root[data-theme="dark"]) .modal-header{
   flex: 0 0 auto;
   display: flex;
   align-items: center;
@@ -1311,10 +1192,7 @@ hr,
   border-bottom: 1px solid #303c4e !important;
 }
 
-.modal-header h1,
-.modal-header h2,
-.modal-header h3,
-.modal-title {
+:where(:root[data-theme="dark"]) .modal-header h1, :where(:root[data-theme="dark"]) .modal-header h2, :where(:root[data-theme="dark"]) .modal-header h3, :where(:root[data-theme="dark"]) .modal-title{
   margin: 0;
   color: #f1f5f9 !important;
   font-size: 16px;
@@ -1323,9 +1201,7 @@ hr,
 }
 
 /* دکمه بستن مودال */
-.modal-header button,
-.modal-close,
-.close-modal {
+:where(:root[data-theme="dark"]) .modal-header button, :where(:root[data-theme="dark"]) .modal-close, :where(:root[data-theme="dark"]) .close-modal{
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1347,16 +1223,14 @@ hr,
     border-color 0.18s ease;
 }
 
-.modal-header button:hover,
-.modal-close:hover,
-.close-modal:hover {
+:where(:root[data-theme="dark"]) .modal-header button:hover, :where(:root[data-theme="dark"]) .modal-close:hover, :where(:root[data-theme="dark"]) .close-modal:hover{
   color: #fff !important;
   background: #3a2632 !important;
   border-color: #fb7185 !important;
 }
 
 /* محتوای مودال */
-.modal-body {
+:where(:root[data-theme="dark"]) .modal-body{
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
@@ -1367,19 +1241,16 @@ hr,
 }
 
 /* تیترهای داخل مودال */
-.modal-body h1,
-.modal-body h2,
-.modal-body h3,
-.modal-body h4 {
+:where(:root[data-theme="dark"]) .modal-body h1, :where(:root[data-theme="dark"]) .modal-body h2, :where(:root[data-theme="dark"]) .modal-body h3, :where(:root[data-theme="dark"]) .modal-body h4{
   color: #e8edf5;
 }
 
-.modal-body p {
+:where(:root[data-theme="dark"]) .modal-body p{
   color: #cbd5e1;
 }
 
 /* پایین مودال */
-.modal-footer {
+:where(:root[data-theme="dark"]) .modal-footer{
   flex: 0 0 auto;
   display: flex;
   align-items: center;
@@ -1393,20 +1264,16 @@ hr,
 }
 
 /* هماهنگی فرم‌ها داخل مودال */
-.modal-content .form-group,
-.modal-content .form-field {
+:where(:root[data-theme="dark"]) .modal-content .form-group, :where(:root[data-theme="dark"]) .modal-content .form-field{
   min-width: 0;
   margin-bottom: 16px;
 }
 
-.modal-content label,
-.modal-content .form-label {
+:where(:root[data-theme="dark"]) .modal-content label, :where(:root[data-theme="dark"]) .modal-content .form-label{
   color: #cbd5e1 !important;
 }
 
-.modal-content input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
-.modal-content select,
-.modal-content textarea {
+:where(:root[data-theme="dark"]) .modal-content input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), :where(:root[data-theme="dark"]) .modal-content select, :where(:root[data-theme="dark"]) .modal-content textarea{
   width: 100%;
   color: #e5edf7 !important;
   background: #141b25 !important;
@@ -1414,181 +1281,140 @@ hr,
   border-radius: 9px !important;
 }
 
-.modal-content input:focus,
-.modal-content select:focus,
-.modal-content textarea:focus {
+:where(:root[data-theme="dark"]) .modal-content input:focus, :where(:root[data-theme="dark"]) .modal-content select:focus, :where(:root[data-theme="dark"]) .modal-content textarea:focus{
   border-color: #38bdf8 !important;
   box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1) !important;
 }
 
-.modal-content select option {
+:where(:root[data-theme="dark"]) .modal-content select option{
   color: #e5edf7;
   background: #1b2330;
 }
 
 /* پیام‌ها و هشدارهای داخل مودال */
-.modal-content .alert {
+:where(:root[data-theme="dark"]) .modal-content .alert{
   border-radius: 10px;
 }
 
 /* جدول‌های داخل مودال */
-.modal-content .table-wrapper {
+:where(:root[data-theme="dark"]) .modal-content .table-wrapper{
   max-width: 100%;
   overflow-x: auto;
   border-color: #303c4e;
   border-radius: 10px;
 }
 
-.modal-content table {
+:where(:root[data-theme="dark"]) .modal-content table{
   color: #dbe5f2;
 }
 
-.modal-content th {
+:where(:root[data-theme="dark"]) .modal-content th{
   color: #a9bbd1;
   background: #202938;
 }
 
-.modal-content td {
+:where(:root[data-theme="dark"]) .modal-content td{
   color: #d5deea;
 }
 
 /* جلوگیری از رنگ روشن ناخواسته در عناصر رایج */
-.modal-content .card {
+:where(:root[data-theme="dark"]) .modal-content .card{
   color: var(--color-text);
   background: #202836;
   border-color: #303c4e;
 }
 
-.modal-content .card-header,
-.modal-content .card-footer {
+:where(:root[data-theme="dark"]) .modal-content .card-header, :where(:root[data-theme="dark"]) .modal-content .card-footer{
   background: #202836;
   border-color: #303c4e;
 }
 
 /* مودال‌های تأیید کوچک */
-.modal-content.modal-sm {
+:where(:root[data-theme="dark"]) .modal-content.modal-sm{
   max-width: 420px;
 }
 
 /* موبایل */
 @media (max-width: 600px) {
-  .modal-overlay,
-  .modal-backdrop,
-  .modal-overlay.show,
-  .modal-backdrop.show {
+  :where(:root[data-theme="dark"]) .modal-overlay, :where(:root[data-theme="dark"]) .modal-backdrop, :where(:root[data-theme="dark"]) .modal-overlay.show, :where(:root[data-theme="dark"]) .modal-backdrop.show{
     align-items: center;
     padding: 10px;
   }
 
-  .modal-content {
+  :where(:root[data-theme="dark"]) .modal-content{
     width: 100%;
     max-width: 100%;
     max-height: calc(100dvh - 20px);
     border-radius: 13px !important;
   }
 
-  .modal-header {
+  :where(:root[data-theme="dark"]) .modal-header{
     padding: 14px 15px;
   }
 
-  .modal-header h1,
-  .modal-header h2,
-  .modal-header h3,
-  .modal-title {
+  :where(:root[data-theme="dark"]) .modal-header h1, :where(:root[data-theme="dark"]) .modal-header h2, :where(:root[data-theme="dark"]) .modal-header h3, :where(:root[data-theme="dark"]) .modal-title{
     font-size: 14px;
   }
 
-  .modal-body {
+  :where(:root[data-theme="dark"]) .modal-body{
     padding: 15px;
   }
 
-  .modal-footer {
+  :where(:root[data-theme="dark"]) .modal-footer{
     padding: 12px 15px;
   }
 
-  .modal-footer .btn {
+  :where(:root[data-theme="dark"]) .modal-footer .btn{
     flex: 1 1 auto;
   }
 }
 
 /* FIX: حذف پس‌زمینه سفید مودال‌ها */
 
-.modal,
-.modal-dialog,
-.modal-content,
-.modal-body,
-.modal-header,
-.modal-footer,
-.modal form,
-.modal form > div,
-.modal-content form,
-.modal-content form > div,
-.modal-content .card,
-.modal-content .card-body,
-.modal-content .tab-content,
-.modal-content .dropdown-menu {
+:where(:root[data-theme="dark"]) .modal, :where(:root[data-theme="dark"]) .modal-dialog, :where(:root[data-theme="dark"]) .modal-content, :where(:root[data-theme="dark"]) .modal-body, :where(:root[data-theme="dark"]) .modal-header, :where(:root[data-theme="dark"]) .modal-footer, :where(:root[data-theme="dark"]) .modal form, :where(:root[data-theme="dark"]) .modal form > div, :where(:root[data-theme="dark"]) .modal-content form, :where(:root[data-theme="dark"]) .modal-content form > div, :where(:root[data-theme="dark"]) .modal-content .card, :where(:root[data-theme="dark"]) .modal-content .card-body, :where(:root[data-theme="dark"]) .modal-content .tab-content, :where(:root[data-theme="dark"]) .modal-content .dropdown-menu{
     background-color: #1b222d !important;
     color: #e5e7eb !important;
 }
 
 /* ورودی‌های داخل مودال */
-.modal input,
-.modal select,
-.modal textarea,
-.modal-content input,
-.modal-content select,
-.modal-content textarea {
+:where(:root[data-theme="dark"]) .modal input, :where(:root[data-theme="dark"]) .modal select, :where(:root[data-theme="dark"]) .modal textarea, :where(:root[data-theme="dark"]) .modal-content input, :where(:root[data-theme="dark"]) .modal-content select, :where(:root[data-theme="dark"]) .modal-content textarea{
     background-color: #111720 !important;
     color: #e5e7eb !important;
     border-color: #3a4555 !important;
 }
 
 /* عنوان و پایین مودال */
-.modal-header,
-.modal-footer {
+:where(:root[data-theme="dark"]) .modal-header, :where(:root[data-theme="dark"]) .modal-footer{
     border-color: #303a48 !important;
 }
 
 /* جدول داخل مودال */
-.modal table,
-.modal table thead,
-.modal table tbody,
-.modal table tr,
-.modal table th,
-.modal table td {
+:where(:root[data-theme="dark"]) .modal table, :where(:root[data-theme="dark"]) .modal table thead, :where(:root[data-theme="dark"]) .modal table tbody, :where(:root[data-theme="dark"]) .modal table tr, :where(:root[data-theme="dark"]) .modal table th, :where(:root[data-theme="dark"]) .modal table td{
     background-color: #1b222d !important;
     color: #e5e7eb !important;
     border-color: #303a48 !important;
 }
 
 /* متن‌ها و برچسب‌ها */
-.modal label,
-.modal p,
-.modal span,
-.modal h1,
-.modal h2,
-.modal h3,
-.modal-content label,
-.modal-content p {
+:where(:root[data-theme="dark"]) .modal label, :where(:root[data-theme="dark"]) .modal p, :where(:root[data-theme="dark"]) .modal span, :where(:root[data-theme="dark"]) .modal h1, :where(:root[data-theme="dark"]) .modal h2, :where(:root[data-theme="dark"]) .modal h3, :where(:root[data-theme="dark"]) .modal-content label, :where(:root[data-theme="dark"]) .modal-content p{
     color: #e5e7eb;
 }
 
 /* حفظ پس‌زمینه تیره پشت مودال */
-.modal-overlay,
-.modal-backdrop {
+:where(:root[data-theme="dark"]) .modal-overlay, :where(:root[data-theme="dark"]) .modal-backdrop{
     background-color: rgba(0, 0, 0, 0.72);
 }
 /* =========================================================
    PMS — EVENTS PAGE | MOBILE FIRST
    ========================================================= */
 
-.page-section:has(#events-table-container) {
+:where(:root[data-theme="dark"]) .page-section:has(#events-table-container){
   width: 100%;
   max-width: 1680px;
   margin-inline: auto;
 }
 
-.page-section:has(#events-table-container) .page-header {
+:where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .page-header{
   padding: 22px 24px;
   margin-bottom: 20px;
   border: 1px solid #303d50;
@@ -1602,18 +1428,18 @@ hr,
     linear-gradient(120deg, #202a39, #191f29);
 }
 
-.page-section:has(#events-table-container) .page-header h2 {
+:where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .page-header h2{
   font-size: 25px;
   letter-spacing: -.4px;
 }
 
-.page-section:has(#events-table-container) .page-header p {
+:where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .page-header p{
   margin-top: 5px;
   color: #a5b4c8;
   line-height: 2;
 }
 
-.page-section:has(#events-table-container) #event-create-button {
+:where(:root[data-theme="dark"]) .page-section:has(#events-table-container) #event-create-button{
   min-height: 44px;
   padding-inline: 20px;
   border-radius: 12px;
@@ -1621,20 +1447,20 @@ hr,
   font-weight: 800;
 }
 
-.page-section:has(#events-table-container) > .card {
+:where(:root[data-theme="dark"]) .page-section:has(#events-table-container) > .card{
   overflow: hidden;
   border-color: #303c4e;
   border-radius: 17px;
   background: linear-gradient(145deg, #1d2532, #191f29);
 }
 
-.page-section:has(#events-table-container) > .card > .card-body {
+:where(:root[data-theme="dark"]) .page-section:has(#events-table-container) > .card > .card-body{
   padding: 20px;
 }
 
 /* فیلترها */
 
-.page-section:has(#events-table-container) .filter-bar {
+:where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .filter-bar{
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
@@ -1645,11 +1471,11 @@ hr,
   background: rgba(13, 19, 28, .42);
 }
 
-.page-section:has(#events-table-container) .filter-group {
+:where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .filter-group{
   min-width: 0;
 }
 
-.page-section:has(#events-table-container) .filter-group label {
+:where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .filter-group label{
   display: block;
   margin-bottom: 7px;
   color: #b8c5d7;
@@ -1657,8 +1483,7 @@ hr,
   font-weight: 700;
 }
 
-.page-section:has(#events-table-container) .filter-group input,
-.page-section:has(#events-table-container) .filter-group select {
+:where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .filter-group input, :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .filter-group select{
   min-height: 43px;
   border-radius: 10px;
   border-color: #354154;
@@ -1667,48 +1492,48 @@ hr,
 
 /* جدول دسکتاپ */
 
-.page-section:has(#events-table-container) .events-desktop-view {
+:where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .events-desktop-view{
   width: 100%;
 }
 
-.page-section:has(#events-table-container) .events-desktop-view .data-table {
+:where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .events-desktop-view .data-table{
   min-width: 1050px;
 }
 
-.page-section:has(#events-table-container) .events-desktop-view .data-table thead th {
+:where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .events-desktop-view .data-table thead th{
   padding: 15px 13px;
   background: #222c3b;
   color: #b6c8dd;
 }
 
-.page-section:has(#events-table-container) .events-desktop-view .data-table tbody td {
+:where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .events-desktop-view .data-table tbody td{
   padding: 14px 13px;
   line-height: 1.9;
 }
 
-.page-section:has(#events-table-container) .events-desktop-view .event-details-button {
+:where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .events-desktop-view .event-details-button{
   white-space: nowrap;
 }
 
 /* کارت‌های موبایل؛ در دسکتاپ مخفی */
 
-.page-section:has(#events-table-container) .events-mobile-view {
+:where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .events-mobile-view{
   display: none;
 }
 
-.events-status-active {
+:where(:root[data-theme="dark"]) .events-status-active{
   color: #6ee7b7 !important;
   background: rgba(16, 185, 129, .12) !important;
   border-color: rgba(52, 211, 153, .28) !important;
 }
 
-.events-status-void {
+:where(:root[data-theme="dark"]) .events-status-void{
   color: #fda4af !important;
   background: rgba(244, 63, 94, .12) !important;
   border-color: rgba(251, 113, 133, .28) !important;
 }
 
-.events-status-other {
+:where(:root[data-theme="dark"]) .events-status-other{
   color: #cbd5e1 !important;
   background: rgba(148, 163, 184, .1) !important;
   border-color: #3b485b !important;
@@ -1717,7 +1542,7 @@ hr,
 /* تبلت */
 
 @media (max-width: 1000px) {
-  .page-section:has(#events-table-container) .filter-bar {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .filter-bar{
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -1725,11 +1550,11 @@ hr,
 /* موبایل */
 
 @media (max-width: 700px) {
-  .page-section:has(#events-table-container) {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container){
     padding: 12px;
   }
 
-  .page-section:has(#events-table-container) .page-header {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .page-header{
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -1739,32 +1564,32 @@ hr,
     border-radius: 15px;
   }
 
-  .page-section:has(#events-table-container) .page-header h2 {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .page-header h2{
     font-size: 22px;
   }
 
-  .page-section:has(#events-table-container) .page-header p {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .page-header p{
     font-size: 12px;
   }
 
-  .page-section:has(#events-table-container) .page-header-actions {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .page-header-actions{
     width: 100%;
   }
 
-  .page-section:has(#events-table-container) #event-create-button {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) #event-create-button{
     width: 100%;
     min-height: 47px;
   }
 
-  .page-section:has(#events-table-container) > .card {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) > .card{
     border-radius: 15px;
   }
 
-  .page-section:has(#events-table-container) > .card > .card-body {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) > .card > .card-body{
     padding: 12px;
   }
 
-  .page-section:has(#events-table-container) .filter-bar {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .filter-bar{
     grid-template-columns: minmax(0, 1fr);
     gap: 12px;
     margin-bottom: 14px;
@@ -1772,26 +1597,25 @@ hr,
     border-radius: 12px;
   }
 
-  .page-section:has(#events-table-container) .filter-group label {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .filter-group label{
     margin-bottom: 5px;
   }
 
-  .page-section:has(#events-table-container) .filter-group input,
-  .page-section:has(#events-table-container) .filter-group select {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .filter-group input, :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .filter-group select{
     min-height: 45px;
     font-size: 13px;
   }
 
-  .page-section:has(#events-table-container) .events-desktop-view {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .events-desktop-view{
     display: none;
   }
 
-  .page-section:has(#events-table-container) .events-mobile-view {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .events-mobile-view{
     display: grid;
     gap: 13px;
   }
 
-  .event-mobile-card {
+  :where(:root[data-theme="dark"]) .event-mobile-card{
     min-width: 0;
     overflow: hidden;
     padding: 15px;
@@ -1807,19 +1631,18 @@ hr,
     box-shadow: 0 5px 16px rgba(0, 0, 0, .14);
   }
 
-  .event-mobile-card-top {
+  :where(:root[data-theme="dark"]) .event-mobile-card-top{
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: 10px;
   }
 
-  .event-mobile-title-group {
+  :where(:root[data-theme="dark"]) .event-mobile-title-group{
     min-width: 0;
   }
 
-  .event-mobile-eyebrow,
-  .event-mobile-label {
+  :where(:root[data-theme="dark"]) .event-mobile-eyebrow, :where(:root[data-theme="dark"]) .event-mobile-label{
     display: block;
     margin-bottom: 4px;
     color: #8293aa;
@@ -1827,7 +1650,7 @@ hr,
     font-weight: 600;
   }
 
-  .event-mobile-title-group h3 {
+  :where(:root[data-theme="dark"]) .event-mobile-title-group h3{
     margin: 0;
     color: #f1f5f9;
     font-size: 15px;
@@ -1836,7 +1659,7 @@ hr,
     overflow-wrap: anywhere;
   }
 
-  .event-mobile-status {
+  :where(:root[data-theme="dark"]) .event-mobile-status{
     flex: 0 0 auto;
     display: inline-flex;
     align-items: center;
@@ -1850,7 +1673,7 @@ hr,
     white-space: nowrap;
   }
 
-  .event-mobile-type {
+  :where(:root[data-theme="dark"]) .event-mobile-type{
     display: flex;
     align-items: center;
     gap: 8px;
@@ -1861,7 +1684,7 @@ hr,
     overflow-wrap: anywhere;
   }
 
-  .event-mobile-type-dot {
+  :where(:root[data-theme="dark"]) .event-mobile-type-dot{
     width: 7px;
     height: 7px;
     flex: 0 0 7px;
@@ -1870,7 +1693,7 @@ hr,
     box-shadow: 0 0 10px rgba(56, 189, 248, .35);
   }
 
-  .event-mobile-description {
+  :where(:root[data-theme="dark"]) .event-mobile-description{
     margin-top: 14px;
     padding: 11px 12px;
     border: 1px solid #303c4e;
@@ -1878,7 +1701,7 @@ hr,
     background: rgba(13, 19, 28, .42);
   }
 
-  .event-mobile-description p {
+  :where(:root[data-theme="dark"]) .event-mobile-description p{
     margin: 0;
     color: #dce5f2;
     font-size: 12px;
@@ -1887,14 +1710,14 @@ hr,
     overflow-wrap: anywhere;
   }
 
-  .event-mobile-meta {
+  :where(:root[data-theme="dark"]) .event-mobile-meta{
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 13px 12px;
     margin-top: 15px;
   }
 
-  .event-mobile-meta-item {
+  :where(:root[data-theme="dark"]) .event-mobile-meta-item{
     min-width: 0;
     color: #dbe5f2;
     font-size: 11px;
@@ -1902,12 +1725,12 @@ hr,
     overflow-wrap: anywhere;
   }
 
-  .event-mobile-meta-item > span:last-child {
+  :where(:root[data-theme="dark"]) .event-mobile-meta-item > span:last-child{
     display: block;
     color: #d6e0ed;
   }
 
-  .event-mobile-card-footer {
+  :where(:root[data-theme="dark"]) .event-mobile-card-footer{
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1918,13 +1741,13 @@ hr,
     border-top: 1px solid #303c4e;
   }
 
-  .event-mobile-id {
+  :where(:root[data-theme="dark"]) .event-mobile-id{
     color: #7f90a7;
     font-size: 10px;
     overflow-wrap: anywhere;
   }
 
-  .event-mobile-card-footer .event-details-button {
+  :where(:root[data-theme="dark"]) .event-mobile-card-footer .event-details-button{
     min-height: 38px;
     padding-inline: 12px;
     border-color: rgba(56, 189, 248, .25);
@@ -1934,36 +1757,36 @@ hr,
     font-weight: 800;
   }
 
-  .event-mobile-card-footer .event-details-button:hover {
+  :where(:root[data-theme="dark"]) .event-mobile-card-footer .event-details-button:hover{
     background: rgba(56, 189, 248, .18);
   }
 
-  .page-section:has(#events-table-container) #events-empty {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) #events-empty{
     padding: 25px 14px;
     line-height: 2;
   }
 }
 
 @media (max-width: 360px) {
-  .event-mobile-card {
+  :where(:root[data-theme="dark"]) .event-mobile-card{
     padding: 12px;
   }
 
-  .event-mobile-card-top {
+  :where(:root[data-theme="dark"]) .event-mobile-card-top{
     flex-direction: column;
   }
 
-  .event-mobile-meta {
+  :where(:root[data-theme="dark"]) .event-mobile-meta{
     grid-template-columns: minmax(0, 1fr);
     gap: 10px;
   }
 
-  .event-mobile-card-footer {
+  :where(:root[data-theme="dark"]) .event-mobile-card-footer{
     align-items: stretch;
     flex-direction: column;
   }
 
-  .event-mobile-card-footer .event-details-button {
+  :where(:root[data-theme="dark"]) .event-mobile-card-footer .event-details-button{
     width: 100%;
   }
 }
@@ -1977,7 +1800,7 @@ hr,
 @media (min-width: 701px) {
 
   /* فضای اصلی صفحه */
-  .page-section:has(#events-table-container) {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container){
     width: 100%;
     max-width: 1700px;
     margin: 0 auto;
@@ -1986,7 +1809,7 @@ hr,
   }
 
   /* عنوان و دکمه ثبت رویداد */
-  .page-section:has(#events-table-container) > .page-header {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) > .page-header{
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1998,28 +1821,28 @@ hr,
     background: linear-gradient(135deg, #191f29, #151b25);
   }
 
-  .page-section:has(#events-table-container) > .page-header h2 {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) > .page-header h2{
     margin: 0 0 8px;
     color: #e8edf5;
     font-size: 25px;
     font-weight: 800;
   }
 
-  .page-section:has(#events-table-container) > .page-header p {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) > .page-header p{
     margin: 0;
     color: #9aa9bc;
     font-size: 14px;
     line-height: 1.8;
   }
 
-  .page-section:has(#events-table-container) .page-header-actions {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .page-header-actions{
     display: flex;
     align-items: center;
     gap: 12px;
     flex-shrink: 0;
   }
 
-  .page-section:has(#events-table-container) #event-create-button {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) #event-create-button{
     min-height: 44px;
     padding: 0 22px;
     border-radius: 10px;
@@ -2030,13 +1853,13 @@ hr,
     transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
 
-  .page-section:has(#events-table-container) #event-create-button:hover {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) #event-create-button:hover{
     transform: translateY(-2px);
     box-shadow: 0 8px 22px rgba(56, 189, 248, 0.2);
   }
 
   /* کارت اصلی فیلترها و جدول */
-  .page-section:has(#events-table-container) > .card {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) > .card{
     overflow: hidden;
     border: 1px solid #2b3545;
     border-radius: 16px;
@@ -2044,12 +1867,12 @@ hr,
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
   }
 
-  .page-section:has(#events-table-container) > .card > .card-body {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) > .card > .card-body{
     padding: 24px;
   }
 
   /* چیدمان فیلترها */
-  .page-section:has(#events-table-container) .filter-bar {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .filter-bar{
     display: grid;
     grid-template-columns: repeat(4, minmax(150px, 1fr));
     gap: 18px;
@@ -2061,21 +1884,20 @@ hr,
     background: #151b25;
   }
 
-  .page-section:has(#events-table-container) .filter-group {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .filter-group{
     display: flex;
     flex-direction: column;
     gap: 9px;
     min-width: 0;
   }
 
-  .page-section:has(#events-table-container) .filter-group label {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .filter-group label{
     color: #b9c6d7;
     font-size: 13px;
     font-weight: 700;
   }
 
-  .page-section:has(#events-table-container) .filter-group input,
-  .page-section:has(#events-table-container) .filter-group select {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .filter-group input, :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .filter-group select{
     width: 100%;
     min-width: 0;
     height: 44px;
@@ -2090,14 +1912,13 @@ hr,
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
   }
 
-  .page-section:has(#events-table-container) .filter-group input:focus,
-  .page-section:has(#events-table-container) .filter-group select:focus {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .filter-group input:focus, :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .filter-group select:focus{
     border-color: #38bdf8;
     box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
   }
 
   /* جدول دسکتاپ */
-  .page-section:has(#events-table-container) #events-table-container {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) #events-table-container{
     width: 100%;
     max-width: 100%;
     overflow-x: auto;
@@ -2108,12 +1929,12 @@ hr,
     scrollbar-color: #46566d #191f29;
   }
 
-  .page-section:has(#events-table-container) .events-desktop-view {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .events-desktop-view{
     width: 100%;
     min-width: 0;
   }
 
-  .page-section:has(#events-table-container) .events-desktop-view .data-table {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .events-desktop-view .data-table{
     width: 100%;
     min-width: 1050px;
     margin: 0;
@@ -2123,11 +1944,11 @@ hr,
     table-layout: auto;
   }
 
-  .page-section:has(#events-table-container) .events-desktop-view .data-table thead {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .events-desktop-view .data-table thead{
     background: #202b3a;
   }
 
-  .page-section:has(#events-table-container) .events-desktop-view .data-table th {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .events-desktop-view .data-table th{
     position: sticky;
     top: 0;
     z-index: 2;
@@ -2141,7 +1962,7 @@ hr,
     white-space: nowrap;
   }
 
-  .page-section:has(#events-table-container) .events-desktop-view .data-table td {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .events-desktop-view .data-table td{
     padding: 15px 14px;
     border-bottom: 1px solid #283241;
     color: #dce5f0;
@@ -2151,25 +1972,25 @@ hr,
     vertical-align: middle;
   }
 
-  .page-section:has(#events-table-container) .events-desktop-view .data-table tbody tr {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .events-desktop-view .data-table tbody tr{
     background: #191f29;
     transition: background-color 0.18s ease;
   }
 
-  .page-section:has(#events-table-container) .events-desktop-view .data-table tbody tr:nth-child(even) {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .events-desktop-view .data-table tbody tr:nth-child(even){
     background: #1c232e;
   }
 
-  .page-section:has(#events-table-container) .events-desktop-view .data-table tbody tr:hover {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .events-desktop-view .data-table tbody tr:hover{
     background: #243244;
   }
 
-  .page-section:has(#events-table-container) .events-desktop-view .data-table tbody tr:last-child td {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .events-desktop-view .data-table tbody tr:last-child td{
     border-bottom: 0;
   }
 
   /* دکمه مشاهده جزئیات */
-  .page-section:has(#events-table-container) .event-details-button {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .event-details-button{
     min-height: 34px;
     padding: 6px 13px;
     border: 1px solid rgba(56, 189, 248, 0.35);
@@ -2183,15 +2004,13 @@ hr,
     transition: background-color 0.2s ease, border-color 0.2s ease;
   }
 
-  .page-section:has(#events-table-container) .event-details-button:hover {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .event-details-button:hover{
     border-color: #38bdf8;
     background: rgba(56, 189, 248, 0.18);
   }
 
   /* وضعیت رویداد */
-  .page-section:has(#events-table-container) .events-status-active,
-  .page-section:has(#events-table-container) .events-status-void,
-  .page-section:has(#events-table-container) .events-status-other {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .events-status-active, :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .events-status-void, :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .events-status-other{
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -2203,27 +2022,26 @@ hr,
     white-space: nowrap;
   }
 
-  .page-section:has(#events-table-container) .events-status-active {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .events-status-active{
     border-color: rgba(52, 211, 153, 0.25);
     background: rgba(52, 211, 153, 0.1);
     color: #6ee7b7;
   }
 
-  .page-section:has(#events-table-container) .events-status-void {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .events-status-void{
     border-color: rgba(248, 113, 113, 0.25);
     background: rgba(248, 113, 113, 0.1);
     color: #fca5a5;
   }
 
-  .page-section:has(#events-table-container) .events-status-other {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .events-status-other{
     border-color: rgba(251, 191, 36, 0.25);
     background: rgba(251, 191, 36, 0.1);
     color: #fcd34d;
   }
 
   /* پیام بارگذاری، خطا و جدول خالی */
-  .page-section:has(#events-table-container) .loading-state,
-  .page-section:has(#events-table-container) .table-empty {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .loading-state, :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .table-empty{
     padding: 40px 20px;
     border: 1px dashed #354256;
     border-radius: 12px;
@@ -2232,24 +2050,24 @@ hr,
     line-height: 2;
   }
 
-  .page-section:has(#events-table-container) #events-error {
+  :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) #events-error{
     margin-bottom: 20px;
     border-radius: 10px;
   }
 
   /* تبلت و پنجره‌های دسکتاپ کوچک */
   @media (max-width: 1050px) {
-    .page-section:has(#events-table-container) .filter-bar {
+    :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) .filter-bar{
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .page-section:has(#events-table-container) > .card > .card-body {
+    :where(:root[data-theme="dark"]) .page-section:has(#events-table-container) > .card > .card-body{
       padding: 18px;
     }
   }
 }
 
-.events-filter-toggle {
+:where(:root[data-theme="dark"]) .events-filter-toggle{
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2258,22 +2076,22 @@ hr,
   margin-bottom: 12px;
 }
 
-.events-filter-content[hidden] {
+:where(:root[data-theme="dark"]) .events-filter-content[hidden]{
   display: none !important;
 }
 
-.events-filter-content {
+:where(:root[data-theme="dark"]) .events-filter-content{
   margin-bottom: 16px;
 }
 
 /* بخش فیلتر و جستجوی رویدادها */
-.events-filter-section {
+:where(:root[data-theme="dark"]) .events-filter-section{
   display: block;
   width: 100%;
   margin-bottom: 16px;
 }
 
-.events-filter-toggle {
+:where(:root[data-theme="dark"]) .events-filter-toggle{
   display: flex !important;
   align-items: center;
   justify-content: space-between;
@@ -2283,16 +2101,16 @@ hr,
   cursor: pointer;
 }
 
-.events-filter-content[hidden] {
+:where(:root[data-theme="dark"]) .events-filter-content[hidden]{
   display: none !important;
 }
 
-.events-filter-content:not([hidden]) {
+:where(:root[data-theme="dark"]) .events-filter-content:not([hidden]){
   display: block !important;
   margin-top: 14px;
 }
 
-.events-filter-content .filter-bar {
+:where(:root[data-theme="dark"]) .events-filter-content .filter-bar{
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 14px;
@@ -2302,19 +2120,18 @@ hr,
   background: #1b222d;
 }
 
-.events-filter-content .filter-group {
+:where(:root[data-theme="dark"]) .events-filter-content .filter-group{
   display: flex;
   flex-direction: column;
   gap: 7px;
   min-width: 0;
 }
 
-.events-filter-content label {
+:where(:root[data-theme="dark"]) .events-filter-content label{
   font-size: 13px;
 }
 
-.events-filter-content input,
-.events-filter-content select {
+:where(:root[data-theme="dark"]) .events-filter-content input, :where(:root[data-theme="dark"]) .events-filter-content select{
   width: 100%;
   min-height: 40px;
   padding: 8px 10px;
@@ -2322,7 +2139,7 @@ hr,
 }
 
 @media (max-width: 600px) {
-  .events-filter-content .filter-bar {
+  :where(:root[data-theme="dark"]) .events-filter-content .filter-bar{
     grid-template-columns: 1fr;
   }
 }
