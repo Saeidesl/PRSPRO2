@@ -281,3 +281,57 @@ html[data-theme="dark"] .modal-overlay { background: rgba(1,4,9,.76) !important;
 }
 #pms-alert-container .pms-alert,
 #pms-alert-container [role="alert"] { box-shadow: var(--shadow-md); }
+
+
+/* Event creation/details modals had a legacy dark-only palette. */
+#event-create-modal, #event-details-modal {
+  background: color-mix(in srgb, var(--color-canvas-subtle) 72%, transparent) !important;
+  color: var(--color-text) !important;
+}
+#event-create-modal .event-modal-panel, #event-details-modal .event-modal-panel,
+#event-details-modal .event-detail-card,
+#event-details-modal .event-modal-table,
+#event-create-modal .event-checkbox-label,
+#event-create-modal .event-modal-close, #event-details-modal .event-modal-close {
+  background: var(--color-surface) !important;
+  color: var(--color-text) !important;
+  border-color: var(--color-border) !important;
+}
+#event-create-modal .event-modal-heading h3, #event-details-modal .event-modal-heading h3,
+#event-create-modal .event-section-title, #event-details-modal .event-section-title,
+#event-details-modal .event-detail-value { color: var(--color-text) !important; }
+#event-create-modal .event-modal-kicker, #event-details-modal .event-detail-label { color: var(--color-primary) !important; }
+#event-create-modal .event-modal-subtitle, #event-create-modal .event-muted,
+#event-details-modal .event-muted, #event-create-modal .event-inline-loading,
+#event-details-modal .event-loading-state { color: var(--color-text-muted) !important; }
+#event-create-modal .event-field > label, #event-details-modal label { color: var(--color-text-secondary) !important; }
+#event-create-modal input:not([type="checkbox"]), #event-create-modal select,
+#event-create-modal textarea, #event-details-modal input:not([type="checkbox"]),
+#event-details-modal select, #event-details-modal textarea {
+  background: var(--color-input-bg) !important;
+  color: var(--color-input-text) !important;
+  border-color: var(--color-border) !important;
+}
+#event-create-modal input::placeholder, #event-create-modal textarea::placeholder { color: var(--color-placeholder) !important; }
+#event-create-modal input:focus, #event-create-modal select:focus, #event-create-modal textarea:focus {
+  background: var(--color-input-bg) !important;
+  border-color: var(--color-primary) !important;
+}
+#event-create-modal select option { background: var(--color-surface) !important; color: var(--color-text) !important; }
+#event-create-modal .event-modal-button, #event-details-modal .event-modal-button,
+#event-create-modal .event-modal-close:hover, #event-details-modal .event-modal-close:hover {
+  background: var(--color-surface-alt) !important;
+  color: var(--color-text) !important;
+  border-color: var(--color-border) !important;
+}
+#event-create-modal .event-modal-button-primary { background: var(--color-primary) !important; color: #fff !important; border-color: var(--color-primary) !important; }
+#event-create-modal .event-modal-button-primary:hover:not(:disabled) { background: var(--color-primary-hover) !important; }
+#event-create-modal .event-modal-error, #event-details-modal .event-modal-error {
+  background: var(--color-danger-bg) !important; color: var(--color-danger) !important; border-color: var(--color-border) !important;
+}
+#event-create-modal .event-submit-progress { background: var(--color-info-bg) !important; border-color: var(--color-border) !important; }
+#event-create-modal .event-submit-progress strong, #event-create-modal .event-submit-progress p { color: var(--color-text-secondary) !important; }
+#event-details-modal .event-modal-table th { background: var(--color-surface-alt) !important; color: var(--color-text-secondary) !important; border-color: var(--color-border) !important; }
+#event-details-modal .event-modal-table td { background: var(--color-surface) !important; color: var(--color-text) !important; border-color: var(--color-border-light) !important; }
+.event-toast { background: var(--color-success-bg) !important; color: var(--color-success) !important; border-color: var(--color-border) !important; }
+.event-toast-warning { background: var(--color-warning-bg) !important; color: var(--color-warning) !important; border-color: var(--color-border) !important; }
