@@ -117,6 +117,18 @@
         });
       }
 
+      const tableContainer = document.getElementById('attachments-table-container');
+      if (tableContainer && !tableContainer.dataset.actionsBound) {
+        tableContainer.dataset.actionsBound = 'true';
+        tableContainer.addEventListener('click', function (event) {
+          const button = event.target.closest('[data-attachment-action]');
+          if (!button) return;
+          const id = button.dataset.attachmentId;
+          if (button.dataset.attachmentAction === 'download') MODULE.download(id);
+          if (button.dataset.attachmentAction === 'delete') MODULE.deleteAttachment(id);
+        });
+      }
+
     },
 
 
@@ -578,13 +590,13 @@
 
 
           html +=
-            '<button type="button" class="btn btn-sm btn-light" onclick="PMS.Modules.Attachments.download(\\'' +
-            this.escapeJs(id) + '\\')">دانلود</button>';
+            '<button type="button" class="btn btn-sm btn-light" data-attachment-action="download" data-attachment-id="' +
+            this.escapeHtml(id) + '">دانلود</button>';
 
           if (this.can('ATTACHMENT_DELETE')) {
             html +=
-              ' <button type="button" class="btn btn-sm btn-danger" onclick="PMS.Modules.Attachments.deleteAttachment(\\'' +
-              this.escapeJs(id) + '\\')">حذف</button>';
+              ' <button type="button" class="btn btn-sm btn-danger" data-attachment-action="delete" data-attachment-id="' +
+              this.escapeHtml(id) + '">حذف</button>';
           }
 
 
