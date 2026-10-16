@@ -220,7 +220,7 @@
 #event-create-modal textarea:focus {
   border-color: var(--color-primary);
   background: var(--color-input-bg);
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 18%, transparent);
 }
 
 #event-create-modal input[type="checkbox"] {
@@ -503,7 +503,7 @@
   border-radius: 13px;
   background: var(--color-success-bg);
   color: var(--color-success);
-  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-overlay);
   font-size: 13px;
   line-height: 1.9;
   opacity: 0;
