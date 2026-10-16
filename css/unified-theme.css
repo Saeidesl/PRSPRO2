@@ -42,7 +42,7 @@
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
-  --transition-theme: background-color .16s ease, color .16s ease, border-color .16s ease;
+  --transition-theme: background-color .16s ease, color .16s ease, border-color .16s ease;\n  --border-color: var(--color-border);\n  --primary-color: var(--color-primary);\n  --card-bg: var(--color-surface);\n  --text-color: var(--color-text);\n  --muted-color: var(--color-text-muted);\n  --soft-bg: var(--color-surface-alt);
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
@@ -228,3 +228,50 @@ html[data-theme="dark"] .modal-overlay { background: rgba(1,4,9,.76) !important;
 @media (prefers-reduced-motion: reduce) {
   *,*::before,*::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
 }
+
+
+/* Dynamic dashboard explorer: neutralize its legacy dark-only palette. */
+#dashboard-project-explorer { color-scheme: inherit !important; }
+#dashboard-project-explorer .dashboard-explorer-card,
+#dashboard-project-explorer .dashboard-project-list-panel,
+#dashboard-project-explorer .dashboard-project-detail-panel,
+#dashboard-project-explorer .dashboard-project-choice,
+#dashboard-project-explorer .dashboard-project-base-item,
+#dashboard-project-explorer .dashboard-compact-event,
+#dashboard-project-explorer .dashboard-compact-event-card {
+  background: var(--color-surface) !important;
+  color: var(--color-text) !important;
+  border-color: var(--color-border) !important;
+}
+#dashboard-project-explorer .dashboard-project-choice:hover,
+#dashboard-project-explorer .dashboard-project-choice.selected,
+#dashboard-project-explorer .dashboard-project-base-item:hover,
+#dashboard-project-explorer .dashboard-compact-event:hover {
+  background: var(--color-surface-hover) !important;
+  color: var(--color-text) !important;
+  border-color: var(--color-primary) !important;
+}
+#dashboard-project-explorer h3,
+#dashboard-project-explorer h4,
+#dashboard-project-explorer strong,
+#dashboard-project-explorer .dashboard-project-choice strong,
+#dashboard-project-explorer .dashboard-project-base-item strong {
+  color: var(--color-text) !important;
+}
+#dashboard-project-explorer p,
+#dashboard-project-explorer span,
+#dashboard-project-explorer label,
+#dashboard-project-explorer small { color: var(--color-text-secondary); }
+#dashboard-project-explorer input,
+#dashboard-project-explorer select,
+#dashboard-project-explorer textarea {
+  background: var(--color-input-bg) !important;
+  color: var(--color-input-text) !important;
+  border-color: var(--color-border) !important;
+}
+#pms-loading-overlay {
+  background: color-mix(in srgb, var(--color-surface) 88%, transparent) !important;
+  color: var(--color-text) !important;
+}
+#pms-alert-container .pms-alert,
+#pms-alert-container [role="alert"] { box-shadow: var(--shadow-md); }
