@@ -111,16 +111,10 @@
 
 
       if (uploadButton) {
-
-        uploadButton.addEventListener(
-          'click',
-          function () {
-
-            MODULE.showUploadMessage();
-
-          }
-        );
-
+        uploadButton.hidden = !MODULE.can('ATTACHMENT_UPLOAD');
+        uploadButton.addEventListener('click', function () {
+          MODULE.showUploadMessage();
+        });
       }
 
     },
@@ -584,21 +578,14 @@
 
 
           html +=
-            '<button ' +
-            'type="button" ' +
-            'class="btn btn-sm btn-light" ' +
-            'data-attachment-id="' +
-            this.escapeHtml(
-              id
-            ) +
-            '" ' +
-            'onclick="PMS.Modules.Attachments.download(\'' +
-            this.escapeJs(
-              id
-            ) +
-            '\')">' +
-            'مشاهده' +
-            '</button>';
+            '<button type="button" class="btn btn-sm btn-light" onclick="PMS.Modules.Attachments.download(\\'' +
+            this.escapeJs(id) + '\\')">دانلود</button>';
+
+          if (this.can('ATTACHMENT_DELETE')) {
+            html +=
+              ' <button type="button" class="btn btn-sm btn-danger" onclick="PMS.Modules.Attachments.deleteAttachment(\\'' +
+              this.escapeJs(id) + '\\')">حذف</button>';
+          }
 
 
           html +=
@@ -624,96 +611,161 @@
     },
 
 
-    download: async function (
-      attachmentId
-    ) {
-
-      if (!attachmentId) {
-
-        return;
-
-      }
-
-
-      try {
-
-        const response =
-          await Api.get(
-            '/attachments/' +
-            encodeURIComponent(
-              attachmentId
-            )
-          );
-
-
-        const data =
-          Api.extractData(
-            response
-          );
-
-
-        if (
-          data &&
-          data.url
-        ) {
-
-          window.open(
-            data.url,
-            '_blank'
-          );
-
-          return;
-
-        }
-
-
-        if (
-          data &&
-          data.downloadUrl
-        ) {
-
-          window.open(
-            data.downloadUrl,
-            '_blank'
-          );
-
-          return;
-
-        }
-
-
-        alert(
-          'اطلاعات دانلود فایل دریافت نشد.'
-        );
-
-
-      } catch (error) {
-
-        console.error(
-          'Attachment Download Error:',
-          error
-        );
-
-
-        alert(
-          error.message ||
-          'خطا در دریافت فایل.'
-        );
-
-      }
-
+    can: function (permission) {
+      const router = window.PMS && window.PMS.Router;
+      if (router && typeof router.isAdmin === 'function' && router.isAdmin()) return true;
+      return Boolean(router && Array.isArray(router.permissions) &&
+        router.permissions.indexOf(permission) !== -1);
     },
 
+    download: async function (attachmentId) {
+      if (!attachmentId) return;
+      try {
+        const response = await Api.get('/attachments/' + encodeURIComponent(attachmentId) + '/download');
+        const data = Api.extractData(response);
+        if (!data || !data.Base64) throw new Error('محتوای فایل از سرور دریافت نشد.');
+        const binary = window.atob(data.Base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        const blob = new Blob([bytes], { type: data.MimeType || 'application/octet-stream' });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = data.FileName || 'download';
+        anchor.hidden = true;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        window.setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      } catch (error) {
+        console.error('Attachment Download Error:', error);
+        alert(error.message || 'خطا در دریافت فایل.');
+      }
+    },
 
-    showUploadMessage:
-      function () {
+    showUploadMessage: function () {
+      if (!this.can('ATTACHMENT_UPLOAD')) {
+        alert('شما مجوز بارگذاری فایل را ندارید.');
+        return;
+      }
+      if (document.getElementById('attachment-upload-modal')) return;
+      const modal = document.createElement('div');
+      modal.id = 'attachment-upload-modal';
+      modal.className = 'modal-overlay';
+      modal.dir = 'rtl';
+      modal.setAttribute('role', 'dialog');
+      modal.setAttribute('aria-modal', 'true');
+      modal.setAttribute('aria-labelledby', 'attachment-upload-title');
+      modal.innerHTML =
+        '<div class="modal">' +
+          '<div class="modal-header"><h3 id="attachment-upload-title">بارگذاری فایل</h3>' +
+            '<button type="button" class="btn btn-light" id="attachment-upload-close" aria-label="بستن">×</button></div>' +
+          '<div class="modal-body">' +
+            '<div id="attachment-upload-error" class="alert alert-danger" role="alert" hidden></div>' +
+            '<form id="attachment-upload-form" class="form">' +
+              '<div class="form-group"><label for="attachment-upload-entity">نوع ارتباط</label>' +
+                '<select id="attachment-upload-entity" required><option value="PROJECT">پروژه</option><option value="EVENT">رویداد</option></select></div>' +
+              '<div class="form-group"><label for="attachment-upload-entity-id">شناسه پروژه یا رویداد</label>' +
+                '<input id="attachment-upload-entity-id" type="text" required autocomplete="off" /></div>' +
+              '<div class="form-group"><label for="attachment-upload-file">فایل</label>' +
+                '<input id="attachment-upload-file" type="file" required />' +
+                '<small class="form-help">فایل به پروژه یا رویداد انتخاب‌شده پیوست می‌شود.</small></div>' +
+              '<div class="form-actions"><button id="attachment-upload-submit" type="submit" class="btn btn-primary">بارگذاری</button>' +
+                '<button id="attachment-upload-cancel" type="button" class="btn btn-secondary">انصراف</button></div>' +
+            '</form></div></div>';
+      document.body.appendChild(modal);
+      document.body.classList.add('modal-open');
+      const close = function () {
+        if (modal.dataset.busy === 'true') return;
+        modal.remove();
+        if (!document.querySelector('.modal-overlay')) document.body.classList.remove('modal-open');
+      };
+      modal.querySelector('#attachment-upload-close').addEventListener('click', close);
+      modal.querySelector('#attachment-upload-cancel').addEventListener('click', close);
+      modal.addEventListener('click', function (event) {
+        if (event.target === modal) close();
+      });
+      modal.querySelector('#attachment-upload-form').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        const entityType = modal.querySelector('#attachment-upload-entity').value;
+        const entityId = modal.querySelector('#attachment-upload-entity-id').value.trim();
+        const fileInput = modal.querySelector('#attachment-upload-file');
+        const file = fileInput.files && fileInput.files[0];
+        const errorBox = modal.querySelector('#attachment-upload-error');
+        const submit = modal.querySelector('#attachment-upload-submit');
+        errorBox.hidden = true;
+        errorBox.textContent = '';
+        if (!entityId || !file) {
+          errorBox.textContent = 'شناسه و فایل را وارد کنید.';
+          errorBox.hidden = false;
+          return;
+        }
+        if (file.size === 0) {
+          errorBox.textContent = 'فایل انتخاب‌شده خالی است.';
+          errorBox.hidden = false;
+          return;
+        }
+        modal.dataset.busy = 'true';
+        submit.disabled = true;
+        submit.textContent = 'در حال بارگذاری...';
+        try {
+          const base64 = await new Promise(function (resolve, reject) {
+            const reader = new FileReader();
+            reader.onload = function () {
+              const result = String(reader.result || '');
+              const comma = result.indexOf(',');
+              if (comma < 0) return reject(new Error('خواندن فایل ناموفق بود.'));
+              resolve(result.slice(comma + 1));
+            };
+            reader.onerror = function () { reject(new Error('خواندن فایل ناموفق بود.')); };
+            reader.readAsDataURL(file);
+          });
+          await Api.post('/attachments', {
+            EntityType: entityType,
+            EntityID: entityId,
+            FileName: file.name,
+            MimeType: file.type || 'application/octet-stream',
+            Base64: base64
+          });
+          Api.invalidateMany([MODULE.cacheKey]);
+          modal.dataset.busy = 'false';
+          close();
+          await MODULE.load();
+          alert('فایل با موفقیت بارگذاری شد.');
+        } catch (error) {
+          modal.dataset.busy = 'false';
+          submit.disabled = false;
+          submit.textContent = 'بارگذاری';
+          errorBox.textContent = error.message || 'بارگذاری فایل ناموفق بود.';
+          errorBox.hidden = false;
+        }
+      });
+      modal.querySelector('#attachment-upload-entity-id').focus();
+    },
 
-        alert(
-          'فرم بارگذاری فایل را در مرحله بعد اضافه می‌کنیم.'
-        );
-
-      },
-
+    deleteAttachment: async function (attachmentId) {
+      if (!attachmentId || !this.can('ATTACHMENT_DELETE')) {
+        alert('شما مجوز حذف فایل را ندارید.');
+        return;
+      }
+      const reason = window.prompt('دلیل حذف فایل را وارد کنید:');
+      if (reason === null) return;
+      if (!reason.trim()) {
+        alert('وارد کردن دلیل حذف الزامی است.');
+        return;
+      }
+      if (!window.confirm('آیا از حذف این فایل مطمئن هستید؟')) return;
+      try {
+        await Api.delete('/attachments/' + encodeURIComponent(attachmentId), {
+          params: { reason: reason.trim() }
+        });
+        Api.invalidateMany([MODULE.cacheKey]);
+        await this.load();
+        alert('فایل حذف شد.');
+      } catch (error) {
+        alert(error.message || 'حذف فایل ناموفق بود.');
+      }
+    },
 
     getEntityLabel:
       function (
