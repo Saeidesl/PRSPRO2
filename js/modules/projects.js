@@ -32,6 +32,7 @@
       }
 
       if (createButton) {
+        createButton.hidden = !window.PMS.Router.hasPermission('PROJECT_CREATE');
         createButton.addEventListener('click', () => {
           this.openCreateForm();
         });
