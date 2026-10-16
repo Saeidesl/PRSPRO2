@@ -24,9 +24,16 @@
       this.bindEvents();
 
       const createButton = document.getElementById('event-create-button');
-      if (createButton && PMS.Router &&
-          typeof PMS.Router.hasPermission === 'function') {
-        createButton.hidden = !PMS.Router.hasPermission('EVENT_CREATE');
+      if (createButton) {
+        const canCreateEvents = !!(
+          PMS.Router &&
+          (
+            (typeof PMS.Router.isAdmin === 'function' && PMS.Router.isAdmin()) ||
+            (Array.isArray(PMS.Router.permissions) &&
+              PMS.Router.permissions.indexOf('EVENT_CREATE') !== -1)
+          )
+        );
+        createButton.hidden = !canCreateEvents;
       }
 
       this.load();
@@ -109,10 +116,15 @@
 
     load: async function () {
       const loading = document.getElementById('events-loading');
+      // Router owns the active permission list; it does not expose hasPermission().
+      // Checking that missing method here incorrectly hid all event data.
       const canViewEvents = !!(
         PMS.Router &&
-        typeof PMS.Router.hasPermission === 'function' &&
-        PMS.Router.hasPermission('EVENT_VIEW')
+        (
+          (typeof PMS.Router.isAdmin === 'function' && PMS.Router.isAdmin()) ||
+          (Array.isArray(PMS.Router.permissions) &&
+            PMS.Router.permissions.indexOf('EVENT_VIEW') !== -1)
+        )
       );
 
       const cachedEvents = canViewEvents
