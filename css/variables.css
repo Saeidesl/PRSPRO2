@@ -29,3 +29,9 @@
   --z-modal: 2000;
   --z-alert: 3000;
 }
+
+/* Shared design tokens for focus, charts and theme-aware login surfaces. */
+:root {
+  --control-height: 42px;
+  --control-radius: var(--radius-md, 8px);
+}
