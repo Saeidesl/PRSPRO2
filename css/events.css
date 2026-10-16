@@ -15,7 +15,7 @@
   background: rgba(8, 15, 28, 0.72);
   -webkit-backdrop-filter: blur(7px);
   backdrop-filter: blur(7px);
-  color: #e8edf5;
+  color: var(--color-text);
   animation: event-overlay-in 180ms ease-out;
 }
 
@@ -36,14 +36,14 @@
   overflow: auto;
   overscroll-behavior: contain;
   padding: 28px;
-  border: 1px solid #344155;
+  border: 1px solid var(--color-border);
   border-radius: 20px;
-  background: #182231;
-  color: #e8edf5;
+  background: var(--color-surface);
+  color: var(--color-text);
   box-shadow: 0 28px 90px rgba(0, 0, 0, 0.42);
   animation: event-panel-in 220ms ease-out;
   scrollbar-width: thin;
-  scrollbar-color: #46566d transparent;
+  scrollbar-color: var(--color-border) transparent;
 }
 
 #event-details-modal .event-modal-panel {
@@ -64,14 +64,14 @@
 #event-create-modal .event-modal-heading h3,
 #event-details-modal .event-modal-heading h3 {
   margin: 4px 0 0;
-  color: #f8fafc;
+  color: var(--color-text);
   font-size: 21px;
   font-weight: 750;
   line-height: 1.6;
 }
 
 #event-create-modal .event-modal-kicker {
-  color: #65c9f3;
+  color: var(--color-primary);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -79,7 +79,7 @@
 
 #event-create-modal .event-modal-subtitle {
   margin: 5px 0 0;
-  color: #9aa9bd;
+  color: var(--color-text-muted);
   font-size: 13px;
   line-height: 1.8;
 }
@@ -93,10 +93,10 @@
   width: 40px;
   height: 40px;
   padding: 0;
-  border: 1px solid #3b4a60;
+  border: 1px solid var(--color-border);
   border-radius: 12px;
-  background: #222f41;
-  color: #d5dfed;
+  background: var(--color-surface-alt);
+  color: var(--color-text);
   font: inherit;
   font-size: 25px;
   line-height: 1;
@@ -109,8 +109,8 @@
 
 #event-create-modal .event-modal-close:hover,
 #event-details-modal .event-modal-close:hover {
-  border-color: #647995;
-  background: #2d3c50;
+  border-color: var(--color-primary);
+  background: var(--color-surface-hover);
   transform: translateY(-1px);
 }
 
@@ -130,7 +130,7 @@
 #event-create-modal .event-section-title,
 #event-details-modal .event-section-title {
   margin: 0 0 16px;
-  color: #eaf2fc;
+  color: var(--color-text);
   font-size: 15px;
   font-weight: 700;
   line-height: 1.7;
@@ -143,7 +143,7 @@
   height: 17px;
   margin-left: 9px;
   border-radius: 4px;
-  background: #38bdf8;
+  background: var(--color-primary);
   content: "";
   vertical-align: -3px;
 }
@@ -166,14 +166,14 @@
 #event-details-modal label {
   display: block;
   margin: 0 0 8px;
-  color: #c7d2e1;
+  color: var(--color-text-secondary);
   font-size: 13px;
   font-weight: 600;
   line-height: 1.7;
 }
 
 #event-create-modal .event-required {
-  color: #fda4af;
+  color: var(--color-danger);
 }
 
 #event-create-modal input:not([type="checkbox"]),
@@ -185,11 +185,11 @@
   min-height: 45px;
   margin: 0;
   padding: 11px 13px;
-  border: 1px solid #3b4a60;
+  border: 1px solid var(--color-border);
   border-radius: 11px;
   outline: none;
-  background: #101927;
-  color: #edf3fb;
+  background: var(--color-input-bg);
+  color: var(--color-input-text);
   font: inherit;
   font-size: 14px;
   line-height: 1.6;
@@ -206,20 +206,20 @@
 
 #event-create-modal input::placeholder,
 #event-create-modal textarea::placeholder {
-  color: #718198;
+  color: var(--color-placeholder);
 }
 
 #event-create-modal input:hover,
 #event-create-modal select:hover,
 #event-create-modal textarea:hover {
-  border-color: #536783;
+  border-color: var(--color-primary);
 }
 
 #event-create-modal input:focus,
 #event-create-modal select:focus,
 #event-create-modal textarea:focus {
-  border-color: #38bdf8;
-  background: #121e2e;
+  border-color: var(--color-primary);
+  background: var(--color-input-bg);
   box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12);
 }
 
@@ -227,13 +227,13 @@
   width: 17px;
   height: 17px;
   margin: 0;
-  accent-color: #0ea5e9;
+  accent-color: var(--color-primary);
   cursor: pointer;
 }
 
 #event-create-modal select option {
-  background: #182231;
-  color: #edf3fb;
+  background: var(--color-surface);
+  color: var(--color-input-text);
 }
 
 #event-create-modal .event-checkbox-label {
@@ -245,8 +245,8 @@
   padding: 10px 12px;
   border: 1px solid #344258;
   border-radius: 11px;
-  background: #131e2d;
-  color: #dce6f3;
+  background: var(--color-surface-alt);
+  color: var(--color-text);
   cursor: pointer;
 }
 
@@ -269,10 +269,10 @@
   min-width: 120px;
   min-height: 46px;
   padding: 11px 20px;
-  border: 1px solid #41516a;
+  border: 1px solid var(--color-border);
   border-radius: 11px;
-  background: #26354a;
-  color: #e8edf5;
+  background: var(--color-surface-alt);
+  color: var(--color-text);
   font: inherit;
   font-size: 14px;
   font-weight: 650;
@@ -286,22 +286,22 @@
 
 #event-create-modal .event-modal-button:hover:not(:disabled),
 #event-details-modal .event-modal-button:hover:not(:disabled) {
-  border-color: #647995;
-  background: #30435c;
+  border-color: var(--color-primary);
+  background: var(--color-surface-hover);
   transform: translateY(-1px);
 }
 
 #event-create-modal .event-modal-button-primary {
   min-width: 165px;
-  border-color: #0284c7;
-  background: linear-gradient(135deg, #0284c7, #0369a1);
+  border-color: var(--color-primary);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
   color: #fff;
   box-shadow: 0 7px 18px rgba(2, 132, 199, 0.18);
 }
 
 #event-create-modal .event-modal-button-primary:hover:not(:disabled) {
-  border-color: #38bdf8;
-  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  border-color: var(--color-primary);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary));
   box-shadow: 0 9px 22px rgba(2, 132, 199, 0.25);
 }
 
@@ -315,7 +315,7 @@
 #event-create-modal .event-muted,
 #event-details-modal .event-muted {
   margin: 0;
-  color: #98a8bd;
+  color: var(--color-text-muted);
   font-size: 13px;
   line-height: 1.9;
 }
@@ -324,10 +324,10 @@
 #event-details-modal .event-modal-error {
   margin: 0 0 18px;
   padding: 13px 15px;
-  border: 1px solid #8f3547;
+  border: 1px solid var(--color-border);
   border-radius: 11px;
-  background: #351e2b;
-  color: #fecdd3;
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
   font-size: 13px;
   line-height: 1.9;
   overflow-wrap: anywhere;
@@ -347,22 +347,22 @@
   gap: 14px;
   margin-top: 22px;
   padding: 15px 16px;
-  border: 1px solid #245477;
+  border: 1px solid var(--color-border);
   border-radius: 13px;
-  background: linear-gradient(120deg, #142a40, #17283a);
+  background: linear-gradient(120deg, var(--color-info-bg), var(--color-info-bg));
   animation: event-progress-in 180ms ease-out;
 }
 
 #event-create-modal .event-submit-progress strong {
   display: block;
   margin-bottom: 3px;
-  color: #e0f2fe;
+  color: var(--color-info);
   font-size: 13px;
 }
 
 #event-create-modal .event-submit-progress p {
   margin: 0;
-  color: #a9c6df;
+  color: var(--color-text-secondary);
   font-size: 12px;
   line-height: 1.8;
 }
@@ -375,8 +375,8 @@
   width: 27px;
   height: 27px;
   border: 3px solid rgba(125, 211, 252, 0.22);
-  border-top-color: #38bdf8;
-  border-left-color: #7dd3fc;
+  border-top-color: var(--color-primary);
+  border-left-color: var(--color-primary);
   border-radius: 50%;
   animation: event-spin 750ms linear infinite;
 }
@@ -430,19 +430,19 @@
   padding: 14px;
   border: 1px solid #344258;
   border-radius: 12px;
-  background: #121d2b;
+  background: var(--color-surface);
 }
 
 #event-details-modal .event-detail-label {
   display: block;
   margin-bottom: 8px;
-  color: #7dd3fc;
+  color: var(--color-primary);
   font-size: 12px;
   font-weight: 700;
 }
 
 #event-details-modal .event-detail-value {
-  color: #e8edf5;
+  color: var(--color-text);
   font-size: 14px;
   line-height: 1.9;
   overflow-wrap: anywhere;
@@ -464,7 +464,7 @@
   width: 100%;
   border-collapse: collapse;
   background: #172231;
-  color: #e8edf5;
+  color: var(--color-text);
 }
 
 #event-details-modal .event-modal-table th,
@@ -478,8 +478,8 @@
 }
 
 #event-details-modal .event-modal-table th {
-  background: #223147;
-  color: #a5e4ff;
+  background: var(--color-surface-alt);
+  color: var(--color-text-secondary);
   font-weight: 700;
 }
 
@@ -499,10 +499,10 @@
   width: min(420px, calc(100vw - 32px));
   min-height: 58px;
   padding: 15px 18px;
-  border: 1px solid #276749;
+  border: 1px solid var(--color-border);
   border-radius: 13px;
-  background: #142c25;
-  color: #d1fae5;
+  background: var(--color-success-bg);
+  color: var(--color-success);
   box-shadow: 0 14px 40px rgba(0, 0, 0, 0.3);
   font-size: 13px;
   line-height: 1.9;
@@ -520,9 +520,9 @@
 }
 
 .event-toast-warning {
-  border-color: #926a2b;
-  background: #342a19;
-  color: #fde68a;
+  border-color: var(--color-border);
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
 }
 
 /* انیمیشن‌ها */
