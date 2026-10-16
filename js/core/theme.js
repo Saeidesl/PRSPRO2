@@ -52,6 +52,10 @@
         var button = event.target.closest && event.target.closest('[data-theme-toggle], #theme-toggle-button');
         if (button) Theme.toggle();
       });
+      if (window.MutationObserver) {
+        var observer = new MutationObserver(function () { Theme.updateControl(); });
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+      }
       var stored = this.getStoredTheme();
       this.apply(stored || this.getSystemTheme(), false);
       if (window.matchMedia) {
