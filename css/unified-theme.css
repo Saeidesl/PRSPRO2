@@ -416,3 +416,55 @@ html[data-theme="dark"] .modal-overlay { background: rgba(1,4,9,.76) !important;
 
 
 .login-theme-toggle { display: flex; width: fit-content; margin: 0 0 16px auto; }
+
+
+/* Status labels and pagination classes used by older modules. */
+.badge,.status-badge,.status-label {
+  background: var(--color-surface-alt) !important;
+  color: var(--color-text-secondary) !important;
+  border-color: var(--color-border) !important;
+}
+.badge-success,.status-active,.status-completed,.status-success {
+  background: var(--color-success-bg) !important;
+  color: var(--color-success) !important;
+  border-color: var(--color-border) !important;
+}
+.badge-warning,.status-on-hold,.status-pending,.status-warning {
+  background: var(--color-warning-bg) !important;
+  color: var(--color-warning) !important;
+  border-color: var(--color-border) !important;
+}
+.badge-danger,.status-cancelled,.status-void,.status-deleted,.status-inactive,.status-danger {
+  background: var(--color-danger-bg) !important;
+  color: var(--color-danger) !important;
+  border-color: var(--color-border) !important;
+}
+.badge-info,.status-info,.status-fetching {
+  background: var(--color-info-bg) !important;
+  color: var(--color-info) !important;
+  border-color: var(--color-border) !important;
+}
+.pagination,.table-pagination,.filter-bar,.search-bar {
+  background: var(--color-surface) !important;
+  color: var(--color-text-secondary) !important;
+  border-color: var(--color-border) !important;
+}
+.pagination button,.pagination a,.table-pagination button,.table-pagination a {
+  background: var(--color-surface) !important;
+  color: var(--color-text) !important;
+  border-color: var(--color-border) !important;
+}
+.pagination button:hover,.pagination a:hover,.table-pagination button:hover,.table-pagination a:hover {
+  background: var(--color-surface-hover) !important;
+  border-color: var(--color-primary) !important;
+}
+.pagination .active,.table-pagination .active {
+  background: var(--color-primary) !important;
+  color: #fff !important;
+  border-color: var(--color-primary) !important;
+}
+.page-section:has(#dashboard-recent-projects) .dashboard-sections h3 {
+  background: var(--color-surface-alt) !important;
+  color: var(--color-text) !important;
+  border-color: var(--color-border) !important;
+}
