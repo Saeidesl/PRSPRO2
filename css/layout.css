@@ -290,7 +290,7 @@
   height: 8px;
   flex: 0 0 8px;
   border-radius: 50%;
-  background: #94a3b8;
+  background: var(--color-text-muted);
 }
 
 .sync-status-text {
@@ -305,7 +305,7 @@
 }
 
 .status-idle .sync-status-dot {
-  background: #94a3b8;
+  background: var(--color-text-muted);
 }
 
 .header-sync-status.status-cached {
@@ -315,7 +315,7 @@
 }
 
 .status-cached .sync-status-dot {
-  background: #f59e0b;
+  background: var(--color-warning);
 }
 
 .header-sync-status.status-fetching {
@@ -325,7 +325,7 @@
 }
 
 .status-fetching .sync-status-dot {
-  background: #3b82f6;
+  background: var(--color-primary);
   animation: sync-status-pulse 1.2s ease-in-out infinite;
 }
 
@@ -336,7 +336,7 @@
 }
 
 .status-updated .sync-status-dot {
-  background: #22c55e;
+  background: var(--color-success);
 }
 
 .header-sync-status.status-error {
@@ -346,7 +346,7 @@
 }
 
 .status-error .sync-status-dot {
-  background: #ef4444;
+  background: var(--color-danger);
 }
 
 @keyframes sync-status-pulse {
@@ -375,7 +375,7 @@
   width: 37px;
   height: 37px;
   flex: 0 0 37px;
-  border: 1px solid #dbeafe;
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   background: var(--color-info-bg);
   color: var(--color-primary);
@@ -744,7 +744,7 @@
 }
 
 .status-idle .sync-status-dot {
-  background: #94a3b8;
+  background: var(--color-text-muted);
 }
 
 .header-sync-status.status-cached {
@@ -754,7 +754,7 @@
 }
 
 .status-cached .sync-status-dot {
-  background: #f59e0b;
+  background: var(--color-warning);
 }
 
 .header-sync-status.status-fetching {
@@ -764,8 +764,8 @@
 }
 
 .status-fetching .sync-status-dot {
-  background: #3b82f6;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.10);
+  background: var(--color-primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 10%, transparent);
   animation: pms-header-pulse 1.4s ease-in-out infinite;
 }
 
@@ -776,8 +776,8 @@
 }
 
 .status-updated .sync-status-dot {
-  background: #10b981;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.10);
+  background: var(--color-success);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-success) 10%, transparent);
 }
 
 .header-sync-status.status-error {
@@ -787,7 +787,7 @@
 }
 
 .status-error .sync-status-dot {
-  background: #ef4444;
+  background: var(--color-danger);
 }
 
 @keyframes pms-header-pulse {
@@ -898,7 +898,7 @@
   border-color: var(--color-border);
   color: var(--color-danger);
 
-  box-shadow: 0 4px 12px rgba(190, 18, 60, 0.07);
+  box-shadow: var(--shadow-sm);
 }
 
 #logout-button:active {
