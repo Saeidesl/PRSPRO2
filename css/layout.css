@@ -670,9 +670,9 @@
   gap: 20px;
 
   background: var(--color-surface);
-  border-bottom: 1px solid #e7ecf4;
+  border-bottom: 1px solid var(--color-border);
 
-  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.045);
+  box-shadow: var(--shadow-sm);
 
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
@@ -721,7 +721,7 @@
   font-weight: 700;
   line-height: 1.6;
 
-  box-shadow: 0 2px 5px rgba(15, 23, 42, 0.025);
+  box-shadow: var(--shadow-sm);
 
   transition:
     background 0.2s ease,
@@ -739,7 +739,7 @@
 
 .header-sync-status.status-idle {
   background: var(--color-surface-alt);
-  border-color: #e2e8f0;
+  border-color: var(--color-border);
   color: var(--color-text-muted);
 }
 
@@ -770,9 +770,9 @@
 }
 
 .header-sync-status.status-updated {
-  background: #ecfdf5;
+  background: var(--color-success-bg);
   border-color: var(--color-border);
-  color: #047857;
+  color: var(--color-success);
 }
 
 .status-updated .sync-status-dot {
@@ -816,7 +816,7 @@
   gap: 12px;
   padding-right: 17px;
 
-  border-right: 1px solid #e8edf5;
+  border-right: 1px solid var(--color-border);
 }
 
 .header-user-avatar {
@@ -824,22 +824,16 @@
   height: 43px;
   flex: 0 0 43px;
 
-  border: 2px solid #ffffff;
+  border: 1px solid var(--color-border);
   border-radius: 14px;
 
-  background: linear-gradient(
-    145deg,
-    #dbeafe 0%,
-    #e0e7ff 100%
-  );
+  background: var(--color-primary-light);
 
-  color: #3730a3;
+  color: var(--color-primary);
   font-size: 14px;
   font-weight: 800;
 
-  box-shadow:
-    0 0 0 1px #dbeafe,
-    0 4px 12px rgba(59, 130, 246, 0.10);
+  box-shadow: var(--shadow-sm);
 }
 
 .header-user-details {
@@ -851,7 +845,7 @@
 .header-user-name {
   max-width: 240px;
 
-  color: #172033;
+  color: var(--color-text);
   font-size: 13px;
   font-weight: 800;
   line-height: 1.6;
@@ -883,13 +877,13 @@
   border: 1px solid var(--color-border);
   border-radius: 11px;
 
-  background: #ffffff;
+  background: var(--color-surface);
   color: var(--color-text-secondary);
 
   font-size: 12px;
   font-weight: 700;
 
-  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.025);
+  box-shadow: var(--shadow-sm);
 
   transition:
     background 0.2s ease,
@@ -923,8 +917,8 @@
   border: 1px solid var(--color-border);
   border-radius: 12px;
 
-  background: #ffffff;
-  color: #334155;
+  background: var(--color-surface);
+  color: var(--color-text);
 
   transition:
     background 0.2s ease,
@@ -935,7 +929,7 @@
 .sidebar-toggle:hover {
   background: var(--color-info-bg);
   border-color: var(--color-border);
-  color: #2563eb;
+  color: var(--color-primary);
 }
 
 /* ==========================================
