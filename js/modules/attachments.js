@@ -742,7 +742,9 @@
           Api.invalidateMany([MODULE.cacheKey]);
           modal.dataset.busy = 'false';
           close();
-          await MODULE.load();
+          if (MODULE.can('ATTACHMENT_VIEW')) {
+            await MODULE.load();
+          }
           alert('فایل با موفقیت بارگذاری شد.');
         } catch (error) {
           modal.dataset.busy = 'false';
