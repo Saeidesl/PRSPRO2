@@ -223,17 +223,42 @@
       (selectedRoleIds || []).map(String)
     );
 
-    return getActiveRoles().map(function (role) {
+    const rolesToDisplay = getActiveRoles().slice();
+
+    selected.forEach(function (selectedId) {
+      const exists = rolesToDisplay.some(function (role) {
+        return String(role.ID || role.id || '') === selectedId;
+      });
+
+      if (exists) return;
+
+      const assignedRole = state.roles.find(function (role) {
+        return String(role.ID || role.id || '') === selectedId;
+      });
+
+      // نقش غیرفعالِ فعلی را نمایش می‌دهیم تا صرفاً به‌دلیل مخفی بودن
+      // در فرم ویرایش، ناخواسته از کاربر حذف نشود.
+      rolesToDisplay.push(assignedRole || {
+        ID: selectedId,
+        Name: 'نقش با شناسه ' + selectedId,
+        Status: 'INACTIVE'
+      });
+    });
+
+    return rolesToDisplay.map(function (role) {
       const id = role.ID || role.id || '';
       const name = getRoleName(role);
       const code = role.Code || role.code || '';
+      const inactive = String(role.Status || role.status || 'ACTIVE').toUpperCase() !== 'ACTIVE';
       const checked = selected.has(String(id)) ? ' checked' : '';
+      const statusText = inactive ? ' (غیرفعال)' : '';
 
       return '<label style="display:flex;gap:8px;align-items:center;margin:8px 0">' +
         '<input type="checkbox" name="user-role" value="' + esc(id) + '"' +
         checked + '>' +
         '<span>' + esc(name) +
         (code && code !== name ? ' (' + esc(code) + ')' : '') +
+        esc(statusText) +
         '</span>' +
         '</label>';
     }).join('');
