@@ -41,7 +41,7 @@
       workflows: ['WORKFLOW_MANAGE'],
       'project-statuses': ['PROJECT_STATUS_MANAGE'],
       'event-types': ['EVENT_TYPE_MANAGE'],
-      attachments: ['ATTACHMENT_VIEW'],
+      attachments: ['ATTACHMENT_VIEW', 'ATTACHMENT_UPLOAD'],
       reports: ['REPORT_VIEW'],
       users: ['USER_VIEW'],
       departments: ['DEPARTMENT_MANAGE'],
