@@ -308,7 +308,7 @@
               '<legend>نقش‌های کاربر</legend>' +
               (roleOptions || '<p>نقش فعالی برای انتخاب وجود ندارد.</p>') +
             '</fieldset>' +
-            '<div id="user-create-error" role="alert" style="color:#b91c1c;margin-top:12px"></div>' +
+            '<div id="user-create-error" role="alert" style="color:var(--color-danger);margin-top:12px"></div>' +
             '<div style="display:flex;gap:8px;margin-top:16px">' +
               '<button class="btn btn-primary" id="user-create-save" type="submit">ثبت کاربر</button>' +
               '<button class="btn btn-secondary" id="user-create-cancel" type="button">انصراف</button>' +
@@ -509,7 +509,7 @@
               '<small>نقش‌های موردنظر را انتخاب یا از انتخاب خارج کن.</small>' +
               (roleOptions || '<p>نقش فعالی برای انتخاب وجود ندارد.</p>') +
             '</fieldset>' +
-            '<div id="user-edit-error" role="alert" style="color:#b91c1c;margin-top:12px"></div>' +
+            '<div id="user-edit-error" role="alert" style="color:var(--color-danger);margin-top:12px"></div>' +
             '<div style="display:flex;gap:8px;margin-top:16px">' +
               '<button class="btn btn-primary" id="user-edit-save" type="submit">ذخیره تغییرات</button>' +
               '<button class="btn btn-secondary" id="user-edit-cancel" type="button">انصراف</button>' +
