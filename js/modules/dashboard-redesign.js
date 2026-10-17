@@ -554,11 +554,24 @@
       projectId = String(projectId || '');
       if (!projectId) return null;
       var existing = this.getHistory(projectId);
-      if (existing && !force && existing.loaded) return existing;
+      if (existing && !force && existing.loaded && !existing.loading && !existing.promise) return existing;
       if (existing && existing.promise && !force) return existing.promise;
 
       var self = this;
-      var history = existing || { events: [], eventData: {}, eventFields: {}, loaded: false, loading: false, error: '' };
+      var history = existing || {
+        events: [], eventData: {}, eventFields: {}, loaded: false,
+        loading: false, error: '', moreError: '', pagination: null, fetchOrder: ''
+      };
+      var resume = !!(force && history.moreError && history.pagination && history.pagination.hasMore);
+      if (force && !resume) {
+        history.events = [];
+        history.eventData = {};
+        history.eventFields = {};
+        history.pagination = null;
+        history.loaded = false;
+        history.moreError = '';
+      }
+
       history.loading = true;
       history.error = '';
       this.histories[projectId] = history;
@@ -566,24 +579,81 @@
 
       history.promise = (async function () {
         try {
-          var response = force
-            ? await window.PMS.Api.getFresh('/projects/' + encodeURIComponent(projectId) + '/details', 'dashboard_project_details_' + projectId)
-            : await window.PMS.Api.getCached('/projects/' + encodeURIComponent(projectId) + '/details', 'dashboard_project_details_' + projectId);
-          var data = self.unwrap(response ? response.data : null) || {};
-          history.events = self.normalizeArray(data.events || data.items || [], ['events', 'items', 'Events', 'Items']);
-          history.eventData = data.eventData && typeof data.eventData === 'object' ? data.eventData : {};
-          history.eventFields = data.eventFields && typeof data.eventFields === 'object' ? data.eventFields : {};
+          var order = history.fetchOrder || self.eventOrder || 'newest';
+          if (!resume) {
+            history.fetchOrder = order;
+          }
+          var page = resume && history.pagination
+            ? Number(history.pagination.page || 1) + 1
+            : 1;
+          var firstPage = !resume;
+
+          while (true) {
+            var path = '/projects/' + encodeURIComponent(projectId) +
+              '/details/page/' + encodeURIComponent(history.fetchOrder || order) + '/' + String(page);
+            var cacheKey = 'dashboard_project_details_' + projectId + '_' +
+              String(history.fetchOrder || order) + '_' + String(page);
+            var response = force
+              ? await window.PMS.Api.getFresh(path, cacheKey)
+              : await window.PMS.Api.getCached(path, cacheKey);
+            var data = self.unwrap(response ? response.data : null) || {};
+            var pageEvents = self.normalizeArray(data.events || data.items || [], ['events', 'items', 'Events', 'Items']);
+            var pagination = data.pagination || {
+              page: page,
+              pageSize: 30,
+              total: pageEvents.length,
+              hasMore: false,
+              order: history.fetchOrder || order
+            };
+
+            if (firstPage && !resume) {
+              history.events = pageEvents;
+              history.eventData = data.eventData && typeof data.eventData === 'object' ? data.eventData : {};
+              history.eventFields = data.eventFields && typeof data.eventFields === 'object' ? data.eventFields : {};
+            } else {
+              history.events = history.events.concat(pageEvents);
+              Object.assign(history.eventData, data.eventData && typeof data.eventData === 'object' ? data.eventData : {});
+              Object.assign(history.eventFields, data.eventFields && typeof data.eventFields === 'object' ? data.eventFields : {});
+            }
+
+            history.pagination = pagination;
+            history.loaded = true;
+            history.loading = !!pagination.hasMore;
+            history.error = '';
+            history.moreError = '';
+            self.renderProjectList();
+
+            if (firstPage) {
+              await self.loadAttachmentIndex();
+              self.populateFilterControls();
+              self.renderProjectList();
+              firstPage = false;
+            }
+
+            if (!pagination.hasMore) break;
+            page = Number(pagination.page || page) + 1;
+            await new Promise(function (resolve) { window.requestAnimationFrame(resolve); });
+          }
+
           history.loaded = true;
           history.loading = false;
           history.error = '';
-          await self.loadAttachmentIndex();
+          history.moreError = '';
           self.populateFilterControls();
           self.renderProjectList();
           self.startSearchIndexingIfNeeded();
           return history;
         } catch (error) {
           history.loading = false;
-          history.error = error && error.message ? error.message : 'دریافت تاریخچه ناموفق بود.';
+          var message = error && error.message ? error.message : 'دریافت تاریخچه ناموفق بود.';
+          if (history.events && history.events.length) {
+            history.loaded = true;
+            history.moreError = message;
+            history.error = '';
+          } else {
+            history.loaded = false;
+            history.error = message;
+          }
           self.renderProjectList();
           if (!self.projects.length) self.showError(error);
           return history;
