@@ -955,6 +955,10 @@
       } finally {
         delete this.projectDetailsLoading[id];
         this.renderProjectCards();
+        if (this.openEventId && this.projectDetails[id] &&
+            this.projectDetails[id].events.some((item) => String(item.ID || item.Id || item.id || '') === this.openEventId)) {
+          this.loadAttachments(this.openEventId);
+        }
         this.saveState();
       }
     },
@@ -1272,6 +1276,7 @@
 
     observeTimelineSentinels: function () {
       if (!('IntersectionObserver' in window)) return;
+      if (this.timelineObserver) this.timelineObserver.disconnect();
       if (!this.timelineObserver) {
         this.timelineObserver = new IntersectionObserver((entries) => {
           entries.forEach((entry) => {
