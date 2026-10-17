@@ -423,6 +423,7 @@
         } catch (error) {
           console.warn('دریافت گزینه‌های داشبورد انجام نشد.', error);
           self.showError(error, true);
+          loaded = true;
         } finally {
           self.lookupsLoaded = loaded;
           self.populateFilterControls();
