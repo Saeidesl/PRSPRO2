@@ -7,12 +7,23 @@
     items: [],
     search: '',
     saving: false,
-    requestId: 0
+    requestId: 0,
+    canManage: false
   };
 
   function init() {
+    const router = PMS.Router;
+    const permissions = router && Array.isArray(router.permissions)
+      ? router.permissions
+      : [];
+    state.canManage = !!(
+      (router && typeof router.isAdmin === 'function' && router.isAdmin()) ||
+      permissions.indexOf('PROJECT_STATUS_MANAGE') !== -1
+    );
+
     const search = document.getElementById('project-status-search');
     const create = document.getElementById('project-status-create');
+    if (create) create.hidden = !state.canManage;
 
     if (!search || search.dataset.bound) return;
     search.dataset.bound = 'true';
@@ -106,12 +117,14 @@
             </span>
           </td>
           <td>
-            <button type="button" class="btn btn-light btn-sm"
-                    data-edit="${escapeHtml(id(item))}">ویرایش</button>
-            <button type="button" class="btn btn-sm ${active ? 'btn-light' : 'btn-primary'}"
-                    data-toggle="${escapeHtml(id(item))}">
-              ${active ? 'غیرفعال کردن' : 'فعال کردن'}
-            </button>
+            ${state.canManage ? `
+              <button type="button" class="btn btn-light btn-sm"
+                      data-edit="${escapeHtml(id(item))}">ویرایش</button>
+              <button type="button" class="btn btn-sm ${active ? 'btn-light' : 'btn-primary'}"
+                      data-toggle="${escapeHtml(id(item))}">
+                ${active ? 'غیرفعال کردن' : 'فعال کردن'}
+              </button>
+            ` : 'فقط مشاهده'}
           </td>
         </tr>`;
     }).join('');
