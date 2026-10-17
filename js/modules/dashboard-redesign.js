@@ -10,6 +10,8 @@
     users: [],
     departments: [],
     eventTypes: [],
+    workflowStepsByWorkflow: {},
+    workflowLookupPromise: null,
     attachments: [],
     attachmentContent: {},
     histories: {},
@@ -410,6 +412,7 @@
             self.loadingProjects = false;
             self.populateFilterControls();
             self.applyFilters(false);
+            self.loadWorkflowLookup();
             self.startSearchIndexingIfNeeded();
           },
           onError: function (error, isBackground) {
@@ -421,6 +424,7 @@
         if (loading) loading.hidden = true;
         this.populateFilterControls();
         this.applyFilters(false);
+        this.loadWorkflowLookup();
         this.startSearchIndexingIfNeeded();
       } catch (error) {
         this.loadingProjects = false;
@@ -451,6 +455,42 @@
           button.disabled = false;
           button.textContent = 'بروزرسانی';
         }
+      }
+    },
+
+    loadWorkflowLookup: async function () {
+      var router = window.PMS.Router;
+      var canReadSteps = !!(router && (
+        (typeof router.isAdmin === 'function' && router.isAdmin()) ||
+        (Array.isArray(router.permissions) && router.permissions.indexOf('WORKFLOW_MANAGE') !== -1)
+      ));
+      if (!canReadSteps || !this.projects.length) return;
+      if (this.workflowLookupPromise) return this.workflowLookupPromise;
+      var self = this;
+      this.workflowLookupPromise = (async function () {
+        try {
+          var ids = [];
+          self.projects.forEach(function (project) {
+            var id = String(project.WorkflowID || project.WorkflowId || '');
+            if (id && ids.indexOf(id) === -1) ids.push(id);
+          });
+          await Promise.all(ids.map(async function (workflowId) {
+            try {
+              var key = window.PMS.Cache.keys.WORKFLOW_STEPS + '_' + workflowId;
+              var result = await window.PMS.Api.getCached('/workflows/' + encodeURIComponent(workflowId) + '/steps', key);
+              self.workflowStepsByWorkflow[workflowId] = self.normalizeArray(result ? result.data : null, ['steps', 'items', 'Steps', 'Items']);
+            } catch (error) {}
+          }));
+          self.populateFilterControls();
+          self.renderProjectList();
+        } catch (error) {
+          // نام مرحله در صورت نبود مجوز با شناسهٔ مرحله جایگزین می‌شود.
+        }
+      })();
+      try {
+        await this.workflowLookupPromise;
+      } finally {
+        this.workflowLookupPromise = null;
       }
     },
 
@@ -586,7 +626,12 @@
     },
 
     projectStage: function (project) {
-      return String(project.CurrentStepName || project.CurrentStepTitle || project.CurrentStage || project.StageName || project.CurrentStepID || project.CurrentStageID || '').trim();
+      var explicit = project.CurrentStepName || project.CurrentStepTitle || project.CurrentStage || project.StageName;
+      if (explicit) return String(explicit).trim();
+      var workflowId = String(project.WorkflowID || project.WorkflowId || '');
+      var steps = this.workflowStepsByWorkflow[workflowId] || [];
+      var step = this.findById(steps, project.CurrentStepID || project.CurrentStageID);
+      return String((step && (step.Name || step.Title || step.Code)) || project.CurrentStepID || project.CurrentStageID || '').trim();
     },
 
     projectUnit: function (project) {

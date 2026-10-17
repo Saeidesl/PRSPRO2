@@ -5,6 +5,8 @@
     projectId: null,
     project: null,
     events: [],
+    auditRecords: [],
+    auditLoadError: '',
     users: [],
     departments: [],
     eventTypes: [],
@@ -25,6 +27,7 @@
 
       this.bindEvents();
       this.load();
+      this.loadAuditHistory(false);
     },
 
     getProjectId: function () {
@@ -103,6 +106,155 @@
           window.location.hash = '#events';
         });
       }
+
+      const auditRetry = document.getElementById('project-management-history-retry');
+      if (auditRetry && !auditRetry.dataset.bound) {
+        auditRetry.dataset.bound = '1';
+        auditRetry.addEventListener('click', function () {
+          ProjectDetail.loadAuditHistory(true);
+        });
+      }
+    },
+
+    loadAuditHistory: async function (forceRefresh) {
+      const container = document.getElementById('project-management-history');
+      const loading = document.getElementById('project-management-history-loading');
+      const error = document.getElementById('project-management-history-error');
+      const router = window.PMS.Router;
+      const canViewAudit = !!(router &&
+        ((typeof router.isAdmin === 'function' && router.isAdmin()) ||
+          (Array.isArray(router.permissions) && router.permissions.indexOf('REPORT_VIEW') !== -1)));
+
+      if (!container) return;
+      if (!canViewAudit) {
+        if (loading) loading.hidden = true;
+        if (error) {
+          error.textContent = 'برای مشاهده تغییرات مدیریتی، دسترسی گزارش‌گیری لازم است.';
+          error.hidden = false;
+        }
+        return;
+      }
+
+      if (loading) loading.hidden = false;
+      if (error) error.hidden = true;
+
+      try {
+        const key = 'project_audit_' + String(this.projectId);
+        const response = forceRefresh
+          ? await window.PMS.Api.getFresh('/audit/entity/PROJECT/' + encodeURIComponent(this.projectId), key)
+          : await window.PMS.Api.getCached('/audit/entity/PROJECT/' + encodeURIComponent(this.projectId), key);
+        this.auditRecords = this.normalizeArray(response ? response.data : null, ['audits', 'items', 'Audits', 'Items']);
+        this.auditLoadError = '';
+        this.renderAuditHistory();
+        await this.loadVoidedEventAuditHistory();
+      } catch (auditError) {
+        this.auditLoadError = auditError && auditError.message ? auditError.message : 'دریافت تغییرات مدیریتی ناموفق بود.';
+        if (error) {
+          error.textContent = this.auditLoadError;
+          error.hidden = false;
+        }
+        if (container && !this.auditRecords.length) {
+          container.innerHTML = '<div class="table-empty">دریافت تغییرات مدیریتی ناموفق بود.</div>';
+        }
+      } finally {
+        if (loading) loading.hidden = true;
+      }
+    },
+
+    loadVoidedEventAuditHistory: async function () {
+      const self = this;
+      const voided = (this.events || []).filter(function (event) {
+        const status = String(event.Status || '').toUpperCase();
+        return status === 'VOID' || status === 'CANCELLED';
+      });
+      await Promise.all(voided.map(async function (event) {
+        const id = event.ID || event.Id || event.id;
+        if (!id) return;
+        try {
+          const key = 'event_audit_' + String(id);
+          const response = await window.PMS.Api.getCached('/audit/entity/EVENT/' + encodeURIComponent(id), key);
+          const records = self.normalizeArray(response ? response.data : null, ['audits', 'items', 'Audits', 'Items']);
+          records.forEach(function (record) {
+            if (!self.auditRecords.some(function (existing) { return String(existing.ID || existing.Id) === String(record.ID || record.Id); })) {
+              self.auditRecords.push(record);
+            }
+          });
+        } catch (error) {}
+      }));
+      this.renderAuditHistory();
+    },
+
+    renderAuditHistory: function () {
+      const container = document.getElementById('project-management-history');
+      if (!container) return;
+      const records = (this.auditRecords || []).slice().sort(function (a, b) {
+        return new Date(b.CreatedAt || 0).getTime() - new Date(a.CreatedAt || 0).getTime();
+      });
+      if (!records.length) {
+        container.innerHTML = '<div class="table-empty">تغییر مدیریتی برای این پروژه ثبت نشده است.</div>';
+        return;
+      }
+
+      const actionLabels = {
+        PROJECT_CREATED: 'ایجاد پروژه',
+        PROJECT_UPDATED: 'ویرایش اطلاعات پروژه',
+        PROJECT_DELETED: 'حذف پروژه',
+        EVENT_VOIDED: 'ابطال رویداد',
+        EVENT_CANCELLED: 'لغو رویداد',
+        EVENT_UPDATED: 'ویرایش رویداد'
+      };
+
+      container.innerHTML = records.map((record) => {
+        const action = String(record.Action || 'تغییر مدیریتی');
+        const user = this.findById(this.users, record.UserID || record.UserId);
+        const userName = user ? (user.Name || user.FullName || user.Username) : (record.UserID || record.UserId || '-');
+        const oldData = this.parseAuditData(record.OldData);
+        const newData = this.parseAuditData(record.NewData);
+        const changes = this.renderAuditDiff(oldData, newData);
+        return '<article class="project-management-record">' +
+          '<div class="project-management-record-head"><strong>' + this.escape(actionLabels[action] || action) + '</strong><span>' + this.escape(this.formatDate(record.CreatedAt)) + '</span></div>' +
+          '<div class="project-management-record-meta"><span>کاربر: ' + this.escape(userName) + '</span>' +
+          (record.Reason ? '<span>دلیل: ' + this.escape(record.Reason) + '</span>' : '') + '</div>' +
+          (changes ? '<details class="project-management-record-details"><summary>مشاهده جزئیات تغییر</summary>' + changes + '</details>' : '') +
+          '</article>';
+      }).join('');
+    },
+
+    parseAuditData: function (value) {
+      if (!value) return {};
+      if (typeof value === 'object') return value;
+      try {
+        const parsed = JSON.parse(String(value));
+        return parsed && typeof parsed === 'object' ? parsed : {};
+      } catch (error) {
+        return {};
+      }
+    },
+
+    renderAuditDiff: function (oldData, newData) {
+      const keys = Array.from(new Set(Object.keys(oldData || {}).concat(Object.keys(newData || {}))));
+      const labels = {
+        ProjectCode: 'کد پروژه', Title: 'عنوان پروژه', Description: 'توضیحات',
+        Status: 'وضعیت', CurrentStepID: 'مرحله فعلی', WorkflowID: 'گردش کار',
+        EventTypeID: 'نوع رویداد', OccurredAt: 'تاریخ رویداد', Reason: 'دلیل'
+      };
+      const changes = keys.filter(function (key) {
+        return JSON.stringify(oldData[key]) !== JSON.stringify(newData[key]);
+      });
+      if (!changes.length) return '';
+      return '<div class="project-management-diff">' + changes.map((key) => {
+        return '<div class="project-management-diff-row"><strong>' + this.escape(labels[key] || key) + '</strong>' +
+          '<span><small>قبل:</small> ' + this.escape(this.auditValue(oldData[key])) + '</span>' +
+          '<span><small>بعد:</small> ' + this.escape(this.auditValue(newData[key])) + '</span></div>';
+      }).join('') + '</div>';
+    },
+
+    auditValue: function (value) {
+      if (value === null || value === undefined || value === '') return '-';
+      if (typeof value === 'object') {
+        try { return JSON.stringify(value); } catch (error) { return String(value); }
+      }
+      return String(value);
     },
 
     load: async function () {
@@ -197,6 +349,7 @@
 
         if (eventsResult) {
           this.applyEventDetailsBundle(eventsResult.data, version);
+          this.loadVoidedEventAuditHistory();
         }
 
         this.showContent();
