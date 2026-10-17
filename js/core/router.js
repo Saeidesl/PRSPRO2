@@ -417,7 +417,10 @@ getBaseUrl: function () {
       }
 
       if (!Router.hasRouteAccess(route)) {
-        Router.handleRoute();
+        content.innerHTML =
+          '<div class="alert alert-danger">' +
+          'شما اجازه مشاهده این صفحه را ندارید.' +
+          '</div>';
         return;
       }
 
