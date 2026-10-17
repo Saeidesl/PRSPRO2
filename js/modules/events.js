@@ -190,7 +190,16 @@
           })
         );
 
-        const results = await Promise.all(requests);
+        // Each dataset has its own permission. One denied request (for
+        // example, the project register) must not prevent event types or
+        // permitted event history from loading.
+        const results = await Promise.all(
+          requests.map(function (request) {
+            return request.catch(function (error) {
+              return { cached: false, data: [], permissionOrLoadError: error };
+            });
+          })
+        );
         let resultIndex = 0;
 
         if (canViewEvents) {
