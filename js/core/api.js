@@ -2,9 +2,8 @@
 (function () {
   'use strict';
 
-  const API_BASE_URL =
-    'https://script.google.com/macros/s/AKfycbyIYLLT4QjEHRZZcx-jAZwLSwzdrDewhJbNlXxgaVL2h_3zZgRUT0qpp0Qzm65lC-MMMw/exec';
-
+ const API_BASE_URL =
+  'https://script.google.com/macros/s/AKfycbyIYLLT4QjEHRZZcx-jAZwLSwzdrDewhJbNlXxgaVL2h_3zZgRUT0qpp0Qzm65lC-MMMw/exec';
   const TOKEN_KEY = 'pms_api_token';
 
   let memoryToken = null;

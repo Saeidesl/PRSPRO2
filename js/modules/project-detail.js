@@ -53,6 +53,10 @@
       return window.PMS.Cache.keys.PROJECT_EVENTS + '_' + this.projectId;
     },
 
+    getEventDetailsCacheKey: function () {
+      return this.getEventsCacheKey() + '_DETAILS';
+    },
+
     getCacheKey: function (base, id) {
       return base + '_' + String(id);
     },
@@ -97,22 +101,25 @@
       const cachedEvents = window.PMS.Cache.get(
         this.getEventsCacheKey()
       );
+      const cachedDetails = window.PMS.Cache.get(
+        this.getEventDetailsCacheKey()
+      );
 
       if (cachedProject !== null) {
         this.project = cachedProject;
         this.renderProject(cachedProject);
       }
 
-      if (cachedEvents !== null) {
+      if (cachedDetails !== null) {
+        this.applyEventDetailsBundle(cachedDetails, version);
+      } else if (cachedEvents !== null) {
         this.events = this.normalizeEvents(cachedEvents);
         this.renderEvents(this.events);
       }
 
-      if (cachedProject !== null || cachedEvents !== null) {
+      if (cachedProject !== null || cachedEvents !== null || cachedDetails !== null) {
         if (loading) loading.hidden = true;
         this.showContent();
-
-        this.loadEventDetails(version);
       }
 
       const projectPromise = window.PMS.Api.getCached(
@@ -137,15 +144,13 @@
       const eventsPromise = window.PMS.Api.getCached(
         '/projects/' +
           encodeURIComponent(this.projectId) +
-          '/events',
-        this.getEventsCacheKey(),
+          '/details',
+        this.getEventDetailsCacheKey(),
         {
           onRefresh: function (data) {
             if (version !== ProjectDetail.loadVersion) return;
 
-            ProjectDetail.events = ProjectDetail.normalizeEvents(data);
-            ProjectDetail.renderEvents(ProjectDetail.events);
-            ProjectDetail.loadEventDetails(version);
+            ProjectDetail.applyEventDetailsBundle(data, version);
             ProjectDetail.showContent();
           }
         }
@@ -173,9 +178,7 @@
         }
 
         if (eventsResult) {
-          this.events = this.normalizeEvents(eventsResult.data);
-          this.renderEvents(this.events);
-          this.loadEventDetails(version);
+          this.applyEventDetailsBundle(eventsResult.data, version);
         }
 
         this.showContent();
@@ -186,7 +189,7 @@
 
         if (loading) loading.hidden = true;
 
-        if (cachedProject === null && cachedEvents === null) {
+        if (cachedProject === null && cachedEvents === null && cachedDetails === null) {
           this.showError(error);
         } else {
           this.showContent();
@@ -404,6 +407,44 @@
       } catch (error) {
         console.warn('دریافت مراحل فرایند انجام نشد.', error);
       }
+    },
+
+    applyEventDetailsBundle: function (data, version) {
+      const bundle = this.unwrap(data);
+      if (!bundle || typeof bundle !== 'object') return;
+
+      this.events = this.normalizeEvents(bundle.events || []);
+      this.eventData = {};
+
+      const eventData = bundle.eventData && typeof bundle.eventData === 'object'
+        ? bundle.eventData
+        : {};
+
+      Object.keys(eventData).forEach(function (eventId) {
+        ProjectDetail.eventData[String(eventId)] =
+          ProjectDetail.normalizeEventData(eventData[eventId]);
+      });
+
+      this.eventFields = {};
+      const eventFields = bundle.eventFields && typeof bundle.eventFields === 'object'
+        ? bundle.eventFields
+        : {};
+
+      Object.keys(eventFields).forEach(function (typeId) {
+        ProjectDetail.eventFields[String(typeId)] =
+          ProjectDetail.normalizeArray(eventFields[typeId]).filter(function (field) {
+            return !field.Status ||
+              String(field.Status).toUpperCase() === 'ACTIVE';
+          });
+      });
+
+      this.renderEvents(this.events);
+
+      this.loadSharedData(version).then(function () {
+        if (version === ProjectDetail.loadVersion) {
+          ProjectDetail.renderEvents(ProjectDetail.events);
+        }
+      });
     },
 
     loadEventDetails: async function (version) {
