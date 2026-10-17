@@ -1335,3 +1335,12 @@ textarea:focus-visible {
   text-align: center;
 }
 .project-dashboard .pd-event-total { color: var(--color-text-muted); font-size: var(--font-size-xs); font-weight: normal; }
+
+.project-dashboard .pd-project-detail-link {
+  margin-right: auto;
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
+}
+.project-dashboard .pd-project-detail-link:hover { text-decoration: underline; }
+.project-dashboard .pd-timeline-heading { flex-wrap: wrap; }
