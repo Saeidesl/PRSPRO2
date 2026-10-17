@@ -1285,3 +1285,53 @@ textarea:focus-visible {
   .project-dashboard .pd-search-hit-meta { text-align: right; }
   .project-dashboard .pd-image-attachment { width: calc(50% - 5px); }
 }
+
+
+/* Project management history, kept separate from production events */
+.pd-management-history { display: flex; flex-direction: column; gap: 10px; }
+.pd-management-entry {
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+.pd-management-entry-head,
+.pd-management-entry-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 14px;
+}
+.pd-management-entry-head { color: var(--color-text); font-size: var(--font-size-sm); }
+.pd-management-entry-head > span,
+.pd-management-entry-meta { color: var(--color-text-muted); font-size: var(--font-size-xs); }
+.pd-management-entry-meta { justify-content: flex-start; margin-top: 5px; }
+.pd-management-reason { margin: 8px 0 0; color: var(--color-text-secondary); font-size: var(--font-size-sm); }
+.pd-management-payload { margin-top: 9px; border-top: 1px solid var(--color-border-light); padding-top: 8px; }
+.pd-management-payload summary { color: var(--color-primary); font-size: var(--font-size-xs); cursor: pointer; }
+.pd-management-payload > div { margin-top: 8px; }
+.pd-management-payload pre {
+  max-height: 260px;
+  overflow: auto;
+  margin: 6px 0 0;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  background: var(--color-background);
+  color: var(--color-text-secondary);
+  direction: ltr;
+  text-align: left;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+}
+.project-dashboard .pd-timeline-sentinel {
+  margin: 8px 10px 8px 0;
+  padding: 9px 12px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  background: var(--color-background);
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+.project-dashboard .pd-event-total { color: var(--color-text-muted); font-size: var(--font-size-xs); font-weight: normal; }
