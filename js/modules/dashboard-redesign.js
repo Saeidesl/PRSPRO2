@@ -974,7 +974,7 @@
       if (expanded) {
         html += '<div class="dash-project-history" id="dash-history-' + this.escape(id) + '">';
         html += '<div class="dash-history-tools"><strong>خط زمانی تولید</strong><a href="#project-detail/' + encodeURIComponent(id) + '">صفحه جزئیات پروژه ←</a></div>';
-        if (!history || history.loading) {
+        if (!history || (!history.loaded && history.loading)) {
           html += '<div class="dash-skeleton-card"><span></span><span></span><span></span><span></span></div>';
         } else if (history.error) {
           html += '<div class="dash-error">دریافت تاریخچه ناموفق بود. <button type="button" class="btn btn-secondary dash-retry-history" data-project-id="' + this.escape(id) + '">تلاش مجدد</button></div>';
@@ -1009,10 +1009,13 @@
       var events = this.getTimelineEvents(history);
       var html = '<div class="dash-timeline" data-project-id="' + this.escape(projectId) + '">';
       html += this.renderTimelineBatch(projectId, history, matching, 0, 30, events);
-      if (events.length > 30) {
+      if (events.length > 30 || (history.loading && history.pagination && history.pagination.hasMore)) {
         html += '<div class="dash-timeline-more dash-skeleton-card" data-project-id="' + this.escape(projectId) + '" data-next-offset="30" aria-label="در حال بارگذاری رویدادهای بیشتر"><span></span><span></span><span></span></div>';
       }
       html += '</div>';
+      if (history.moreError) {
+        html += '<div class="dash-error">' + this.escape(history.moreError) + ' <button type="button" class="btn btn-secondary dash-retry-history" data-project-id="' + this.escape(projectId) + '">تلاش مجدد</button></div>';
+      }
       return html;
     },
 
@@ -1067,7 +1070,11 @@
           sentinel.insertAdjacentHTML('beforebegin', batch);
           offset += 30;
           if (offset >= events.length) {
-            sentinel.remove();
+            if (history.loading && history.pagination && history.pagination.hasMore) {
+              sentinel.setAttribute('data-next-offset', String(offset));
+            } else {
+              sentinel.remove();
+            }
           } else {
             sentinel.setAttribute('data-next-offset', String(offset));
           }
@@ -1076,9 +1083,12 @@
             if (target) Dashboard.focusTargetEvent(Dashboard.targetEventId);
           }
         });
-        if (document.querySelector('#dash-project-list .dash-timeline-more')) {
-          Dashboard.scheduleTimelineContinuation();
-        }
+        var canContinue = Array.prototype.slice.call(document.querySelectorAll('#dash-project-list .dash-timeline-more')).some(function (sentinel) {
+          var projectId = sentinel.getAttribute('data-project-id');
+          var history = Dashboard.getHistory(projectId);
+          return !!history && Number(sentinel.getAttribute('data-next-offset') || 0) < Dashboard.getTimelineEvents(history).length;
+        });
+        if (canContinue) Dashboard.scheduleTimelineContinuation();
       });
     },
 
