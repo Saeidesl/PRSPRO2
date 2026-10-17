@@ -369,7 +369,7 @@
   async function loadConfigurationLists() {
     const results = await Promise.all([
       PMS.Api.get('/departments'),
-      PMS.Api.get('/users'),
+      PMS.Api.get('/lookup/users-for-event-types'),
       PMS.Api.get('/project-statuses')
     ]);
 
