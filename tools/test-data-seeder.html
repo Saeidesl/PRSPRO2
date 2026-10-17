@@ -46,8 +46,25 @@ function dynamicData(fields,index){const out={};(fields||[]).forEach(f=>{const c
 function withTimeout(promise,label,ms){return new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error(label+' بیش از '+Math.round(ms/1000)+' ثانیه طول کشید؛ ارتباط با سرور پاسخ نداده است.')),ms);promise.then(value=>{clearTimeout(timer);resolve(value)},error=>{clearTimeout(timer);reject(error)})})}
 async function apiGet(path){status('در حال دریافت اطلاعات از سرور: '+path);log('درخواست اطلاعات: '+path);return dataOf(await withTimeout(PMS.Api.get(path),'دریافت '+path,30000))}
 async function apiPost(path,body){status('در حال ثبت اطلاعات در سرور: '+path);return dataOf(await withTimeout(PMS.Api.post(path,body),'ثبت '+path,30000))}
-function idOf(o){return String(pick(o,'ID','Id','id')||'')}
-function successEntity(o,key){if(o&&o[key])return o[key];if(o&&o.data&&o.data[key])return o.data[key];return o}
+function idOf(o){
+ const keys=['ID','Id','id','EventID','eventID','eventId','event_id','ProjectID','projectID','projectId','project_id'];
+ const seen=[];
+ function find(value,depth){
+  if(!value||typeof value!=='object'||depth>4||seen.indexOf(value)!==-1)return '';
+  seen.push(value);
+  for(const key of keys){if(value[key]!==undefined&&value[key]!==null&&String(value[key]).trim()!=='')return String(value[key])}
+  const nested=['event','Event','project','Project','data','result','item','record','entity'];
+  for(const key of nested){const found=find(value[key],depth+1);if(found)return found}
+  return '';
+ }
+ return find(o,0);
+}
+function successEntity(o,key){
+ if(!o||typeof o!=='object')return o;
+ const candidates=[o[key],o[key.charAt(0).toUpperCase()+key.slice(1)],o.data&&o.data[key],o.data&&o.data[key.charAt(0).toUpperCase()+key.slice(1)],o.result&&o.result[key],o.result&&o.result[key.charAt(0).toUpperCase()+key.slice(1)]];
+ for(const candidate of candidates){if(candidate&&typeof candidate==='object')return candidate}
+ return o;
+}
 function makePng(){return 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jXioAAAAASUVORK5CYII='}
 function makePdf(){const stream='BT\n/F1 12 Tf\n50 350 Td\n(PMS Test Attachment) Tj\nET';const objects=[null,'<< /Type /Catalog /Pages 2 0 R >>','<< /Type /Pages /Kids [3 0 R] /Count 1 >>','<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 400] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>','<< /Length '+stream.length+' >>\nstream\n'+stream+'\nendstream','<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'];let pdf='%PDF-1.4\n';const offsets=[0];for(let i=1;i<objects.length;i++){offsets[i]=pdf.length;pdf+=i+' 0 obj\n'+objects[i]+'\nendobj\n'}const xref=pdf.length;pdf+='xref\n0 '+objects.length+'\n0000000000 65535 f \n';for(let i=1;i<objects.length;i++)pdf+=String(offsets[i]).padStart(10,'0')+' 00000 n \n';pdf+='trailer\n<< /Size '+objects.length+' /Root 1 0 R >>\nstartxref\n'+xref+'\n%%EOF';return btoa(pdf)}
 function bytesToBase64(b64){return b64}
