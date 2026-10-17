@@ -830,7 +830,8 @@
       if (this.projectDetailsErrors[id]) {
         return '<div class="pd-timeline-panel"><div class="alert alert-danger">' +
           this.escape(this.projectDetailsErrors[id]) +
-          ' <button type="button" class="btn btn-sm btn-light" data-retry-project="' + this.escape(id) + '">تلاش مجدد</button></div></div>';
+          ' <button type="button" class="btn btn-sm btn-light" data-retry-project="' + this.escape(id) + '">تلاش مجدد</button>' +
+          ' <a class="pd-project-detail-link" href="#project-detail/' + encodeURIComponent(id) + '" data-action="open-project-detail">صفحه جزئیات پروژه</a></div></div>';
       }
       if (!this.projectDetails[id]) {
         return '<div class="pd-timeline-panel"><div class="pd-timeline-skeleton">' +
@@ -844,7 +845,8 @@
         return this.timelineOrder === 'oldest' ? -diff : diff;
       });
       if (!events.length) {
-        return '<div class="pd-timeline-panel"><div class="pd-timeline-empty">هنوز رویداد تولیدی برای این پروژه ثبت نشده است</div></div>';
+        return '<div class="pd-timeline-panel"><div class="pd-timeline-empty">هنوز رویداد تولیدی برای این پروژه ثبت نشده است</div>' +
+          '<a class="pd-project-detail-link" href="#project-detail/' + encodeURIComponent(id) + '" data-action="open-project-detail">مشاهده جزئیات پروژه و تغییرات مدیریتی</a></div>';
       }
       const visibleCount = Math.min(
         events.length,
