@@ -501,8 +501,9 @@
     restoreExpandedHistories: function () {
       var self = this;
       var queue = Object.keys(this.expanded).filter(function (id) {
+        var history = self.getHistory(id);
         return self.expanded[id] && !!self.getProject(id) &&
-          !(self.getHistory(id) && self.getHistory(id).loaded);
+          (!history || !history.loaded || history.error || history.moreError);
       });
       var cursor = 0;
       [0, 1].forEach(function () {
@@ -554,8 +555,9 @@
       projectId = String(projectId || '');
       if (!projectId) return null;
       var existing = this.getHistory(projectId);
-      if (existing && !force && existing.loaded && !existing.loading && !existing.promise) return existing;
+      if (existing && !force && existing.loaded && !existing.loading && !existing.promise && !existing.error && !existing.moreError) return existing;
       if (existing && existing.promise && !force) return existing.promise;
+      if (!force && existing && (existing.error || existing.moreError)) force = true;
 
       var self = this;
       var history = existing || {
@@ -688,16 +690,20 @@
       var queue = this.projects.map(function (project) { return String(self.getId(project)); }).filter(Boolean);
       var cursor = 0;
       var completed = 0;
+      var failedIds = [];
       var workers = [0, 1];
       this.updateSearchProgress('در حال بررسی اطلاعات رویدادها برای جست‌وجو و فیلتر کامل...');
       Promise.all(workers.map(async function () {
         while (cursor < queue.length && generation === self.searchGeneration) {
           var id = queue[cursor++];
-          if (!id || self.getHistory(id) && self.getHistory(id).loaded) {
+          var existingHistory = self.getHistory(id);
+          if (!id || (existingHistory && existingHistory.loaded && !existingHistory.loading &&
+              !existingHistory.promise && !existingHistory.error && !existingHistory.moreError)) {
             completed++;
             continue;
           }
-          await self.loadProjectHistory(id, false);
+          var loadedHistory = await self.loadProjectHistory(id, false);
+          if (loadedHistory && (loadedHistory.error || loadedHistory.moreError)) failedIds.push(id);
           completed++;
           self.updateSearchProgress('در حال جست‌وجو در تاریخچه‌ها: ' + self.toPersianDigits(completed) + ' از ' + self.toPersianDigits(queue.length));
           self.applyFilters(false);
@@ -706,7 +712,12 @@
         if (generation !== self.searchGeneration) return;
         self.indexing = false;
         self.indexingDone = true;
-        self.updateSearchProgress('');
+        if (failedIds.length) {
+          self.updateSearchProgress('بعضی تاریخچه‌ها بارگذاری نشدند؛ برای تلاش دوباره از دکمهٔ تلاش مجدد استفاده کنید.');
+          self.showError(new Error('بارگذاری کامل تاریخچهٔ بعضی پروژه‌ها ناموفق بود.'), true);
+        } else {
+          self.updateSearchProgress('');
+        }
         self.applyFilters(false);
       });
     },
