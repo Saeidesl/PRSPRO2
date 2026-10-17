@@ -462,7 +462,7 @@
     updateSearchStatus: function () {
       const status = this.el('dashboard-search-status');
       if (!status) return;
-      const needsIndex = !!this.getSearchText() || !!this.getFilterValue('registrant') || !!this.getFilterValue('eventType');
+      const needsIndex = !!this.getSearchText() || this.hasEventFilters();
       if (this.searchIndexLoading && needsIndex) {
         status.textContent = 'در حال بررسی تدریجی اطلاعات رویدادها… ' +
           this.searchIndex.length.toLocaleString('fa-IR') +
@@ -494,7 +494,7 @@
     },
 
     hasEventFilters: function () {
-      return !!(this.getFilterValue('registrant') || this.getFilterValue('eventType'));
+      return !!(this.getFilterValue('department') || this.getFilterValue('registrant') || this.getFilterValue('eventType'));
     },
 
     applyFilters: function () {
@@ -566,9 +566,6 @@
       if (status && String(project.Status || '').toUpperCase() !== status.toUpperCase()) return false;
       if (stage && String(project.CurrentStepID || '') !== stage &&
           this.normalizeText(project.CurrentStepName) !== this.normalizeText(this.getOptionLabel('dashboard-filter-stage', stage))) return false;
-      if (department && String(project.CurrentDepartmentID || '') !== department &&
-          this.normalizeText(project.CurrentDepartmentName) !== this.normalizeText(this.getOptionLabel('dashboard-filter-department', department))) return false;
-
       const created = this.timeValue(project.CreatedAt);
       const activity = this.timeValue(project.LastActivityAt || project.UpdatedAt || project.CreatedAt);
       const createdFrom = this.parseJalaliDate(this.getFilterValue('createdFrom'));
@@ -583,8 +580,10 @@
     },
 
     matchesEventFilters: function (event) {
+      const department = this.getFilterValue('department');
       const registrant = this.getFilterValue('registrant');
       const eventType = this.getFilterValue('eventType');
+      if (department && String(event.DepartmentID || '') !== department) return false;
       if (registrant && String(event.CreatedBy || '') !== registrant) return false;
       if (eventType && String(event.EventTypeID || '') !== eventType) return false;
       return true;
