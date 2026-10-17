@@ -14,7 +14,7 @@
 <p>این ابزار با نشست ورود فعلی شما کار می‌کند و از API واقعی برنامه استفاده می‌کند. پروژه‌های آزمایشی با کدهای TEST-0001 تا TEST-0050 و رویدادهای مرتبط ساخته می‌شوند.</p>
 <div class="warning"><b>هشدار:</b> این عملیات داده واقعی در پایگاه داده فعلی ایجاد می‌کند. فقط در محیط آزمایشی یا زمانی اجرا کنید که ساخت داده‌های تستی در محیط فعلی مورد تأیید شماست. رکوردهای موجود با کد TEST-0001 تا TEST-0050 دوباره ساخته نمی‌شوند.</div>
 <div class="row">
-<div class="field"><label for="projectCount">تعداد پروژه‌ها (حداکثر ۵۰)</label><input id="projectCount" type="number" min="1" max="50" value="50"></div>
+<div class="field"><label for="projectCount">تعداد پروژه‌ها (حداکثر ۵۰)</label><input id="projectCount" type="number" min="1" max="50" value="1"></div>
 <div class="field"><label for="eventsPerProject">رویداد برای هر پروژه (حداقل ۱۰)</label><input id="eventsPerProject" type="number" min="10" max="20" value="10"></div>
 </div>
 <div class="row">
@@ -71,10 +71,10 @@ async function run(){
   const orderedTypes=eventTypeSort(projectTypes,steps);
   // Validate every event type's dynamic fields before creating any records.
   orderedTypes.forEach(t=>{try{dynamicData(fieldMap[idOf(t)]||[],0)}catch(e){throw new Error('پیش‌بررسی نوع رویداد «'+pick(t,'Name','name')+'» ناموفق بود؛ هنوز هیچ پروژه‌ای ساخته نشده است. '+e.message)}});
-  const count=Math.max(1,Math.min(50,Number($('projectCount').value)||50));
+  const count=Math.max(1,Math.min(50,Number($('projectCount').value)||1));
   const perProject=Math.max(10,Math.min(20,Number($('eventsPerProject').value)||10));
   const withFiles=$('withAttachments').checked;
-  const total=count*(perProject+1);let progress=0;$('progress').max=total;$('progress').value=0;
+  if(count>1&&!confirm('پیش‌بررسی فقط ساختار را بررسی کرده است، نه پذیرش گردش واقعی رویدادها. ساخت '+count+' پروژه و حدود '+(count*perProject)+' رویداد در پایگاه داده ادامه یابد؟ برای آزمون اول بهتر است فقط ۱ پروژه بسازید.')){throw new Error('عملیات پیش از ایجاد رکورد به درخواست کاربر لغو شد.')}\n  const total=count*(perProject+1);let progress=0;$('progress').max=total;$('progress').value=0;
   log('گردش کار انتخاب‌شده: '+pick(workflow,'Name','name')+' ('+workflowId+')');
   log('تعداد انواع رویداد مرتبط و فعال: '+projectTypes.length+'؛ پروژه‌های موجود: '+projects.length);
   const knownCodes=new Set(projects.map(p=>String(pick(p,'ProjectCode','projectCode'))));
