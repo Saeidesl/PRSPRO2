@@ -440,6 +440,7 @@
             self.loadingProjects = false;
             self.populateFilterControls();
             self.applyFilters(false);
+            self.restoreExpandedHistories();
             self.loadWorkflowLookup();
             self.startSearchIndexingIfNeeded();
           },
@@ -452,6 +453,7 @@
         if (loading) loading.hidden = true;
         this.populateFilterControls();
         this.applyFilters(false);
+        this.restoreExpandedHistories();
         this.loadWorkflowLookup();
         this.startSearchIndexingIfNeeded();
       } catch (error) {
@@ -475,6 +477,7 @@
         this.indexingDone = false;
         this.populateFilterControls();
         this.applyFilters(false);
+        this.restoreExpandedHistories();
         this.startSearchIndexingIfNeeded();
       } catch (error) {
         this.showError(error, true);
@@ -484,6 +487,22 @@
           button.textContent = 'بروزرسانی';
         }
       }
+    },
+
+    restoreExpandedHistories: function () {
+      var self = this;
+      var queue = Object.keys(this.expanded).filter(function (id) {
+        return self.expanded[id] && !(self.getHistory(id) && self.getHistory(id).loaded);
+      });
+      var cursor = 0;
+      [0, 1].forEach(function () {
+        (async function () {
+          while (cursor < queue.length) {
+            var id = queue[cursor++];
+            await self.loadProjectHistory(id, false);
+          }
+        })();
+      });
     },
 
     loadWorkflowLookup: async function () {
