@@ -19,6 +19,8 @@
 
     init: function () {
       this.projectId = this.getProjectId();
+      this.managementHistory = [];
+      this.managementHistoryError = null;
 
       if (!this.projectId) {
         this.showError('شناسه پروژه مشخص نیست.');
@@ -67,6 +69,12 @@
       const backButton = document.getElementById(
         'project-back-button'
       );
+
+      try {
+        if (backButton && window.sessionStorage.getItem('pms_project_detail_return_route') === 'dashboard') {
+          backButton.textContent = '← بازگشت به داشبورد';
+        }
+      } catch (error) {}
 
       const addEventButton = document.getElementById(
         'project-add-event-button'
