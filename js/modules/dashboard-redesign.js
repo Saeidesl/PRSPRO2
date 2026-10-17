@@ -633,7 +633,12 @@
         }
         if (self.filters.registrant) {
           var registrantMatch = !!history && history.events.some(function (event) {
-            return String(event.CreatedByName || event.CreatorName || event.CreatedBy || event.CreatedByID || '') === String(self.filters.registrant);
+            var selected = String(self.filters.registrant);
+            var creatorId = String(event.CreatedBy || event.CreatedByID || event.CreatedById || '');
+            var creatorName = String(event.CreatedByName || event.CreatorName || '');
+            var lookupName = String(self.lookupName(self.users, selected) || '');
+            return creatorId === selected || creatorName === selected ||
+              (!!lookupName && creatorName === lookupName);
           });
           if (!registrantMatch) matches = false;
         }
@@ -910,24 +915,30 @@
       }
     },
 
-    openSearchEvent: function (projectId, eventId) {
+    openSearchEvent: async function (projectId, eventId) {
       this.expanded[String(projectId)] = true;
       this.targetEventId = String(eventId);
       this.openEventId = String(eventId);
-      if (!this.getHistory(projectId) || !this.getHistory(projectId).loaded) this.loadProjectHistory(projectId, false);
+      var history = this.getHistory(projectId);
+      if (!history || !history.loaded) {
+        await this.loadProjectHistory(projectId, false);
+      }
       this.renderProjectList();
+      this.focusTargetEvent(eventId);
+    },
+
+    focusTargetEvent: function (eventId) {
       var self = this;
       window.setTimeout(function () {
-        var target = document.getElementById('dash-event-' + self.targetEventId);
-        if (target) {
-          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          target.classList.add('is-target');
-          window.setTimeout(function () {
-            target.classList.remove('is-target');
-            self.targetEventId = '';
-          }, 2800);
-        }
-      }, 100);
+        var target = document.getElementById('dash-event-' + String(eventId || self.targetEventId));
+        if (!target) return;
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        target.classList.add('is-target');
+        window.setTimeout(function () {
+          target.classList.remove('is-target');
+          if (String(self.targetEventId) === String(eventId)) self.targetEventId = '';
+        }, 2800);
+      }, 80);
     },
 
     renderEventSearchResults: function () {
@@ -1139,12 +1150,53 @@
       var match = digits.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})$/);
       if (!match) return null;
       var jy = Number(match[1]), jm = Number(match[2]), jd = Number(match[3]);
-      if (jm < 1 || jm > 12 || jd < 1 || jd > 31) return null;
-      var gy = jy + 621;
-      var start = new Date(gy, 2, 20);
-      var offset = (jm <= 6 ? (jm - 1) * 31 : 186 + (jm - 7) * 30) + jd - 1;
-      start.setDate(start.getDate() + offset);
-      return new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+      if (jm < 1 || jm > 12 || jd < 1 || jd > (jm <= 6 ? 31 : (jm <= 11 ? 30 : 30))) return null;
+      var date = this.jalaliToGregorian(jy, jm, jd);
+      if (date === null) return null;
+      try {
+        var parts = new Intl.DateTimeFormat('en-US-u-ca-persian', {
+          year: 'numeric', month: 'numeric', day: 'numeric'
+        }).formatToParts(new Date(date));
+        var parsed = {};
+        parts.forEach(function (part) {
+          if (part.type === 'year' || part.type === 'month' || part.type === 'day') parsed[part.type] = Number(part.value);
+        });
+        if (parsed.year !== jy || parsed.month !== jm || parsed.day !== jd) return null;
+      } catch (error) {
+        // If Intl calendar parts are unavailable, keep the converted date.
+      }
+      var converted = new Date(date);
+      return new Date(converted.getFullYear(), converted.getMonth(), converted.getDate()).getTime();
+    },
+
+    jalaliToGregorian: function (jy, jm, jd) {
+      jy += 1595;
+      var days = -355668 + (365 * jy) + Math.floor(jy / 33) * 8 +
+        Math.floor(((jy % 33) + 3) / 4) + jd;
+      days += jm < 7 ? (jm - 1) * 31 : ((jm - 7) * 30) + 186;
+      var gy = 400 * Math.floor(days / 146097);
+      days %= 146097;
+      if (days > 36524) {
+        gy += 100 * Math.floor(--days / 36524);
+        days %= 36524;
+        if (days >= 365) days++;
+      }
+      gy += 4 * Math.floor(days / 1461);
+      days %= 1461;
+      if (days > 365) {
+        gy += Math.floor((days - 1) / 365);
+        days = (days - 1) % 365;
+      }
+      var gd = days + 1;
+      var leap = (gy % 4 === 0 && gy % 100 !== 0) || gy % 400 === 0;
+      var monthDays = [0, 31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+      var gm = 1;
+      while (gm <= 12 && gd > monthDays[gm]) {
+        gd -= monthDays[gm];
+        gm++;
+      }
+      if (gm > 12) return null;
+      return new Date(gy, gm - 1, gd).getTime();
     },
 
     eventTime: function (event) {
