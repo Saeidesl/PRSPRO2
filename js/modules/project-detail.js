@@ -102,7 +102,6 @@
 
           window.location.hash = '#events';
         });
-      });
       }
     },
 
