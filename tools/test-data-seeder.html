@@ -46,8 +46,35 @@ function dynamicData(fields,index){const out={};(fields||[]).forEach(f=>{const c
 function withTimeout(promise,label,ms){return new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error(label+' بیش از '+Math.round(ms/1000)+' ثانیه طول کشید؛ ارتباط با سرور پاسخ نداده است.')),ms);promise.then(value=>{clearTimeout(timer);resolve(value)},error=>{clearTimeout(timer);reject(error)})})}
 async function apiGet(path){status('در حال دریافت اطلاعات از سرور: '+path);log('درخواست اطلاعات: '+path);return dataOf(await withTimeout(PMS.Api.get(path),'دریافت '+path,30000))}
 async function apiPost(path,body){status('در حال ثبت اطلاعات در سرور: '+path);return dataOf(await withTimeout(PMS.Api.post(path,body),'ثبت '+path,30000))}
-function idOf(o){return String(pick(o,'ID','Id','id')||'')}
-function successEntity(o,key){if(o&&o[key])return o[key];if(o&&o.data&&o.data[key])return o.data[key];return o}
+function idOf(o,entityType){
+ const entity=String(entityType||'').toLowerCase();
+ const specific=entity==='event'
+  ?['EventID','eventID','eventId','event_id']
+  :entity==='project'
+   ?['ProjectID','projectID','projectId','project_id']
+   :[];
+ const keys=specific.concat(['ID','Id','id']);
+ const seen=[];
+ function find(value,depth){
+  if(!value||typeof value!=='object'||depth>4||seen.indexOf(value)!==-1)return '';
+  seen.push(value);
+  for(const key of keys){if(value[key]!==undefined&&value[key]!==null&&String(value[key]).trim()!=='')return String(value[key])}
+  const nested=entity==='event'
+   ?['event','Event','data','result','item','record','entity']
+   :entity==='project'
+    ?['project','Project','data','result','item','record','entity']
+    :['event','Event','project','Project','data','result','item','record','entity'];
+  for(const key of nested){const found=find(value[key],depth+1);if(found)return found}
+  return '';
+ }
+ return find(o,0);
+}
+function successEntity(o,key){
+ if(!o||typeof o!=='object')return o;
+ const candidates=[o[key],o[key.charAt(0).toUpperCase()+key.slice(1)],o.data&&o.data[key],o.data&&o.data[key.charAt(0).toUpperCase()+key.slice(1)],o.result&&o.result[key],o.result&&o.result[key.charAt(0).toUpperCase()+key.slice(1)]];
+ for(const candidate of candidates){if(candidate&&typeof candidate==='object')return candidate}
+ return o;
+}
 function makePng(){return 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jXioAAAAASUVORK5CYII='}
 function makePdf(){const stream='BT\n/F1 12 Tf\n50 350 Td\n(PMS Test Attachment) Tj\nET';const objects=[null,'<< /Type /Catalog /Pages 2 0 R >>','<< /Type /Pages /Kids [3 0 R] /Count 1 >>','<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 400] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>','<< /Length '+stream.length+' >>\nstream\n'+stream+'\nendstream','<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'];let pdf='%PDF-1.4\n';const offsets=[0];for(let i=1;i<objects.length;i++){offsets[i]=pdf.length;pdf+=i+' 0 obj\n'+objects[i]+'\nendobj\n'}const xref=pdf.length;pdf+='xref\n0 '+objects.length+'\n0000000000 65535 f \n';for(let i=1;i<objects.length;i++)pdf+=String(offsets[i]).padStart(10,'0')+' 00000 n \n';pdf+='trailer\n<< /Size '+objects.length+' /Root 1 0 R >>\nstartxref\n'+xref+'\n%%EOF';return btoa(pdf)}
 function bytesToBase64(b64){return b64}
@@ -94,7 +121,7 @@ async function run(){
    try{
     const res=await apiPost('/projects',{ProjectCode:code,Title:'پروژه آزمایشی '+String(i).padStart(4,'0'),Description:'رکورد آزمایشی تولیدشده برای کنترل گردش کار و تاریخچه. شناسه گروه: '+code,WorkflowID:workflowId});
     project=successEntity(res,'project');
-    const pid=idOf(project);if(!pid)throw new Error('پاسخ ساخت پروژه شناسه ندارد');
+    const pid=idOf(project,'project');if(!pid)throw new Error('پاسخ ساخت پروژه شناسه ندارد');
     report.projectsCreated++;knownCodes.add(code);log('پروژه ساخته شد: '+code);
     if(withFiles&&i%5===1){try{await uploadAttachment('PROJECT',pid,code+'-sample.png','image/png',png);report.attachmentsCreated++;log('  پیوست PNG به پروژه اضافه شد')}catch(e){report.failures.push(code+' پیوست پروژه: '+e.message);log('  خطای پیوست پروژه: '+e.message)}}
     for(let j=0;j<perProject;j++){
@@ -103,7 +130,7 @@ async function run(){
      try{
       const fields=fieldMap[idOf(type)]||[];
       const payload={ProjectID:pid,EventTypeID:idOf(type),EventTypeVersion:Number(pick(type,'Version','version'))||1,OccurredAt:dateIso((perProject-j)*2,(i%24)*60),Description:'رویداد آزمایشی '+(j+1)+' از '+perProject+' برای '+code+'؛ مرحله '+pick(type,'Name','name'),DynamicData:dynamicData(fields,j+i)};
-      const evRes=await apiPost('/events',payload);const ev=successEntity(evRes,'event');const eid=idOf(ev);if(!eid)throw new Error('پاسخ ثبت رویداد شناسه ندارد');
+      const evRes=await apiPost('/events',payload);const ev=successEntity(evRes,'event');const eid=idOf(ev,'event');if(!eid)throw new Error('پاسخ ثبت رویداد شناسه ندارد');
       report.eventsCreated++;log('  رویداد '+(j+1)+' ثبت شد: '+pick(type,'Name','name'));
       if(withFiles&&j===Math.min(4,perProject-1)&&i%5===1){try{await uploadAttachment('EVENT',eid,code+'-event-'+(j+1)+'.pdf','application/pdf',pdf);report.attachmentsCreated++;log('  پیوست PDF به رویداد اضافه شد')}catch(e){report.failures.push(code+' پیوست رویداد: '+e.message);log('  خطای پیوست رویداد: '+e.message)}}
      }catch(e){report.failures.push(code+' رویداد '+(j+1)+': '+e.message);log('  خطای رویداد '+(j+1)+': '+e.message)}
