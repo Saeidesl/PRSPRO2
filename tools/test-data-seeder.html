@@ -74,7 +74,8 @@ async function run(){
   const count=Math.max(1,Math.min(50,Number($('projectCount').value)||1));
   const perProject=Math.max(10,Math.min(20,Number($('eventsPerProject').value)||10));
   const withFiles=$('withAttachments').checked;
-  if(count>1&&!confirm('پیش‌بررسی فقط ساختار را بررسی کرده است، نه پذیرش گردش واقعی رویدادها. ساخت '+count+' پروژه و حدود '+(count*perProject)+' رویداد در پایگاه داده ادامه یابد؟ برای آزمون اول بهتر است فقط ۱ پروژه بسازید.')){throw new Error('عملیات پیش از ایجاد رکورد به درخواست کاربر لغو شد.')}\n  const total=count*(perProject+1);let progress=0;$('progress').max=total;$('progress').value=0;
+  if(count>1&&!confirm('پیش‌بررسی فقط ساختار را بررسی کرده است، نه پذیرش گردش واقعی رویدادها. ساخت '+count+' پروژه و حدود '+(count*perProject)+' رویداد در پایگاه داده ادامه یابد؟ برای آزمون اول بهتر است فقط ۱ پروژه بسازید.')){throw new Error('عملیات پیش از ایجاد رکورد به درخواست کاربر لغو شد.')} 
+  const total=count*(perProject+1);let progress=0;$('progress').max=total;$('progress').value=0;
   log('گردش کار انتخاب‌شده: '+pick(workflow,'Name','name')+' ('+workflowId+')');
   log('تعداد انواع رویداد مرتبط و فعال: '+projectTypes.length+'؛ پروژه‌های موجود: '+projects.length);
   const knownCodes=new Set(projects.map(p=>String(pick(p,'ProjectCode','projectCode'))));
