@@ -6,7 +6,7 @@
 
   const STATE_KEY = 'pms_project_dashboard_state_v1';
   const SUMMARY_CACHE_KEY = 'project_dashboard_summary';
-  const SEARCH_BATCH_SIZE = 100;
+  const SEARCH_BATCH_SIZE = 5000;
   const PROJECT_BATCH_SIZE = 25;
 
   const Dashboard = {
@@ -461,7 +461,7 @@
           items.forEach((item) => {
             const id = String(item.ID || '');
             if (!id || this.searchIndexIds[id]) return;
-            item._searchText = this.normalizeText(item.SearchText || '');
+            item._searchText = this.normalizeText((item.SearchText || '') + ' ' + this.formatDateTime(item.OccurredAt || item.CreatedAt));
             this.searchIndexIds[id] = true;
             this.searchIndex.push(item);
           });
