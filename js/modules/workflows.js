@@ -639,22 +639,25 @@
 
         <div class="modal-footer"
              style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-start">
-          <button type="button" class="btn btn-primary" id="steps-add-button">
+          ${state.canManage ? `<button type="button" class="btn btn-primary" id="steps-add-button">
             + افزودن مرحله
-          </button>
+          </button>` : ''}
           <button type="button" class="btn btn-light" data-close-modal>
             بستن
           </button>
         </div>
       `,
       onReady: function (overlay) {
-        overlay.querySelector('#steps-add-button').addEventListener(
-          'click',
-          function () {
-            closeModal(overlay);
-            showCreateStepModal(workflow);
-          }
-        );
+        const addStepButton = overlay.querySelector('#steps-add-button');
+        if (addStepButton) {
+          addStepButton.addEventListener(
+            'click',
+            function () {
+              closeModal(overlay);
+              showCreateStepModal(workflow);
+            }
+          );
+        }
       }
     });
   }
