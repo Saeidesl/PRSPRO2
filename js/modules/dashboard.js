@@ -471,7 +471,8 @@
           (this.searchIndexTotal ? ' از ' + this.searchIndexTotal.toLocaleString('fa-IR') : '');
         status.hidden = false;
       } else if (this.searchIndexError && needsIndex) {
-        status.textContent = 'جست‌وجوی جزئیات رویدادها انجام نشد. اطلاعات پروژه‌ها همچنان قابل مشاهده است.';
+        status.innerHTML = this.escape('جست‌وجوی جزئیات رویدادها انجام نشد. اطلاعات پروژه‌ها همچنان قابل مشاهده است.') +
+          ' <button type="button" class="btn btn-sm btn-light" data-retry-search-index>تلاش مجدد</button>';
         status.hidden = false;
       } else {
         status.hidden = true;
@@ -543,8 +544,13 @@
 
       this.filteredProjects = filtered;
       if (this.visibleCount < PROJECT_BATCH_SIZE) this.visibleCount = PROJECT_BATCH_SIZE;
+      const filteredProjectIds = Object.create(null);
+      filtered.forEach((project) => { filteredProjectIds[String(this.projectId(project))] = true; });
+      const displayEventMatches = matchingEvents.filter((item) =>
+        !!filteredProjectIds[String(item.ProjectID)] && this.matchesEventFilters(item)
+      );
       this.renderActiveFilters();
-      this.renderSearchResults(matchingEvents);
+      this.renderSearchResults(displayEventMatches);
       this.renderProjectCards();
       this.updateSearchClear();
       this.updateSearchStatus();
@@ -553,7 +559,7 @@
       if (count) {
         count.textContent = filtered.length.toLocaleString('fa-IR') + ' پروژه از ' +
           this.projects.length.toLocaleString('fa-IR') + ' پروژه' +
-          (query ? '؛ ' + matchingEvents.length.toLocaleString('fa-IR') + ' رویداد منطبق' : '');
+          (query ? '؛ ' + displayEventMatches.length.toLocaleString('fa-IR') + ' رویداد منطبق' : '');
       }
 
       const empty = this.el('dashboard-project-empty');
@@ -627,11 +633,8 @@
           '</button>'
         ).join('') + '<button type="button" class="pd-clear-all" data-clear-filter="all">پاک کردن همه</button>';
       }
-      const filterCount = this.hasEventFilters() +
-        !!this.getFilterValue('status') + !!this.getFilterValue('stage') +
-        !!this.getFilterValue('department') + !!this.getFilterValue('createdFrom') +
-        !!this.getFilterValue('createdTo') + !!this.getFilterValue('activityFrom') +
-        !!this.getFilterValue('activityTo');
+      const filterCount = ['status', 'stage', 'department', 'createdFrom', 'createdTo', 'activityFrom', 'activityTo', 'registrant', 'eventType']
+        .filter((key) => !!this.getFilterValue(key)).length;
       if (countBadge) {
         countBadge.textContent = String(filterCount);
         countBadge.hidden = !filterCount;
@@ -831,7 +834,7 @@
         known[code] = true;
         const value = data[code];
         if (value === undefined || value === null || String(value).trim() === '') return;
-        dynamic.push(this.detailItem(field.Name || code, this.displayValue(value)));
+        dynamic.push(this.detailItem(field.Name || code, this.formatFieldValue(value, field)));
       });
       Object.keys(data).forEach((code) => {
         if (known[code] || data[code] === undefined || data[code] === null || String(data[code]).trim() === '') return;
@@ -999,7 +1002,7 @@
         }
         this.renderProjectCards();
         window.requestAnimationFrame(() => {
-          const current = this.el('dashboard-project-list').querySelector('[data-action="toggle-project"][data-project-id="' + CSS.escape(id) + '"]');
+          const current = Array.from(this.el('dashboard-project-list').querySelectorAll('[data-action="toggle-project"]')).find((item) => item.getAttribute('data-project-id') === id);
           if (current) window.scrollTo(0, window.scrollY + current.getBoundingClientRect().top - beforeTop);
         });
         this.saveState();
@@ -1012,7 +1015,7 @@
         this.openEventId = this.openEventId === eventId ? '' : eventId;
         this.renderProjectCards();
         window.requestAnimationFrame(() => {
-          const current = this.el('dashboard-project-list').querySelector('[data-action="toggle-event"][data-event-id="' + CSS.escape(eventId) + '"]');
+          const current = Array.from(this.el('dashboard-project-list').querySelectorAll('[data-action="toggle-event"]')).find((item) => item.getAttribute('data-event-id') === eventId);
           if (current) window.scrollTo(0, window.scrollY + current.getBoundingClientRect().top - beforeTop);
         });
         if (this.openEventId) this.loadAttachments(this.openEventId);
@@ -1158,6 +1161,23 @@
       if (status === 'ON_HOLD' || status === 'INACTIVE') return 'is-stopped';
       if (status === 'CANCELLED' || status === 'VOID' || status === 'DELETED') return 'is-cancelled';
       return 'is-active';
+    },
+
+    formatFieldValue: function (value, field) {
+      const type = String((field && field.FieldType) || '').toLowerCase();
+      if (type === 'datetime') return this.formatDateTime(value);
+      if (type === 'date') {
+        const date = new Date(value);
+        if (isNaN(date.getTime())) return String(value);
+        try {
+          return new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
+            year: 'numeric', month: '2-digit', day: '2-digit'
+          }).format(date);
+        } catch (error) {
+          return date.toLocaleDateString('fa-IR');
+        }
+      }
+      return this.displayValue(value);
     },
 
     displayValue: function (value) {
