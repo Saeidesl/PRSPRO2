@@ -581,10 +581,11 @@
 
       history.promise = (async function () {
         try {
-          var order = history.fetchOrder || self.eventOrder || 'newest';
-          if (!resume) {
-            history.fetchOrder = order;
-          }
+          var order = resume
+            ? (history.fetchOrder || self.eventOrder || 'newest')
+            : (self.eventOrder || 'newest');
+          if (!resume) history.fetchOrder = order;
+          else history.moreError = '';
           var page = resume && history.pagination
             ? Number(history.pagination.page || 1) + 1
             : 1;
