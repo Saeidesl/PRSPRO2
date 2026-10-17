@@ -417,7 +417,7 @@ getBaseUrl: function () {
       }
 
       if (!Router.hasRouteAccess(route)) {
-        Router.changeRoute('events', true);
+        Router.handleRoute();
         return;
       }
 
