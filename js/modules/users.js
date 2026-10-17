@@ -16,20 +16,58 @@
   function init() {
     bindEvents();
 
-    const cachedUsers = PMS.Cache.get(CACHE_KEY);
-    const cachedDepartments = PMS.Cache.get(DEPARTMENTS_CACHE_KEY);
+    const router = PMS.Router;
+    const permissions = router && Array.isArray(router.permissions)
+      ? router.permissions
+      : [];
+    const isAdmin = !!(
+      router &&
+      typeof router.isAdmin === 'function' &&
+      router.isAdmin()
+    );
+    const canViewUsers = isAdmin || permissions.indexOf('USER_VIEW') !== -1;
+    const canCreateUsers = isAdmin || permissions.indexOf('USER_CREATE') !== -1;
+    const canEditUsers = isAdmin || permissions.indexOf('USER_EDIT') !== -1;
+    const canViewDepartments = isAdmin ||
+      permissions.indexOf('DEPARTMENT_VIEW') !== -1 ||
+      permissions.indexOf('DEPARTMENT_MANAGE') !== -1;
 
-    if (cachedUsers !== null) {
-      state.users = normalizeUsers(cachedUsers);
-      render();
+    const createButton = document.getElementById('user-create-button');
+    if (createButton) createButton.hidden = !canCreateUsers;
+
+    if (!canViewUsers) {
+      const loading = document.getElementById('users-loading');
+      const filters = document.querySelector('.filter-bar');
+      const table = document.getElementById('users-table-container');
+      const empty = document.getElementById('users-empty');
+
+      if (loading) loading.hidden = true;
+      if (filters) filters.hidden = true;
+      if (table) table.hidden = true;
+      if (empty) {
+        empty.hidden = false;
+        empty.textContent = canCreateUsers
+          ? 'دسترسی شما فقط شامل ایجاد کاربر است؛ برای مشاهده فهرست کاربران باید مجوز «مشاهده کاربران» داشته باشید.'
+          : 'برای مشاهده کاربران مجوز لازم را ندارید.';
+      }
+    } else {
+      const cachedUsers = PMS.Cache.get(CACHE_KEY);
+      if (cachedUsers !== null) {
+        state.users = normalizeUsers(cachedUsers);
+        render();
+      }
+      loadUsers();
     }
 
+    const cachedDepartments = PMS.Cache.get(DEPARTMENTS_CACHE_KEY);
     if (cachedDepartments !== null) {
       state.departments = normalizeList(cachedDepartments, 'departments');
     }
-
-    loadUsers();
-    loadDepartments();
+    if (canViewDepartments && (canViewUsers || canCreateUsers || canEditUsers)) {
+      loadDepartments().catch(function (error) {
+        console.warn('Department lookup failed:', error);
+      });
+    }
   }
 
   function bindEvents() {
