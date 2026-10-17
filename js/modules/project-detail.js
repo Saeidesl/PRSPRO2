@@ -13,6 +13,8 @@
     eventFields: {},
     pendingDetails: {},
     pendingFieldRequests: {},
+    managementHistory: [],
+    managementHistoryError: null,
     loadVersion: 0,
 
     init: function () {
@@ -90,6 +92,16 @@
         addEventButton.hidden = !canCreateEvents;
       }
 
+      const historyContainer = document.getElementById('project-detail-management-history');
+      if (historyContainer && !historyContainer.dataset.bound) {
+        historyContainer.dataset.bound = '1';
+        historyContainer.addEventListener('click', function (event) {
+          if (event.target.closest('[data-management-retry]')) {
+            ProjectDetail.loadManagementHistory(ProjectDetail.loadVersion, true);
+          }
+        });
+      }
+
       if (addEventButton && !addEventButton.dataset.projectDetailBound) {
         addEventButton.dataset.projectDetailBound = '1';
 
@@ -107,6 +119,7 @@
 
     load: async function () {
       const version = ++this.loadVersion;
+      this.loadManagementHistory(version);
 
       const loading = document.getElementById(
         'project-detail-loading'
@@ -216,6 +229,117 @@
             error
           );
         }
+      }
+    },
+
+    loadManagementHistory: async function (version, force) {
+      const container = document.getElementById('project-detail-management-history');
+      if (!container || !this.projectId) return;
+      if (!force && this.managementHistory.length) {
+        this.renderManagementHistory();
+      } else {
+        container.innerHTML = '<div class="loading-state">در حال دریافت تاریخچهٔ تغییرات…</div>';
+      }
+
+      try {
+        const path = '/projects/' + encodeURIComponent(this.projectId) + '/management-history';
+        let data;
+        if (force) {
+          data = await window.PMS.Api.getFresh(path, this.getCacheKey('PROJECT_MANAGEMENT_HISTORY', this.projectId));
+        } else {
+          const result = await window.PMS.Api.getCached(
+            path,
+            this.getCacheKey('PROJECT_MANAGEMENT_HISTORY', this.projectId),
+            {
+              onRefresh: function (fresh) {
+                if (version !== ProjectDetail.loadVersion) return;
+                ProjectDetail.managementHistory = ProjectDetail.normalizeArray(
+                  fresh,
+                  ['history', 'items', 'audits', 'History', 'Items']
+                );
+                ProjectDetail.renderManagementHistory();
+              }
+            }
+          );
+          data = result ? result.data : null;
+        }
+
+        if (version !== this.loadVersion) return;
+        this.managementHistory = this.normalizeArray(
+          data,
+          ['history', 'items', 'audits', 'History', 'Items']
+        );
+        this.managementHistoryError = null;
+        this.renderManagementHistory();
+      } catch (error) {
+        if (version !== this.loadVersion) return;
+        this.managementHistoryError = error && error.message
+          ? error.message
+          : 'دریافت تاریخچهٔ تغییرات انجام نشد.';
+        this.renderManagementHistory();
+      }
+    },
+
+    renderManagementHistory: function () {
+      const container = document.getElementById('project-detail-management-history');
+      if (!container) return;
+
+      if (this.managementHistoryError) {
+        container.innerHTML = '<div class="alert alert-danger">' +
+          this.escape(this.managementHistoryError) +
+          ' <button type="button" class="btn btn-sm btn-light" data-management-retry>تلاش مجدد</button></div>';
+        return;
+      }
+
+      if (!this.managementHistory.length) {
+        container.innerHTML = '<div class="table-empty">تغییر مدیریتی ثبت‌شده‌ای برای این پروژه وجود ندارد.</div>';
+        return;
+      }
+
+      const actionLabels = {
+        CREATE: 'ایجاد',
+        UPDATE: 'ویرایش',
+        VOID: 'ابطال',
+        CANCEL: 'لغو',
+        DELETE: 'حذف',
+        RESTORE: 'بازیابی'
+      };
+
+      container.innerHTML = '<div class="pd-management-history">' +
+        this.managementHistory.map((item) => {
+          const action = String(item.Action || '').toUpperCase();
+          const entityType = String(item.EntityType || '').toUpperCase();
+          const label = actionLabels[action] || item.Action || 'تغییر';
+          const entityLabel = entityType === 'EVENT' ? 'رویداد' : 'پروژه';
+          const oldData = this.formatAuditPayload(item.OldData);
+          const newData = this.formatAuditPayload(item.NewData);
+          const hasPayload = !!(oldData || newData);
+
+          return '<article class="pd-management-entry">' +
+            '<div class="pd-management-entry-head">' +
+              '<strong>' + this.escape(label + ' ' + entityLabel) + '</strong>' +
+              '<span>' + this.escape(this.formatDate(item.CreatedAt)) + '</span>' +
+            '</div>' +
+            '<div class="pd-management-entry-meta">' +
+              '<span>انجام‌دهنده: ' + this.escape(item.UserName || item.UserID || 'نامشخص') + '</span>' +
+              (item.RelatedEventTitle ? '<span>' + this.escape(item.RelatedEventTitle) + '</span>' : '') +
+            '</div>' +
+            (item.Reason ? '<p class="pd-management-reason">' + this.escape(item.Reason) + '</p>' : '') +
+            (hasPayload ? '<details class="pd-management-payload"><summary>مشاهده جزئیات تغییر</summary>' +
+              (oldData ? '<div><strong>اطلاعات قبلی</strong><pre>' + this.escape(oldData) + '</pre></div>' : '') +
+              (newData ? '<div><strong>اطلاعات جدید</strong><pre>' + this.escape(newData) + '</pre></div>' : '') +
+              '</details>' : '') +
+          '</article>';
+        }).join('') +
+      '</div>';
+    },
+
+    formatAuditPayload: function (value) {
+      if (value === undefined || value === null || value === '') return '';
+      try {
+        return JSON.stringify(typeof value === 'string' ? JSON.parse(value) : value, null, 2);
+      } catch (error) {
+        return String(value);
       }
     },
 
