@@ -98,12 +98,23 @@
         this.getProjectCacheKey()
       );
 
-      const cachedEvents = window.PMS.Cache.get(
-        this.getEventsCacheKey()
+      const router = window.PMS.Router;
+      const permissions = router && Array.isArray(router.permissions)
+        ? router.permissions
+        : [];
+      const isAdmin = !!(
+        router &&
+        typeof router.isAdmin === 'function' &&
+        router.isAdmin()
       );
-      const cachedDetails = window.PMS.Cache.get(
-        this.getEventDetailsCacheKey()
-      );
+      const canViewEvents = isAdmin || permissions.indexOf('EVENT_VIEW') !== -1;
+
+      const cachedEvents = canViewEvents
+        ? window.PMS.Cache.get(this.getEventsCacheKey())
+        : null;
+      const cachedDetails = canViewEvents
+        ? window.PMS.Cache.get(this.getEventDetailsCacheKey())
+        : null;
 
       if (cachedProject !== null) {
         this.project = cachedProject;
@@ -141,20 +152,22 @@
         }
       );
 
-      const eventsPromise = window.PMS.Api.getCached(
-        '/projects/' +
-          encodeURIComponent(this.projectId) +
-          '/details',
-        this.getEventDetailsCacheKey(),
-        {
-          onRefresh: function (data) {
-            if (version !== ProjectDetail.loadVersion) return;
+      const eventsPromise = canViewEvents
+        ? window.PMS.Api.getCached(
+            '/projects/' +
+              encodeURIComponent(this.projectId) +
+              '/details',
+            this.getEventDetailsCacheKey(),
+            {
+              onRefresh: function (data) {
+                if (version !== ProjectDetail.loadVersion) return;
 
-            ProjectDetail.applyEventDetailsBundle(data, version);
-            ProjectDetail.showContent();
-          }
-        }
-      );
+                ProjectDetail.applyEventDetailsBundle(data, version);
+                ProjectDetail.showContent();
+              }
+            }
+          )
+        : Promise.resolve(null);
 
       try {
         const results = await Promise.all([
@@ -179,6 +192,11 @@
 
         if (eventsResult) {
           this.applyEventDetailsBundle(eventsResult.data, version);
+        } else {
+          this.events = [];
+          this.eventData = {};
+          this.eventFields = {};
+          this.renderEvents([]);
         }
 
         this.showContent();
@@ -368,6 +386,25 @@
     },
 
     loadWorkflowSteps: async function (project, version) {
+      const router = window.PMS.Router;
+      const permissions = router && Array.isArray(router.permissions)
+        ? router.permissions
+        : [];
+      const isAdmin = !!(
+        router &&
+        typeof router.isAdmin === 'function' &&
+        router.isAdmin()
+      );
+      if (
+        !isAdmin &&
+        permissions.indexOf('WORKFLOW_VIEW') === -1 &&
+        permissions.indexOf('WORKFLOW_MANAGE') === -1
+      ) {
+        this.workflowSteps = [];
+        this.renderProject(this.project);
+        return;
+      }
+
       if (!project || !project.WorkflowID) return;
 
       const cacheKey = this.getCacheKey(
