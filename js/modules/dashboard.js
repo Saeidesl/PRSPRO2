@@ -31,6 +31,7 @@
     expandedProjects: new Set(),
     openEventId: '',
     pendingTargetEventId: '',
+    pendingTargetProjectId: '',
     searchTimer: null,
     visibleCount: PROJECT_BATCH_SIZE,
     observer: null,
@@ -155,6 +156,21 @@
           const button = event.target.closest('[data-clear-filter]');
           if (!button) return;
           this.clearOneFilter(button.getAttribute('data-clear-filter'));
+        });
+      }
+
+      const searchStatus = this.el('dashboard-search-status');
+      if (searchStatus && !searchStatus.dataset.retryBound) {
+        searchStatus.dataset.retryBound = '1';
+        searchStatus.addEventListener('click', (event) => {
+          if (!event.target.closest('[data-retry-search-index]')) return;
+          this.searchIndexError = null;
+          this.searchIndexLoaded = false;
+          this.searchIndexOffset = 0;
+          this.searchIndexTotal = 0;
+          this.searchIndex = [];
+          this.searchIndexIds = Object.create(null);
+          this.ensureSearchIndex();
         });
       }
 
@@ -712,6 +728,8 @@
       const index = this.filteredProjects.findIndex((project) => String(this.projectId(project)) === String(projectId));
       if (index >= 0) this.visibleCount = Math.max(this.visibleCount, index + 1);
       this.pendingTargetEventId = String(eventId);
+      this.pendingTargetProjectId = String(projectId);
+      this.ensureEventVisible(projectId, eventId);
       this.renderProjectCards();
       this.loadProjectDetails(projectId);
       this.saveState();
@@ -919,6 +937,9 @@
               }
             });
         this.projectDetails[id] = this.normalizeProjectDetails(response ? response.data : null);
+        if (this.pendingTargetProjectId === id && this.pendingTargetEventId) {
+          this.ensureEventVisible(id, this.pendingTargetEventId);
+        }
         delete this.projectDetailsErrors[id];
       } catch (error) {
         this.projectDetailsErrors[id] = this.errorMessage(error, 'دریافت تاریخچهٔ پروژه انجام نشد.');
@@ -926,6 +947,21 @@
         delete this.projectDetailsLoading[id];
         this.renderProjectCards();
         this.saveState();
+      }
+    },
+
+    ensureEventVisible: function (projectId, eventId) {
+      const id = String(projectId || '');
+      const detail = this.projectDetails[id];
+      if (!detail || !Array.isArray(detail.events)) return;
+      const events = detail.events.slice().sort((a, b) => {
+        const diff = this.timeValue(this.eventTime(b)) - this.timeValue(this.eventTime(a));
+        return this.timelineOrder === 'oldest' ? -diff : diff;
+      });
+      const index = events.findIndex((item) => String(item.ID || item.Id || item.id || '') === String(eventId));
+      if (index >= 0) {
+        const needed = Math.ceil((index + 1) / 40) * 40;
+        this.timelineVisibleCounts[id] = Math.max(this.timelineVisibleCounts[id] || 40, needed);
       }
     },
 
@@ -1209,6 +1245,7 @@
       const target = this.el('pd-event-' + eventId);
       if (!target) return;
       this.pendingTargetEventId = '';
+      this.pendingTargetProjectId = '';
       window.requestAnimationFrame(() => {
         const current = this.el('pd-event-' + eventId);
         if (!current) return;
