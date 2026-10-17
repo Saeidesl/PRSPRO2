@@ -103,6 +103,13 @@
         });
       }
 
+      ['dashboard-filter-registrant', 'dashboard-filter-event-type'].forEach((id) => {
+        const input = this.el(id);
+        if (input) input.addEventListener('focus', () => {
+          if (!this.searchIndexLoaded && !this.searchIndexError) this.ensureSearchIndex();
+        });
+      });
+
       filterIds.forEach((id) => {
         const input = this.el(id);
         if (!input) return;
@@ -388,8 +395,16 @@
       const options = this.filterOptions || {};
       this.fillSelect('dashboard-filter-stage', options.stages || [], 'همهٔ مراحل');
       this.fillSelect('dashboard-filter-department', options.departments || [], 'همهٔ واحدها');
-      this.fillSelect('dashboard-filter-registrant', options.users || [], 'همهٔ ثبت‌کنندگان');
-      this.fillSelect('dashboard-filter-event-type', options.eventTypes || [], 'همهٔ رویدادها');
+      if ((options.users || []).length) {
+        this.fillSelect('dashboard-filter-registrant', options.users, 'همهٔ ثبت‌کنندگان');
+      }
+      if ((options.eventTypes || []).length) {
+        this.fillSelect('dashboard-filter-event-type', options.eventTypes, 'همهٔ رویدادها');
+      }
+      this.applyPendingFilterValues();
+    },
+
+    applyPendingFilterValues: function () {
       const pending = this.pendingFilterValues || {};
       const mapping = {
         stage: 'dashboard-filter-stage',
@@ -399,9 +414,33 @@
       };
       Object.keys(mapping).forEach((key) => {
         const input = this.el(mapping[key]);
-        if (input && pending[key]) input.value = pending[key];
+        if (!input || !pending[key]) return;
+        if (Array.from(input.options).some((option) => option.value === String(pending[key]))) {
+          input.value = pending[key];
+          delete pending[key];
+        }
       });
-      this.pendingFilterValues = null;
+      this.pendingFilterValues = Object.keys(pending).length ? pending : null;
+    },
+
+    populateEventFilterOptionsFromIndex: function () {
+      const users = Object.create(null);
+      const eventTypes = Object.create(null);
+      this.searchIndex.forEach((item) => {
+        const userId = String(item.CreatedBy || '');
+        if (userId && !users[userId]) {
+          users[userId] = { ID: userId, Name: item.CreatorName || userId };
+        }
+        const typeId = String(item.EventTypeID || '');
+        if (typeId && !eventTypes[typeId]) {
+          eventTypes[typeId] = { ID: typeId, Name: item.EventTypeName || typeId };
+        }
+      });
+      this.filterOptions.users = Object.keys(users).map((key) => users[key]).sort((a, b) => a.Name.localeCompare(b.Name, 'fa'));
+      this.filterOptions.eventTypes = Object.keys(eventTypes).map((key) => eventTypes[key]).sort((a, b) => a.Name.localeCompare(b.Name, 'fa'));
+      this.fillSelect('dashboard-filter-registrant', this.filterOptions.users, 'همهٔ ثبت‌کنندگان');
+      this.fillSelect('dashboard-filter-event-type', this.filterOptions.eventTypes, 'همهٔ رویدادها');
+      this.applyPendingFilterValues();
     },
 
     fillSelect: function (id, items, firstLabel) {
@@ -465,6 +504,7 @@
             this.searchIndexIds[id] = true;
             this.searchIndex.push(item);
           });
+          this.populateEventFilterOptionsFromIndex();
           this.searchIndexOffset = Number(data.nextOffset || (this.searchIndexOffset + items.length));
           this.searchIndexTotal = Number(data.total || this.searchIndexTotal || 0);
           hasMore = data.hasMore === true;
@@ -489,7 +529,7 @@
     updateSearchStatus: function () {
       const status = this.el('dashboard-search-status');
       if (!status) return;
-      const needsIndex = !!this.getSearchText() || this.hasEventFilters();
+      const needsIndex = !!this.getSearchText() || this.hasEventFilters() || this.searchIndexLoading;
       if (this.searchIndexLoading && needsIndex) {
         status.textContent = 'در حال بررسی تدریجی اطلاعات رویدادها… ' +
           this.searchIndex.length.toLocaleString('fa-IR') +
