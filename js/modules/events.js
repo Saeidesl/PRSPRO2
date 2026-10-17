@@ -199,7 +199,10 @@
         } else if (canCreateEvents) {
           requests.push(
             PMS.Api.get('/projects/available-for-event').then(function (response) {
-              return { cached: false, data: Events.normalize(response) };
+              const data = PMS.Api.extractData
+                ? PMS.Api.extractData(response)
+                : response;
+              return { cached: false, data: Events.normalize(data) };
             })
           );
         }
