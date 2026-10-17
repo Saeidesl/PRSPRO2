@@ -10,7 +10,8 @@
     departments: [],
     roles: [],
     search: '',
-    saving: false
+    saving: false,
+    canEdit: false
   };
 
   function init() {
@@ -28,6 +29,7 @@
     const canViewUsers = isAdmin || permissions.indexOf('USER_VIEW') !== -1;
     const canCreateUsers = isAdmin || permissions.indexOf('USER_CREATE') !== -1;
     const canEditUsers = isAdmin || permissions.indexOf('USER_EDIT') !== -1;
+    state.canEdit = canEditUsers;
     const canViewDepartments = isAdmin ||
       permissions.indexOf('DEPARTMENT_VIEW') !== -1 ||
       permissions.indexOf('DEPARTMENT_MANAGE') !== -1;
@@ -219,10 +221,12 @@
         '<td>' + renderStatus(user.Status) + '</td>' +
         '<td>' + esc(formatDate(user.CreatedAt)) + '</td>' +
         '<td style="white-space:nowrap">' +
-          '<button type="button" class="btn btn-sm btn-primary user-edit-button" ' +
-          'data-id="' + esc(id) + '">ویرایش</button> ' +
-          '<button type="button" class="btn btn-sm btn-secondary user-roles-button" ' +
-          'data-id="' + esc(id) + '" data-name="' + esc(name) + '">نقش‌ها</button>' +
+          (state.canEdit
+            ? '<button type="button" class="btn btn-sm btn-primary user-edit-button" ' +
+              'data-id="' + esc(id) + '">ویرایش</button> ' +
+              '<button type="button" class="btn btn-sm btn-secondary user-roles-button" ' +
+              'data-id="' + esc(id) + '" data-name="' + esc(name) + '">نقش‌ها</button>'
+            : 'فقط مشاهده') +
         '</td>' +
         '</tr>';
     });
