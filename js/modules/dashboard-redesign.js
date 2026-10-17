@@ -800,6 +800,7 @@
 
       var loading = document.getElementById('dash-list-loading');
       if (loading) loading.hidden = this.visibleCount >= all.length;
+      this.scheduleTimelineContinuation();
       if (oldScroll > 0) window.requestAnimationFrame(function () { window.scrollTo(0, oldScroll); });
       this.saveState();
     },
@@ -844,11 +845,11 @@
       return html;
     },
 
-    renderTimeline: function (projectId, history, matching) {
+    getTimelineEvents: function (history) {
       var self = this;
       var events = history.events.slice().filter(function (event) {
-        return String(event.Status || '').toUpperCase() !== 'VOID' &&
-          String(event.Status || '').toUpperCase() !== 'CANCELLED';
+        var status = String(event.Status || '').toUpperCase();
+        return status !== 'VOID' && status !== 'CANCELLED';
       });
       events.sort(function (a, b) {
         var first = self.eventTime(a), second = self.eventTime(b);
@@ -857,8 +858,25 @@
         if (second === null) return -1;
         return self.eventOrder === 'oldest' ? first - second : second - first;
       });
-      var html = '<div class="dash-timeline">';
-      events.forEach(function (event) {
+      return events;
+    },
+
+    renderTimeline: function (projectId, history, matching) {
+      var events = this.getTimelineEvents(history);
+      var html = '<div class="dash-timeline" data-project-id="' + this.escape(projectId) + '">';
+      html += this.renderTimelineBatch(projectId, history, matching, 0, 30, events);
+      if (events.length > 30) {
+        html += '<div class="dash-timeline-more dash-skeleton-card" data-project-id="' + this.escape(projectId) + '" data-next-offset="30" aria-label="در حال بارگذاری رویدادهای بیشتر"><span></span><span></span><span></span></div>';
+      }
+      html += '</div>';
+      return html;
+    },
+
+    renderTimelineBatch: function (projectId, history, matching, start, limit, events) {
+      var self = this;
+      events = events || this.getTimelineEvents(history);
+      var html = '';
+      events.slice(start, start + limit).forEach(function (event) {
         var id = String(self.getId(event));
         var typeId = String(event.EventTypeID || event.EventTypeId || '');
         var type = self.findById(self.eventTypes, typeId);
@@ -879,8 +897,45 @@
         if (open) html += self.renderEventDetails(event, history);
         html += '</article>';
       });
-      html += '</div>';
       return html;
+    },
+
+    scheduleTimelineContinuation: function () {
+      if (this.timelineContinuationScheduled) return;
+      var first = document.querySelector('#dash-project-list .dash-timeline-more');
+      if (!first) return;
+      this.timelineContinuationScheduled = true;
+      window.requestAnimationFrame(function () {
+        Dashboard.timelineContinuationScheduled = false;
+        var sentinels = Array.prototype.slice.call(document.querySelectorAll('#dash-project-list .dash-timeline-more'));
+        sentinels.forEach(function (sentinel) {
+          if (!sentinel.isConnected) return;
+          var projectId = sentinel.getAttribute('data-project-id');
+          var history = Dashboard.getHistory(projectId);
+          if (!history || !history.loaded) {
+            sentinel.remove();
+            return;
+          }
+          var matching = Dashboard.matchingEventIds(history);
+          var events = Dashboard.getTimelineEvents(history);
+          var offset = Number(sentinel.getAttribute('data-next-offset') || 0);
+          var batch = Dashboard.renderTimelineBatch(projectId, history, matching, offset, 30, events);
+          sentinel.insertAdjacentHTML('beforebegin', batch);
+          offset += 30;
+          if (offset >= events.length) {
+            sentinel.remove();
+          } else {
+            sentinel.setAttribute('data-next-offset', String(offset));
+          }
+          if (Dashboard.targetEventId) {
+            var target = document.getElementById('dash-event-' + Dashboard.cssEscape(Dashboard.targetEventId));
+            if (target) Dashboard.focusTargetEvent(Dashboard.targetEventId);
+          }
+        });
+        if (document.querySelector('#dash-project-list .dash-timeline-more')) {
+          Dashboard.scheduleTimelineContinuation();
+        }
+      });
     },
 
     renderEventDetails: function (event, history) {
@@ -947,17 +1002,19 @@
     toggleEventDetails: function (eventId) {
       eventId = String(eventId || '');
       this.openEventId = this.openEventId === eventId ? '' : eventId;
+      this.targetEventId = this.openEventId ? eventId : '';
       this.saveState();
       this.renderProjectList();
-      if (this.openEventId) {
-        var event = document.getElementById('dash-event-' + this.openEventId);
+      var self = this;
+      window.setTimeout(function () {
+        var event = document.getElementById('dash-event-' + eventId);
         if (event) {
           var rect = event.getBoundingClientRect();
           if (rect.top < 80 || rect.bottom > window.innerHeight) event.scrollIntoView({ behavior: 'smooth', block: 'center' });
           var images = event.querySelectorAll('img[data-preview-id]');
-          for (var i = 0; i < images.length; i++) this.loadAttachmentPreview(images[i].getAttribute('data-preview-id'));
+          for (var i = 0; i < images.length; i++) self.loadAttachmentPreview(images[i].getAttribute('data-preview-id'));
         }
-      }
+      }, 60);
     },
 
     openSearchEvent: async function (projectId, eventId) {
@@ -968,6 +1025,11 @@
       if (!history || !history.loaded) {
         await this.loadProjectHistory(projectId, false);
       }
+      var visible = this.filteredProjects();
+      var index = visible.findIndex(function (project) {
+        return String(Dashboard.getId(project)) === String(projectId);
+      });
+      if (index >= 0) this.visibleCount = Math.max(this.visibleCount, index + 1);
       this.renderProjectList();
       this.focusTargetEvent(eventId);
     },
