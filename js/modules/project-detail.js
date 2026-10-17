@@ -76,7 +76,12 @@
         backButton.dataset.projectDetailBound = '1';
 
         backButton.addEventListener('click', function () {
-          window.location.hash = '#projects';
+          let returnRoute = '';
+          try {
+            returnRoute = window.sessionStorage.getItem('pms_project_detail_return_route') || '';
+            window.sessionStorage.removeItem('pms_project_detail_return_route');
+          } catch (error) {}
+          window.location.hash = returnRoute === 'dashboard' ? '#dashboard' : '#projects';
         });
       }
 
