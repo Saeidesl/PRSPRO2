@@ -11,7 +11,8 @@
   const state = {
     roles: [],
     search: '',
-    editingRoleId: null
+    editingRoleId: null,
+    canManage: false
   };
 
   function esc(value) {
@@ -133,12 +134,14 @@
         '<td>' + esc(dateText(role.CreatedAt)) + '</td>' +
         '<td>' + esc(dateText(role.UpdatedAt)) + '</td>' +
         '<td>' +
-        '<button type="button" class="btn btn-sm btn-secondary ' +
-        'role-permissions-button" data-role-id="' + esc(role.ID) +
-        '">مدیریت دسترسی</button> ' +
-        '<button type="button" class="btn btn-sm btn-primary ' +
-        'role-edit-button" data-role-id="' + esc(role.ID) +
-        '">ویرایش</button>' +
+        (state.canManage
+          ? '<button type="button" class="btn btn-sm btn-secondary ' +
+            'role-permissions-button" data-role-id="' + esc(role.ID) +
+            '">مدیریت دسترسی</button> ' +
+            '<button type="button" class="btn btn-sm btn-primary ' +
+            'role-edit-button" data-role-id="' + esc(role.ID) +
+            '">ویرایش</button>'
+          : 'فقط مشاهده') +
         '</td></tr>';
     });
 
@@ -974,6 +977,18 @@
   }
 
   function init() {
+    const router = window.PMS.Router;
+    const permissions = router && Array.isArray(router.permissions)
+      ? router.permissions
+      : [];
+    state.canManage = !!(
+      (router && typeof router.isAdmin === 'function' && router.isAdmin()) ||
+      permissions.indexOf('ROLE_MANAGE') !== -1
+    );
+
+    const createButton = document.getElementById('role-create-button');
+    if (createButton) createButton.hidden = !state.canManage;
+
     const search = document.getElementById('role-search');
 
     if (search) {
@@ -983,9 +998,7 @@
       });
     }
 
-    const createButton = document.getElementById('role-create-button');
-
-    if (createButton) {
+    if (createButton && state.canManage) {
       createButton.addEventListener('click', openCreateRole);
     }
 
