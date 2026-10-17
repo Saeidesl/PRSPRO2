@@ -11,6 +11,43 @@
 
     init: function () {
       this.bindEvents();
+
+      const router = window.PMS.Router;
+      const permissions = router && Array.isArray(router.permissions)
+        ? router.permissions
+        : [];
+      const isAdmin = !!(
+        router &&
+        typeof router.isAdmin === 'function' &&
+        router.isAdmin()
+      );
+      const canViewProjects = isAdmin || permissions.indexOf('PROJECT_VIEW') !== -1;
+      const canCreateProjects = isAdmin || permissions.indexOf('PROJECT_CREATE') !== -1;
+      const createButton = document.getElementById('project-create-button');
+
+      if (createButton) createButton.hidden = !canCreateProjects;
+
+      // A creator-only role must be able to create a project without being
+      // granted access to the full project register.
+      if (!canViewProjects) {
+        const loading = document.getElementById('projects-loading');
+        const filters = document.querySelector('.filter-bar');
+        const table = document.getElementById('projects-table-container');
+        const empty = document.getElementById('projects-empty');
+
+        if (loading) loading.hidden = true;
+        if (filters) filters.hidden = true;
+        if (table) table.hidden = true;
+        if (empty) {
+          empty.hidden = false;
+          empty.textContent = canCreateProjects
+            ? 'دسترسی شما فقط شامل ایجاد پروژه است؛ برای مشاهده فهرست پروژه‌ها باید مجوز «مشاهده پروژه‌ها» داشته باشید.'
+            : 'برای مشاهده پروژه‌ها مجوز لازم را ندارید.';
+        }
+
+        return;
+      }
+
       this.loadProjects();
     },
 
