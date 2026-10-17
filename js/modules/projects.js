@@ -699,7 +699,7 @@
                 ${this.escape(this.statusText(project.Status))}
               </span>
             </td>
-            <td>${this.escape(project.CurrentStepID || '-')}</td>
+            <td>${this.escape(project.CurrentStepName || project.CurrentStep || project.CurrentStepID || '-')}</td>
             <td>${this.escape(this.formatDate(project.UpdatedAt))}</td>
             <td>
               <button
