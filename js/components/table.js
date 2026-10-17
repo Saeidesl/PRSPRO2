@@ -2,160 +2,94 @@
   'use strict';
 
   const Table = {
+    render: function (container, columns, rows, options) {
+      options = options || {};
+      const target = typeof container === 'string'
+        ? document.querySelector(container)
+        : container;
 
-    render: function (
-      container,
-      columns,
-      rows,
-      options
-    ) {
+      if (!target) return;
 
-      options =
-        options || {};
+      columns = Array.isArray(columns) ? columns : [];
+      rows = Array.isArray(rows) ? rows : [];
 
-      const target =
-        typeof container === 'string'
-          ? document.querySelector(container)
-          : container;
-
-      if (!target) {
+      if (options.loading) {
+        target.innerHTML =
+          '<div class="table-state" role="status" aria-live="polite">' +
+          '<span class="loading-spinner" aria-hidden="true"></span>' +
+          '<span>' + this.escapeHtml(options.loadingText || 'در حال بارگذاری...') + '</span>' +
+          '</div>';
         return;
       }
 
-      rows =
-        Array.isArray(rows)
-          ? rows
-          : [];
+      if (!columns.length) {
+        target.innerHTML =
+          '<div class="table-empty">' +
+          this.escapeHtml(options.emptyText || 'ستونی برای نمایش تعریف نشده است.') +
+          '</div>';
+        return;
+      }
 
-      columns =
-        Array.isArray(columns)
-          ? columns
-          : [];
+      let html = '<div class="table-wrapper' +
+        (options.wrapperClass ? ' ' + this.escapeHtml(options.wrapperClass) : '') +
+        '"><table class="data-table' +
+        (options.tableClass ? ' ' + this.escapeHtml(options.tableClass) : '') +
+        '">';
+
+      if (options.caption) {
+        html += '<caption class="table-caption">' +
+          this.escapeHtml(options.caption) + '</caption>';
+      }
+
+      html += '<thead><tr>';
+      columns.forEach(function (column) {
+        const label = column.label || column.key || '';
+        const align = column.align ? ' class="text-' + this.escapeHtml(column.align) + '"' : '';
+        html += '<th scope="col"' + align + '>' + this.escapeHtml(label) + '</th>';
+      }, this);
+      html += '</tr></thead><tbody>';
 
       if (!rows.length) {
+        html += '<tr><td class="table-empty-cell" colspan="' + columns.length + '">' +
+          this.escapeHtml(options.emptyText || 'داده‌ای برای نمایش وجود ندارد.') +
+          '</td></tr>';
+      } else {
+        rows.forEach(function (row, rowIndex) {
+          let rowClass = '';
+          if (typeof options.rowClassName === 'function') {
+            rowClass = options.rowClassName(row, rowIndex) || '';
+          }
+          html += '<tr' + (rowClass ? ' class="' + this.escapeHtml(rowClass) + '"' : '') + '>';
 
-        target.innerHTML = `
-          <div class="table-empty">
-            ${this.escapeHtml(
-              options.emptyText ||
-              'داده‌ای برای نمایش وجود ندارد.'
-            )}
-          </div>
-        `;
+          columns.forEach(function (column) {
+            let value = typeof column.render === 'function'
+              ? column.render(row, rowIndex)
+              : row && column.key != null ? row[column.key] : '';
+            const align = column.align ? ' class="text-' + this.escapeHtml(column.align) + '"' : '';
 
-        return;
-      }
+            // raw is an explicit opt-in for trusted HTML (for example, action buttons).
+            const cell = column.raw === true
+              ? String(value == null ? '' : value)
+              : this.escapeHtml(value == null ? '' : value);
 
-      let html = `
-        <div class="table-wrapper">
-
-          <table class="data-table">
-
-            <thead>
-              <tr>
-      `;
-
-      columns.forEach(
-        function (column) {
-
-          html += `
-            <th>
-              ${this.escapeHtml(
-                column.label ||
-                column.key ||
-                ''
-              )}
-            </th>
-          `;
-
-        }.bind(this)
-      );
-
-      html += `
-              </tr>
-            </thead>
-
-            <tbody>
-      `;
-
-      rows.forEach(
-        function (row) {
-
-          html += '<tr>';
-
-          columns.forEach(
-            function (column) {
-
-              let value = '';
-
-              if (
-                typeof column.render ===
-                'function'
-              ) {
-
-                value =
-                  column.render(
-                    row
-                  );
-
-              } else {
-
-                value =
-                  row[column.key];
-              }
-
-              html += `
-                <td>
-                  ${
-                    column.raw
-                      ? String(
-                          value ?? ''
-                        )
-                      : this.escapeHtml(
-                          value ?? ''
-                        )
-                  }
-                </td>
-              `;
-
-            }.bind(this)
-          );
+            html += '<td' + align + '>' + cell + '</td>';
+          }, this);
 
           html += '</tr>';
+        }, this);
+      }
 
-        }.bind(this)
-      );
-
-      html += `
-            </tbody>
-
-          </table>
-
-        </div>
-      `;
-
-      target.innerHTML =
-        html;
+      html += '</tbody></table></div>';
+      target.innerHTML = html;
     },
 
-    escapeHtml: function (
-      value
-    ) {
-
-      const div =
-        document.createElement('div');
-
-      div.textContent =
-        String(value ?? '');
-
+    escapeHtml: function (value) {
+      const div = document.createElement('div');
+      div.textContent = String(value == null ? '' : value);
       return div.innerHTML;
     }
   };
 
-  window.PMS =
-    window.PMS || {};
-
-  window.PMS.Table =
-    Table;
-
+  window.PMS = window.PMS || {};
+  window.PMS.Table = Table;
 })();
