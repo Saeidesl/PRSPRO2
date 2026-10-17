@@ -329,7 +329,11 @@
 
       html += '<button type="button" class="btn btn-sm btn-secondary event-type-fields" data-id="' +
         escapeAttribute(id) + '" data-name="' + escapeAttribute(name) +
-        '">فیلدهای پویا</button>';
+        '">فیلدهای پویا</button> ';
+
+      html += '<button type="button" class="btn btn-sm btn-secondary event-type-procurement" data-id="' +
+        escapeAttribute(id) + '" data-name="' + escapeAttribute(name) +
+        '">تنظیمات تأمین</button>';
 
       html += '</td></tr>';
     });
@@ -348,6 +352,12 @@
     container.querySelectorAll('.event-type-fields').forEach(function (button) {
       button.addEventListener('click', function () {
         loadFields(button.dataset.id, button.dataset.name);
+      });
+    });
+
+    container.querySelectorAll('.event-type-procurement').forEach(function (button) {
+      button.addEventListener('click', function () {
+        openProcurementSettings(button.dataset.id, button.dataset.name);
       });
     });
   }
@@ -1197,6 +1207,133 @@
       if (cached === null) {
         showMessage(error.message || 'دریافت فیلدهای پویا ناموفق بود.');
       }
+    }
+  }
+
+  async function openProcurementSettings(eventTypeId, eventTypeName) {
+    const modal = createModal('تنظیمات تأمین: ' + (eventTypeName || ''), 'event-type-procurement-modal');
+    modal.body.innerHTML = '<div class="table-empty">در حال دریافت تنظیمات...</div>';
+
+    function unwrap(value) {
+      return value && value.data !== undefined ? value.data : value;
+    }
+
+    function activeFields(value) {
+      const data = unwrap(value);
+      const list = normalizeFields(data);
+      return list.filter(function (field) {
+        return String(field.Status || 'ACTIVE').toUpperCase() === 'ACTIVE';
+      });
+    }
+
+    function mappingSelect(key, label, fields, selected, required) {
+      const options = ['<option value="">-- انتخاب فیلد --</option>'].concat(fields.map(function (field) {
+        const code = String(field.Code || '');
+        const isSelected = code === String(selected || '') ? ' selected' : '';
+        return '<option value="' + escapeAttribute(code) + '"' + isSelected + '>' +
+          escapeHtml((field.Name || code) + ' (' + code + ')') + '</option>';
+      })).join('');
+      return '<label class="form-group"><span>' + escapeHtml(label) +
+        (required ? ' *' : '') + '</span><select class="form-control" name="' + escapeAttribute(key) +
+        '" data-map-key="' + escapeAttribute(key) + '">' + options + '</select></label>';
+    }
+
+    try {
+      const results = await Promise.all([
+        PMS.Api.get('/event-types/' + encodeURIComponent(eventTypeId) + '/procurement'),
+        PMS.Api.get('/event-types/' + encodeURIComponent(eventTypeId) + '/fields')
+      ]);
+      const settings = unwrap(results[0]) || {};
+      const fields = activeFields(results[1]);
+      const fieldMap = settings.FieldMap && typeof settings.FieldMap === 'object'
+        ? settings.FieldMap : {};
+      const action = String(settings.Action || 'NONE').toUpperCase();
+
+      let html = '<p class="form-help">این تنظیم مشخص می‌کند ثبت این نوع رویداد، نیاز ملزومات ایجاد کند یا رسید واقعی انبار را ثبت کند. خرید و دریافت انبار دو وضعیت جدا هستند.</p>' +
+        '<form id="event-type-procurement-form">' +
+        '<label class="form-group"><span>عملیات تأمین</span><select class="form-control" name="Action">' +
+        '<option value="NONE">بدون عملیات تأمین</option>' +
+        '<option value="CREATE_NEED">ایجاد نیاز ملزومات</option>' +
+        '<option value="RECORD_RECEIPT">ثبت دریافت واقعی از سفارش</option>' +
+        '</select></label>' +
+        '<div id="event-type-procurement-mappings"></div>' +
+        '<div class="modal-actions"><button type="submit" class="btn btn-primary">ذخیره تنظیمات</button></div></form>';
+
+      modal.body.innerHTML = html;
+      const form = modal.body.querySelector('#event-type-procurement-form');
+      const actionInput = form.elements.namedItem('Action');
+      actionInput.value = ['NONE', 'CREATE_NEED', 'RECORD_RECEIPT'].indexOf(action) >= 0 ? action : 'NONE';
+
+      function renderMappings() {
+        const selectedAction = actionInput.value;
+        const definitions = selectedAction === 'CREATE_NEED'
+          ? [
+              ['ItemName', 'نام ملزوم', true],
+              ['Unit', 'واحد اندازه‌گیری', true],
+              ['RequestedQuantity', 'مقدار موردنیاز', true],
+              ['ItemCode', 'کد ملزوم', false],
+              ['ProjectID', 'شناسه پروژه (اختیاری)', false],
+              ['NeededBy', 'تاریخ نیاز (اختیاری)', false],
+              ['Notes', 'توضیحات (اختیاری)', false]
+            ]
+          : (selectedAction === 'RECORD_RECEIPT'
+            ? [
+                ['PurchaseOrderItemID', 'شناسه ردیف سفارش خرید', true],
+                ['QuantityReceived', 'مقدار دریافت‌شده', true],
+                ['ProjectID', 'شناسه پروژه (اختیاری)', false],
+                ['Notes', 'توضیحات (اختیاری)', false]
+              ] : []);
+        const container = form.querySelector('#event-type-procurement-mappings');
+        if (!definitions.length) {
+          container.innerHTML = '<p class="form-help">با این گزینه، رویداد هیچ رکورد تأمینی ایجاد نمی‌کند.</p>';
+          return;
+        }
+        container.innerHTML = '<div class="table-wrapper"><table class="data-table"><thead><tr><th>فیلد تأمین</th><th>فیلد پویای رویداد</th></tr></thead><tbody>' +
+          definitions.map(function (def) {
+            return '<tr><td>' + escapeHtml(def[1]) + '</td><td>' +
+              mappingSelect(def[0], def[1], fields, fieldMap[def[0]], def[2]) +
+              '</td></tr>';
+          }).join('') + '</tbody></table></div>';
+      }
+
+      actionInput.addEventListener('change', renderMappings);
+      renderMappings();
+
+      form.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        const saveButton = form.querySelector('button[type="submit"]');
+        if (saveButton.disabled) return;
+        const selectedAction = actionInput.value;
+        const fieldMapPayload = {};
+        form.querySelectorAll('[data-map-key]').forEach(function (select) {
+          if (select.value) fieldMapPayload[select.dataset.mapKey] = select.value;
+        });
+        const requiredKeys = selectedAction === 'CREATE_NEED'
+          ? ['ItemName', 'Unit', 'RequestedQuantity']
+          : (selectedAction === 'RECORD_RECEIPT' ? ['PurchaseOrderItemID', 'QuantityReceived'] : []);
+        const missing = requiredKeys.filter(function (key) { return !fieldMapPayload[key]; });
+        if (missing.length) {
+          showMessage('فیلدهای الزامی را انتخاب کن: ' + missing.join('، '));
+          return;
+        }
+        saveButton.disabled = true;
+        saveButton.textContent = 'در حال ذخیره...';
+        try {
+          await PMS.Api.post('/event-types/' + encodeURIComponent(eventTypeId) + '/procurement', {
+            Action: selectedAction,
+            FieldMap: fieldMapPayload
+          });
+          showMessage('تنظیمات تأمین ذخیره شد.');
+          modal.close();
+        } catch (error) {
+          showMessage(error.message || 'ذخیره تنظیمات تأمین ناموفق بود.');
+          saveButton.disabled = false;
+          saveButton.textContent = 'ذخیره تنظیمات';
+        }
+      });
+    } catch (error) {
+      modal.body.innerHTML = '<div class="alert alert-error">' +
+        escapeHtml(error.message || 'دریافت تنظیمات تأمین ناموفق بود.') + '</div>';
     }
   }
 
