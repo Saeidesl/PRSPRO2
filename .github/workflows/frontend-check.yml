@@ -38,7 +38,7 @@ jobs:
           const path = require('path');
           const html = fs.readFileSync('index.html', 'utf8');
           const refs = [...html.matchAll(/(?:src|href)=["']([^"']+)["']/g)]
-            .map(match => match[1])
+            .map(match => match[1].split('?')[0].split('#')[0])
             .filter(ref => /^(css|js)\//.test(ref));
           const missing = refs.filter(ref => !fs.existsSync(ref));
           if (missing.length) {
