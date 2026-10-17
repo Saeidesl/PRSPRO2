@@ -43,8 +43,9 @@ function dateIso(daysAgo,offsetMinutes){return new Date(Date.now()-(daysAgo*8640
 function optionsOf(field){let o=pick(field,'Options','options');if(Array.isArray(o))return o;try{const x=JSON.parse(String(o||''));if(Array.isArray(x))return x}catch(e){}return String(o||'').split(',').map(x=>x.trim()).filter(Boolean)}
 function dynamicValue(field,index){const type=String(pick(field,'FieldType','fieldType')||'text').toLowerCase();if(type==='number')return (index+1)*10;if(type==='boolean')return index%2===0;if(type==='date')return new Date(Date.now()-index*86400000).toISOString().slice(0,10);if(type==='datetime')return dateIso(index);if(type==='select'){const opts=optionsOf(field).map(x=>x&&typeof x==='object'&&x.value!==undefined?String(x.value):String(x));return opts.length?opts[index%opts.length]:null}return 'داده آزمایشی '+(index+1)}
 function dynamicData(fields,index){const out={};(fields||[]).forEach(f=>{const code=String(pick(f,'Code','code')||'').trim();if(!code)return;const required=String(pick(f,'IsRequired','isRequired')).toUpperCase()==='TRUE';const type=String(pick(f,'FieldType','fieldType')||'text').toLowerCase();const supported=['text','textarea','number','boolean','date','datetime','select'].includes(type);if(!supported){if(required)throw new Error('نوع فیلد اجباری پشتیبانی نمی‌شود: '+pick(f,'Name','name')+' ('+type+')');return}let value=dynamicValue(f,index);if(value===null||value===''){if(required)throw new Error('برای فیلد اجباری گزینه معتبر وجود ندارد: '+pick(f,'Name','name'));return}out[code]=value});return out}
-async function apiGet(path){return dataOf(await PMS.Api.get(path))}
-async function apiPost(path,body){return dataOf(await PMS.Api.post(path,body))}
+function withTimeout(promise,label,ms){return new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error(label+' بیش از '+Math.round(ms/1000)+' ثانیه طول کشید؛ ارتباط با سرور پاسخ نداده است.')),ms);promise.then(value=>{clearTimeout(timer);resolve(value)},error=>{clearTimeout(timer);reject(error)})})}
+async function apiGet(path){status('در حال دریافت اطلاعات از سرور: '+path);log('درخواست اطلاعات: '+path);return dataOf(await withTimeout(PMS.Api.get(path),'دریافت '+path,30000))}
+async function apiPost(path,body){status('در حال ثبت اطلاعات در سرور: '+path);return dataOf(await withTimeout(PMS.Api.post(path,body),'ثبت '+path,30000))}
 function idOf(o){return String(pick(o,'ID','Id','id')||'')}
 function successEntity(o,key){if(o&&o[key])return o[key];if(o&&o.data&&o.data[key])return o.data[key];return o}
 function makePng(){return 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jXioAAAAASUVORK5CYII='}
@@ -57,7 +58,10 @@ async function run(){
  const report={projectsCreated:0,projectsSkipped:0,eventsCreated:0,attachmentsCreated:0,failures:[]};
  try{
   if(!PMS.Api.getToken())throw new Error('نشست ورود پیدا نشد. ابتدا در برنامه وارد شوید، سپس این صفحه را باز کنید.');
+  status('مرحله ۱ از ۴: بررسی گردش کار، انواع رویداد و پروژه‌های موجود…');
+  log('شروع بررسی اولیه سرور؛ اگر پاسخ نرسد حداکثر پس از ۳۰ ثانیه خطا نمایش داده می‌شود.');
   const [workflows,allTypes,existingProjects]=await Promise.all([apiGet('/workflows'),apiGet('/event-types'),apiGet('/projects')]);
+  status('مرحله ۲ از ۴: بررسی مراحل گردش کار…');
   const workflowList=listOf(workflows),types=listOf(allTypes),projects=listOf(existingProjects);
   const workflow=workflowList.find(w=>String(pick(w,'Status','status')||'ACTIVE').toUpperCase()==='ACTIVE')||workflowList[0];
   if(!workflow)throw new Error('گردش کار پیدا نشد. ابتدا یک گردش کار فعال با مرحله بسازید.');
@@ -67,6 +71,7 @@ async function run(){
   const projectTypes=types.filter(t=>String(pick(t,'ConnectionType','connectionType')||'PROJECT').toUpperCase()!=='INDEPENDENT'&&String(pick(t,'Status','status')||'ACTIVE').toUpperCase()==='ACTIVE');
   if(!projectTypes.length)throw new Error('نوع رویداد فعال و مرتبط با پروژه پیدا نشد.');
   const fieldMap={};
+  status('مرحله ۳ از ۴: بررسی فیلدهای اجباری انواع رویداد…');
   for(const t of projectTypes){try{fieldMap[idOf(t)]=listOf(await apiGet('/event-types/'+encodeURIComponent(idOf(t))+'/fields')).filter(f=>String(pick(f,'Status','status')||'ACTIVE').toUpperCase()==='ACTIVE')}catch(e){fieldMap[idOf(t)]=[];log('هشدار: فیلدهای نوع '+pick(t,'Name','name')+' خوانده نشد: '+e.message)}}
   const orderedTypes=eventTypeSort(projectTypes,steps);
   // Validate every event type's dynamic fields before creating any records.
@@ -75,6 +80,7 @@ async function run(){
   const perProject=Math.max(10,Math.min(20,Number($('eventsPerProject').value)||10));
   const withFiles=$('withAttachments').checked;
   if(count>1&&!confirm('پیش‌بررسی فقط ساختار را بررسی کرده است، نه پذیرش گردش واقعی رویدادها. ساخت '+count+' پروژه و حدود '+(count*perProject)+' رویداد در پایگاه داده ادامه یابد؟ برای آزمون اول بهتر است فقط ۱ پروژه بسازید.')){throw new Error('عملیات پیش از ایجاد رکورد به درخواست کاربر لغو شد.')} 
+  status('مرحله ۴ از ۴: آماده‌سازی برای ساخت داده‌ها…');
   const total=count*(perProject+1);let progress=0;$('progress').max=total;$('progress').value=0;
   log('گردش کار انتخاب‌شده: '+pick(workflow,'Name','name')+' ('+workflowId+')');
   log('تعداد انواع رویداد مرتبط و فعال: '+projectTypes.length+'؛ پروژه‌های موجود: '+projects.length);
