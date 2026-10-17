@@ -19,6 +19,7 @@
     fieldsError: false,
     fieldsLoadedForTypeId: '',
     searchTimer: null,
+    preselectedProjectId: '',
 
     init: function () {
       this.bindEvents();
@@ -845,6 +846,17 @@
 
         projectSelect.appendChild(option);
       });
+
+      // When arriving from a project detail page, preselect that project.
+      if (this.preselectedProjectId) {
+        const requestedProjectId = String(this.preselectedProjectId);
+        if (Array.from(projectSelect.options).some(function (option) {
+          return option.value === requestedProjectId;
+        })) {
+          projectSelect.value = requestedProjectId;
+        }
+        this.preselectedProjectId = '';
+      }
 
       this.eventTypes.forEach(function (type) {
         const id = Events.idOf(type);
