@@ -9,7 +9,8 @@
   const Dashboard = {
     lookups: {
       projects: {},
-      eventTypes: {}
+      eventTypes: {},
+      projectStatuses: {}
     },
 
     projects: [],
@@ -158,7 +159,8 @@
       try {
         const results = await Promise.all([
           this.getLookup('/projects', 'dashboard_projects_lookup'),
-          this.getLookup('/event-types', 'dashboard_event_types_lookup')
+          this.getLookup('/event-types', 'dashboard_event_types_lookup'),
+          this.getLookup('/project-dashboard/lookups', 'dashboard_shared_lookups_v2')
         ]);
 
         this.lookups.projects = this.toLookup(
@@ -171,6 +173,11 @@
           results[1],
           ['ID', 'EventTypeID', 'Id', 'id'],
           ['Name', 'Title', 'Code']
+        );
+
+        const sharedLookups = this.unwrap(results[2]) || {};
+        this.lookups.projectStatuses = this.toStatusLookup(
+          sharedLookups.projectStatuses || []
         );
 
         const cachedDashboard = this.unwrap(
@@ -220,6 +227,9 @@
       const eventTypeData = window.PMS.Cache.get(
         'dashboard_event_types_lookup'
       );
+      const sharedLookupData = this.unwrap(window.PMS.Cache.get(
+        'dashboard_shared_lookups_v2'
+      )) || {};
 
       if (projectData !== null) {
         this.lookups.projects = this.toLookup(
@@ -237,6 +247,12 @@
         );
       }
 
+      this.lookups.projectStatuses = this.toLookup(
+        sharedLookupData.projectStatuses || [],
+        ['ID', 'Code', 'Id', 'id', 'code'],
+        ['Name', 'Title', 'Code', 'name']
+      );
+
       const cachedDashboard = this.unwrap(
         window.PMS.Cache.get(CACHE_KEY)
       );
@@ -247,12 +263,32 @@
       }
     },
 
+    toStatusLookup: function (response) {
+      const lookup = {};
+      const items = this.normalizeArray(
+        response,
+        ['items', 'data', 'projectStatuses']
+      );
+
+      items.forEach(function (item) {
+        if (!item) return;
+        const name = item.Name || item.Title || item.Code || item.ID || '';
+        [item.ID, item.Code, item.Id, item.id, item.code].forEach(function (key) {
+          if (key !== undefined && key !== null && String(key) !== '') {
+            lookup[String(key)] = name;
+          }
+        });
+      });
+
+      return lookup;
+    },
+
     toLookup: function (response, idFields, nameFields) {
       const lookup = {};
 
       const items = this.normalizeArray(
         response,
-        ['items', 'data', 'projects', 'eventTypes']
+        ['items', 'data', 'projects', 'eventTypes', 'projectStatuses']
       );
 
       items.forEach(function (item) {
@@ -1766,8 +1802,11 @@
         REJECTED: 'ردشده'
       };
 
-      return labels[status] ||
-        this.lookups.projectStatuses[String(status)] ||
+      const key = String(status === undefined || status === null ? '' : status);
+      const normalizedKey = key.toUpperCase();
+      return labels[normalizedKey] ||
+        this.lookups.projectStatuses[key] ||
+        this.lookups.projectStatuses[normalizedKey] ||
         status ||
         '-';
     },
