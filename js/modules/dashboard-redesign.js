@@ -1017,6 +1017,7 @@
       this.targetEventId = this.openEventId ? eventId : '';
       this.saveState();
       this.renderProjectList();
+      if (this.openEventId) this.focusTargetEvent(eventId);
       var self = this;
       window.setTimeout(function () {
         var event = document.getElementById('dash-event-' + eventId);
