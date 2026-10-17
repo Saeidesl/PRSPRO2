@@ -12,6 +12,8 @@
     eventTypes: [],
     workflowStepsByWorkflow: {},
     workflowLookupPromise: null,
+    lookupsPromise: null,
+    lookupsLoaded: false,
     attachments: [],
     attachmentContent: {},
     histories: {},
@@ -390,21 +392,49 @@
     },
 
     loadLookups: async function () {
+      if (this.lookupsLoaded) return;
+      if (this.lookupsPromise) return this.lookupsPromise;
       var self = this;
-      var tasks = [
-        { path: '/users', key: 'dashboard_users_lookup', prop: 'users', keys: ['users', 'items', 'Users', 'Items'] },
-        { path: '/departments', key: 'dashboard_departments_lookup', prop: 'departments', keys: ['departments', 'items', 'Departments', 'Items'] },
-        { path: '/event-types', key: 'dashboard_event_types_lookup', prop: 'eventTypes', keys: ['eventTypes', 'items', 'EventTypes', 'Items'] }
-      ];
-      await Promise.all(tasks.map(async function (task) {
+      this.lookupsPromise = (async function () {
+        var loaded = false;
         try {
-          var result = await window.PMS.Api.getCached(task.path, task.key);
-          self[task.prop] = self.normalizeArray(result ? result.data : null, task.keys);
-          if (task.prop === 'eventTypes') self.populateFilterControls();
-        } catch (error) {}
-      }));
-      this.populateFilterControls();
-      if (this.projects.length) this.renderProjectList();
+          var result = await window.PMS.Api.getCached(
+            '/project-dashboard/lookups',
+            'dashboard_project_lookups_v1'
+          );
+          var data = self.unwrap(result ? result.data : null) || {};
+          self.users = self.normalizeArray(data.users, ['users', 'items', 'Users', 'Items']);
+          self.departments = self.normalizeArray(data.departments, ['departments', 'items', 'Departments', 'Items']);
+          self.eventTypes = self.normalizeArray(data.eventTypes, ['eventTypes', 'items', 'EventTypes', 'Items']);
+          var steps = self.normalizeArray(data.workflowSteps, ['workflowSteps', 'steps', 'items', 'WorkflowSteps', 'Steps', 'Items']);
+          self.workflowStepsByWorkflow = {};
+          steps.forEach(function (step) {
+            var workflowId = String(step.WorkflowID || step.WorkflowId || '');
+            if (!workflowId) return;
+            if (!self.workflowStepsByWorkflow[workflowId]) self.workflowStepsByWorkflow[workflowId] = [];
+            self.workflowStepsByWorkflow[workflowId].push(step);
+          });
+          Object.keys(self.workflowStepsByWorkflow).forEach(function (workflowId) {
+            self.workflowStepsByWorkflow[workflowId].sort(function (a, b) {
+              return Number(a.StepOrder || a.Order || 0) - Number(b.StepOrder || b.Order || 0);
+            });
+          });
+          loaded = true;
+        } catch (error) {
+          console.warn('دریافت گزینه‌های داشبورد انجام نشد.', error);
+          self.showError(error, true);
+          loaded = true;
+        } finally {
+          self.lookupsLoaded = loaded;
+          self.populateFilterControls();
+          if (self.projects.length) self.renderProjectList();
+        }
+      })();
+      try {
+        await this.lookupsPromise;
+      } finally {
+        this.lookupsPromise = null;
+      }
     },
 
     loadProjects: async function () {
@@ -419,6 +449,7 @@
             self.loadingProjects = false;
             self.populateFilterControls();
             self.applyFilters(false);
+            self.restoreExpandedHistories();
             self.loadWorkflowLookup();
             self.startSearchIndexingIfNeeded();
           },
@@ -431,6 +462,7 @@
         if (loading) loading.hidden = true;
         this.populateFilterControls();
         this.applyFilters(false);
+        this.restoreExpandedHistories();
         this.loadWorkflowLookup();
         this.startSearchIndexingIfNeeded();
       } catch (error) {
@@ -454,6 +486,7 @@
         this.indexingDone = false;
         this.populateFilterControls();
         this.applyFilters(false);
+        this.restoreExpandedHistories();
         this.startSearchIndexingIfNeeded();
       } catch (error) {
         this.showError(error, true);
@@ -465,40 +498,28 @@
       }
     },
 
-    loadWorkflowLookup: async function () {
-      var router = window.PMS.Router;
-      var canReadSteps = !!(router && (
-        (typeof router.isAdmin === 'function' && router.isAdmin()) ||
-        (Array.isArray(router.permissions) && router.permissions.indexOf('WORKFLOW_MANAGE') !== -1)
-      ));
-      if (!canReadSteps || !this.projects.length) return;
-      if (this.workflowLookupPromise) return this.workflowLookupPromise;
+    restoreExpandedHistories: function () {
       var self = this;
-      this.workflowLookupPromise = (async function () {
-        try {
-          var ids = [];
-          self.projects.forEach(function (project) {
-            var id = String(project.WorkflowID || project.WorkflowId || '');
-            if (id && ids.indexOf(id) === -1) ids.push(id);
-          });
-          await Promise.all(ids.map(async function (workflowId) {
-            try {
-              var key = window.PMS.Cache.keys.WORKFLOW_STEPS + '_' + workflowId;
-              var result = await window.PMS.Api.getCached('/workflows/' + encodeURIComponent(workflowId) + '/steps', key);
-              self.workflowStepsByWorkflow[workflowId] = self.normalizeArray(result ? result.data : null, ['steps', 'items', 'Steps', 'Items']);
-            } catch (error) {}
-          }));
-          self.populateFilterControls();
-          self.renderProjectList();
-        } catch (error) {
-          // نام مرحله در صورت نبود مجوز با شناسهٔ مرحله جایگزین می‌شود.
-        }
-      })();
-      try {
-        await this.workflowLookupPromise;
-      } finally {
-        this.workflowLookupPromise = null;
-      }
+      var queue = Object.keys(this.expanded).filter(function (id) {
+        var history = self.getHistory(id);
+        return self.expanded[id] && !!self.getProject(id) &&
+          (!history || !history.loaded || history.error || history.moreError);
+      });
+      var cursor = 0;
+      [0, 1].forEach(function () {
+        (async function () {
+          while (cursor < queue.length) {
+            var id = queue[cursor++];
+            await self.loadProjectHistory(id, false);
+          }
+        })();
+      });
+    },
+
+    loadWorkflowLookup: async function () {
+      await this.loadLookups();
+      this.populateFilterControls();
+      if (this.projects.length) this.renderProjectList();
     },
 
     normalizeArray: function (data, keys) {
@@ -534,11 +555,25 @@
       projectId = String(projectId || '');
       if (!projectId) return null;
       var existing = this.getHistory(projectId);
-      if (existing && !force && existing.loaded) return existing;
+      if (existing && !force && existing.loaded && !existing.loading && !existing.promise && !existing.error && !existing.moreError) return existing;
       if (existing && existing.promise && !force) return existing.promise;
+      if (!force && existing && (existing.error || existing.moreError)) force = true;
 
       var self = this;
-      var history = existing || { events: [], eventData: {}, eventFields: {}, loaded: false, loading: false, error: '' };
+      var history = existing || {
+        events: [], eventData: {}, eventFields: {}, loaded: false,
+        loading: false, error: '', moreError: '', pagination: null, fetchOrder: ''
+      };
+      var resume = !!(force && history.moreError && history.pagination && history.pagination.hasMore);
+      if (force && !resume) {
+        history.events = [];
+        history.eventData = {};
+        history.eventFields = {};
+        history.pagination = null;
+        history.loaded = false;
+        history.moreError = '';
+      }
+
       history.loading = true;
       history.error = '';
       this.histories[projectId] = history;
@@ -546,24 +581,82 @@
 
       history.promise = (async function () {
         try {
-          var response = force
-            ? await window.PMS.Api.getFresh('/projects/' + encodeURIComponent(projectId) + '/details', 'dashboard_project_details_' + projectId)
-            : await window.PMS.Api.getCached('/projects/' + encodeURIComponent(projectId) + '/details', 'dashboard_project_details_' + projectId);
-          var data = self.unwrap(response ? response.data : null) || {};
-          history.events = self.normalizeArray(data.events || data.items || [], ['events', 'items', 'Events', 'Items']);
-          history.eventData = data.eventData && typeof data.eventData === 'object' ? data.eventData : {};
-          history.eventFields = data.eventFields && typeof data.eventFields === 'object' ? data.eventFields : {};
+          var order = resume
+            ? (history.fetchOrder || self.eventOrder || 'newest')
+            : (self.eventOrder || 'newest');
+          if (!resume) history.fetchOrder = order;
+          else history.moreError = '';
+          var page = resume && history.pagination
+            ? Number(history.pagination.page || 1) + 1
+            : 1;
+          var firstPage = !resume;
+
+          while (true) {
+            var path = '/projects/' + encodeURIComponent(projectId) +
+              '/details/page/' + encodeURIComponent(history.fetchOrder || order) + '/' + String(page);
+            var cacheKey = 'dashboard_project_details_' + projectId + '_' +
+              String(history.fetchOrder || order) + '_' + String(page);
+            var response = force
+              ? await window.PMS.Api.getFresh(path, cacheKey)
+              : await window.PMS.Api.getCached(path, cacheKey);
+            var data = self.unwrap(response ? response.data : null) || {};
+            var pageEvents = self.normalizeArray(data.events || data.items || [], ['events', 'items', 'Events', 'Items']);
+            var pagination = data.pagination || {
+              page: page,
+              pageSize: 30,
+              total: pageEvents.length,
+              hasMore: false,
+              order: history.fetchOrder || order
+            };
+
+            if (firstPage && !resume) {
+              history.events = pageEvents;
+              history.eventData = data.eventData && typeof data.eventData === 'object' ? data.eventData : {};
+              history.eventFields = data.eventFields && typeof data.eventFields === 'object' ? data.eventFields : {};
+            } else {
+              history.events = history.events.concat(pageEvents);
+              Object.assign(history.eventData, data.eventData && typeof data.eventData === 'object' ? data.eventData : {});
+              Object.assign(history.eventFields, data.eventFields && typeof data.eventFields === 'object' ? data.eventFields : {});
+            }
+
+            history.pagination = pagination;
+            history.loaded = true;
+            history.loading = !!pagination.hasMore;
+            history.error = '';
+            history.moreError = '';
+            self.renderProjectList();
+
+            if (firstPage) {
+              await self.loadAttachmentIndex();
+              self.populateFilterControls();
+              self.renderProjectList();
+              firstPage = false;
+            }
+
+            if (!pagination.hasMore) break;
+            page = Number(pagination.page || page) + 1;
+            await new Promise(function (resolve) { window.requestAnimationFrame(resolve); });
+          }
+
           history.loaded = true;
           history.loading = false;
           history.error = '';
-          await self.loadAttachmentIndex();
+          history.moreError = '';
           self.populateFilterControls();
           self.renderProjectList();
           self.startSearchIndexingIfNeeded();
           return history;
         } catch (error) {
           history.loading = false;
-          history.error = error && error.message ? error.message : 'دریافت تاریخچه ناموفق بود.';
+          var message = error && error.message ? error.message : 'دریافت تاریخچه ناموفق بود.';
+          if (history.events && history.events.length) {
+            history.loaded = true;
+            history.moreError = message;
+            history.error = '';
+          } else {
+            history.loaded = false;
+            history.error = message;
+          }
           self.renderProjectList();
           if (!self.projects.length) self.showError(error);
           return history;
@@ -598,16 +691,20 @@
       var queue = this.projects.map(function (project) { return String(self.getId(project)); }).filter(Boolean);
       var cursor = 0;
       var completed = 0;
+      var failedIds = [];
       var workers = [0, 1];
       this.updateSearchProgress('در حال بررسی اطلاعات رویدادها برای جست‌وجو و فیلتر کامل...');
       Promise.all(workers.map(async function () {
         while (cursor < queue.length && generation === self.searchGeneration) {
           var id = queue[cursor++];
-          if (!id || self.getHistory(id) && self.getHistory(id).loaded) {
+          var existingHistory = self.getHistory(id);
+          if (!id || (existingHistory && existingHistory.loaded && !existingHistory.loading &&
+              !existingHistory.promise && !existingHistory.error && !existingHistory.moreError)) {
             completed++;
             continue;
           }
-          await self.loadProjectHistory(id, false);
+          var loadedHistory = await self.loadProjectHistory(id, false);
+          if (loadedHistory && (loadedHistory.error || loadedHistory.moreError)) failedIds.push(id);
           completed++;
           self.updateSearchProgress('در حال جست‌وجو در تاریخچه‌ها: ' + self.toPersianDigits(completed) + ' از ' + self.toPersianDigits(queue.length));
           self.applyFilters(false);
@@ -616,7 +713,12 @@
         if (generation !== self.searchGeneration) return;
         self.indexing = false;
         self.indexingDone = true;
-        self.updateSearchProgress('');
+        if (failedIds.length) {
+          self.updateSearchProgress('بعضی تاریخچه‌ها بارگذاری نشدند؛ برای تلاش دوباره از دکمهٔ تلاش مجدد استفاده کنید.');
+          self.showError(new Error('بارگذاری کامل تاریخچهٔ بعضی پروژه‌ها ناموفق بود.'), true);
+        } else {
+          self.updateSearchProgress('');
+        }
         self.applyFilters(false);
       });
     },
@@ -667,7 +769,7 @@
 
     filteredProjects: function () {
       var self = this;
-      var query = this.query.trim().toLocaleLowerCase();
+      var query = this.normalizeSearchText(this.query);
       var filtered = this.projects.filter(function (project) {
         var id = String(self.getId(project));
         var history = self.getHistory(id);
@@ -710,10 +812,10 @@
         if (self.filters.activityTo && !self.inDateRange(activity, self.filters.activityTo, 'to')) matches = false;
 
         if (matches && query) {
-          var projectText = self.searchableProjectText(project).toLocaleLowerCase();
+          var projectText = self.normalizeSearchText(self.searchableProjectText(project));
           var projectMatches = projectText.indexOf(query) !== -1;
           var eventMatches = !!history && history.events.some(function (event) {
-            return self.searchableEventText(event, history).toLocaleLowerCase().indexOf(query) !== -1;
+            return self.normalizeSearchText(self.searchableEventText(event, history)).indexOf(query) !== -1;
           });
           if (!projectMatches && !eventMatches && !history) {
             // Until this project's history is indexed, keep the list provisional.
@@ -737,9 +839,12 @@
     },
 
     searchableProjectText: function (project) {
-      return Object.keys(project || {}).map(function (key) {
+      var pieces = Object.keys(project || {}).map(function (key) {
         return Dashboard.stringifyValue(project[key]);
-      }).join(' ');
+      });
+      pieces.push(this.formatExactDate(this.dateValue(project && project.CreatedAt)));
+      pieces.push(this.formatExactDate(this.dateValue(project && project.UpdatedAt)));
+      return pieces.join(' ');
     },
 
     searchableEventText: function (event, history) {
@@ -754,11 +859,50 @@
         var field = fields.find(function (item) { return String(item.Code || '') === String(key); });
         pieces.push(field ? field.Name : key);
         pieces.push(Dashboard.stringifyValue(data[key]));
+        pieces.push(Dashboard.formatDynamicField(data[key], field));
       });
+      pieces.push(this.formatExactDate(this.eventTime(event)));
+      pieces.push(this.formatExactDate(this.dateValue(event.CreatedAt)));
       this.getEventAttachments(id).forEach(function (attachment) {
         pieces.push(attachment.FileName || attachment.fileName || '');
       });
       return pieces.join(' ');
+    },
+
+    normalizeSearchText: function (value) {
+      return String(value === null || value === undefined ? '' : value)
+        .toLocaleLowerCase('fa')
+        .replace(/[يى]/g, 'ی')
+        .replace(/ك/g, 'ک')
+        .replace(/[۰-۹]/g, function (digit) { return String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)); })
+        .replace(/[٠-٩]/g, function (digit) { return String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)); })
+        .replace(/\s+/g, ' ')
+        .trim();
+    },
+
+    formatDynamicField: function (value, field) {
+      if (value === null || value === undefined || value === '') return '';
+      var type = String(field && (field.FieldType || field.Type || field.DataType) || '').toLowerCase();
+      if (type.indexOf('date') === -1) return this.stringifyValue(value);
+      var raw = String(value);
+      var date;
+      var match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (match && type.indexOf('time') === -1) {
+        date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+      } else {
+        date = new Date(value);
+      }
+      if (isNaN(date.getTime())) return this.stringifyValue(value);
+      if (type.indexOf('time') !== -1 || type.indexOf('datetime') !== -1) {
+        return this.formatExactDate(date.getTime());
+      }
+      try {
+        return date.toLocaleDateString('fa-IR-u-ca-persian', {
+          year: 'numeric', month: '2-digit', day: '2-digit'
+        });
+      } catch (error) {
+        return date.toLocaleDateString('fa-IR');
+      }
     },
 
     stringifyValue: function (value) {
@@ -842,7 +986,7 @@
       if (expanded) {
         html += '<div class="dash-project-history" id="dash-history-' + this.escape(id) + '">';
         html += '<div class="dash-history-tools"><strong>خط زمانی تولید</strong><a href="#project-detail/' + encodeURIComponent(id) + '">صفحه جزئیات پروژه ←</a></div>';
-        if (!history || history.loading) {
+        if (!history || (!history.loaded && history.loading)) {
           html += '<div class="dash-skeleton-card"><span></span><span></span><span></span><span></span></div>';
         } else if (history.error) {
           html += '<div class="dash-error">دریافت تاریخچه ناموفق بود. <button type="button" class="btn btn-secondary dash-retry-history" data-project-id="' + this.escape(id) + '">تلاش مجدد</button></div>';
@@ -877,10 +1021,13 @@
       var events = this.getTimelineEvents(history);
       var html = '<div class="dash-timeline" data-project-id="' + this.escape(projectId) + '">';
       html += this.renderTimelineBatch(projectId, history, matching, 0, 30, events);
-      if (events.length > 30) {
+      if (events.length > 30 || (history.loading && history.pagination && history.pagination.hasMore)) {
         html += '<div class="dash-timeline-more dash-skeleton-card" data-project-id="' + this.escape(projectId) + '" data-next-offset="30" aria-label="در حال بارگذاری رویدادهای بیشتر"><span></span><span></span><span></span></div>';
       }
       html += '</div>';
+      if (history.moreError) {
+        html += '<div class="dash-error">' + this.escape(history.moreError) + ' <button type="button" class="btn btn-secondary dash-retry-history" data-project-id="' + this.escape(projectId) + '">تلاش مجدد</button></div>';
+      }
       return html;
     },
 
@@ -935,7 +1082,11 @@
           sentinel.insertAdjacentHTML('beforebegin', batch);
           offset += 30;
           if (offset >= events.length) {
-            sentinel.remove();
+            if (history.loading && history.pagination && history.pagination.hasMore) {
+              sentinel.setAttribute('data-next-offset', String(offset));
+            } else {
+              sentinel.remove();
+            }
           } else {
             sentinel.setAttribute('data-next-offset', String(offset));
           }
@@ -944,9 +1095,12 @@
             if (target) Dashboard.focusTargetEvent(Dashboard.targetEventId);
           }
         });
-        if (document.querySelector('#dash-project-list .dash-timeline-more')) {
-          Dashboard.scheduleTimelineContinuation();
-        }
+        var canContinue = Array.prototype.slice.call(document.querySelectorAll('#dash-project-list .dash-timeline-more')).some(function (sentinel) {
+          var projectId = sentinel.getAttribute('data-project-id');
+          var history = Dashboard.getHistory(projectId);
+          return !!history && Number(sentinel.getAttribute('data-next-offset') || 0) < Dashboard.getTimelineEvents(history).length;
+        });
+        if (canContinue) Dashboard.scheduleTimelineContinuation();
       });
     },
 
@@ -973,7 +1127,7 @@
       });
       Object.keys(data).forEach(function (key) {
         var field = fieldByCode[key];
-        html += '<div class="dash-detail-item"><small>' + Dashboard.escape(field ? field.Name || key : key) + '</small><strong>' + Dashboard.escape(Dashboard.stringifyValue(data[key])) + '</strong></div>';
+        html += '<div class="dash-detail-item"><small>' + Dashboard.escape(field ? field.Name || key : key) + '</small><strong>' + Dashboard.escape(Dashboard.formatDynamicField(data[key], field)) + '</strong></div>';
       });
       html += '</div>';
       if (event.Description) html += '<div class="dash-description">' + this.escape(event.Description) + '</div>';
@@ -1064,7 +1218,7 @@
     renderEventSearchResults: function () {
       var container = document.getElementById('dash-event-search-results');
       if (!container) return;
-      var query = this.query.trim().toLocaleLowerCase();
+      var query = this.normalizeSearchText(this.query);
       if (!query) {
         container.hidden = true;
         container.innerHTML = '';
@@ -1079,7 +1233,7 @@
         history.events.forEach(function (event) {
           var status = String(event.Status || '').toUpperCase();
           if (status === 'VOID' || status === 'CANCELLED') return;
-          if (self.searchableEventText(event, history).toLocaleLowerCase().indexOf(query) === -1) return;
+          if (self.normalizeSearchText(self.searchableEventText(event, history)).indexOf(query) === -1) return;
           hits.push({ project: project, event: event });
         });
       });
@@ -1103,10 +1257,10 @@
 
     matchingEventIds: function (history) {
       if (!this.query.trim() || !history || !history.loaded) return [];
-      var query = this.query.trim().toLocaleLowerCase();
+      var query = this.normalizeSearchText(this.query);
       return history.events.filter(function (event) {
         return String(event.Status || '').toUpperCase() !== 'VOID' &&
-          Dashboard.searchableEventText(event, history).toLocaleLowerCase().indexOf(query) !== -1;
+          Dashboard.normalizeSearchText(Dashboard.searchableEventText(event, history)).indexOf(query) !== -1;
       }).map(function (event) { return String(Dashboard.getId(event)); });
     },
 
@@ -1427,8 +1581,11 @@
       if (retry) {
         retry.addEventListener('click', function () {
           box.hidden = true;
+          Dashboard.lookupsLoaded = false;
+          Dashboard.lookupsPromise = null;
+          Dashboard.loadLookups();
           Dashboard.loadProjects();
-          if (Dashboard.query.trim()) {
+          if (Dashboard.query.trim() || Dashboard.hasEventFilters()) {
             Dashboard.indexingDone = false;
             Dashboard.startSearchIndexingIfNeeded();
           }
