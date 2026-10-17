@@ -739,3 +739,121 @@ html, body {
 .table-responsive > table {
   min-width: 100%;
 }
+
+
+/* Management and reporting pages: one shared visual contract. */
+.page-section,
+.page-container {
+  width: 100%;
+  min-width: 0;
+  color: var(--color-text);
+}
+.page-container {
+  padding: var(--space-24, 24px);
+  border-radius: var(--radius-lg);
+}
+.page-header {
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+.page-header p,
+.page-container > p,
+.page-section > p {
+  color: var(--color-text-secondary);
+}
+.card,
+.card-body,
+.card-header,
+.table-wrapper,
+.filter-bar,
+.loading-state,
+.table-empty {
+  min-width: 0;
+  border-color: var(--color-border);
+}
+.table-wrapper,
+.table-responsive {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.table-wrapper table,
+.table-responsive table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.table-wrapper table th,
+.table-responsive table th {
+  white-space: nowrap;
+}
+.table-wrapper table td,
+.table-responsive table td {
+  vertical-align: middle;
+}
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+  gap: var(--space-16, 16px);
+}
+.stat-card {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.stat-card-value {
+  font-variant-numeric: tabular-nums;
+}
+.filter-bar,
+.search-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-12, 12px);
+}
+.filter-group {
+  min-width: min(100%, 220px);
+}
+.filter-group label {
+  display: block;
+  margin-bottom: 6px;
+}
+.form-group,
+.form-field,
+.form-row > * {
+  min-width: 0;
+}
+input,
+select,
+textarea,
+.form-control,
+.form-select {
+  max-width: 100%;
+}
+textarea {
+  resize: vertical;
+}
+button,
+.btn,
+.theme-toggle {
+  touch-action: manipulation;
+}
+button:focus-visible,
+.btn:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+[hidden] {
+  display: none !important;
+}
+#reports-error,
+#audit-message,
+#settings-message,
+#project-status-message {
+  margin-block: 0 var(--space-12, 12px);
+}
