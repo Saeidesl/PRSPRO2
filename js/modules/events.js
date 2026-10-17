@@ -117,26 +117,40 @@
 
     load: async function () {
       const loading = document.getElementById('events-loading');
-      // Router owns the active permission list; it does not expose hasPermission().
-      // Checking that missing method here incorrectly hid all event data.
-      const canViewEvents = !!(
-        PMS.Router &&
-        (
-          (typeof PMS.Router.isAdmin === 'function' && PMS.Router.isAdmin()) ||
-          (Array.isArray(PMS.Router.permissions) &&
-            PMS.Router.permissions.indexOf('EVENT_VIEW') !== -1)
-        )
+      const router = PMS.Router;
+      const isAdmin = !!(
+        router &&
+        typeof router.isAdmin === 'function' &&
+        router.isAdmin()
       );
+      const permissions = router && Array.isArray(router.permissions)
+        ? router.permissions
+        : [];
+      const canViewEvents = isAdmin || permissions.indexOf('EVENT_VIEW') !== -1;
+      const canViewProjects = isAdmin || permissions.indexOf('PROJECT_VIEW') !== -1;
+      const canLoadEventTypes = isAdmin ||
+        permissions.indexOf('EVENT_CREATE') !== -1 ||
+        permissions.indexOf('EVENT_TYPE_MANAGE') !== -1;
 
-      const cachedEvents = canViewEvents
-        ? PMS.Cache.get(CACHE_KEY)
+      const cachedEvents = canViewEvents ? PMS.Cache.get(CACHE_KEY) : null;
+      const cachedProjects = canViewProjects
+        ? PMS.Cache.get(PROJECTS_CACHE_KEY)
         : null;
-      const cachedProjects = PMS.Cache.get(PROJECTS_CACHE_KEY);
-      const cachedTypes = PMS.Cache.get(EVENT_TYPES_CACHE_KEY);
+      const cachedTypes = canLoadEventTypes
+        ? PMS.Cache.get(EVENT_TYPES_CACHE_KEY)
+        : null;
 
       if (!canViewEvents) {
         this.events = [];
         PMS.Cache.remove(CACHE_KEY);
+      }
+      if (!canViewProjects) {
+        this.projects = [];
+        PMS.Cache.remove(PROJECTS_CACHE_KEY);
+      }
+      if (!canLoadEventTypes) {
+        this.eventTypes = [];
+        PMS.Cache.remove(EVENT_TYPES_CACHE_KEY);
       }
 
       if (cachedEvents !== null) this.events = this.normalize(cachedEvents);
@@ -156,8 +170,10 @@
 
       try {
         const requests = [];
+        const resultKeys = [];
 
         if (canViewEvents) {
+          resultKeys.push('events');
           requests.push(
             PMS.Api.getCached('/events', CACHE_KEY, {
               onRefresh: function (data) {
@@ -174,44 +190,41 @@
           );
         }
 
-        requests.push(
-          PMS.Api.getCached('/projects', PROJECTS_CACHE_KEY, {
-            onRefresh: function (data) {
-              Events.projects = Events.normalize(data);
-              Events.renderFilters();
-              Events.applyFilters();
-            }
-          }),
-          PMS.Api.getCached('/event-types', EVENT_TYPES_CACHE_KEY, {
-            onRefresh: function (data) {
-              Events.eventTypes = Events.normalize(data);
-              Events.renderFilters();
-              Events.applyFilters();
-            }
-          })
-        );
+        if (canViewProjects) {
+          resultKeys.push('projects');
+          requests.push(
+            PMS.Api.getCached('/projects', PROJECTS_CACHE_KEY, {
+              onRefresh: function (data) {
+                Events.projects = Events.normalize(data);
+                Events.renderFilters();
+                Events.applyFilters();
+              }
+            })
+          );
+        }
+
+        if (canLoadEventTypes) {
+          resultKeys.push('types');
+          requests.push(
+            PMS.Api.getCached('/event-types', EVENT_TYPES_CACHE_KEY, {
+              onRefresh: function (data) {
+                Events.eventTypes = Events.normalize(data);
+                Events.renderFilters();
+                Events.applyFilters();
+              }
+            })
+          );
+        }
 
         const results = await Promise.all(requests);
-        let resultIndex = 0;
+        results.forEach(function (result, index) {
+          if (!result || result.cached !== false) return;
 
-        if (canViewEvents) {
-          const eventsResult = results[resultIndex++];
-          if (eventsResult && eventsResult.cached === false) {
-            this.events = this.normalize(eventsResult.data);
-          }
-        } else {
-          this.events = [];
-        }
-
-        const projectsResult = results[resultIndex++];
-        if (projectsResult && projectsResult.cached === false) {
-          this.projects = this.normalize(projectsResult.data);
-        }
-
-        const typesResult = results[resultIndex++];
-        if (typesResult && typesResult.cached === false) {
-          this.eventTypes = this.normalize(typesResult.data);
-        }
+          const key = resultKeys[index];
+          if (key === 'events') Events.events = Events.normalize(result.data);
+          if (key === 'projects') Events.projects = Events.normalize(result.data);
+          if (key === 'types') Events.eventTypes = Events.normalize(result.data);
+        });
 
         this.renderFilters();
         this.applyFilters();
