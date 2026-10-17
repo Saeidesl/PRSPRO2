@@ -118,20 +118,33 @@
       const loading = document.getElementById('events-loading');
       // Router owns the active permission list; it does not expose hasPermission().
       // Checking that missing method here incorrectly hid all event data.
-      const canViewEvents = !!(
+      const permissions = PMS.Router && Array.isArray(PMS.Router.permissions)
+        ? PMS.Router.permissions
+        : [];
+      const isAdmin = !!(
         PMS.Router &&
-        (
-          (typeof PMS.Router.isAdmin === 'function' && PMS.Router.isAdmin()) ||
-          (Array.isArray(PMS.Router.permissions) &&
-            PMS.Router.permissions.indexOf('EVENT_VIEW') !== -1)
-        )
+        typeof PMS.Router.isAdmin === 'function' &&
+        PMS.Router.isAdmin()
       );
+      const canViewEvents = isAdmin || permissions.indexOf('EVENT_VIEW') !== -1;
+      const canViewProjects = isAdmin || permissions.indexOf('PROJECT_VIEW') !== -1;
+      const canCreateEvents = isAdmin || permissions.indexOf('EVENT_CREATE') !== -1;
+      const canViewEventTypes = isAdmin ||
+        canCreateEvents ||
+        permissions.indexOf('EVENT_TYPE_VIEW') !== -1 ||
+        permissions.indexOf('EVENT_TYPE_MANAGE') !== -1;
 
       const cachedEvents = canViewEvents
         ? PMS.Cache.get(CACHE_KEY)
         : null;
-      const cachedProjects = PMS.Cache.get(PROJECTS_CACHE_KEY);
-      const cachedTypes = PMS.Cache.get(EVENT_TYPES_CACHE_KEY);
+      // The general project cache is not used by users who only have
+      // event-registration access; they receive a scoped project list.
+      const cachedProjects = canViewProjects
+        ? PMS.Cache.get(PROJECTS_CACHE_KEY)
+        : null;
+      const cachedTypes = canViewEventTypes
+        ? PMS.Cache.get(EVENT_TYPES_CACHE_KEY)
+        : null;
 
       if (!canViewEvents) {
         this.events = [];
@@ -173,24 +186,43 @@
           );
         }
 
-        requests.push(
-          PMS.Api.getCached('/projects', PROJECTS_CACHE_KEY, {
-            onRefresh: function (data) {
-              Events.projects = Events.normalize(data);
-              Events.renderFilters();
-              Events.applyFilters();
-            }
-          }),
-          PMS.Api.getCached('/event-types', EVENT_TYPES_CACHE_KEY, {
-            onRefresh: function (data) {
-              Events.eventTypes = Events.normalize(data);
-              Events.renderFilters();
-              Events.applyFilters();
-            }
+        if (canViewProjects) {
+          requests.push(
+            PMS.Api.getCached('/projects', PROJECTS_CACHE_KEY, {
+              onRefresh: function (data) {
+                Events.projects = Events.normalize(data);
+                Events.renderFilters();
+                Events.applyFilters();
+              }
+            })
+          );
+        } else if (canCreateEvents) {
+          requests.push(
+            PMS.Api.get('/projects/available-for-event').then(function (response) {
+              return { cached: false, data: Events.normalize(response) };
+            })
+          );
+        }
+
+        if (canViewEventTypes) {
+          requests.push(
+            PMS.Api.getCached('/event-types', EVENT_TYPES_CACHE_KEY, {
+              onRefresh: function (data) {
+                Events.eventTypes = Events.normalize(data);
+                Events.renderFilters();
+                Events.applyFilters();
+              }
+            })
+          );
+        }
+
+        const results = await Promise.all(
+          requests.map(function (request) {
+            return request.catch(function (error) {
+              return { cached: false, data: [], permissionOrLoadError: error };
+            });
           })
         );
-
-        const results = await Promise.all(requests);
         let resultIndex = 0;
 
         if (canViewEvents) {
@@ -202,14 +234,22 @@
           this.events = [];
         }
 
-        const projectsResult = results[resultIndex++];
-        if (projectsResult && projectsResult.cached === false) {
-          this.projects = this.normalize(projectsResult.data);
+        if (canViewProjects || canCreateEvents) {
+          const projectsResult = results[resultIndex++];
+          if (projectsResult && projectsResult.cached === false) {
+            this.projects = this.normalize(projectsResult.data);
+          }
+        } else {
+          this.projects = [];
         }
 
-        const typesResult = results[resultIndex++];
-        if (typesResult && typesResult.cached === false) {
-          this.eventTypes = this.normalize(typesResult.data);
+        if (canViewEventTypes) {
+          const typesResult = results[resultIndex++];
+          if (typesResult && typesResult.cached === false) {
+            this.eventTypes = this.normalize(typesResult.data);
+          }
+        } else {
+          this.eventTypes = [];
         }
 
         this.renderFilters();
