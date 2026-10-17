@@ -6,10 +6,22 @@
 
   const state = {
     departments: [],
-    search: ''
+    search: '',
+    canManage: false
   };
 
   function init() {
+    const router = PMS.Router;
+    const permissions = router && Array.isArray(router.permissions)
+      ? router.permissions
+      : [];
+    state.canManage = !!(
+      (router && typeof router.isAdmin === 'function' && router.isAdmin()) ||
+      permissions.indexOf('DEPARTMENT_MANAGE') !== -1
+    );
+    const createButton = document.getElementById('department-create-button');
+    if (createButton) createButton.hidden = !state.canManage;
+
     bindEvents();
 
     // نمایش فوری فهرست ذخیره‌شده
@@ -598,12 +610,13 @@
           class="btn btn-secondary"
           data-department-details-close
         >بستن</button>
-
-        <button
-          type="button"
-          class="btn btn-primary"
-          data-department-edit
-        >ویرایش واحد</button>
+        ${state.canManage ? `
+          <button
+            type="button"
+            class="btn btn-primary"
+            data-department-edit
+          >ویرایش واحد</button>
+        ` : ''}
       `,
 
       onOpen: function () {

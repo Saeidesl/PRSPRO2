@@ -12,7 +12,8 @@
     departments: [],
     users: [],
     projectStatuses: [],
-    modalBusy: false
+    modalBusy: false,
+    canManage: false
   };
 
   const CATEGORY_OPTIONS = [
@@ -35,6 +36,17 @@
   ];
 
   function init() {
+    const router = PMS.Router;
+    const permissions = router && Array.isArray(router.permissions)
+      ? router.permissions
+      : [];
+    state.canManage = !!(
+      (router && typeof router.isAdmin === 'function' && router.isAdmin()) ||
+      permissions.indexOf('EVENT_TYPE_MANAGE') !== -1
+    );
+    const createButton = document.getElementById('event-type-create-button');
+    if (createButton) createButton.hidden = !state.canManage;
+
     bindEvents();
 
     const cached = PMS.Cache.get(CACHE_KEY);
@@ -324,8 +336,10 @@
       html += '<td>' + (isChecked(item.AllowAttachments) ? 'مجاز' : 'غیرمجاز') + '</td>';
       html += '<td class="event-type-actions">';
 
-      html += '<button type="button" class="btn btn-sm btn-secondary event-type-edit" data-id="' +
-        escapeAttribute(id) + '">ویرایش</button> ';
+      if (state.canManage) {
+        html += '<button type="button" class="btn btn-sm btn-secondary event-type-edit" data-id="' +
+          escapeAttribute(id) + '">ویرایش</button> ';
+      }
 
       html += '<button type="button" class="btn btn-sm btn-secondary event-type-fields" data-id="' +
         escapeAttribute(id) + '" data-name="' + escapeAttribute(name) +
@@ -355,7 +369,7 @@
   async function loadConfigurationLists() {
     const results = await Promise.all([
       PMS.Api.get('/departments'),
-      PMS.Api.get('/users'),
+      PMS.Api.get('/lookup/users-for-event-types'),
       PMS.Api.get('/project-statuses')
     ]);
 
@@ -1198,10 +1212,11 @@
       'event-type-fields-modal'
     );
 
-    let html =
-      '<div class="modal-actions" style="margin-bottom:12px">' +
-        '<button type="button" class="btn btn-primary" id="field-create-button">+ افزودن فیلد</button>' +
-      '</div>';
+    let html = state.canManage
+      ? '<div class="modal-actions" style="margin-bottom:12px">' +
+          '<button type="button" class="btn btn-primary" id="field-create-button">+ افزودن فیلد</button>' +
+        '</div>'
+      : '';
 
     const fields = state.fields.slice().sort(function (a, b) {
       return Number(a.FieldOrder || 0) - Number(b.FieldOrder || 0);
@@ -1229,12 +1244,16 @@
         html += '<td>' + renderStatus(field.Status || 'ACTIVE') + '</td>';
         html += '<td>';
 
-        html += '<button type="button" class="btn btn-sm btn-secondary field-edit" data-id="' +
-          escapeAttribute(id) + '">ویرایش</button> ';
+        if (state.canManage) {
+          html += '<button type="button" class="btn btn-sm btn-secondary field-edit" data-id="' +
+            escapeAttribute(id) + '">ویرایش</button> ';
 
-        if (active) {
-          html += '<button type="button" class="btn btn-sm btn-secondary field-disable" data-id="' +
-            escapeAttribute(id) + '">غیرفعال‌سازی</button>';
+          if (active) {
+            html += '<button type="button" class="btn btn-sm btn-secondary field-disable" data-id="' +
+              escapeAttribute(id) + '">غیرفعال‌سازی</button>';
+          }
+        } else {
+          html += 'فقط مشاهده';
         }
 
         html += '</td></tr>';
@@ -1245,9 +1264,12 @@
 
     modal.body.innerHTML = html;
 
-    modal.body.querySelector('#field-create-button').addEventListener('click', function () {
-      openFieldForm(null);
-    });
+    const fieldCreateButton = modal.body.querySelector('#field-create-button');
+    if (fieldCreateButton) {
+      fieldCreateButton.addEventListener('click', function () {
+        openFieldForm(null);
+      });
+    }
 
     modal.body.querySelectorAll('.field-edit').forEach(function (button) {
       button.addEventListener('click', function () {

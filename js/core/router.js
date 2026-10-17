@@ -33,22 +33,23 @@
     permissionsLoaded: false,
     permissionsRequest: null,
 
+    // Page entry permissions; every API action is enforced by the backend.
     routePermissions: {
       dashboard: ['REPORT_VIEW'],
       projects: ['PROJECT_VIEW', 'PROJECT_CREATE'],
       'project-detail': ['PROJECT_VIEW'],
       events: ['EVENT_VIEW', 'EVENT_CREATE'],
-      workflows: ['WORKFLOW_MANAGE'],
-      'project-statuses': ['PROJECT_STATUS_MANAGE'],
-      'event-types': ['EVENT_TYPE_MANAGE'],
-      attachments: ['ATTACHMENT_VIEW', 'ATTACHMENT_UPLOAD'],
+      workflows: ['WORKFLOW_VIEW', 'WORKFLOW_MANAGE'],
+      'project-statuses': ['PROJECT_STATUS_VIEW', 'PROJECT_STATUS_MANAGE'],
+      'event-types': ['EVENT_TYPE_VIEW', 'EVENT_TYPE_MANAGE'],
+      attachments: ['ATTACHMENT_VIEW'],
       reports: ['REPORT_VIEW'],
-      users: ['USER_VIEW', 'USER_CREATE', 'USER_EDIT'],
-      departments: ['DEPARTMENT_MANAGE'],
-      roles: ['ROLE_MANAGE'],
-      permissions: ['PERMISSION_MANAGE'],
-      audit: ['REPORT_VIEW'],
-      settings: ['SETTINGS_MANAGE'],
+      users: ['USER_VIEW', 'USER_CREATE'],
+      departments: ['DEPARTMENT_VIEW', 'DEPARTMENT_MANAGE'],
+      roles: ['ROLE_VIEW', 'ROLE_MANAGE'],
+      permissions: ['PERMISSION_VIEW', 'PERMISSION_MANAGE'],
+      audit: ['AUDIT_VIEW'],
+      settings: ['SYSTEM_SETTINGS'],
       admin: ['SYSTEM_MANAGE']
     },
 
@@ -103,7 +104,9 @@ getBaseUrl: function () {
       return (
         user.IsAdmin === true ||
         String(user.IsAdmin).toLowerCase() === 'true' ||
-        String(user.DepartmentCode || '').trim().toUpperCase() === 'ADMIN'
+        String(user.DepartmentCode || '').trim().toUpperCase() === 'ADMIN' ||
+        (Array.isArray(Router.permissions) &&
+          Router.permissions.indexOf('SYSTEM_MANAGE') !== -1)
       );
     },
 

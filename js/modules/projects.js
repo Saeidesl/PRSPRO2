@@ -8,9 +8,46 @@
     workflows: [],
     modal: null,
     isSaving: false,
+    canViewProjects: false,
 
     init: function () {
       this.bindEvents();
+
+      const router = window.PMS.Router;
+      const permissions = router && Array.isArray(router.permissions)
+        ? router.permissions
+        : [];
+      const isAdmin = !!(
+        router &&
+        typeof router.isAdmin === 'function' &&
+        router.isAdmin()
+      );
+      const canViewProjects = isAdmin || permissions.indexOf('PROJECT_VIEW') !== -1;
+      this.canViewProjects = canViewProjects;
+      const canCreateProjects = isAdmin || permissions.indexOf('PROJECT_CREATE') !== -1;
+      const createButton = document.getElementById('project-create-button');
+
+      if (createButton) createButton.hidden = !canCreateProjects;
+
+      // Project creation is independent from permission to browse the register.
+      if (!canViewProjects) {
+        const loading = document.getElementById('projects-loading');
+        const filters = document.querySelector('.filter-bar');
+        const table = document.getElementById('projects-table-container');
+        const empty = document.getElementById('projects-empty');
+
+        if (loading) loading.hidden = true;
+        if (filters) filters.hidden = true;
+        if (table) table.hidden = true;
+        if (empty) {
+          empty.hidden = false;
+          empty.textContent = canCreateProjects
+            ? 'دسترسی شما فقط شامل ایجاد پروژه است؛ برای مشاهده فهرست پروژه‌ها باید مجوز «مشاهده پروژه‌ها» داشته باشید.'
+            : 'برای مشاهده پروژه‌ها مجوز لازم را ندارید.';
+        }
+        return;
+      }
+
       this.loadProjects();
     },
 
@@ -328,7 +365,7 @@
       });
 
       try {
-        const response = await window.PMS.Api.get('/workflows');
+        const response = await window.PMS.Api.get('/workflows/available-for-project');
         const workflows = this.normalizeWorkflows(response);
 
         if (this.modal !== modal) {
@@ -473,16 +510,18 @@
 
         const createdId = String(created.ID || created.Id || created.id);
 
-        const exists = this.projects.some((item) => {
-          return String(item.ID || item.Id || item.id) === createdId;
-        });
+        if (this.canViewProjects) {
+          const exists = this.projects.some((item) => {
+            return String(item.ID || item.Id || item.id) === createdId;
+          });
 
-        if (!exists) {
-          this.projects.unshift(created);
+          if (!exists) {
+            this.projects.unshift(created);
+          }
+
+          // Only users with project-view permission may render the project register.
+          this.applyFilters();
         }
-
-        // فهرست فعلی را بلافاصله به‌روز می‌کنیم.
-        this.applyFilters();
 
         modal.remove();
 
@@ -492,8 +531,10 @@
 
         alert('پروژه با موفقیت ثبت شد.');
 
-        // دریافت دوباره فهرست از سرور برای هماهنگ‌شدن اطلاعات.
-        this.loadProjects();
+        // Refresh the register only when this role may view all projects.
+        if (this.canViewProjects) {
+          this.loadProjects();
+        }
 
       } catch (error) {
         this.showFormError(

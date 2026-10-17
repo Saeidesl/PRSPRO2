@@ -118,20 +118,32 @@
       const loading = document.getElementById('events-loading');
       // Router owns the active permission list; it does not expose hasPermission().
       // Checking that missing method here incorrectly hid all event data.
-      const canViewEvents = !!(
+      const permissions = PMS.Router && Array.isArray(PMS.Router.permissions)
+        ? PMS.Router.permissions
+        : [];
+      const isAdmin = !!(
         PMS.Router &&
-        (
-          (typeof PMS.Router.isAdmin === 'function' && PMS.Router.isAdmin()) ||
-          (Array.isArray(PMS.Router.permissions) &&
-            PMS.Router.permissions.indexOf('EVENT_VIEW') !== -1)
-        )
+        typeof PMS.Router.isAdmin === 'function' &&
+        PMS.Router.isAdmin()
       );
+      const canViewEvents = isAdmin || permissions.indexOf('EVENT_VIEW') !== -1;
+      const canViewProjects = isAdmin || permissions.indexOf('PROJECT_VIEW') !== -1;
+      const canCreateEvents = isAdmin || permissions.indexOf('EVENT_CREATE') !== -1;
+      const canBrowseEventTypes = isAdmin ||
+        permissions.indexOf('EVENT_TYPE_VIEW') !== -1 ||
+        permissions.indexOf('EVENT_TYPE_MANAGE') !== -1;
+      const canViewEventTypes = canBrowseEventTypes || canCreateEvents;
 
       const cachedEvents = canViewEvents
         ? PMS.Cache.get(CACHE_KEY)
         : null;
-      const cachedProjects = PMS.Cache.get(PROJECTS_CACHE_KEY);
-      const cachedTypes = PMS.Cache.get(EVENT_TYPES_CACHE_KEY);
+      // General caches are not reused for narrowly scoped registration context.
+      const cachedProjects = canViewProjects
+        ? PMS.Cache.get(PROJECTS_CACHE_KEY)
+        : null;
+      const cachedTypes = canBrowseEventTypes
+        ? PMS.Cache.get(EVENT_TYPES_CACHE_KEY)
+        : null;
 
       if (!canViewEvents) {
         this.events = [];
@@ -173,24 +185,55 @@
           );
         }
 
-        requests.push(
-          PMS.Api.getCached('/projects', PROJECTS_CACHE_KEY, {
-            onRefresh: function (data) {
-              Events.projects = Events.normalize(data);
-              Events.renderFilters();
-              Events.applyFilters();
-            }
-          }),
-          PMS.Api.getCached('/event-types', EVENT_TYPES_CACHE_KEY, {
-            onRefresh: function (data) {
-              Events.eventTypes = Events.normalize(data);
-              Events.renderFilters();
-              Events.applyFilters();
-            }
+        if (canViewProjects) {
+          requests.push(
+            PMS.Api.getCached('/projects', PROJECTS_CACHE_KEY, {
+              onRefresh: function (data) {
+                Events.projects = Events.normalize(data);
+                Events.renderFilters();
+                Events.applyFilters();
+              }
+            })
+          );
+        } else if (canCreateEvents) {
+          requests.push(
+            PMS.Api.get('/projects/available-for-event').then(function (response) {
+              const data = PMS.Api.extractData
+                ? PMS.Api.extractData(response)
+                : response;
+              return { cached: false, data: Events.normalize(data) };
+            })
+          );
+        }
+
+        if (canBrowseEventTypes) {
+          requests.push(
+            PMS.Api.getCached('/event-types', EVENT_TYPES_CACHE_KEY, {
+              onRefresh: function (data) {
+                Events.eventTypes = Events.normalize(data);
+                Events.renderFilters();
+                Events.applyFilters();
+              }
+            })
+          );
+        } else if (canCreateEvents) {
+          requests.push(
+            PMS.Api.get('/event-types').then(function (response) {
+              const data = PMS.Api.extractData
+                ? PMS.Api.extractData(response)
+                : response;
+              return { cached: false, data: Events.normalize(data) };
+            })
+          );
+        }
+
+        const results = await Promise.all(
+          requests.map(function (request) {
+            return request.catch(function (error) {
+              return { cached: false, data: [], permissionOrLoadError: error };
+            });
           })
         );
-
-        const results = await Promise.all(requests);
         let resultIndex = 0;
 
         if (canViewEvents) {
@@ -202,14 +245,22 @@
           this.events = [];
         }
 
-        const projectsResult = results[resultIndex++];
-        if (projectsResult && projectsResult.cached === false) {
-          this.projects = this.normalize(projectsResult.data);
+        if (canViewProjects || canCreateEvents) {
+          const projectsResult = results[resultIndex++];
+          if (projectsResult && projectsResult.cached === false) {
+            this.projects = this.normalize(projectsResult.data);
+          }
+        } else {
+          this.projects = [];
         }
 
-        const typesResult = results[resultIndex++];
-        if (typesResult && typesResult.cached === false) {
-          this.eventTypes = this.normalize(typesResult.data);
+        if (canViewEventTypes) {
+          const typesResult = results[resultIndex++];
+          if (typesResult && typesResult.cached === false) {
+            this.eventTypes = this.normalize(typesResult.data);
+          }
+        } else {
+          this.eventTypes = [];
         }
 
         this.renderFilters();
@@ -288,7 +339,17 @@
         }
       }
 
-      const projects = this.uniqueValues(this.projects.map(function (project) {
+      const projectSource = this.projects.length
+        ? this.projects
+        : this.events.map(function (event) {
+            return {
+              ID: event.ProjectID,
+              ProjectCode: event.ProjectCode,
+              Title: event.ProjectTitle || event.ProjectName
+            };
+          });
+
+      const projects = this.uniqueValues(projectSource.map(function (project) {
         const id = Events.idOf(project);
         if (!id) return null;
 
@@ -298,7 +359,16 @@
         };
       }));
 
-      const types = this.uniqueValues(this.eventTypes.map(function (type) {
+      const typeSource = this.eventTypes.length
+        ? this.eventTypes
+        : this.events.map(function (event) {
+            return {
+              ID: event.EventTypeID,
+              Name: event.EventTypeName
+            };
+          });
+
+      const types = this.uniqueValues(typeSource.map(function (type) {
         const id = Events.idOf(type);
         if (!id) return null;
 
