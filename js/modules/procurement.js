@@ -109,7 +109,7 @@
     setText('procurement-needs-count', number(summary.activeNeeds !== undefined ? summary.activeNeeds : state.needs.length));
     setText('procurement-needs-open', number(summary.openNeeds !== undefined ? summary.openNeeds :
       state.needs.filter(function (x) { return Number(x.OrderedQuantity || 0) < Number(x.RequestedQuantity || 0); }).length));
-    setText('procurement-orders-count', number(summary.orders !== undefined ? summary.orders : state.orders.length));
+    setText('procurement-orders-count', number(summary.activeOrders !== undefined ? summary.activeOrders : (summary.orders !== undefined ? summary.orders : state.orders.length)));
     setText('procurement-orders-open', number(summary.openOrders !== undefined ? summary.openOrders :
       state.orders.filter(function (x) { return String(x.Status).toUpperCase() !== 'RECEIVED'; }).length));
   }
