@@ -104,7 +104,9 @@ getBaseUrl: function () {
       return (
         user.IsAdmin === true ||
         String(user.IsAdmin).toLowerCase() === 'true' ||
-        String(user.DepartmentCode || '').trim().toUpperCase() === 'ADMIN'
+        String(user.DepartmentCode || '').trim().toUpperCase() === 'ADMIN' ||
+        (Array.isArray(Router.permissions) &&
+          Router.permissions.indexOf('SYSTEM_MANAGE') !== -1)
       );
     },
 
