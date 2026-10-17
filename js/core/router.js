@@ -245,11 +245,32 @@ getBaseUrl: function () {
         const permissionsOk = await Router.loadPermissions();
 
         if (!permissionsOk || !Router.hasRouteAccess(route)) {
-          route = 'events';
-          mainRoute = 'events';
-          Router.changeRoute('events', true);
+          const fallbackRoutes = Router.isAdmin()
+            ? ['dashboard', 'events', 'projects']
+            : [
+                'events',
+                'projects',
+                'dashboard',
+                'reports',
+                'users',
+                'workflows',
+                'event-types',
+                'attachments',
+                'departments',
+                'roles',
+                'permissions',
+                'audit',
+                'settings',
+                'admin'
+              ];
 
-          if (!Router.hasRouteAccess('events')) {
+          const fallbackRoute = permissionsOk
+            ? fallbackRoutes.find(function (candidate) {
+                return Router.hasRouteAccess(candidate);
+              })
+            : null;
+
+          if (!fallbackRoute) {
             if (!Router.layoutRendered) Router.renderLayout();
 
             const content = document.getElementById('page-content');
@@ -264,6 +285,10 @@ getBaseUrl: function () {
 
             return;
           }
+
+          route = fallbackRoute;
+          mainRoute = fallbackRoute;
+          Router.changeRoute(fallbackRoute, true);
         }
 
         if (!Router.layoutRendered) Router.renderLayout();
