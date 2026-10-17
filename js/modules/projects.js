@@ -8,6 +8,7 @@
     workflows: [],
     modal: null,
     isSaving: false,
+    canViewProjects: false,
 
     init: function () {
       this.bindEvents();
@@ -22,6 +23,7 @@
         router.isAdmin()
       );
       const canViewProjects = isAdmin || permissions.indexOf('PROJECT_VIEW') !== -1;
+      this.canViewProjects = canViewProjects;
       const canCreateProjects = isAdmin || permissions.indexOf('PROJECT_CREATE') !== -1;
       const createButton = document.getElementById('project-create-button');
 
@@ -508,16 +510,18 @@
 
         const createdId = String(created.ID || created.Id || created.id);
 
-        const exists = this.projects.some((item) => {
-          return String(item.ID || item.Id || item.id) === createdId;
-        });
+        if (this.canViewProjects) {
+          const exists = this.projects.some((item) => {
+            return String(item.ID || item.Id || item.id) === createdId;
+          });
 
-        if (!exists) {
-          this.projects.unshift(created);
+          if (!exists) {
+            this.projects.unshift(created);
+          }
+
+          // Only users with project-view permission may render the project register.
+          this.applyFilters();
         }
-
-        // فهرست فعلی را بلافاصله به‌روز می‌کنیم.
-        this.applyFilters();
 
         modal.remove();
 
@@ -527,8 +531,10 @@
 
         alert('پروژه با موفقیت ثبت شد.');
 
-        // دریافت دوباره فهرست از سرور برای هماهنگ‌شدن اطلاعات.
-        this.loadProjects();
+        // Refresh the register only when this role may view all projects.
+        if (this.canViewProjects) {
+          this.loadProjects();
+        }
 
       } catch (error) {
         this.showFormError(
