@@ -624,84 +624,66 @@
     },
 
 
-    download: async function (
-      attachmentId
-    ) {
-
+    download: async function (attachmentId) {
       if (!attachmentId) {
-
+        alert('شناسه فایل مشخص نیست.');
         return;
-
       }
-
 
       try {
-
-        const response =
-          await Api.get(
-            '/attachments/' +
-            encodeURIComponent(
-              attachmentId
-            )
-          );
-
-
-        const data =
-          Api.extractData(
-            response
-          );
-
-
-        if (
-          data &&
-          data.url
-        ) {
-
-          window.open(
-            data.url,
-            '_blank'
-          );
-
-          return;
-
-        }
-
-
-        if (
-          data &&
-          data.downloadUrl
-        ) {
-
-          window.open(
-            data.downloadUrl,
-            '_blank'
-          );
-
-          return;
-
-        }
-
-
-        alert(
-          'اطلاعات دانلود فایل دریافت نشد.'
+        // Backend download endpoint returns file metadata and Base64 content.
+        const response = await Api.get(
+          '/attachments/' +
+          encodeURIComponent(attachmentId) +
+          '/download'
         );
+        const data = Api.extractData(response) || {};
 
+        // Keep compatibility with a URL-based response if the backend changes.
+        const url = data.url || data.downloadUrl || data.DownloadUrl;
+        if (url) {
+          window.open(url, '_blank', 'noopener');
+          return;
+        }
 
+        const base64 = data.Base64 || data.base64;
+        if (!base64) {
+          throw new Error('سرور اطلاعات دانلود یا محتوای فایل را برنگرداند.');
+        }
+
+        const mimeType = data.MimeType || data.mimeType || 'application/octet-stream';
+        const fileName = data.FileName || data.fileName || ('attachment-' + attachmentId);
+        const cleanBase64 = String(base64).replace(/^data:[^,]*;base64,/, '');
+        const binary = window.atob(cleanBase64);
+        const chunks = [];
+        const chunkSize = 8192;
+
+        for (let offset = 0; offset < binary.length; offset += chunkSize) {
+          const length = Math.min(chunkSize, binary.length - offset);
+          const bytes = new Uint8Array(length);
+          for (let i = 0; i < length; i++) {
+            bytes[i] = binary.charCodeAt(offset + i);
+          }
+          chunks.push(bytes);
+        }
+
+        const blob = new Blob(chunks, { type: mimeType });
+        const objectUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = objectUrl;
+        link.download = fileName;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+
+        window.setTimeout(function () {
+          window.URL.revokeObjectURL(objectUrl);
+        }, 1000);
       } catch (error) {
-
-        console.error(
-          'Attachment Download Error:',
-          error
-        );
-
-
-        alert(
-          error.message ||
-          'خطا در دریافت فایل.'
-        );
-
+        console.error('Attachment Download Error:', error);
+        alert(error.message || 'خطا در دریافت فایل.');
       }
-
     },
 
 
