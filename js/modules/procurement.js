@@ -40,6 +40,32 @@
     return labels[String(status || '').toUpperCase()] || status || '-';
   }
 
+
+  function option(value, label, selected) {
+    const rawValue = String(value == null ? '' : value)
+      .replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return '<option value="' + rawValue + '"' + (selected ? ' selected' : '') + '>' + escape(label) + '</option>';
+  }
+  function clearMessage() {
+    const root = $('procurement-modal-root');
+    if (root) root.innerHTML = '';
+  }
+  function showMessage(message, isError) {
+    const root = $('procurement-modal-root');
+    if (!root) { window.alert(message); return; }
+    let box = root.querySelector('.procurement-inline-message');
+    if (!box) {
+      box = document.createElement('div');
+      box.className = 'procurement-inline-message alert';
+      root.prepend(box);
+    }
+    box.classList.toggle('alert-danger', !!isError);
+    box.classList.toggle('alert-success', !isError);
+    box.textContent = message;
+    box.hidden = false;
+  }
+
   function setText(id, value) {
     const el = $(id);
     if (el) el.textContent = value;
