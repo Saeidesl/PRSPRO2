@@ -341,12 +341,30 @@
   }
 
   function init() {
-    const button = $('procurement-refresh');
-    if (button && !button.dataset.bound) {
-      button.dataset.bound = '1';
-      button.addEventListener('click', load);
+    const refresh = $('procurement-refresh');
+    if (refresh && !refresh.dataset.bound) {
+      refresh.dataset.bound = '1';
+      refresh.addEventListener('click', function () { load(false); });
     }
-    load();
+    const permissions = window.PMS && window.PMS.Router && Array.isArray(window.PMS.Router.permissions)
+      ? window.PMS.Router.permissions : [];
+    const canManage = permissions.indexOf('PROCUREMENT_MANAGE') !== -1;
+    ['procurement-create-need', 'procurement-create-order', 'procurement-create-receipt'].forEach(function (id) {
+      const button = $(id);
+      if (button) button.hidden = !canManage;
+    });
+    if (canManage) {
+      [['procurement-create-need', openNeedForm],
+       ['procurement-create-order', openOrderForm],
+       ['procurement-create-receipt', openReceiptForm]].forEach(function (entry) {
+        const button = $(entry[0]);
+        if (button && !button.dataset.bound) {
+          button.dataset.bound = '1';
+          button.addEventListener('click', entry[1]);
+        }
+      });
+    }
+    load(false);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
