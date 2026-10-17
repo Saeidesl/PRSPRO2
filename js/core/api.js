@@ -3,7 +3,7 @@
   'use strict';
 
  const API_BASE_URL =
-  'https://script.google.com/macros/s/AKfycbw3fLMb19Ts4-hZggtk1htTI7tdIU6lsYi78bktpqt8Rgn2u4N6NTUWsAVFEqeer7Dc/exec';
+  'https://script.google.com/macros/s/AKfycbwqjplQG3x2aJIGfVK9OyhgCM4HaQ3zpiDq7uBbw5h3c6w-5Awi7zG0cMySl7QIh3RxZQ/exec';
   const TOKEN_KEY = 'pms_api_token';
 
   let memoryToken = null;
