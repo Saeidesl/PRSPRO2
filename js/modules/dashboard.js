@@ -16,6 +16,8 @@
     projectDetails: Object.create(null),
     projectDetailsLoading: Object.create(null),
     projectDetailsErrors: Object.create(null),
+    timelineVisibleCounts: Object.create(null),
+    timelineObserver: null,
     attachments: Object.create(null),
     attachmentLoading: Object.create(null),
     searchIndex: [],
@@ -719,6 +721,7 @@
       const visible = this.filteredProjects.slice(0, this.visibleCount);
       container.innerHTML = visible.map((project) => this.renderProjectCard(project)).join('');
       if (sentinel) sentinel.hidden = this.visibleCount >= this.filteredProjects.length;
+      this.observeTimelineSentinels();
       this.filteredProjects.slice(0, this.visibleCount).forEach((project) => {
         const id = String(this.projectId(project));
         if (this.expandedProjects.has(id) && !this.projectDetails[id] && !this.projectDetailsLoading[id] && !this.projectDetailsErrors[id]) {
@@ -773,13 +776,20 @@
       if (!events.length) {
         return '<div class="pd-timeline-panel"><div class="pd-timeline-empty">هنوز رویداد تولیدی برای این پروژه ثبت نشده است</div></div>';
       }
-      const rows = events.map((event) => this.renderTimelineEvent(event, detail, id)).join('');
+      const visibleCount = Math.min(
+        events.length,
+        this.timelineVisibleCounts[id] || 40
+      );
+      const rows = events.slice(0, visibleCount).map((event) => this.renderTimelineEvent(event, detail, id)).join('');
+      const more = visibleCount < events.length
+        ? '<div class="pd-timeline-sentinel" data-timeline-sentinel="' + this.escape(id) + '">در حال آماده‌سازی ادامهٔ تاریخچه…</div>'
+        : '';
       return '<div class="pd-timeline-panel">' +
-        '<div class="pd-timeline-heading"><strong>خط زمانی تولید</strong><label>ترتیب <select data-action="timeline-order">' +
+        '<div class="pd-timeline-heading"><strong>خط زمانی تولید <span class="pd-event-total">(' + events.length.toLocaleString('fa-IR') + ' رویداد)</span></strong><label>ترتیب <select data-action="timeline-order">' +
           '<option value="newest"' + (this.timelineOrder === 'newest' ? ' selected' : '') + '>جدیدترین به قدیم</option>' +
           '<option value="oldest"' + (this.timelineOrder === 'oldest' ? ' selected' : '') + '>قدیمی‌ترین به جدید</option>' +
         '</select></label></div>' +
-        '<div class="pd-timeline">' + rows + '</div>' +
+        '<div class="pd-timeline">' + rows + '</div>' + more +
       '</div>';
     },
 
@@ -980,26 +990,31 @@
       const projectButton = event.target.closest('[data-action="toggle-project"]');
       if (projectButton) {
         const id = String(projectButton.getAttribute('data-project-id') || '');
+        const beforeTop = projectButton.getBoundingClientRect().top;
         if (this.expandedProjects.has(id)) {
           this.expandedProjects.delete(id);
-          const card = projectButton.closest('[data-project-card]');
-          if (card) {
-            const rect = card.getBoundingClientRect();
-            this.savedScrollY = window.scrollY + rect.top - 18;
-          }
         } else {
           this.expandedProjects.add(id);
           if (!this.projectDetails[id]) this.loadProjectDetails(id);
         }
         this.renderProjectCards();
+        window.requestAnimationFrame(() => {
+          const current = this.el('dashboard-project-list').querySelector('[data-action="toggle-project"][data-project-id="' + CSS.escape(id) + '"]');
+          if (current) window.scrollTo(0, window.scrollY + current.getBoundingClientRect().top - beforeTop);
+        });
         this.saveState();
         return;
       }
       const eventButton = event.target.closest('[data-action="toggle-event"]');
       if (eventButton) {
         const eventId = String(eventButton.getAttribute('data-event-id') || '');
+        const beforeTop = eventButton.getBoundingClientRect().top;
         this.openEventId = this.openEventId === eventId ? '' : eventId;
         this.renderProjectCards();
+        window.requestAnimationFrame(() => {
+          const current = this.el('dashboard-project-list').querySelector('[data-action="toggle-event"][data-event-id="' + CSS.escape(eventId) + '"]');
+          if (current) window.scrollTo(0, window.scrollY + current.getBoundingClientRect().top - beforeTop);
+        });
         if (this.openEventId) this.loadAttachments(this.openEventId);
         this.saveState();
       }
@@ -1180,6 +1195,27 @@
         current.scrollIntoView({ behavior: 'smooth', block: 'center' });
         current.classList.add('pd-event-found');
         window.setTimeout(() => current.classList.remove('pd-event-found'), 2600);
+      });
+    },
+
+    observeTimelineSentinels: function () {
+      if (!('IntersectionObserver' in window)) return;
+      if (!this.timelineObserver) {
+        this.timelineObserver = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            const id = String(entry.target.getAttribute('data-timeline-sentinel') || '');
+            const detail = this.projectDetails[id];
+            if (!id || !detail || !Array.isArray(detail.events)) return;
+            const current = this.timelineVisibleCounts[id] || 40;
+            if (current >= detail.events.length) return;
+            this.timelineVisibleCounts[id] = Math.min(current + 40, detail.events.length);
+            this.renderProjectCards();
+          });
+        }, { rootMargin: '220px 0px' });
+      }
+      this.el('dashboard-project-list').querySelectorAll('[data-timeline-sentinel]').forEach((item) => {
+        this.timelineObserver.observe(item);
       });
     },
 
