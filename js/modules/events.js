@@ -1341,7 +1341,7 @@
           PROJECTS_CACHE_KEY,
           EVENT_TYPES_CACHE_KEY,
           'dashboard_projects_lookup',
-          'dashboard_shared_lookups',
+          'dashboard_shared_lookups_v2',
           PMS.Cache.keys.DASHBOARD
         ]);
 
