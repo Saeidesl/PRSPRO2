@@ -1002,14 +1002,18 @@
         var history = self.getHistory(projectId);
         if (!history || !history.loaded) return;
         history.events.forEach(function (event) {
-          if (String(event.Status || '').toUpperCase() === 'VOID') return;
+          var status = String(event.Status || '').toUpperCase();
+          if (status === 'VOID' || status === 'CANCELLED') return;
           if (self.searchableEventText(event, history).toLocaleLowerCase().indexOf(query) === -1) return;
           hits.push({ project: project, event: event });
         });
       });
       hits.sort(function (a, b) { return (self.eventTime(b.event) || 0) - (self.eventTime(a.event) || 0); });
       if (!hits.length) {
-        container.innerHTML = '<div class="dash-empty">هنوز رویداد منطبقی پیدا نشده است؛ جست‌وجوی پس‌زمینه در حال تکمیل است.</div>';
+        var emptyText = self.indexingDone
+          ? 'رویدادی مطابق جست‌وجو پیدا نشد.'
+          : 'هنوز رویداد منطبقی پیدا نشده است؛ جست‌وجوی پس‌زمینه در حال تکمیل است.';
+        container.innerHTML = '<div class="dash-empty">' + self.escape(emptyText) + '</div>';
       } else {
         container.innerHTML = hits.slice(0, 12).map(function (hit) {
           var projectId = String(self.getId(hit.project));

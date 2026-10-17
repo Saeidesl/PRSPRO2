@@ -125,7 +125,9 @@
         ((typeof router.isAdmin === 'function' && router.isAdmin()) ||
           (Array.isArray(router.permissions) && router.permissions.indexOf('REPORT_VIEW') !== -1)));
 
+      const retry = document.getElementById('project-management-history-retry');
       if (!container) return;
+      if (retry) retry.hidden = true;
       if (!canViewAudit) {
         if (loading) loading.hidden = true;
         if (error) {
@@ -156,6 +158,7 @@
         if (container && !this.auditRecords.length) {
           container.innerHTML = '<div class="table-empty">دریافت تغییرات مدیریتی ناموفق بود.</div>';
         }
+        if (retry) retry.hidden = false;
       } finally {
         if (loading) loading.hidden = true;
       }
@@ -187,6 +190,7 @@
     renderAuditHistory: function () {
       const container = document.getElementById('project-management-history');
       if (!container) return;
+      this.ensureManagementHistoryStyles();
       const records = (this.auditRecords || []).slice().sort(function (a, b) {
         return new Date(b.CreatedAt || 0).getTime() - new Date(a.CreatedAt || 0).getTime();
       });
@@ -218,6 +222,32 @@
           (changes ? '<details class="project-management-record-details"><summary>مشاهده جزئیات تغییر</summary>' + changes + '</details>' : '') +
           '</article>';
       }).join('');
+    },
+
+    ensureManagementHistoryStyles: function () {
+      let style = document.getElementById('project-management-history-styles');
+      if (!style) {
+        style = document.createElement('style');
+        style.id = 'project-management-history-styles';
+        document.head.appendChild(style);
+      }
+      style.textContent = [
+        '.project-management-history-intro{font-size:12px;line-height:2;color:var(--color-text-secondary);margin:0 0 14px}',
+        '.project-management-record{padding:12px 0;border-bottom:1px solid var(--color-border)}',
+        '.project-management-record:last-child{border-bottom:0}',
+        '.project-management-record-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}',
+        '.project-management-record-head strong{font-size:13px;color:var(--color-text)}',
+        '.project-management-record-head span,.project-management-record-meta{font-size:11px;color:var(--color-text-secondary);line-height:1.9}',
+        '.project-management-record-meta{display:flex;gap:6px 16px;flex-wrap:wrap;margin-top:5px}',
+        '.project-management-record-details{margin-top:8px;border:1px solid var(--color-border);border-radius:8px;padding:8px 10px;background:var(--color-surface)}',
+        '.project-management-record-details summary{font-size:11px;cursor:pointer;color:var(--color-primary);font-weight:700}',
+        '.project-management-diff{display:flex;flex-direction:column;gap:7px;margin-top:10px}',
+        '.project-management-diff-row{display:grid;grid-template-columns:minmax(100px,.6fr) repeat(2,minmax(0,1fr));gap:8px;padding:8px;border-radius:7px;background:var(--color-background);font-size:11px;overflow-wrap:anywhere}',
+        '.project-management-diff-row>strong{color:var(--color-text)}',
+        '.project-management-diff-row>span{white-space:pre-wrap;overflow-wrap:anywhere;color:var(--color-text-secondary)}',
+        '.project-management-diff-row small{display:block;color:var(--color-text-muted);margin-bottom:3px}',
+        '@media(max-width:600px){.project-management-diff-row{grid-template-columns:minmax(0,1fr)}.project-management-record-head{flex-direction:column;gap:2px}}'
+      ].join('\n');
     },
 
     parseAuditData: function (value) {
@@ -614,6 +644,7 @@
       this.loadSharedData(version).then(function () {
         if (version === ProjectDetail.loadVersion) {
           ProjectDetail.renderEvents(ProjectDetail.events);
+          ProjectDetail.renderAuditHistory();
         }
       });
     },
