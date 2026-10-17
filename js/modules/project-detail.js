@@ -200,6 +200,10 @@
       }
 
       const actionLabels = {
+        CREATE: 'ایجاد رکورد',
+        UPDATE: 'ویرایش اطلاعات',
+        DELETE: 'حذف رکورد',
+        VOID: 'ابطال رویداد',
         PROJECT_CREATED: 'ایجاد پروژه',
         PROJECT_UPDATED: 'ویرایش اطلاعات پروژه',
         PROJECT_DELETED: 'حذف پروژه',
@@ -210,13 +214,21 @@
 
       container.innerHTML = records.map((record) => {
         const action = String(record.Action || 'تغییر مدیریتی');
+        const entityType = String(record.EntityType || '').toUpperCase();
+        const actionLabel = action === 'CREATE' && entityType === 'PROJECT'
+          ? 'ایجاد پروژه'
+          : (action === 'UPDATE' && entityType === 'PROJECT'
+            ? 'ویرایش اطلاعات پروژه'
+            : (action === 'VOID' && entityType === 'EVENT'
+              ? 'ابطال رویداد'
+              : (actionLabels[action] || action)));
         const user = this.findById(this.users, record.UserID || record.UserId);
         const userName = user ? (user.Name || user.FullName || user.Username) : (record.UserID || record.UserId || '-');
         const oldData = this.parseAuditData(record.OldData);
         const newData = this.parseAuditData(record.NewData);
         const changes = this.renderAuditDiff(oldData, newData);
         return '<article class="project-management-record">' +
-          '<div class="project-management-record-head"><strong>' + this.escape(actionLabels[action] || action) + '</strong><span>' + this.escape(this.formatDate(record.CreatedAt)) + '</span></div>' +
+          '<div class="project-management-record-head"><strong>' + this.escape(actionLabel) + '</strong><span>' + this.escape(this.formatDate(record.CreatedAt)) + '</span></div>' +
           '<div class="project-management-record-meta"><span>کاربر: ' + this.escape(userName) + '</span>' +
           (record.Reason ? '<span>دلیل: ' + this.escape(record.Reason) + '</span>' : '') + '</div>' +
           (changes ? '<details class="project-management-record-details"><summary>مشاهده جزئیات تغییر</summary>' + changes + '</details>' : '') +
