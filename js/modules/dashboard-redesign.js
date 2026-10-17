@@ -744,9 +744,12 @@
     },
 
     searchableProjectText: function (project) {
-      return Object.keys(project || {}).map(function (key) {
+      var pieces = Object.keys(project || {}).map(function (key) {
         return Dashboard.stringifyValue(project[key]);
-      }).join(' ');
+      });
+      pieces.push(this.formatExactDate(this.dateValue(project && project.CreatedAt)));
+      pieces.push(this.formatExactDate(this.dateValue(project && project.UpdatedAt)));
+      return pieces.join(' ');
     },
 
     searchableEventText: function (event, history) {
@@ -761,6 +764,7 @@
         var field = fields.find(function (item) { return String(item.Code || '') === String(key); });
         pieces.push(field ? field.Name : key);
         pieces.push(Dashboard.stringifyValue(data[key]));
+        pieces.push(Dashboard.formatDynamicField(data[key], field));
       });
       pieces.push(this.formatExactDate(this.eventTime(event)));
       pieces.push(this.formatExactDate(this.dateValue(event.CreatedAt)));
