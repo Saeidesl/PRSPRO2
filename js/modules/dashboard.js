@@ -202,9 +202,17 @@
           registrant: 'dashboard-filter-registrant',
           eventType: 'dashboard-filter-event-type'
         };
+        this.pendingFilterValues = {};
         Object.keys(mapping).forEach((key) => {
           const input = this.el(mapping[key]);
-          if (input) input.value = values[key] || '';
+          const value = values[key] || '';
+          if (!input) return;
+          if (input.tagName === 'SELECT' &&
+              !Array.from(input.options).some((option) => option.value === String(value))) {
+            this.pendingFilterValues[key] = value;
+          } else {
+            input.value = value;
+          }
         });
         this.sortOrder = state.sortOrder || 'created-desc';
         this.timelineOrder = state.timelineOrder || 'newest';
@@ -355,6 +363,18 @@
       this.fillSelect('dashboard-filter-department', options.departments || [], 'همهٔ واحدها');
       this.fillSelect('dashboard-filter-registrant', options.users || [], 'همهٔ ثبت‌کنندگان');
       this.fillSelect('dashboard-filter-event-type', options.eventTypes || [], 'همهٔ رویدادها');
+      const pending = this.pendingFilterValues || {};
+      const mapping = {
+        stage: 'dashboard-filter-stage',
+        department: 'dashboard-filter-department',
+        registrant: 'dashboard-filter-registrant',
+        eventType: 'dashboard-filter-event-type'
+      };
+      Object.keys(mapping).forEach((key) => {
+        const input = this.el(mapping[key]);
+        if (input && pending[key]) input.value = pending[key];
+      });
+      this.pendingFilterValues = null;
     },
 
     fillSelect: function (id, items, firstLabel) {
