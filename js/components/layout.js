@@ -12,6 +12,7 @@
       { route: 'workflows', label: 'Workflowها', icon: '↔', permission: 'WORKFLOW_MANAGE' },
       { route: 'project-statuses', label: 'وضعیت‌های پروژه', icon: '⚑', permission: 'PROJECT_STATUS_MANAGE' },
       { route: 'event-types', label: 'انواع رویداد', icon: '⚙', permission: 'EVENT_TYPE_MANAGE' },
+      { route: 'procurement', label: 'تأمین ملزومات', icon: '▤', permission: 'PROCUREMENT_VIEW' },
       { route: 'attachments', label: 'فایل‌ها', icon: '▤', permission: 'ATTACHMENT_VIEW' },
       { route: 'reports', label: 'گزارش‌ها', icon: '▥', permission: 'REPORT_VIEW' },
       { route: 'users', label: 'کاربران', icon: '♙', permission: 'USER_VIEW' },
