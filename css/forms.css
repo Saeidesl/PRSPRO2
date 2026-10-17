@@ -229,3 +229,37 @@ textarea.form-control {
     transition: none;
   }
 }
+
+
+/* Shared validation and accessible disabled state */
+.form-group input:focus-visible,
+.form-group select:focus-visible,
+.form-group textarea:focus-visible,
+.form-control:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
+  outline-offset: 1px;
+}
+.form-group input:disabled,
+.form-group select:disabled,
+.form-group textarea:disabled,
+.form-control:disabled {
+  cursor: not-allowed;
+}
+.form-group input[aria-invalid="true"],
+.form-group select[aria-invalid="true"],
+.form-group textarea[aria-invalid="true"],
+.form-control[aria-invalid="true"] {
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-danger) 10%, transparent);
+}
+.modal-overlay .modal-body > form,
+.modal-overlay .modal-body .form {
+  min-width: 0;
+  max-width: 100%;
+}
+@media (max-width: 768px) {
+  .modal-overlay .modal {
+    width: min(100%, calc(100vw - 20px));
+    max-height: calc(100dvh - 20px);
+  }
+}
