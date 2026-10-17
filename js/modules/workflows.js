@@ -20,10 +20,23 @@
     loading: false,
     saving: false,
     loadRequestId: 0,
-    stepRequestId: 0
+    stepRequestId: 0,
+    canManage: false
   };
 
   function init() {
+    const router = PMS.Router;
+    const permissions = router && Array.isArray(router.permissions)
+      ? router.permissions
+      : [];
+    state.canManage = !!(
+      (router && typeof router.isAdmin === 'function' && router.isAdmin()) ||
+      permissions.indexOf('WORKFLOW_MANAGE') !== -1
+    );
+
+    const createButton = document.getElementById('workflow-create-button');
+    if (createButton) createButton.hidden = !state.canManage;
+
     bindEvents();
     loadWorkflows();
   }
@@ -274,12 +287,12 @@
                     data-id="${escapeAttribute(id)}">
               مشاهده مراحل
             </button>
-            <button type="button"
+            ${state.canManage ? `<button type="button"
                     class="btn btn-light btn-sm"
                     data-action="add-step"
                     data-id="${escapeAttribute(id)}">
               + افزودن مرحله
-            </button>
+            </button>` : ''}
           </div>
         </div>
       </article>
