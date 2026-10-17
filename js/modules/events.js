@@ -1308,6 +1308,19 @@
           EVENT_TYPES_CACHE_KEY
         ]);
 
+        // Keep project detail from serving stale project/event data.
+        if (projectId) {
+          PMS.Cache.remove(
+            PMS.Cache.keys.PROJECT_EVENTS + '_' + String(projectId)
+          );
+          PMS.Cache.remove(
+            PMS.Cache.keys.PROJECT_EVENTS + '_' + String(projectId) + '_DETAILS'
+          );
+          PMS.Cache.remove(
+            PMS.Cache.keys.PROJECT + '_' + String(projectId)
+          );
+        }
+
         // موفقیت ثبت را از موفقیت تازه‌سازی فهرست جدا نگه می‌داریم.
         this.closeForm(true);
 
