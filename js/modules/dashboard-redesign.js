@@ -12,6 +12,8 @@
     eventTypes: [],
     workflowStepsByWorkflow: {},
     workflowLookupPromise: null,
+    lookupsPromise: null,
+    lookupsLoaded: false,
     attachments: [],
     attachmentContent: {},
     histories: {},
@@ -390,21 +392,45 @@
     },
 
     loadLookups: async function () {
+      if (this.lookupsLoaded) return;
+      if (this.lookupsPromise) return this.lookupsPromise;
       var self = this;
-      var tasks = [
-        { path: '/users', key: 'dashboard_users_lookup', prop: 'users', keys: ['users', 'items', 'Users', 'Items'] },
-        { path: '/departments', key: 'dashboard_departments_lookup', prop: 'departments', keys: ['departments', 'items', 'Departments', 'Items'] },
-        { path: '/event-types', key: 'dashboard_event_types_lookup', prop: 'eventTypes', keys: ['eventTypes', 'items', 'EventTypes', 'Items'] }
-      ];
-      await Promise.all(tasks.map(async function (task) {
+      this.lookupsPromise = (async function () {
         try {
-          var result = await window.PMS.Api.getCached(task.path, task.key);
-          self[task.prop] = self.normalizeArray(result ? result.data : null, task.keys);
-          if (task.prop === 'eventTypes') self.populateFilterControls();
-        } catch (error) {}
-      }));
-      this.populateFilterControls();
-      if (this.projects.length) this.renderProjectList();
+          var result = await window.PMS.Api.getCached(
+            '/project-dashboard/lookups',
+            'dashboard_project_lookups_v1'
+          );
+          var data = self.unwrap(result ? result.data : null) || {};
+          self.users = self.normalizeArray(data.users, ['users', 'items', 'Users', 'Items']);
+          self.departments = self.normalizeArray(data.departments, ['departments', 'items', 'Departments', 'Items']);
+          self.eventTypes = self.normalizeArray(data.eventTypes, ['eventTypes', 'items', 'EventTypes', 'Items']);
+          var steps = self.normalizeArray(data.workflowSteps, ['workflowSteps', 'steps', 'items', 'WorkflowSteps', 'Steps', 'Items']);
+          self.workflowStepsByWorkflow = {};
+          steps.forEach(function (step) {
+            var workflowId = String(step.WorkflowID || step.WorkflowId || '');
+            if (!workflowId) return;
+            if (!self.workflowStepsByWorkflow[workflowId]) self.workflowStepsByWorkflow[workflowId] = [];
+            self.workflowStepsByWorkflow[workflowId].push(step);
+          });
+          Object.keys(self.workflowStepsByWorkflow).forEach(function (workflowId) {
+            self.workflowStepsByWorkflow[workflowId].sort(function (a, b) {
+              return Number(a.StepOrder || a.Order || 0) - Number(b.StepOrder || b.Order || 0);
+            });
+          });
+        } catch (error) {
+          console.warn('دریافت گزینه‌های داشبورد انجام نشد.', error);
+        } finally {
+          self.lookupsLoaded = true;
+          self.populateFilterControls();
+          if (self.projects.length) self.renderProjectList();
+        }
+      })();
+      try {
+        await this.lookupsPromise;
+      } finally {
+        this.lookupsPromise = null;
+      }
     },
 
     loadProjects: async function () {
@@ -419,6 +445,7 @@
             self.loadingProjects = false;
             self.populateFilterControls();
             self.applyFilters(false);
+            self.restoreExpandedHistories();
             self.loadWorkflowLookup();
             self.startSearchIndexingIfNeeded();
           },
@@ -431,6 +458,7 @@
         if (loading) loading.hidden = true;
         this.populateFilterControls();
         this.applyFilters(false);
+        this.restoreExpandedHistories();
         this.loadWorkflowLookup();
         this.startSearchIndexingIfNeeded();
       } catch (error) {
@@ -454,6 +482,7 @@
         this.indexingDone = false;
         this.populateFilterControls();
         this.applyFilters(false);
+        this.restoreExpandedHistories();
         this.startSearchIndexingIfNeeded();
       } catch (error) {
         this.showError(error, true);
@@ -465,40 +494,27 @@
       }
     },
 
-    loadWorkflowLookup: async function () {
-      var router = window.PMS.Router;
-      var canReadSteps = !!(router && (
-        (typeof router.isAdmin === 'function' && router.isAdmin()) ||
-        (Array.isArray(router.permissions) && router.permissions.indexOf('WORKFLOW_MANAGE') !== -1)
-      ));
-      if (!canReadSteps || !this.projects.length) return;
-      if (this.workflowLookupPromise) return this.workflowLookupPromise;
+    restoreExpandedHistories: function () {
       var self = this;
-      this.workflowLookupPromise = (async function () {
-        try {
-          var ids = [];
-          self.projects.forEach(function (project) {
-            var id = String(project.WorkflowID || project.WorkflowId || '');
-            if (id && ids.indexOf(id) === -1) ids.push(id);
-          });
-          await Promise.all(ids.map(async function (workflowId) {
-            try {
-              var key = window.PMS.Cache.keys.WORKFLOW_STEPS + '_' + workflowId;
-              var result = await window.PMS.Api.getCached('/workflows/' + encodeURIComponent(workflowId) + '/steps', key);
-              self.workflowStepsByWorkflow[workflowId] = self.normalizeArray(result ? result.data : null, ['steps', 'items', 'Steps', 'Items']);
-            } catch (error) {}
-          }));
-          self.populateFilterControls();
-          self.renderProjectList();
-        } catch (error) {
-          // نام مرحله در صورت نبود مجوز با شناسهٔ مرحله جایگزین می‌شود.
-        }
-      })();
-      try {
-        await this.workflowLookupPromise;
-      } finally {
-        this.workflowLookupPromise = null;
-      }
+      var queue = Object.keys(this.expanded).filter(function (id) {
+        return self.expanded[id] && !!self.getProject(id) &&
+          !(self.getHistory(id) && self.getHistory(id).loaded);
+      });
+      var cursor = 0;
+      [0, 1].forEach(function () {
+        (async function () {
+          while (cursor < queue.length) {
+            var id = queue[cursor++];
+            await self.loadProjectHistory(id, false);
+          }
+        })();
+      });
+    },
+
+    loadWorkflowLookup: async function () {
+      await this.loadLookups();
+      this.populateFilterControls();
+      if (this.projects.length) this.renderProjectList();
     },
 
     normalizeArray: function (data, keys) {
