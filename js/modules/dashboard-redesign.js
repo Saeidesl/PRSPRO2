@@ -153,6 +153,8 @@
       if (search) search.value = this.query;
       var sort = document.getElementById('dash-sort-by');
       if (sort) sort.value = this.sortBy;
+      var eventOrder = document.getElementById('dash-event-order');
+      if (eventOrder) eventOrder.textContent = this.eventOrder === 'oldest' ? 'رویدادها: قدیم به جدید' : 'رویدادها: جدید به قدیم';
       this.populateFilterControls();
       this.syncFilterControls();
     },
@@ -323,6 +325,10 @@
         }
         if (button.id === 'dash-clear-filters') {
           self.filters = {};
+          self.query = '';
+          var searchInput = document.getElementById('dash-search');
+          if (searchInput) searchInput.value = '';
+          if (self.searchTimer) clearTimeout(self.searchTimer);
           self.syncFilterControls();
           self.visibleCount = PAGE_SIZE;
           self.saveState();
@@ -331,6 +337,7 @@
         }
         if (button.id === 'dash-event-order') {
           self.eventOrder = self.eventOrder === 'newest' ? 'oldest' : 'newest';
+          button.textContent = self.eventOrder === 'oldest' ? 'رویدادها: قدیم به جدید' : 'رویدادها: جدید به قدیم';
           self.saveState();
           self.renderProjectList();
           return;
@@ -579,8 +586,12 @@
       return this.attachments;
     },
 
+    hasEventFilters: function () {
+      return !!(this.filters.unit || this.filters.registrant || this.filters.type);
+    },
+
     startSearchIndexingIfNeeded: function () {
-      if (!this.query.trim() || this.indexing || this.indexingDone || !this.projects.length) return;
+      if (!(this.query.trim() || this.hasEventFilters()) || this.indexing || this.indexingDone || !this.projects.length) return;
       this.indexing = true;
       var generation = ++this.searchGeneration;
       var self = this;
@@ -588,7 +599,7 @@
       var cursor = 0;
       var completed = 0;
       var workers = [0, 1];
-      this.updateSearchProgress('در حال بررسی اطلاعات رویدادها برای جست‌وجوی کامل...');
+      this.updateSearchProgress('در حال بررسی اطلاعات رویدادها برای جست‌وجو و فیلتر کامل...');
       Promise.all(workers.map(async function () {
         while (cursor < queue.length && generation === self.searchGeneration) {
           var id = queue[cursor++];
@@ -618,7 +629,7 @@
     },
 
     applyFilters: function (startIndexing) {
-      if (startIndexing) this.startSearchIndexingIfNeeded();
+      this.startSearchIndexingIfNeeded();
       this.renderProjectList();
       this.renderActiveFilterChips();
       this.renderEventSearchResults();
@@ -811,8 +822,9 @@
       var stage = this.projectStage(project) || 'مرحله نامشخص';
       var status = this.projectStatus(project);
       var statusClass = status === 'ACTIVE' ? 'dash-status-active' :
-        (status === 'ON_HOLD' || status === 'INACTIVE' ? 'dash-status-hold' :
+        (status === 'ON_HOLD' || status === 'INACTIVE' || status === 'STOPPED' || status === 'PAUSED' ? 'dash-status-hold' :
         (status === 'COMPLETED' ? 'dash-status-completed' : (status === 'CANCELLED' || status === 'VOID' ? 'dash-status-cancelled' : '')));
+      var statusLabel = status === 'INACTIVE' || status === 'STOPPED' || status === 'PAUSED' ? 'متوقف' : this.statusText(status);
       var history = this.getHistory(id);
       var last = this.projectLastActivity(project);
       var matching = this.matchingEventIds(history);
@@ -822,7 +834,7 @@
             '<div class="dash-project-code">' + this.escape(project.ProjectCode || 'بدون کد') + '</div>' +
             '<div class="dash-project-title">' + this.escape(project.Title || project.Name || 'بدون عنوان') + '</div>' +
             '<div class="dash-project-badges"><span class="dash-badge dash-badge-stage">' + this.escape(stage) + '</span>' +
-              '<span class="dash-badge dash-badge-status ' + statusClass + '"><span aria-hidden="true">●</span> ' + this.escape(this.statusText(status)) + '</span></div>' +
+              '<span class="dash-badge dash-badge-status ' + statusClass + '"><span aria-hidden="true">●</span> ' + this.escape(statusLabel) + '</span></div>' +
             '<div class="dash-project-activity">آخرین فعالیت: ' + this.escape(this.formatExactDate(last)) + ' — ' + this.escape(this.relativeTime(last)) + '</div>' +
           '</div><span class="dash-project-chevron" aria-hidden="true">⌄</span>' +
         '</button>';
