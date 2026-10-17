@@ -78,12 +78,31 @@
         });
       }
 
+      const router = window.PMS.Router;
+      const canCreateEvents = !!(
+        router &&
+        ((typeof router.isAdmin === 'function' && router.isAdmin()) ||
+          (Array.isArray(router.permissions) &&
+            router.permissions.indexOf('EVENT_CREATE') !== -1))
+      );
+
+      if (addEventButton) {
+        addEventButton.hidden = !canCreateEvents;
+      }
+
       if (addEventButton && !addEventButton.dataset.projectDetailBound) {
         addEventButton.dataset.projectDetailBound = '1';
 
         addEventButton.addEventListener('click', function () {
-          alert('ثبت رویداد در مرحله بعد تکمیل می‌شود.');
+          if (!ProjectDetail.projectId || !canCreateEvents) return;
+
+          if (window.PMS.Events) {
+            window.PMS.Events.preselectedProjectId = ProjectDetail.projectId;
+          }
+
+          window.location.hash = '#events';
         });
+      });
       }
     },
 
