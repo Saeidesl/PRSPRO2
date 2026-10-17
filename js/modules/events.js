@@ -822,7 +822,7 @@
         '<section class="event-form-section"><h4 class="event-section-title">اطلاعات اصلی</h4>' +
         '<div class="event-dynamic-grid">' +
         '<div class="event-field"><label for="event-form-project">پروژه <span class="event-required">*</span></label>' +
-        '<select id="event-form-project" name="ProjectID" required><option value="">انتخاب پروژه</option></select></div>' +
+        '<select id="event-form-project" name="ProjectID"><option value="">انتخاب پروژه</option></select></div>' +
         '<div class="event-field"><label for="event-form-type">نوع رویداد <span class="event-required">*</span></label>' +
         '<select id="event-form-type" name="EventTypeID" required><option value="">انتخاب نوع رویداد</option></select></div>' +
         '<div class="event-field"><label for="event-form-date">تاریخ و زمان وقوع <span class="event-required">*</span></label>' +
@@ -871,11 +871,18 @@
         this.preselectedProjectId = '';
       }
 
+      const router = PMS.Router;
+      const permissions = router && Array.isArray(router.permissions) ? router.permissions : [];
+      const canViewProjects = !!(router && typeof router.isAdmin === 'function' && router.isAdmin()) ||
+        permissions.indexOf('PROJECT_VIEW') !== -1;
+
       this.eventTypes.forEach(function (type) {
         const id = Events.idOf(type);
+        const isProjectEvent = String(type.ConnectionType || 'PROJECT').toUpperCase() !== 'INDEPENDENT';
 
         if (!id ||
-            String(type.Status || 'ACTIVE').toUpperCase() !== 'ACTIVE') {
+            String(type.Status || 'ACTIVE').toUpperCase() !== 'ACTIVE' ||
+            (!canViewProjects && isProjectEvent)) {
           return;
         }
 
@@ -897,6 +904,14 @@
         .addEventListener('click', () => this.closeForm());
 
       typeSelect.addEventListener('change', () => {
+        const selectedType = this.findById(this.eventTypes, typeSelect.value);
+        const isIndependent = !!selectedType &&
+          String(selectedType.ConnectionType || 'PROJECT').toUpperCase() === 'INDEPENDENT';
+        const projectField = projectSelect.closest('.event-field');
+        if (projectField) projectField.hidden = isIndependent;
+        projectSelect.required = !isIndependent;
+        if (isIndependent) projectSelect.value = '';
+        this.updateSubmitAvailability();
         this.loadDynamicFields(typeSelect.value);
       });
 
@@ -1039,12 +1054,16 @@
       const typeInput = document.getElementById('event-form-type');
       const dateInput = document.getElementById('event-form-date');
 
-      const projectSelected = Boolean(
-        projectInput && String(projectInput.value || '').trim()
-      );
-
       const typeSelected = Boolean(
         typeInput && String(typeInput.value || '').trim()
+      );
+      const selectedType = typeInput
+        ? this.findById(this.eventTypes, typeInput.value)
+        : null;
+      const isIndependent = !!selectedType &&
+        String(selectedType.ConnectionType || 'PROJECT').toUpperCase() === 'INDEPENDENT';
+      const projectSelected = isIndependent || Boolean(
+        projectInput && String(projectInput.value || '').trim()
       );
 
       const dateSelected = Boolean(
@@ -1300,8 +1319,10 @@
         return;
       }
 
+      const isIndependent = !!type &&
+        String(type.ConnectionType || 'PROJECT').toUpperCase() === 'INDEPENDENT';
       const payload = {
-        ProjectID: projectId,
+        ProjectID: isIndependent ? '' : projectId,
         EventTypeID: typeId,
         EventTypeVersion: type ? Number(type.Version || 1) : 1,
         OccurredAt: date.toISOString(),
