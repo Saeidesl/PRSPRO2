@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ابزار داده‌ساز آزمایشی PMS</title>
+<style>
+:root{font-family:Tahoma,Arial,sans-serif;color:#17202a;background:#f4f6f8}body{margin:0;padding:20px}.wrap{max-width:850px;margin:auto;background:white;padding:22px;border-radius:14px;box-shadow:0 3px 18px #00000012}h1{font-size:22px}p{line-height:1.9}.warning{background:#fff3cd;border:1px solid #ffe08a;padding:12px;border-radius:8px}.row{display:flex;gap:12px;flex-wrap:wrap;margin:12px 0}.field{flex:1;min-width:180px}label{display:block;margin-bottom:7px}input,select{width:100%;box-sizing:border-box;padding:10px;border:1px solid #c9d0d7;border-radius:7px;font:inherit}button{padding:12px 18px;border:0;border-radius:8px;background:#175cd3;color:white;font:inherit;cursor:pointer}button:disabled{opacity:.5;cursor:wait}.secondary{background:#475467}progress{width:100%;height:18px}#log{white-space:pre-wrap;background:#101828;color:#d1e9ff;padding:14px;border-radius:8px;min-height:120px;max-height:360px;overflow:auto;font:13px/1.7 monospace}.small{font-size:13px;color:#475467}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>داده‌ساز آزمایشی نرم‌افزار مدیریت تولید</h1>
+<p>این ابزار با نشست ورود فعلی شما کار می‌کند و از API واقعی برنامه استفاده می‌کند. پروژه‌های آزمایشی با کدهای TEST-0001 تا TEST-0050 و رویدادهای مرتبط ساخته می‌شوند.</p>
+<div class="warning"><b>هشدار:</b> این عملیات داده واقعی در پایگاه داده فعلی ایجاد می‌کند. فقط در محیط آزمایشی یا زمانی اجرا کنید که ساخت داده‌های تستی در محیط فعلی مورد تأیید شماست. رکوردهای موجود با کد TEST-0001 تا TEST-0050 دوباره ساخته نمی‌شوند.</div>
+<div class="row">
+<div class="field"><label for="projectCount">تعداد پروژه‌ها (حداکثر ۵۰)</label><input id="projectCount" type="number" min="1" max="50" value="1"></div>
+<div class="field"><label for="eventsPerProject">رویداد برای هر پروژه (حداقل ۱۰)</label><input id="eventsPerProject" type="number" min="10" max="20" value="10"></div>
+</div>
+<div class="row">
+<label><input id="withAttachments" type="checkbox" checked style="width:auto"> افزودن پیوست واقعی PNG و PDF (حدود ۵۰ فایل)</label>
+</div>
+<div class="row">
+<button id="start">بررسی تنظیمات و شروع ساخت داده‌ها</button>
+<button id="stop" class="secondary" disabled>توقف پس از عملیات جاری</button>
+</div>
+<progress id="progress" value="0" max="1"></progress>
+<p id="status" class="small">در انتظار بررسی نشست و تنظیمات…</p>
+<pre id="log">آماده</pre>
+</div>
+<script src="../js/core/api.js"></script>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const logBox=$('log');let stopped=false,running=false;
+function log(s){logBox.textContent+='\n'+s;logBox.scrollTop=logBox.scrollHeight}
+function status(s){$('status').textContent=s}
+function dataOf(r){return window.PMS.Api.extractData(r)}
+function listOf(r){const d=dataOf(r);if(Array.isArray(d))return d;if(d&&Array.isArray(d.items))return d.items;if(d&&Array.isArray(d.data))return d.data;return []}
+function pick(obj,...keys){for(const k of keys){if(obj&&obj[k]!==undefined&&obj[k]!==null)return obj[k]}return ''}
+function dateIso(daysAgo,offsetMinutes){return new Date(Date.now()-(daysAgo*86400000)+(offsetMinutes||0)*60000).toISOString()}
+function optionsOf(field){let o=pick(field,'Options','options');if(Array.isArray(o))return o;try{const x=JSON.parse(String(o||''));if(Array.isArray(x))return x}catch(e){}return String(o||'').split(',').map(x=>x.trim()).filter(Boolean)}
+function dynamicValue(field,index){const type=String(pick(field,'FieldType','fieldType')||'text').toLowerCase();if(type==='number')return (index+1)*10;if(type==='boolean')return index%2===0;if(type==='date')return new Date(Date.now()-index*86400000).toISOString().slice(0,10);if(type==='datetime')return dateIso(index);if(type==='select'){const opts=optionsOf(field).map(x=>x&&typeof x==='object'&&x.value!==undefined?String(x.value):String(x));return opts.length?opts[index%opts.length]:null}return 'داده آزمایشی '+(index+1)}
+function dynamicData(fields,index){const out={};(fields||[]).forEach(f=>{const code=String(pick(f,'Code','code')||'').trim();if(!code)return;const required=String(pick(f,'IsRequired','isRequired')).toUpperCase()==='TRUE';const type=String(pick(f,'FieldType','fieldType')||'text').toLowerCase();const supported=['text','textarea','number','boolean','date','datetime','select'].includes(type);if(!supported){if(required)throw new Error('نوع فیلد اجباری پشتیبانی نمی‌شود: '+pick(f,'Name','name')+' ('+type+')');return}let value=dynamicValue(f,index);if(value===null||value===''){if(required)throw new Error('برای فیلد اجباری گزینه معتبر وجود ندارد: '+pick(f,'Name','name'));return}out[code]=value});return out}
+async function apiGet(path){return dataOf(await PMS.Api.get(path))}
+async function apiPost(path,body){return dataOf(await PMS.Api.post(path,body))}
+function idOf(o){return String(pick(o,'ID','Id','id')||'')}
+function successEntity(o,key){if(o&&o[key])return o[key];if(o&&o.data&&o.data[key])return o.data[key];return o}
+function makePng(){return 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jXioAAAAASUVORK5CYII='}
+function makePdf(){const stream='BT\n/F1 12 Tf\n50 350 Td\n(PMS Test Attachment) Tj\nET';const objects=[null,'<< /Type /Catalog /Pages 2 0 R >>','<< /Type /Pages /Kids [3 0 R] /Count 1 >>','<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 400] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>','<< /Length '+stream.length+' >>\nstream\n'+stream+'\nendstream','<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'];let pdf='%PDF-1.4\n';const offsets=[0];for(let i=1;i<objects.length;i++){offsets[i]=pdf.length;pdf+=i+' 0 obj\n'+objects[i]+'\nendobj\n'}const xref=pdf.length;pdf+='xref\n0 '+objects.length+'\n0000000000 65535 f \n';for(let i=1;i<objects.length;i++)pdf+=String(offsets[i]).padStart(10,'0')+' 00000 n \n';pdf+='trailer\n<< /Size '+objects.length+' /Root 1 0 R >>\nstartxref\n'+xref+'\n%%EOF';return btoa(pdf)}
+function bytesToBase64(b64){return b64}
+async function uploadAttachment(entityType,entityId,fileName,mimeType,base64){const path=entityType==='EVENT'?'/events/'+encodeURIComponent(entityId)+'/attachments':'/projects/'+encodeURIComponent(entityId)+'/attachments';return apiPost(path,{FileName:fileName,MimeType:mimeType,Base64:bytesToBase64(base64)})}
+function eventTypeSort(types,steps){const order={};(steps||[]).forEach((s,i)=>order[idOf(s)]=Number(pick(s,'StepOrder','Order','Sequence','SortOrder'))||i);return types.slice().sort((a,b)=>{const ai=order[String(pick(a,'WorkflowStepID','workflowStepID'))];const bi=order[String(pick(b,'WorkflowStepID','workflowStepID'))];return (ai===undefined?999:ai)-(bi===undefined?999:bi)})}
+async function run(){
+ if(running)return;running=true;stopped=false;$('start').disabled=true;$('stop').disabled=false;logBox.textContent='';
+ const report={projectsCreated:0,projectsSkipped:0,eventsCreated:0,attachmentsCreated:0,failures:[]};
+ try{
+  if(!PMS.Api.getToken())throw new Error('نشست ورود پیدا نشد. ابتدا در برنامه وارد شوید، سپس این صفحه را باز کنید.');
+  const [workflows,allTypes,existingProjects]=await Promise.all([apiGet('/workflows'),apiGet('/event-types'),apiGet('/projects')]);
+  const workflowList=listOf(workflows),types=listOf(allTypes),projects=listOf(existingProjects);
+  const workflow=workflowList.find(w=>String(pick(w,'Status','status')||'ACTIVE').toUpperCase()==='ACTIVE')||workflowList[0];
+  if(!workflow)throw new Error('گردش کار پیدا نشد. ابتدا یک گردش کار فعال با مرحله بسازید.');
+  const workflowId=idOf(workflow);
+  const stepResponse=await apiGet('/workflows/'+encodeURIComponent(workflowId)+'/steps');
+  const steps=listOf(stepResponse);
+  const projectTypes=types.filter(t=>String(pick(t,'ConnectionType','connectionType')||'PROJECT').toUpperCase()!=='INDEPENDENT'&&String(pick(t,'Status','status')||'ACTIVE').toUpperCase()==='ACTIVE');
+  if(!projectTypes.length)throw new Error('نوع رویداد فعال و مرتبط با پروژه پیدا نشد.');
+  const fieldMap={};
+  for(const t of projectTypes){try{fieldMap[idOf(t)]=listOf(await apiGet('/event-types/'+encodeURIComponent(idOf(t))+'/fields')).filter(f=>String(pick(f,'Status','status')||'ACTIVE').toUpperCase()==='ACTIVE')}catch(e){fieldMap[idOf(t)]=[];log('هشدار: فیلدهای نوع '+pick(t,'Name','name')+' خوانده نشد: '+e.message)}}
+  const orderedTypes=eventTypeSort(projectTypes,steps);
+  // Validate every event type's dynamic fields before creating any records.
+  orderedTypes.forEach(t=>{try{dynamicData(fieldMap[idOf(t)]||[],0)}catch(e){throw new Error('پیش‌بررسی نوع رویداد «'+pick(t,'Name','name')+'» ناموفق بود؛ هنوز هیچ پروژه‌ای ساخته نشده است. '+e.message)}});
+  const count=Math.max(1,Math.min(50,Number($('projectCount').value)||1));
+  const perProject=Math.max(10,Math.min(20,Number($('eventsPerProject').value)||10));
+  const withFiles=$('withAttachments').checked;
+  if(count>1&&!confirm('پیش‌بررسی فقط ساختار را بررسی کرده است، نه پذیرش گردش واقعی رویدادها. ساخت '+count+' پروژه و حدود '+(count*perProject)+' رویداد در پایگاه داده ادامه یابد؟ برای آزمون اول بهتر است فقط ۱ پروژه بسازید.')){throw new Error('عملیات پیش از ایجاد رکورد به درخواست کاربر لغو شد.')} 
+  const total=count*(perProject+1);let progress=0;$('progress').max=total;$('progress').value=0;
+  log('گردش کار انتخاب‌شده: '+pick(workflow,'Name','name')+' ('+workflowId+')');
+  log('تعداد انواع رویداد مرتبط و فعال: '+projectTypes.length+'؛ پروژه‌های موجود: '+projects.length);
+  const knownCodes=new Set(projects.map(p=>String(pick(p,'ProjectCode','projectCode'))));
+  const png=makePng(),pdf=makePdf();
+  for(let i=1;i<=count;i++){
+   if(stopped)break;
+   const code='TEST-'+String(i).padStart(4,'0');
+   if(knownCodes.has(code)){report.projectsSkipped++;log('رد شد؛ پروژه از قبل وجود دارد: '+code);progress++;$('progress').value=progress;continue}
+   let project;
+   try{
+    const res=await apiPost('/projects',{ProjectCode:code,Title:'پروژه آزمایشی '+String(i).padStart(4,'0'),Description:'رکورد آزمایشی تولیدشده برای کنترل گردش کار و تاریخچه. شناسه گروه: '+code,WorkflowID:workflowId});
+    project=successEntity(res,'project');
+    const pid=idOf(project);if(!pid)throw new Error('پاسخ ساخت پروژه شناسه ندارد');
+    report.projectsCreated++;knownCodes.add(code);log('پروژه ساخته شد: '+code);
+    if(withFiles&&i%5===1){try{await uploadAttachment('PROJECT',pid,code+'-sample.png','image/png',png);report.attachmentsCreated++;log('  پیوست PNG به پروژه اضافه شد')}catch(e){report.failures.push(code+' پیوست پروژه: '+e.message);log('  خطای پیوست پروژه: '+e.message)}}
+    for(let j=0;j<perProject;j++){
+     if(stopped)break;
+     const type=orderedTypes[j%orderedTypes.length];
+     try{
+      const fields=fieldMap[idOf(type)]||[];
+      const payload={ProjectID:pid,EventTypeID:idOf(type),EventTypeVersion:Number(pick(type,'Version','version'))||1,OccurredAt:dateIso((perProject-j)*2,(i%24)*60),Description:'رویداد آزمایشی '+(j+1)+' از '+perProject+' برای '+code+'؛ مرحله '+pick(type,'Name','name'),DynamicData:dynamicData(fields,j+i)};
+      const evRes=await apiPost('/events',payload);const ev=successEntity(evRes,'event');const eid=idOf(ev);if(!eid)throw new Error('پاسخ ثبت رویداد شناسه ندارد');
+      report.eventsCreated++;log('  رویداد '+(j+1)+' ثبت شد: '+pick(type,'Name','name'));
+      if(withFiles&&j===Math.min(4,perProject-1)&&i%5===1){try{await uploadAttachment('EVENT',eid,code+'-event-'+(j+1)+'.pdf','application/pdf',pdf);report.attachmentsCreated++;log('  پیوست PDF به رویداد اضافه شد')}catch(e){report.failures.push(code+' پیوست رویداد: '+e.message);log('  خطای پیوست رویداد: '+e.message)}}
+     }catch(e){report.failures.push(code+' رویداد '+(j+1)+': '+e.message);log('  خطای رویداد '+(j+1)+': '+e.message)}
+     progress++;$('progress').value=progress;status('پروژه '+i+' از '+count+'؛ رویدادهای موفق '+report.eventsCreated+'؛ پیوست‌ها '+report.attachmentsCreated);
+    }
+   }catch(e){report.failures.push(code+' پروژه: '+e.message);log('خطای پروژه '+code+': '+e.message);progress+=perProject+1;$('progress').value=Math.min(progress,total)}
+   progress++;$('progress').value=Math.min(progress,total);
+  }
+ }catch(e){log('توقف به علت خطای اصلی: '+e.message);report.failures.push('خطای اصلی: '+e.message)}
+ finally{
+  log('\n===== گزارش نهایی =====');
+  log('پروژه‌های ایجادشده: '+report.projectsCreated);
+  log('پروژه‌های ردشده به دلیل تکراری بودن: '+report.projectsSkipped);
+  log('رویدادهای ایجادشده: '+report.eventsCreated);
+  log('پیوست‌های ثبت‌شده: '+report.attachmentsCreated);
+  log('خطاها: '+report.failures.length);
+  report.failures.slice(0,100).forEach(x=>log(' - '+x));
+  if(report.failures.length>100)log('… و '+(report.failures.length-100)+' خطای دیگر');
+  status(stopped?'توقف به درخواست کاربر؛ گزارش بالا وضعیت عملیات را نشان می‌دهد.':'پایان عملیات؛ گزارش بالا را بررسی کنید.');
+  running=false;$('start').disabled=false;$('stop').disabled=true;
+ }
+}
+$('start').addEventListener('click',()=>{if(confirm('این عملیات در پایگاه داده فعلی رکوردهای آزمایشی ایجاد می‌کند. ادامه می‌دهید؟'))run()});
+$('stop').addEventListener('click',()=>{stopped=true;status('درخواست توقف ثبت شد؛ عملیات جاری تمام می‌شود.')});
+if(!window.PMS||!PMS.Api){status('خطا: بارگذاری API برنامه ناموفق بود.');$('start').disabled=true}
+})();
+</script>
+</body>
+</html>
