@@ -678,7 +678,8 @@
         if (aDate === null) return 1;
         if (bDate === null) return -1;
 
-        return aDate - bDate;
+        // نمایش آخرین فعالیت در ابتدای خط زمانی
+        return bDate - aDate;
       });
 
       let html = '<div class="pms-timeline">';
