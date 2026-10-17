@@ -69,6 +69,8 @@ async function run(){
   const fieldMap={};
   for(const t of projectTypes){try{fieldMap[idOf(t)]=listOf(await apiGet('/event-types/'+encodeURIComponent(idOf(t))+'/fields')).filter(f=>String(pick(f,'Status','status')||'ACTIVE').toUpperCase()==='ACTIVE')}catch(e){fieldMap[idOf(t)]=[];log('هشدار: فیلدهای نوع '+pick(t,'Name','name')+' خوانده نشد: '+e.message)}}
   const orderedTypes=eventTypeSort(projectTypes,steps);
+  // Validate every event type's dynamic fields before creating any records.
+  orderedTypes.forEach(t=>{try{dynamicData(fieldMap[idOf(t)]||[],0)}catch(e){throw new Error('پیش‌بررسی نوع رویداد «'+pick(t,'Name','name')+'» ناموفق بود؛ هنوز هیچ پروژه‌ای ساخته نشده است. '+e.message)}});
   const count=Math.max(1,Math.min(50,Number($('projectCount').value)||50));
   const perProject=Math.max(10,Math.min(20,Number($('eventsPerProject').value)||10));
   const withFiles=$('withAttachments').checked;
