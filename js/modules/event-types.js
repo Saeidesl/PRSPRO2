@@ -527,6 +527,15 @@
             '</div>' +
 
             '<div class="form-group">' +
+              '<label for="et-connection-type">ارتباط با پروژه</label>' +
+              '<select id="et-connection-type" name="ConnectionType">' +
+                '<option value="PROJECT">مرتبط با پروژه</option>' +
+                '<option value="INDEPENDENT">مستقل از پروژه</option>' +
+              '</select>' +
+              '<small class="et-muted">برای سفارش پارچه و رویدادهای انبار ملزومات، مستقل را انتخاب کن.</small>' +
+            '</div>' +
+
+            '<div class="form-group">' +
               '<label for="et-department">بخش مرتبط</label>' +
               '<select id="et-department" name="DepartmentID">' +
                 departmentOptions +
@@ -690,6 +699,7 @@
       setFieldValue(form, 'Description', item.Description);
       setFieldValue(form, 'Category', item.Category);
       setFieldValue(form, 'DepartmentID', item.DepartmentID);
+      setFieldValue(form, 'ConnectionType', item.ConnectionType || 'PROJECT');
       setFieldValue(form, 'Version', item.Version || 1);
       setFieldValue(form, 'Status', status);
       setFieldValue(form, 'TargetDepartmentID', item.TargetDepartmentID);
@@ -759,6 +769,7 @@
         Code: fieldValue(form, 'Code').trim(),
         Description: fieldValue(form, 'Description').trim(),
         Category: fieldValue(form, 'Category'),
+        ConnectionType: fieldValue(form, 'ConnectionType') || 'PROJECT',
         DepartmentID: fieldValue(form, 'DepartmentID'),
         Version: Number(fieldValue(form, 'Version') || 1),
         Status: fieldValue(form, 'Status'),
