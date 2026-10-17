@@ -1766,7 +1766,10 @@
         REJECTED: 'ردشده'
       };
 
-      return labels[status] || status || '-';
+      return labels[status] ||
+        this.lookups.projectStatuses[String(status)] ||
+        status ||
+        '-';
     },
 
     escape: function (value) {

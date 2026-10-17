@@ -1339,7 +1339,10 @@
         PMS.Api.invalidateMany([
           CACHE_KEY,
           PROJECTS_CACHE_KEY,
-          EVENT_TYPES_CACHE_KEY
+          EVENT_TYPES_CACHE_KEY,
+          'dashboard_projects_lookup',
+          'dashboard_shared_lookups',
+          PMS.Cache.keys.DASHBOARD
         ]);
 
         // Keep project detail from serving stale project/event data.
