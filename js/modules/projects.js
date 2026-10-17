@@ -619,7 +619,7 @@
 
       const status = statusFilter ? statusFilter.value : '';
       const search = searchInput
-        ? searchInput.value.trim().toLowerCase()
+        ? searchInput.value.trim().toLocaleLowerCase('fa')
         : '';
 
       const filtered = (this.projects || []).filter((project) => {
@@ -628,8 +628,8 @@
         }
 
         if (search) {
-          const code = String(project.ProjectCode || '').toLowerCase();
-          const title = String(project.Title || '').toLowerCase();
+          const code = String(project.ProjectCode || '').toLocaleLowerCase('fa');
+          const title = String(project.Title || '').toLocaleLowerCase('fa');
 
           if (
             code.indexOf(search) === -1 &&
