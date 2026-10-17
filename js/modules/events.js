@@ -328,7 +328,17 @@
         }
       }
 
-      const projects = this.uniqueValues(this.projects.map(function (project) {
+      const projectSource = this.projects.length
+        ? this.projects
+        : this.events.map(function (event) {
+            return {
+              ID: event.ProjectID,
+              ProjectCode: event.ProjectCode,
+              Title: event.ProjectTitle || event.ProjectName
+            };
+          });
+
+      const projects = this.uniqueValues(projectSource.map(function (project) {
         const id = Events.idOf(project);
         if (!id) return null;
 
@@ -338,7 +348,16 @@
         };
       }));
 
-      const types = this.uniqueValues(this.eventTypes.map(function (type) {
+      const typeSource = this.eventTypes.length
+        ? this.eventTypes
+        : this.events.map(function (event) {
+            return {
+              ID: event.EventTypeID,
+              Name: event.EventTypeName
+            };
+          });
+
+      const types = this.uniqueValues(typeSource.map(function (type) {
         const id = Events.idOf(type);
         if (!id) return null;
 
