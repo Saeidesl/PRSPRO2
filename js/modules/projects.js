@@ -363,7 +363,7 @@
       });
 
       try {
-        const response = await window.PMS.Api.get('/workflows');
+        const response = await window.PMS.Api.get('/workflows/available-for-project');
         const workflows = this.normalizeWorkflows(response);
 
         if (this.modal !== modal) {
