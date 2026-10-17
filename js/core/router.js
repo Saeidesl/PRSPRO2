@@ -35,7 +35,7 @@
     permissionsRequest: null,
 
     routePermissions: {
-      dashboard: ['REPORT_VIEW'],
+      dashboard: ['PROJECT_VIEW'],
       projects: ['PROJECT_VIEW', 'PROJECT_CREATE'],
       'project-detail': ['PROJECT_VIEW'],
       events: ['EVENT_VIEW', 'EVENT_CREATE'],
