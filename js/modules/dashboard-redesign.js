@@ -1041,9 +1041,9 @@
         if (!target) return;
         target.scrollIntoView({ behavior: 'smooth', block: 'center' });
         target.classList.add('is-target');
+        if (String(self.targetEventId) === String(eventId)) self.targetEventId = '';
         window.setTimeout(function () {
           target.classList.remove('is-target');
-          if (String(self.targetEventId) === String(eventId)) self.targetEventId = '';
         }, 2800);
       }, 80);
     },
