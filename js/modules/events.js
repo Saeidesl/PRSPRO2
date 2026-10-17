@@ -129,20 +129,19 @@
       const canViewEvents = isAdmin || permissions.indexOf('EVENT_VIEW') !== -1;
       const canViewProjects = isAdmin || permissions.indexOf('PROJECT_VIEW') !== -1;
       const canCreateEvents = isAdmin || permissions.indexOf('EVENT_CREATE') !== -1;
-      const canViewEventTypes = isAdmin ||
-        canCreateEvents ||
+      const canBrowseEventTypes = isAdmin ||
         permissions.indexOf('EVENT_TYPE_VIEW') !== -1 ||
         permissions.indexOf('EVENT_TYPE_MANAGE') !== -1;
+      const canViewEventTypes = canBrowseEventTypes || canCreateEvents;
 
       const cachedEvents = canViewEvents
         ? PMS.Cache.get(CACHE_KEY)
         : null;
-      // The general project cache is not used by users who only have
-      // event-registration access; they receive a scoped project list.
+      // General caches are not reused for narrowly scoped registration context.
       const cachedProjects = canViewProjects
         ? PMS.Cache.get(PROJECTS_CACHE_KEY)
         : null;
-      const cachedTypes = canViewEventTypes
+      const cachedTypes = canBrowseEventTypes
         ? PMS.Cache.get(EVENT_TYPES_CACHE_KEY)
         : null;
 
@@ -207,7 +206,7 @@
           );
         }
 
-        if (canViewEventTypes) {
+        if (canBrowseEventTypes) {
           requests.push(
             PMS.Api.getCached('/event-types', EVENT_TYPES_CACHE_KEY, {
               onRefresh: function (data) {
@@ -215,6 +214,15 @@
                 Events.renderFilters();
                 Events.applyFilters();
               }
+            })
+          );
+        } else if (canCreateEvents) {
+          requests.push(
+            PMS.Api.get('/event-types').then(function (response) {
+              const data = PMS.Api.extractData
+                ? PMS.Api.extractData(response)
+                : response;
+              return { cached: false, data: Events.normalize(data) };
             })
           );
         }
