@@ -507,8 +507,18 @@
 
         alert('پروژه با موفقیت ثبت شد.');
 
-        // دریافت دوباره فهرست از سرور برای هماهنگ‌شدن اطلاعات.
-        this.loadProjects();
+        // Refresh the list only when the user is allowed to view projects.
+        const router = window.PMS.Router;
+        const canViewProjects = !!(
+          router &&
+          (router.isAdmin() ||
+            (Array.isArray(router.permissions) &&
+              router.permissions.indexOf('PROJECT_VIEW') !== -1))
+        );
+
+        if (canViewProjects) {
+          this.loadProjects();
+        }
 
       } catch (error) {
         this.showFormError(
