@@ -396,6 +396,7 @@
       if (this.lookupsPromise) return this.lookupsPromise;
       var self = this;
       this.lookupsPromise = (async function () {
+        var loaded = false;
         try {
           var result = await window.PMS.Api.getCached(
             '/project-dashboard/lookups',
@@ -418,10 +419,12 @@
               return Number(a.StepOrder || a.Order || 0) - Number(b.StepOrder || b.Order || 0);
             });
           });
+          loaded = true;
         } catch (error) {
           console.warn('دریافت گزینه‌های داشبورد انجام نشد.', error);
+          self.showError(error, true);
         } finally {
-          self.lookupsLoaded = true;
+          self.lookupsLoaded = loaded;
           self.populateFilterControls();
           if (self.projects.length) self.renderProjectList();
         }
@@ -1485,8 +1488,11 @@
       if (retry) {
         retry.addEventListener('click', function () {
           box.hidden = true;
+          Dashboard.lookupsLoaded = false;
+          Dashboard.lookupsPromise = null;
+          Dashboard.loadLookups();
           Dashboard.loadProjects();
-          if (Dashboard.query.trim()) {
+          if (Dashboard.query.trim() || Dashboard.hasEventFilters()) {
             Dashboard.indexingDone = false;
             Dashboard.startSearchIndexingIfNeeded();
           }
