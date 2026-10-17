@@ -1,196 +1,105 @@
-<section class="page-section">
-
+<section class="page-section project-dashboard" dir="rtl">
   <div class="page-header">
-
     <div>
-      <h2>داشبورد</h2>
-      <p>نمای کلی وضعیت تولید و فعالیت‌های سیستم</p>
+      <h2>داشبورد پروژه‌ها</h2>
+      <p>جست‌وجو و پیگیری تاریخچهٔ تولید پروژه‌ها</p>
     </div>
-
     <div class="page-header-actions">
+      <button type="button" class="btn btn-primary" id="dashboard-refresh-button">بروزرسانی</button>
+    </div>
+  </div>
 
-      <button
-        type="button"
-        class="btn btn-primary"
-        id="dashboard-refresh-button"
-      >
-        بروزرسانی
+  <div id="dashboard-error" class="alert alert-danger" hidden></div>
+  <div id="dashboard-cache-info" class="alert alert-info" hidden></div>
+
+  <div class="pd-toolbar card">
+    <div class="pd-search-row">
+      <label class="pd-search-box" for="dashboard-project-search">
+        <span aria-hidden="true">⌕</span>
+        <input type="search" id="dashboard-project-search" autocomplete="off"
+          placeholder="جست‌وجوی کد، عنوان، رویداد، توضیحات، مقادیر یا نام فایل‌ها…">
+        <button type="button" id="dashboard-search-clear" class="pd-icon-button" aria-label="پاک کردن جست‌وجو" hidden>×</button>
+      </label>
+      <button type="button" id="dashboard-filter-toggle" class="btn btn-secondary"
+        aria-expanded="false" aria-controls="dashboard-advanced-filters">
+        <span aria-hidden="true">☷</span> فیلترها <span id="dashboard-filter-count" class="pd-filter-count" hidden>0</span>
       </button>
-
     </div>
 
+    <div id="dashboard-advanced-filters" class="pd-advanced-filters" hidden>
+      <div class="pd-filter-grid">
+        <div class="filter-group">
+          <label for="dashboard-filter-status">وضعیت پروژه</label>
+          <select id="dashboard-filter-status">
+            <option value="">همه وضعیت‌ها</option>
+            <option value="ACTIVE">فعال</option>
+            <option value="ON_HOLD">متوقف</option>
+            <option value="COMPLETED">تکمیل‌شده</option>
+            <option value="INACTIVE">غیرفعال</option>
+            <option value="CANCELLED">لغوشده</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="dashboard-filter-stage">مرحلهٔ فعلی</label>
+          <select id="dashboard-filter-stage"><option value="">همهٔ مراحل</option></select>
+        </div>
+        <div class="filter-group">
+          <label for="dashboard-filter-department">واحد تولید</label>
+          <select id="dashboard-filter-department"><option value="">همهٔ واحدها</option></select>
+        </div>
+        <div class="filter-group">
+          <label for="dashboard-filter-created-from">ایجاد پروژه از تاریخ</label>
+          <input type="text" id="dashboard-filter-created-from" inputmode="numeric" placeholder="۱۴۰۵/۰۷/۰۱">
+        </div>
+        <div class="filter-group">
+          <label for="dashboard-filter-created-to">ایجاد پروژه تا تاریخ</label>
+          <input type="text" id="dashboard-filter-created-to" inputmode="numeric" placeholder="۱۴۰۵/۰۷/۳۰">
+        </div>
+        <div class="filter-group">
+          <label for="dashboard-filter-activity-from">آخرین فعالیت از تاریخ</label>
+          <input type="text" id="dashboard-filter-activity-from" inputmode="numeric" placeholder="۱۴۰۵/۰۷/۰۱">
+        </div>
+        <div class="filter-group">
+          <label for="dashboard-filter-activity-to">آخرین فعالیت تا تاریخ</label>
+          <input type="text" id="dashboard-filter-activity-to" inputmode="numeric" placeholder="۱۴۰۵/۰۷/۳۰">
+        </div>
+        <div class="filter-group">
+          <label for="dashboard-filter-registrant">ثبت‌کنندهٔ رویداد</label>
+          <select id="dashboard-filter-registrant"><option value="">همهٔ ثبت‌کنندگان</option></select>
+        </div>
+        <div class="filter-group">
+          <label for="dashboard-filter-event-type">عنوان نوع رویداد</label>
+          <select id="dashboard-filter-event-type"><option value="">همهٔ رویدادها</option></select>
+        </div>
+      </div>
+      <div class="pd-filter-actions">
+        <span class="pd-date-hint">تاریخ‌ها را به شمسی وارد کن؛ قالب: سال/ماه/روز</span>
+        <button type="button" id="dashboard-clear-filters" class="btn btn-light btn-sm">پاک کردن همه</button>
+      </div>
+    </div>
+
+    <div id="dashboard-active-filters" class="pd-active-filters" hidden></div>
+    <div class="pd-results-line">
+      <div id="dashboard-results-count" aria-live="polite">در حال دریافت پروژه‌ها…</div>
+      <div class="pd-sort-controls">
+        <label for="dashboard-project-sort">مرتب‌سازی پروژه‌ها</label>
+        <select id="dashboard-project-sort">
+          <option value="created-desc">تاریخ ایجاد: جدید به قدیم</option>
+          <option value="activity-desc">آخرین فعالیت: جدید به قدیم</option>
+          <option value="activity-asc">آخرین فعالیت: قدیم به جدید</option>
+        </select>
+      </div>
+    </div>
+    <div id="dashboard-search-status" class="pd-search-status" role="status" hidden></div>
   </div>
 
-
-  <div
-    id="dashboard-cache-info"
-    class="alert alert-info"
-    hidden
-  ></div>
-
-
-  <div
-    id="dashboard-error"
-    class="alert alert-danger"
-    hidden
-  ></div>
-
-
-  <div
-    id="dashboard-loading"
-    class="loading-state"
-  >
-    در حال بارگذاری اطلاعات داشبورد...
+  <div id="dashboard-search-results" class="pd-search-results" hidden></div>
+  <div id="dashboard-loading" class="pd-loading-list" aria-label="در حال بارگذاری">
+    <div class="pd-skeleton-card"></div><div class="pd-skeleton-card"></div><div class="pd-skeleton-card"></div>
   </div>
-
-
-  <!-- آمار اصلی -->
-
-  <div class="dashboard-grid">
-
-    <div class="card stat-card">
-
-      <div
-        class="stat-card-value"
-        id="dashboard-projects"
-      >
-        0
-      </div>
-
-      <div class="stat-card-label">
-        کل پروژه‌ها
-      </div>
-
-    </div>
-
-
-    <div class="card stat-card">
-
-      <div
-        class="stat-card-value"
-        id="dashboard-active-projects"
-      >
-        0
-      </div>
-
-      <div class="stat-card-label">
-        پروژه‌های فعال
-      </div>
-
-    </div>
-
-
-    <div class="card stat-card">
-
-      <div
-        class="stat-card-value"
-        id="dashboard-completed-projects"
-      >
-        0
-      </div>
-
-      <div class="stat-card-label">
-        پروژه‌های تکمیل‌شده
-      </div>
-
-    </div>
-
-
-    <div class="card stat-card">
-
-      <div
-        class="stat-card-value"
-        id="dashboard-events"
-      >
-        0
-      </div>
-
-      <div class="stat-card-label">
-        کل رویدادها
-      </div>
-
-    </div>
-
-
-    <div class="card stat-card">
-
-      <div
-        class="stat-card-value"
-        id="dashboard-attachments"
-      >
-        0
-      </div>
-
-      <div class="stat-card-label">
-        فایل‌ها
-      </div>
-
-    </div>
-
-
-    <div class="card stat-card">
-
-      <div
-        class="stat-card-value"
-        id="dashboard-users"
-      >
-        0
-      </div>
-
-      <div class="stat-card-label">
-        کاربران
-      </div>
-
-    </div>
-
-  </div>
-
-
-  <!-- پروژه‌های اخیر -->
-
-  <div
-    class="dashboard-sections"
-    style="margin-top:16px;"
-  >
-
-    <div class="card">
-
-      <div class="card-body">
-
-        <h3>
-          آخرین پروژه‌ها
-        </h3>
-
-        <div
-          id="dashboard-recent-projects"
-        ></div>
-
-      </div>
-
-    </div>
-
-
-    <!-- رویدادهای اخیر -->
-
-    <div class="card">
-
-      <div class="card-body">
-
-        <h3>
-          آخرین رویدادها
-        </h3>
-
-        <div
-          id="dashboard-recent-events"
-        ></div>
-
-      </div>
-
-    </div>
-
-  </div>
-
+  <div id="dashboard-project-list" class="pd-project-list" aria-live="polite"></div>
+  <div id="dashboard-project-empty" class="table-empty" hidden>پروژه‌ای مطابق جست‌وجو و فیلترها پیدا نشد.</div>
+  <div id="dashboard-list-sentinel" class="pd-list-sentinel" aria-hidden="true"></div>
 </section>
-
 
 <script src="js/modules/dashboard.js"></script>
