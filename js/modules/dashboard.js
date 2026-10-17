@@ -160,7 +160,7 @@
         const results = await Promise.all([
           this.getLookup('/projects', 'dashboard_projects_lookup'),
           this.getLookup('/event-types', 'dashboard_event_types_lookup'),
-          this.getLookup('/project-dashboard/lookups', 'dashboard_shared_lookups')
+          this.getLookup('/project-dashboard/lookups', 'dashboard_shared_lookups_v2')
         ]);
 
         this.lookups.projects = this.toLookup(
@@ -228,7 +228,7 @@
         'dashboard_event_types_lookup'
       );
       const sharedLookupData = this.unwrap(window.PMS.Cache.get(
-        'dashboard_shared_lookups'
+        'dashboard_shared_lookups_v2'
       )) || {};
 
       if (projectData !== null) {
