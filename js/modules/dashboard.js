@@ -9,7 +9,8 @@
   const Dashboard = {
     lookups: {
       projects: {},
-      eventTypes: {}
+      eventTypes: {},
+      projectStatuses: {}
     },
 
     projects: [],
@@ -158,7 +159,8 @@
       try {
         const results = await Promise.all([
           this.getLookup('/projects', 'dashboard_projects_lookup'),
-          this.getLookup('/event-types', 'dashboard_event_types_lookup')
+          this.getLookup('/event-types', 'dashboard_event_types_lookup'),
+          this.getLookup('/project-dashboard/lookups', 'dashboard_shared_lookups')
         ]);
 
         this.lookups.projects = this.toLookup(
@@ -171,6 +173,13 @@
           results[1],
           ['ID', 'EventTypeID', 'Id', 'id'],
           ['Name', 'Title', 'Code']
+        );
+
+        const sharedLookups = this.unwrap(results[2]) || {};
+        this.lookups.projectStatuses = this.toLookup(
+          sharedLookups.projectStatuses || [],
+          ['ID', 'Code', 'Id', 'id', 'code'],
+          ['Name', 'Title', 'Code', 'name']
         );
 
         const cachedDashboard = this.unwrap(
@@ -220,6 +229,9 @@
       const eventTypeData = window.PMS.Cache.get(
         'dashboard_event_types_lookup'
       );
+      const sharedLookupData = this.unwrap(window.PMS.Cache.get(
+        'dashboard_shared_lookups'
+      )) || {};
 
       if (projectData !== null) {
         this.lookups.projects = this.toLookup(
@@ -237,6 +249,12 @@
         );
       }
 
+      this.lookups.projectStatuses = this.toLookup(
+        sharedLookupData.projectStatuses || [],
+        ['ID', 'Code', 'Id', 'id', 'code'],
+        ['Name', 'Title', 'Code', 'name']
+      );
+
       const cachedDashboard = this.unwrap(
         window.PMS.Cache.get(CACHE_KEY)
       );
@@ -252,7 +270,7 @@
 
       const items = this.normalizeArray(
         response,
-        ['items', 'data', 'projects', 'eventTypes']
+        ['items', 'data', 'projects', 'eventTypes', 'projectStatuses']
       );
 
       items.forEach(function (item) {
@@ -1766,8 +1784,11 @@
         REJECTED: 'ردشده'
       };
 
-      return labels[status] ||
-        this.lookups.projectStatuses[String(status)] ||
+      const key = String(status === undefined || status === null ? '' : status);
+      const normalizedKey = key.toUpperCase();
+      return labels[normalizedKey] ||
+        this.lookups.projectStatuses[key] ||
+        this.lookups.projectStatuses[normalizedKey] ||
         status ||
         '-';
     },
