@@ -33,22 +33,23 @@
     permissionsLoaded: false,
     permissionsRequest: null,
 
+    // Page entry permissions; every API action is enforced by the backend.
     routePermissions: {
       dashboard: ['REPORT_VIEW'],
       projects: ['PROJECT_VIEW', 'PROJECT_CREATE'],
       'project-detail': ['PROJECT_VIEW'],
       events: ['EVENT_VIEW', 'EVENT_CREATE'],
-      workflows: ['WORKFLOW_MANAGE'],
-      'project-statuses': ['PROJECT_STATUS_MANAGE'],
-      'event-types': ['EVENT_TYPE_MANAGE'],
+      workflows: ['WORKFLOW_VIEW', 'WORKFLOW_MANAGE'],
+      'project-statuses': ['PROJECT_STATUS_VIEW', 'PROJECT_STATUS_MANAGE'],
+      'event-types': ['EVENT_TYPE_VIEW', 'EVENT_TYPE_MANAGE'],
       attachments: ['ATTACHMENT_VIEW', 'ATTACHMENT_UPLOAD'],
       reports: ['REPORT_VIEW'],
       users: ['USER_VIEW', 'USER_CREATE', 'USER_EDIT'],
-      departments: ['DEPARTMENT_MANAGE'],
-      roles: ['ROLE_MANAGE'],
-      permissions: ['PERMISSION_MANAGE'],
-      audit: ['REPORT_VIEW'],
-      settings: ['SETTINGS_MANAGE'],
+      departments: ['DEPARTMENT_VIEW', 'DEPARTMENT_MANAGE'],
+      roles: ['ROLE_VIEW', 'ROLE_MANAGE'],
+      permissions: ['PERMISSION_VIEW', 'PERMISSION_MANAGE'],
+      audit: ['AUDIT_VIEW'],
+      settings: ['SYSTEM_SETTINGS'],
       admin: ['SYSTEM_MANAGE']
     },
 
