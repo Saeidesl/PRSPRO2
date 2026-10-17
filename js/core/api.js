@@ -8,6 +8,7 @@
 
   let memoryToken = null;
   let authExpiredNotified = false;
+  const inFlightGetRequests = new Map();
 
   const syncState = {
     status: 'idle',
@@ -248,7 +249,22 @@
     },
 
     get: function (path, options) {
-      return this.request('GET', path, options);
+      const token = this.getToken() || '';
+      const requestKey = token + '\n' + String(path || '/');
+
+      if (inFlightGetRequests.has(requestKey)) {
+        return inFlightGetRequests.get(requestKey);
+      }
+
+      const requestPromise = this.request('GET', path, options);
+      const sharedPromise = requestPromise.finally(function () {
+        if (inFlightGetRequests.get(requestKey) === sharedPromise) {
+          inFlightGetRequests.delete(requestKey);
+        }
+      });
+
+      inFlightGetRequests.set(requestKey, sharedPromise);
+      return sharedPromise;
     },
 
     post: function (path, body, options) {

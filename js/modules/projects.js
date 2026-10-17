@@ -11,7 +11,22 @@
 
     init: function () {
       this.bindEvents();
-      this.loadProjects();
+
+      const router = window.PMS.Router;
+      const canViewProjects = !!(
+        router &&
+        (router.isAdmin() ||
+          (Array.isArray(router.permissions) &&
+            router.permissions.indexOf('PROJECT_VIEW') !== -1))
+      );
+
+      if (canViewProjects) {
+        this.loadProjects();
+      } else {
+        // Create-only users should not trigger a forbidden project-list request.
+        const card = document.querySelector('.page-section > .card');
+        if (card) card.hidden = true;
+      }
     },
 
     bindEvents: function () {

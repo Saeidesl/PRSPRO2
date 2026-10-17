@@ -106,13 +106,20 @@
         const item = JSON.parse(raw);
 
         if (!item || item.version !== CACHE_VERSION) {
+          this.remove(key);
+          return null;
+        }
+
+        const now = Date.now();
+        if (item.expiresAt && now > item.expiresAt) {
+          this.remove(key);
           return null;
         }
 
         return {
           cachedAt: item.cachedAt,
           expiresAt: item.expiresAt,
-          age: Date.now() - item.cachedAt
+          age: now - item.cachedAt
         };
 
       } catch (error) {

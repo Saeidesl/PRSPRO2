@@ -29,6 +29,7 @@
     currentPage: null,
     layoutRendered: false,
     handling: false,
+    pending: false,
     permissions: [],
     permissionsLoaded: false,
     permissionsRequest: null,
@@ -202,8 +203,13 @@ getBaseUrl: function () {
     },
 
     handle: async function () {
-      if (Router.handling) return;
+      if (Router.handling) {
+        // Preserve the latest requested route while a navigation is in progress.
+        Router.pending = true;
+        return;
+      }
       Router.handling = true;
+      Router.pending = false;
 
       try {
         let route = window.location.hash.replace(/^#/, '').trim();
@@ -281,6 +287,12 @@ getBaseUrl: function () {
         }
       } finally {
         Router.handling = false;
+        if (Router.pending) {
+          Router.pending = false;
+          Promise.resolve().then(function () {
+            Router.handle();
+          });
+        }
       }
     },
 
