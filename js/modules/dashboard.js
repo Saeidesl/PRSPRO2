@@ -144,6 +144,15 @@
 
       if (list) {
         list.addEventListener('click', (event) => this.handleListClick(event));
+        list.addEventListener('change', (event) => {
+          const order = event.target.closest('[data-action="timeline-order"]');
+          if (!order) return;
+          this.timelineOrder = order.value || 'newest';
+          const globalOrder = this.el('dashboard-timeline-order');
+          if (globalOrder) globalOrder.value = this.timelineOrder;
+          this.renderProjectCards();
+          this.saveState();
+        });
       }
 
       if (results) {
@@ -1283,6 +1292,7 @@
     },
 
     observeListEnd: function () {
+      if (this.observer) this.observer.disconnect();
       const sentinel = this.el('dashboard-list-sentinel');
       if (!sentinel) return;
       if ('IntersectionObserver' in window) {
