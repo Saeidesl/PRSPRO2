@@ -806,7 +806,7 @@
         ? '<div class="pd-timeline-sentinel" data-timeline-sentinel="' + this.escape(id) + '">در حال آماده‌سازی ادامهٔ تاریخچه…</div>'
         : '';
       return '<div class="pd-timeline-panel">' +
-        '<div class="pd-timeline-heading"><strong>خط زمانی تولید <span class="pd-event-total">(' + events.length.toLocaleString('fa-IR') + ' رویداد)</span></strong><label>ترتیب <select data-action="timeline-order">' +
+        '<div class="pd-timeline-heading"><strong>خط زمانی تولید <span class="pd-event-total">(' + events.length.toLocaleString('fa-IR') + ' رویداد)</span></strong><a class="pd-project-detail-link" href="#project-detail/' + encodeURIComponent(id) + '" data-action="open-project-detail">جزئیات کامل پروژه</a><label>ترتیب <select data-action="timeline-order">' +
           '<option value="newest"' + (this.timelineOrder === 'newest' ? ' selected' : '') + '>جدیدترین به قدیم</option>' +
           '<option value="oldest"' + (this.timelineOrder === 'oldest' ? ' selected' : '') + '>قدیمی‌ترین به جدید</option>' +
         '</select></label></div>' +
@@ -1019,6 +1019,12 @@
     },
 
     handleListClick: function (event) {
+      const detailLink = event.target.closest('[data-action="open-project-detail"]');
+      if (detailLink) {
+        this.saveState();
+        try { window.sessionStorage.setItem('pms_project_detail_return_route', 'dashboard'); } catch (error) {}
+        return;
+      }
       const order = event.target.closest('[data-action="timeline-order"]');
       if (order) {
         this.timelineOrder = order.value || 'newest';
