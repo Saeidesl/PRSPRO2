@@ -1122,7 +1122,7 @@
     renderEventSearchResults: function () {
       var container = document.getElementById('dash-event-search-results');
       if (!container) return;
-      var query = this.query.trim().toLocaleLowerCase();
+      var query = this.normalizeSearchText(this.query);
       if (!query) {
         container.hidden = true;
         container.innerHTML = '';
@@ -1161,7 +1161,7 @@
 
     matchingEventIds: function (history) {
       if (!this.query.trim() || !history || !history.loaded) return [];
-      var query = this.query.trim().toLocaleLowerCase();
+      var query = this.normalizeSearchText(this.query);
       return history.events.filter(function (event) {
         return String(event.Status || '').toUpperCase() !== 'VOID' &&
           Dashboard.normalizeSearchText(Dashboard.searchableEventText(event, history)).indexOf(query) !== -1;
