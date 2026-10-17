@@ -176,10 +176,8 @@
         );
 
         const sharedLookups = this.unwrap(results[2]) || {};
-        this.lookups.projectStatuses = this.toLookup(
-          sharedLookups.projectStatuses || [],
-          ['ID', 'Code', 'Id', 'id', 'code'],
-          ['Name', 'Title', 'Code', 'name']
+        this.lookups.projectStatuses = this.toStatusLookup(
+          sharedLookups.projectStatuses || []
         );
 
         const cachedDashboard = this.unwrap(
@@ -263,6 +261,26 @@
         this.renderProjects(cachedDashboard.recentProjects || []);
         this.renderEvents(cachedDashboard.recentEvents || []);
       }
+    },
+
+    toStatusLookup: function (response) {
+      const lookup = {};
+      const items = this.normalizeArray(
+        response,
+        ['items', 'data', 'projectStatuses']
+      );
+
+      items.forEach(function (item) {
+        if (!item) return;
+        const name = item.Name || item.Title || item.Code || item.ID || '';
+        [item.ID, item.Code, item.Id, item.id, item.code].forEach(function (key) {
+          if (key !== undefined && key !== null && String(key) !== '') {
+            lookup[String(key)] = name;
+          }
+        });
+      });
+
+      return lookup;
     },
 
     toLookup: function (response, idFields, nameFields) {
