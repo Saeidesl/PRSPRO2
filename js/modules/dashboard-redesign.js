@@ -674,7 +674,7 @@
 
     filteredProjects: function () {
       var self = this;
-      var query = this.query.trim().toLocaleLowerCase();
+      var query = this.normalizeSearchText(this.query);
       var filtered = this.projects.filter(function (project) {
         var id = String(self.getId(project));
         var history = self.getHistory(id);
@@ -717,10 +717,10 @@
         if (self.filters.activityTo && !self.inDateRange(activity, self.filters.activityTo, 'to')) matches = false;
 
         if (matches && query) {
-          var projectText = self.searchableProjectText(project).toLocaleLowerCase();
+          var projectText = self.normalizeSearchText(self.searchableProjectText(project));
           var projectMatches = projectText.indexOf(query) !== -1;
           var eventMatches = !!history && history.events.some(function (event) {
-            return self.searchableEventText(event, history).toLocaleLowerCase().indexOf(query) !== -1;
+            return self.normalizeSearchText(self.searchableEventText(event, history)).indexOf(query) !== -1;
           });
           if (!projectMatches && !eventMatches && !history) {
             // Until this project's history is indexed, keep the list provisional.
@@ -762,10 +762,48 @@
         pieces.push(field ? field.Name : key);
         pieces.push(Dashboard.stringifyValue(data[key]));
       });
+      pieces.push(this.formatExactDate(this.eventTime(event)));
+      pieces.push(this.formatExactDate(this.dateValue(event.CreatedAt)));
       this.getEventAttachments(id).forEach(function (attachment) {
         pieces.push(attachment.FileName || attachment.fileName || '');
       });
       return pieces.join(' ');
+    },
+
+    normalizeSearchText: function (value) {
+      return String(value === null || value === undefined ? '' : value)
+        .toLocaleLowerCase('fa')
+        .replace(/[يى]/g, 'ی')
+        .replace(/ك/g, 'ک')
+        .replace(/[۰-۹]/g, function (digit) { return String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)); })
+        .replace(/[٠-٩]/g, function (digit) { return String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)); })
+        .replace(/\s+/g, ' ')
+        .trim();
+    },
+
+    formatDynamicField: function (value, field) {
+      if (value === null || value === undefined || value === '') return '';
+      var type = String(field && (field.FieldType || field.Type || field.DataType) || '').toLowerCase();
+      if (type.indexOf('date') === -1) return this.stringifyValue(value);
+      var raw = String(value);
+      var date;
+      var match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (match && type.indexOf('time') === -1) {
+        date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+      } else {
+        date = new Date(value);
+      }
+      if (isNaN(date.getTime())) return this.stringifyValue(value);
+      if (type.indexOf('time') !== -1 || type.indexOf('datetime') !== -1) {
+        return this.formatExactDate(date.getTime());
+      }
+      try {
+        return date.toLocaleDateString('fa-IR-u-ca-persian', {
+          year: 'numeric', month: '2-digit', day: '2-digit'
+        });
+      } catch (error) {
+        return date.toLocaleDateString('fa-IR');
+      }
     },
 
     stringifyValue: function (value) {
@@ -979,7 +1017,7 @@
       });
       Object.keys(data).forEach(function (key) {
         var field = fieldByCode[key];
-        html += '<div class="dash-detail-item"><small>' + Dashboard.escape(field ? field.Name || key : key) + '</small><strong>' + Dashboard.escape(Dashboard.stringifyValue(data[key])) + '</strong></div>';
+        html += '<div class="dash-detail-item"><small>' + Dashboard.escape(field ? field.Name || key : key) + '</small><strong>' + Dashboard.escape(Dashboard.formatDynamicField(data[key], field)) + '</strong></div>';
       });
       html += '</div>';
       if (event.Description) html += '<div class="dash-description">' + this.escape(event.Description) + '</div>';
@@ -1069,7 +1107,7 @@
     renderEventSearchResults: function () {
       var container = document.getElementById('dash-event-search-results');
       if (!container) return;
-      var query = this.query.trim().toLocaleLowerCase();
+      var query = this.normalizeSearchText(this.query);
       if (!query) {
         container.hidden = true;
         container.innerHTML = '';
@@ -1084,7 +1122,7 @@
         history.events.forEach(function (event) {
           var status = String(event.Status || '').toUpperCase();
           if (status === 'VOID' || status === 'CANCELLED') return;
-          if (self.searchableEventText(event, history).toLocaleLowerCase().indexOf(query) === -1) return;
+          if (self.normalizeSearchText(self.searchableEventText(event, history)).indexOf(query) === -1) return;
           hits.push({ project: project, event: event });
         });
       });
@@ -1108,10 +1146,10 @@
 
     matchingEventIds: function (history) {
       if (!this.query.trim() || !history || !history.loaded) return [];
-      var query = this.query.trim().toLocaleLowerCase();
+      var query = this.normalizeSearchText(this.query);
       return history.events.filter(function (event) {
         return String(event.Status || '').toUpperCase() !== 'VOID' &&
-          Dashboard.searchableEventText(event, history).toLocaleLowerCase().indexOf(query) !== -1;
+          Dashboard.normalizeSearchText(Dashboard.searchableEventText(event, history)).indexOf(query) !== -1;
       }).map(function (event) { return String(Dashboard.getId(event)); });
     },
 
