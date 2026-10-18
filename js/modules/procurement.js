@@ -268,7 +268,7 @@
       : 0;
     const surplus = Math.max(0, quantity - remaining);
     preview.textContent = surplus > 0
-      ? 'مازاد خرید قابل ثبت: ' + number(surplus) + ' ' + String((need && need.Unit) || (row.querySelector('[name="Unit"]') || {}).value || '')
+      ? 'مازاد خرید قابل ثبت: ' + number(surplus) + ' ' + String((row.querySelector('[name="Unit"]') || {}).value || (need && need.Unit) || '')
       : 'مازاد خریدی برای این ردیف محاسبه نشده است.';
     preview.hidden = false;
   }
