@@ -2,7 +2,7 @@
   'use strict';
 
   const $ = function (id) { return document.getElementById(id); };
-  const state = { needs: [], orders: [], loading: false };
+  const state = { needs: [], orders: [], projects: [], loading: false };
 
   function unwrap(value) {
     if (value && value.data !== undefined) return unwrap(value.data);
@@ -159,70 +159,86 @@
     root.scrollIntoView({ behavior: 'smooth', block: 'start' });
     return root;
   }
-  function needOptions(selected) {
-    return [option('', 'بدون اتصال به نیاز ثبت‌شده', !selected)].concat(state.needs.map(function (need) {
-      return option(need.ID, (need.ItemName || 'ملزوم') + ' — باقی‌مانده: ' +
-        number(Math.max(0, Number(need.RequestedQuantity || 0) - Number(need.OrderedQuantity || 0))) +
-        ' ' + (need.Unit || '') + (need.ProjectCode || need.ProjectID ? ' — پروژه ' + (need.ProjectCode || need.ProjectID) : ''),
-        String(need.ID) === String(selected || ''));
+  function normalizeProjects(value) {
+    value = unwrap(value);
+    if (Array.isArray(value)) return value;
+    if (!value || typeof value !== 'object') return [];
+    if (Array.isArray(value.projects)) return value.projects;
+    if (Array.isArray(value.items)) return value.items;
+    if (Array.isArray(value.Projects)) return value.Projects;
+    return [];
+  }
+
+  function projectId(project) {
+    return project.ID || project.ProjectID || project.Id || project.id || '';
+  }
+
+  function projectLabel(project) {
+    const code = project.ProjectCode || project.Code || project.code || '';
+    const name = project.ProjectName || project.Name || project.Title || project.name || '';
+    const label = [code, name].filter(Boolean).join(' — ');
+    return label || String(projectId(project));
+  }
+
+  async function loadProjectsForOrder() {
+    try {
+      const result = await PMS.Api.getCached('/projects', 'procurement-projects', {});
+      state.projects = normalizeProjects(result && result.cached === true ? result.data : result);
+      if (!state.projects.length && result && result.data) {
+        state.projects = normalizeProjects(result.data);
+      }
+    } catch (error) {
+      // Try the direct API if this client does not support cached requests here.
+      const result = await PMS.Api.get('/projects');
+      state.projects = normalizeProjects(result);
+    }
+    return state.projects;
+  }
+
+  function projectOptions() {
+    return [option('', 'انتخاب پروژه', true)].concat(state.projects.map(function (project) {
+      return option(projectId(project), projectLabel(project), false);
     })).join('');
   }
-  function openNeedForm() {
-    const root = modal('ثبت نیاز ملزومات',
-      '<form id="procurement-need-form"><div class="form-grid">' +
-      '<label class="form-group"><span>نام ملزوم *</span><input name="ItemName" required maxlength="200"></label>' +
-      '<label class="form-group"><span>کد ملزوم</span><input name="ItemCode" maxlength="100"></label>' +
-      '<label class="form-group"><span>واحد اندازه‌گیری *</span><input name="Unit" required></label>' +
-      '<label class="form-group"><span>مقدار موردنیاز *</span><input name="RequestedQuantity" type="number" min="0.001" step="any" required></label>' +
-      '<label class="form-group"><span>شناسه پروژه (اختیاری)</span><input name="ProjectID" placeholder="شناسه دقیق پروژه"></label>' +
-      '<label class="form-group"><span>تاریخ نیاز</span><input name="NeededBy" type="date"></label>' +
-      '<label class="form-group"><span>توضیحات</span><input name="Notes" maxlength="500"></label>' +
-      '</div><div class="modal-actions"><button class="btn btn-primary" type="submit">ثبت نیاز</button></div></form>');
-    root.querySelector('#procurement-need-form').addEventListener('submit', async function (event) {
-      event.preventDefault();
-      if (state.saving) return;
-      const form = event.currentTarget;
-      const body = Object.fromEntries(new FormData(form).entries());
-      body.RequestedQuantity = Number(body.RequestedQuantity);
-      if (!body.ProjectID) delete body.ProjectID;
-      state.saving = true;
-      const submit = form.querySelector('[type="submit"]');
-      submit.disabled = true; submit.textContent = 'در حال ثبت...';
-      try {
-        await PMS.Api.post('/procurement/needs', body);
-        clearMessage(); await load(true); showMessage('نیاز ملزومات ثبت شد.', false);
-      } catch (err) {
-        showMessage(err.message || 'ثبت نیاز ناموفق بود.', true);
-      } finally {
-        state.saving = false;
-        if (submit.isConnected) { submit.disabled = false; submit.textContent = 'ثبت نیاز'; }
-      }
-    });
-  }
+
   function orderItemRow(index) {
-    return '<div class="card procurement-order-item" data-order-item="' + index + '"><div class="card-header"><strong>قلم سفارش ' + (index + 1) +
-      '</strong><button type="button" class="btn btn-light" data-remove-item>حذف قلم</button></div><div class="card-body"><div class="form-grid">' +
-      '<label class="form-group"><span>اتصال به نیاز موجود</span><select name="MaterialNeedID">' + needOptions('') + '</select></label>' +
+    return '<div class="card procurement-order-item" data-order-item="' + index + '"><div class="card-header"><strong>قلم ' + (index + 1) +
+      '</strong><button type="button" class="btn btn-light" data-remove-item>حذف ردیف</button></div><div class="card-body"><div class="form-grid">' +
       '<label class="form-group"><span>نام ملزوم *</span><input name="ItemName" required maxlength="200"></label>' +
-      '<label class="form-group"><span>کد ملزوم</span><input name="ItemCode" maxlength="100"></label>' +
-      '<label class="form-group"><span>واحد *</span><input name="Unit" required></label>' +
-      '<label class="form-group"><span>مقدار سفارش *</span><input name="OrderedQuantity" type="number" min="0.001" step="any" required></label>' +
-      '<label class="form-group"><span>قیمت واحد</span><input name="UnitPrice" type="number" min="0" step="any"></label>' +
-      '<label class="form-group"><span>شناسه پروژه (اختیاری)</span><input name="ProjectID" placeholder="شناسه پروژه"></label>' +
-      '<label class="form-group"><span>توضیحات قلم</span><input name="Notes" maxlength="300"></label>' +
+      '<label class="form-group"><span>واحد اندازه‌گیری *</span><input name="Unit" required maxlength="100"></label>' +
+      '<label class="form-group"><span>مقدار موردنیاز *</span><input name="OrderedQuantity" type="number" min="0.001" step="any" required></label>' +
+      '<label class="form-group"><span>توضیحات</span><input name="Notes" maxlength="500"></label>' +
       '</div></div></div>';
   }
-  function openOrderForm() {
-    const root = modal('ثبت سفارش خرید',
-      '<form id="procurement-order-form"><div class="form-grid">' +
-      '<label class="form-group"><span>شماره سفارش</span><input name="OrderNumber" maxlength="100" placeholder="خودکار"></label>' +
-      '<label class="form-group"><span>تأمین‌کننده</span><input name="SupplierName" maxlength="200"></label>' +
-      '<label class="form-group"><span>تاریخ سفارش</span><input name="OrderDate" type="date"></label>' +
-      '<label class="form-group"><span>تاریخ تحویل مورد انتظار</span><input name="ExpectedDeliveryDate" type="date"></label>' +
-      '<label class="form-group"><span>توضیحات سفارش</span><input name="Notes" maxlength="500"></label>' +
-      '</div><div id="procurement-order-items">' + orderItemRow(0) + '</div>' +
-      '<div class="modal-actions"><button type="button" class="btn btn-secondary" id="procurement-add-order-item">+ افزودن قلم</button>' +
-      '<button type="submit" class="btn btn-primary">ثبت سفارش</button></div></form>');
+
+  async function openOrderForm(orderType) {
+    const isProjectOrder = orderType === 'PROJECT';
+    try {
+      if (isProjectOrder) {
+        await loadProjectsForOrder();
+        if (!state.projects.length) {
+          showMessage('فهرست پروژه‌ها دریافت نشد یا پروژه‌ای برای انتخاب وجود ندارد.', true);
+          return;
+        }
+      }
+    } catch (error) {
+      showMessage('دریافت فهرست پروژه‌ها ناموفق بود. لطفاً دوباره تلاش کنید.', true);
+      return;
+    }
+
+    const title = isProjectOrder ? 'ثبت سفارش مرتبط با پروژه' : 'ثبت سفارش عمومی';
+    const projectField = isProjectOrder
+      ? '<label class="form-group"><span>پروژه *</span><select name="ProjectID" required>' + projectOptions() + '</select></label>'
+      : '';
+    const root = modal(title,
+      '<form id="procurement-order-form" data-order-type="' + orderType + '"><div class="form-grid">' +
+      projectField +
+      '<label class="form-group"><span>تاریخ سفارش (اختیاری)</span><input name="OrderDate" type="date"></label>' +
+      '</div><div class="card"><div class="card-header"><h4>اقلام موردنیاز</h4></div><div class="card-body">' +
+      '<div id="procurement-order-items">' + orderItemRow(0) + '</div>' +
+      '<div class="modal-actions"><button type="button" class="btn btn-secondary" id="procurement-add-order-item">+ افزودن ردیف</button></div>' +
+      '</div></div><div class="modal-actions"><button type="submit" class="btn btn-primary">ثبت سفارش</button></div></form>');
+
     const itemsRoot = root.querySelector('#procurement-order-items');
     root.querySelector('#procurement-add-order-item').addEventListener('click', function () {
       itemsRoot.insertAdjacentHTML('beforeend', orderItemRow(itemsRoot.querySelectorAll('[data-order-item]').length));
@@ -231,55 +247,55 @@
       const button = event.target.closest('[data-remove-item]');
       if (!button) return;
       if (itemsRoot.querySelectorAll('[data-order-item]').length <= 1) {
-        showMessage('سفارش باید دست‌کم یک قلم داشته باشد.', true); return;
+        showMessage('سفارش باید دست‌کم یک ردیف داشته باشد.', true);
+        return;
       }
       button.closest('[data-order-item]').remove();
     });
-    itemsRoot.addEventListener('change', function (event) {
-      if (!event.target.matches('select[name="MaterialNeedID"]')) return;
-      const row = event.target.closest('[data-order-item]');
-      const need = state.needs.find(function (item) { return String(item.ID) === String(event.target.value); });
-      if (!need) return;
-      row.querySelector('[name="ItemName"]').value = need.ItemName || '';
-      row.querySelector('[name="ItemCode"]').value = need.ItemCode || '';
-      row.querySelector('[name="Unit"]').value = need.Unit || '';
-      row.querySelector('[name="ProjectID"]').value = need.ProjectID || '';
-      const remaining = Math.max(0, Number(need.RequestedQuantity || 0) - Number(need.OrderedQuantity || 0));
-      row.querySelector('[name="OrderedQuantity"]').value = remaining > 0 ? remaining : '';
-    });
+
     root.querySelector('#procurement-order-form').addEventListener('submit', async function (event) {
       event.preventDefault();
       if (state.saving) return;
       const form = event.currentTarget;
       const header = Object.fromEntries(new FormData(form).entries());
+      const selectedProject = isProjectOrder ? header.ProjectID : '';
       const items = Array.from(form.querySelectorAll('[data-order-item]')).map(function (row) {
-        const get = function (name) { return row.querySelector('[name="' + name + '"]').value.trim(); };
-        const item = {
-          MaterialNeedID: get('MaterialNeedID'), ItemName: get('ItemName'), ItemCode: get('ItemCode'),
-          Unit: get('Unit'), OrderedQuantity: Number(get('OrderedQuantity')),
-          UnitPrice: get('UnitPrice') === '' ? '' : Number(get('UnitPrice')),
-          ProjectID: get('ProjectID'), Notes: get('Notes')
+        const get = function (name) {
+          const field = row.querySelector('[name="' + name + '"]');
+          return field ? field.value.trim() : '';
         };
-        if (!item.MaterialNeedID) delete item.MaterialNeedID;
-        if (!item.ProjectID) delete item.ProjectID;
+        const item = {
+          ItemName: get('ItemName'),
+          Unit: get('Unit'),
+          OrderedQuantity: Number(get('OrderedQuantity')),
+          Notes: get('Notes')
+        };
+        if (isProjectOrder && selectedProject) item.ProjectID = selectedProject;
         return item;
       });
       const body = {
-        OrderNumber: header.OrderNumber, SupplierName: header.SupplierName,
-        OrderDate: header.OrderDate, ExpectedDeliveryDate: header.ExpectedDeliveryDate,
-        Notes: header.Notes, Items: items
+        OrderDate: header.OrderDate,
+        Items: items
       };
+      if (isProjectOrder) body.ProjectID = selectedProject;
+
       state.saving = true;
       const submit = form.querySelector('[type="submit"]');
-      submit.disabled = true; submit.textContent = 'در حال ثبت...';
+      submit.disabled = true;
+      submit.textContent = 'در حال ثبت...';
       try {
         await PMS.Api.post('/procurement/orders', body);
-        clearMessage(); await load(true); showMessage('سفارش خرید ثبت شد.', false);
+        clearMessage();
+        await load(true);
+        showMessage(isProjectOrder ? 'سفارش مرتبط با پروژه ثبت شد.' : 'سفارش عمومی ثبت شد.', false);
       } catch (err) {
         showMessage(err.message || 'ثبت سفارش ناموفق بود.', true);
       } finally {
         state.saving = false;
-        if (submit.isConnected) { submit.disabled = false; submit.textContent = 'ثبت سفارش'; }
+        if (submit.isConnected) {
+          submit.disabled = false;
+          submit.textContent = 'ثبت سفارش';
+        }
       }
     });
   }
@@ -355,7 +371,8 @@
     });
     if (canManage) {
       [['procurement-create-need', openNeedForm],
-       ['procurement-create-order', openOrderForm],
+       ['procurement-create-project-order', function () { openOrderForm('PROJECT'); }],
+       ['procurement-create-general-order', function () { openOrderForm('GENERAL'); }],
        ['procurement-create-receipt', openReceiptForm]].forEach(function (entry) {
         const button = $(entry[0]);
         if (button && !button.dataset.bound) {
