@@ -463,9 +463,15 @@
 
     function projectOrderItems(projectId) {
       const entries = [];
+      const needsById = {};
+      state.needs.forEach(function (need) {
+        if (need && need.ID) needsById[String(need.ID)] = need;
+      });
       state.orders.forEach(function (order) {
-        if (String(order.ProjectID || '') !== String(projectId)) return;
         (Array.isArray(order.Items) ? order.Items : []).forEach(function (item) {
+          const need = needsById[String(item.MaterialNeedID || '')];
+          const linkedProjectId = item.ProjectID || order.ProjectID || (need && need.ProjectID) || '';
+          if (String(linkedProjectId) !== String(projectId)) return;
           const ordered = Math.max(0, Number(item.OrderedQuantity || 0));
           const received = Math.max(0, Number(item.ReceivedQuantity || 0));
           entries.push({
@@ -473,7 +479,8 @@
             item: item,
             ordered: ordered,
             received: received,
-            remaining: Math.max(0, ordered - received)
+            remaining: Math.max(0, Number(item.RemainingQuantity !== undefined ? item.RemainingQuantity : ordered - received)),
+            projectId: String(linkedProjectId)
           });
         });
       });
@@ -574,6 +581,7 @@
         for (const receipt of selected) {
           const body = {
             PurchaseOrderItemID: receipt.itemId,
+            ProjectID: projectSelect.value,
             QuantityReceived: receipt.quantity,
             Notes: form.elements.Notes.value || ''
           };
