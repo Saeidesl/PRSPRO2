@@ -6,12 +6,15 @@
   const Projects = {
     projects: [],
     workflows: [],
+    workflowStepsByWorkflow: {},
+    stageLookupsLoaded: false,
     modal: null,
     isSaving: false,
 
     init: function () {
       this.ensureProjectStyles();
       this.bindEvents();
+      this.loadStageLookups();
 
       const router = window.PMS.Router;
       const canViewProjects = !!(
@@ -202,6 +205,71 @@
           submit.textContent = 'ثبت نیازها';
         }
       });
+    },
+
+    loadStageLookups: async function () {
+      if (this.stageLookupsLoaded) return;
+
+      try {
+        const result = await window.PMS.Api.getCached(
+          '/project-dashboard/lookups',
+          'dashboard_project_lookups_v1'
+        );
+        let data = result && result.data !== undefined ? result.data : result;
+        if (data && data.success === true && data.data !== undefined) data = data.data;
+        if (data && data.data !== undefined) data = data.data;
+
+        let steps = [];
+        if (Array.isArray(data)) steps = data;
+        else if (data && Array.isArray(data.workflowSteps)) steps = data.workflowSteps;
+        else if (data && Array.isArray(data.WorkflowSteps)) steps = data.WorkflowSteps;
+        else if (data && Array.isArray(data.steps)) steps = data.steps;
+        else if (data && Array.isArray(data.items)) steps = data.items;
+
+        this.workflowStepsByWorkflow = {};
+        steps.forEach((step) => {
+          const workflowId = String(step.WorkflowID || step.WorkflowId || step.workflowId || '');
+          if (!workflowId) return;
+          if (!this.workflowStepsByWorkflow[workflowId]) this.workflowStepsByWorkflow[workflowId] = [];
+          this.workflowStepsByWorkflow[workflowId].push(step);
+        });
+        Object.keys(this.workflowStepsByWorkflow).forEach((workflowId) => {
+          this.workflowStepsByWorkflow[workflowId].sort((a, b) =>
+            Number(a.StepOrder || a.Order || a.stepOrder || 0) -
+            Number(b.StepOrder || b.Order || b.stepOrder || 0)
+          );
+        });
+      } catch (error) {
+        // The project list remains usable if optional stage labels cannot be loaded.
+        console.warn('دریافت نام مراحل پروژه‌ها انجام نشد.', error);
+      } finally {
+        this.stageLookupsLoaded = true;
+        this.applyFilters();
+      }
+    },
+
+    getProjectStageName: function (project) {
+      const explicit = project.CurrentStepName || project.CurrentStepTitle ||
+        project.CurrentStageName || project.CurrentStage || project.StageName;
+      if (explicit && !this.isLikelyStepCode(explicit)) return String(explicit).trim();
+
+      const workflowId = String(project.WorkflowID || project.WorkflowId || '');
+      const steps = this.workflowStepsByWorkflow[workflowId] || [];
+      const currentStepId = project.CurrentStepID || project.CurrentStageID ||
+        project.CurrentStep || project.CurrentStageCode || '';
+      const step = steps.find((item) => {
+        const ids = [item.ID, item.Id, item.id, item.Code, item.code];
+        return ids.some((value) => value !== null && value !== undefined &&
+          String(value).toLowerCase() === String(currentStepId).toLowerCase());
+      });
+
+      return String((step && (step.Name || step.Title || step.name || step.title)) ||
+        explicit || currentStepId || 'نامشخص').trim();
+    },
+
+    isLikelyStepCode: function (value) {
+      const text = String(value || '').trim();
+      return /^[A-Z0-9_-]+$/.test(text) && /[A-Z]/.test(text);
     },
 
     // ========================================================
@@ -853,7 +921,7 @@
       projects.forEach((project) => {
         const id = project.ID || project.Id || project.id || '';
         const stateClass = statusClass(project.Status);
-        const step = project.CurrentStepName || project.CurrentStep || project.CurrentStepID || 'نامشخص';
+        const step = this.getProjectStageName(project);
         const quantity = project.Quantity !== undefined && project.Quantity !== null && project.Quantity !== ''
           ? 'تعداد: ' + this.escape(project.Quantity.toLocaleString ? project.Quantity.toLocaleString('fa-IR') : project.Quantity)
           : '';
