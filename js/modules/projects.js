@@ -235,6 +235,23 @@
             </div>
 
             <div class="filter-group" style="margin-bottom:16px;">
+              <label for="new-project-quantity">
+                تعداد کل پروژه <span style="color:var(--color-danger);">*</span>
+              </label>
+              <input
+                type="number"
+                id="new-project-quantity"
+                name="Quantity"
+                required
+                min="1"
+                step="1"
+                inputmode="numeric"
+                placeholder="تعداد کل قطعات"
+                style="width:100%;box-sizing:border-box;"
+              >
+            </div>
+
+            <div class="filter-group" style="margin-bottom:16px;">
               <label for="new-project-workflow">
                 گردش کار <span style="color:var(--color-danger);">*</span>
               </label>
@@ -439,6 +456,7 @@
 
       const codeInput = modal.querySelector('#new-project-code');
       const titleInput = modal.querySelector('#new-project-title');
+      const quantityInput = modal.querySelector('#new-project-quantity');
       const workflowSelect = modal.querySelector('#new-project-workflow');
       const descriptionInput = modal.querySelector('#new-project-description');
       const submitButton = modal.querySelector('#project-create-submit');
@@ -446,6 +464,7 @@
       const project = {
         ProjectCode: codeInput.value.trim(),
         Title: titleInput.value.trim(),
+        Quantity: Number(quantityInput.value),
         WorkflowID: workflowSelect.value,
         Description: descriptionInput.value.trim()
       };
@@ -457,8 +476,14 @@
       }
 
       if (!project.Title) {
-        this.showFormError(modal, 'عنوان پروژه را وارد کن.');
+        this.showFormError(modal, 'نام پروژه را وارد کن.');
         titleInput.focus();
+        return;
+      }
+
+      if (!Number.isFinite(project.Quantity) || project.Quantity < 1 || !Number.isInteger(project.Quantity)) {
+        this.showFormError(modal, 'تعداد پروژه باید یک عدد صحیح بزرگ‌تر از صفر باشد.');
+        quantityInput.focus();
         return;
       }
 
