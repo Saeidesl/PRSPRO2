@@ -51,6 +51,123 @@
           this.openCreateForm();
         });
       }
+
+      const tableContainer = document.getElementById('projects-table-container');
+      if (tableContainer) {
+        tableContainer.addEventListener('click', (event) => {
+          const button = event.target.closest('.project-material-needs-button');
+          if (!button) return;
+          const projectId = button.getAttribute('data-project-id');
+          if (projectId) this.openProjectNeedsForm(projectId);
+        });
+      }
+    },
+
+    canManageProcurement: function () {
+      const router = window.PMS && window.PMS.Router;
+      return !!(router && (
+        router.isAdmin() ||
+        (Array.isArray(router.permissions) &&
+          router.permissions.indexOf('PROCUREMENT_MANAGE') !== -1)
+      ));
+    },
+
+    openProjectNeedsForm: function (projectId) {
+      const project = this.projects.find((item) =>
+        String(item.ID || item.Id || item.id) === String(projectId)
+      ) || {};
+      const existingModal = document.getElementById('project-needs-modal');
+      if (existingModal) existingModal.remove();
+
+      const modal = document.createElement('div');
+      modal.id = 'project-needs-modal';
+      modal.style.cssText = 'position:fixed;inset:0;z-index:10050;background:var(--color-overlay,rgba(0,0,0,.45));display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto;direction:rtl;';
+      modal.innerHTML = '<div role="dialog" aria-modal="true" aria-labelledby="project-needs-title" style="background:var(--color-surface,#fff);color:var(--color-text,#222);width:100%;max-width:900px;max-height:92vh;overflow:auto;border-radius:12px;padding:20px;box-sizing:border-box;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px"><div><h3 id="project-needs-title" style="margin:0 0 6px">ثبت نیازهای ملزومات پروژه</h3><div>' + this.escape(project.ProjectCode || '') + ' — ' + this.escape(project.Title || project.Name || '') + '</div></div><button type="button" class="btn btn-light" data-needs-close>بستن</button></div>' +
+        '<div class="alert alert-info">هر ردیف یک نیاز جداگانه است. برای سفارش‌گذاری، بعداً از دکمه «سفارش مرتبط با پروژه» استفاده کنید.</div>' +
+        '<form id="project-needs-form"><div id="project-needs-rows"></div>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button type="button" class="btn btn-secondary" id="project-needs-add-row">+ افزودن ردیف</button><button type="submit" class="btn btn-primary">ثبت نیازها</button></div>' +
+        '<div id="project-needs-error" class="alert alert-danger" hidden style="margin-top:12px"></div></form></div>';
+      document.body.appendChild(modal);
+
+      const rows = modal.querySelector('#project-needs-rows');
+      const form = modal.querySelector('#project-needs-form');
+      const errorBox = modal.querySelector('#project-needs-error');
+      const close = () => { if (!modal.dataset.saving) modal.remove(); };
+      modal.querySelector('[data-needs-close]').addEventListener('click', close);
+      modal.addEventListener('click', (event) => { if (event.target === modal) close(); });
+
+      const addRow = () => {
+        const index = rows.querySelectorAll('[data-need-row]').length;
+        const row = document.createElement('div');
+        row.className = 'card';
+        row.setAttribute('data-need-row', String(index));
+        row.style.cssText = 'margin-top:12px;border:1px solid var(--color-border,#ddd);border-radius:8px;padding:14px;';
+        row.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><strong>نیاز ' + (index + 1) + '</strong><button type="button" class="btn btn-light" data-need-remove>حذف ردیف</button></div>' +
+          '<div class="form-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">' +
+          '<label class="form-group"><span>نام ملزوم *</span><input name="ItemName" required maxlength="200" style="width:100%;box-sizing:border-box"></label>' +
+          '<label class="form-group"><span>کد ملزوم</span><input name="ItemCode" maxlength="100" style="width:100%;box-sizing:border-box"></label>' +
+          '<label class="form-group"><span>واحد اندازه‌گیری *</span><input name="Unit" required maxlength="100" style="width:100%;box-sizing:border-box"></label>' +
+          '<label class="form-group"><span>مقدار موردنیاز *</span><input name="RequestedQuantity" type="number" min="0.001" step="any" required style="width:100%;box-sizing:border-box"></label>' +
+          '<label class="form-group"><span>تاریخ موردنیاز</span><input name="NeededBy" type="date" style="width:100%;box-sizing:border-box"></label>' +
+          '<label class="form-group"><span>توضیحات</span><input name="Notes" maxlength="500" style="width:100%;box-sizing:border-box"></label></div>';
+        rows.appendChild(row);
+      };
+
+      modal.querySelector('#project-needs-add-row').addEventListener('click', addRow);
+      rows.addEventListener('click', (event) => {
+        const remove = event.target.closest('[data-need-remove]');
+        if (!remove) return;
+        if (rows.querySelectorAll('[data-need-row]').length <= 1) {
+          errorBox.textContent = 'حداقل یک ردیف باید باقی بماند.';
+          errorBox.hidden = false;
+          return;
+        }
+        remove.closest('[data-need-row]').remove();
+      });
+      addRow();
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (modal.dataset.saving) return;
+        errorBox.hidden = true;
+        const dataRows = Array.from(rows.querySelectorAll('[data-need-row]')).map((row) => {
+          const get = (name) => row.querySelector('[name="' + name + '"]').value.trim();
+          return {
+            row,
+            payload: {
+              ProjectID: String(projectId),
+              ItemName: get('ItemName'),
+              ItemCode: get('ItemCode'),
+              Unit: get('Unit'),
+              RequestedQuantity: Number(get('RequestedQuantity')),
+              NeededBy: get('NeededBy'),
+              Notes: get('Notes')
+            }
+          };
+        });
+        const submit = form.querySelector('[type="submit"]');
+        modal.dataset.saving = '1';
+        submit.disabled = true;
+        submit.textContent = 'در حال ثبت...';
+        let saved = 0;
+        try {
+          for (let i = 0; i < dataRows.length; i++) {
+            await window.PMS.Api.post('/procurement/needs', dataRows[i].payload);
+            dataRows[i].row.remove();
+            saved++;
+          }
+          modal.remove();
+          window.alert('تعداد ' + saved + ' نیاز برای پروژه ثبت شد.');
+        } catch (error) {
+          delete modal.dataset.saving;
+          errorBox.textContent = (error && error.message ? error.message : 'ثبت نیازها ناموفق بود.') +
+            (saved ? ' تا پیش از خطا، ' + saved + ' ردیف ثبت شده است؛ فقط ردیف‌های باقی‌مانده را دوباره ثبت کنید.' : '');
+          errorBox.hidden = false;
+          submit.disabled = false;
+          submit.textContent = 'ثبت نیازها';
+        }
+      });
     },
 
     // ========================================================
@@ -734,6 +851,15 @@
               >
                 مشاهده
               </button>
+              ${this.canManageProcurement() ? `
+                <button
+                  type="button"
+                  class="btn btn-sm btn-secondary project-material-needs-button"
+                  data-project-id="${this.escape(id)}"
+                >
+                  ملزومات
+                </button>
+              ` : ''}
             </td>
           </tr>
         `;
