@@ -1074,6 +1074,10 @@
       var history = this.getHistory(id);
       var last = this.projectLastActivity(project);
       var matching = this.matchingEventIds(history);
+      var router = window.PMS && window.PMS.Router;
+      var canManageProcurement = !!(router &&
+        ((typeof router.isAdmin === 'function' && router.isAdmin()) ||
+         (Array.isArray(router.permissions) && router.permissions.indexOf('PROCUREMENT_MANAGE') !== -1)));
       var html = '<article class="dash-project-card' + (expanded ? ' is-expanded' : '') + '" data-project-card="' + this.escape(id) + '">' +
         '<button type="button" class="dash-project-card-head" data-project-id="' + this.escape(id) + '" aria-expanded="' + String(expanded) + '">' +
           '<div class="dash-project-main">' +
@@ -1088,7 +1092,9 @@
 
       if (expanded) {
         html += '<div class="dash-project-history" id="dash-history-' + this.escape(id) + '">';
-        html += '<div class="dash-history-tools"><strong>خط زمانی تولید</strong><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button type="button" class="btn btn-secondary dash-project-material-needs" data-project-id="' + this.escape(id) + '">ملزومات</button><a href="#project-detail/' + encodeURIComponent(id) + '">صفحه جزئیات پروژه ←</a></div></div>';
+        html += '<div class="dash-history-tools"><strong>خط زمانی تولید</strong><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
+          (canManageProcurement ? '<button type="button" class="btn btn-secondary dash-project-material-needs" data-project-id="' + this.escape(id) + '">ملزومات</button>' : '') +
+          '<a href="#project-detail/' + encodeURIComponent(id) + '">صفحه جزئیات پروژه ←</a></div></div>';
         if (!history || (!history.loaded && history.loading)) {
           html += '<div class="dash-skeleton-card"><span></span><span></span><span></span><span></span></div>';
         } else if (history.error) {
