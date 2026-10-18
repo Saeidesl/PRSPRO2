@@ -10,6 +10,7 @@
     isSaving: false,
 
     init: function () {
+      this.ensureProjectStyles();
       this.bindEvents();
 
       const router = window.PMS.Router;
@@ -27,6 +28,39 @@
         const card = document.querySelector('.page-section > .card');
         if (card) card.hidden = true;
       }
+    },
+
+    ensureProjectStyles: function () {
+      if (document.getElementById('projects-card-view-styles')) return;
+      const style = document.createElement('style');
+      style.id = 'projects-card-view-styles';
+      style.textContent = [
+        '#projects-page-tools{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}',
+        '#projects-page-tools .filter-bar{display:flex;align-items:end;gap:10px;flex:1;min-width:240px;flex-wrap:wrap}',
+        '#projects-page-tools .filter-group{flex:1;min-width:180px}',
+        '#projects-page-tools .filter-group label{display:block;margin-bottom:6px;color:var(--color-text-secondary);font-size:12px}',
+        '#projects-page-tools input,#projects-page-tools select{width:100%;min-height:42px;padding:9px 12px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-surface);color:var(--color-text);font:inherit}',
+        '#projects-table-container.projects-card-list{display:flex;flex-direction:column;gap:9px;min-width:0}',
+        '.project-list-card{border:1px solid var(--color-border);border-radius:13px;background:var(--color-surface);overflow:hidden;transition:border-color .16s ease,box-shadow .16s ease}',
+        '.project-list-card:hover{border-color:color-mix(in srgb,var(--color-primary) 35%,var(--color-border));box-shadow:var(--shadow-sm,0 3px 12px rgba(0,0,0,.06))}',
+        '.project-list-card-main{display:flex;align-items:center;gap:12px;padding:14px 15px;min-width:0}',
+        '.project-list-card-indicator{width:9px;height:9px;flex:0 0 9px;border-radius:50%;background:var(--color-text-secondary)}',
+        '.project-list-card-indicator.is-active{background:#16a34a}.project-list-card-indicator.is-hold{background:#eab308}.project-list-card-indicator.is-completed{background:#3b82f6}.project-list-card-indicator.is-cancelled{background:#ef4444}',
+        '.project-list-card-content{flex:1;min-width:0}',
+        '.project-list-card-code{font-size:14px;font-weight:850;line-height:1.8;overflow-wrap:anywhere;color:var(--color-text)}',
+        '.project-list-card-title{font-size:12px;color:var(--color-text-secondary);line-height:1.8;overflow-wrap:anywhere}',
+        '.project-list-card-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:7px}',
+        '.project-list-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:18px;border:1px solid var(--color-border);background:var(--color-surface-hover);color:var(--color-text-secondary);font-size:10px;line-height:1.7;font-weight:700}',
+        '.project-list-badge.is-active{color:#16824a;background:color-mix(in srgb,#16a34a 12%,var(--color-surface));border-color:color-mix(in srgb,#16a34a 25%,transparent)}',
+        '.project-list-badge.is-hold{color:#a16207;background:color-mix(in srgb,#eab308 13%,var(--color-surface));border-color:color-mix(in srgb,#eab308 28%,transparent)}',
+        '.project-list-badge.is-completed{color:#2563eb;background:color-mix(in srgb,#3b82f6 12%,var(--color-surface));border-color:color-mix(in srgb,#3b82f6 25%,transparent)}',
+        '.project-list-badge.is-cancelled{color:#b91c1c;background:color-mix(in srgb,#ef4444 12%,var(--color-surface));border-color:color-mix(in srgb,#ef4444 25%,transparent)}',
+        '.project-list-card-activity{font-size:11px;color:var(--color-text-secondary);line-height:1.8;margin-top:5px}',
+        '.project-list-card-actions{display:flex;align-items:center;justify-content:flex-start;gap:7px;flex-wrap:wrap;padding:0 15px 13px 15px}',
+        '.project-list-card-actions .btn{min-height:34px}',
+        '@media(max-width:520px){.project-list-card-main{padding:11px;gap:9px}.project-list-card-code{font-size:12px}.project-list-card-title{font-size:11px}.project-list-card-actions{padding:0 11px 11px}.project-list-card-actions .btn{flex:1}}'
+      ].join('');
+      document.head.appendChild(style);
     },
 
     bindEvents: function () {
@@ -794,81 +828,59 @@
     render: function (projects) {
       const container = document.getElementById('projects-table-container');
       const empty = document.getElementById('projects-empty');
+      if (!container) return;
 
-      if (!container) {
-        return;
-      }
+      container.classList.add('projects-card-list');
 
       if (!projects || projects.length === 0) {
         container.innerHTML = '';
         container.hidden = true;
-
-        if (empty) {
-          empty.hidden = false;
-        }
-
+        if (empty) empty.hidden = false;
         return;
       }
+      if (empty) empty.hidden = true;
 
-      if (empty) {
-        empty.hidden = true;
-      }
+      const statusClass = (status) => {
+        const value = String(status || '').toUpperCase();
+        if (value === 'ACTIVE') return 'is-active';
+        if (value === 'ON_HOLD' || value === 'INACTIVE') return 'is-hold';
+        if (value === 'COMPLETED') return 'is-completed';
+        if (value === 'CANCELLED' || value === 'VOID' || value === 'DELETED') return 'is-cancelled';
+        return '';
+      };
 
-      let html = `
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>کد پروژه</th>
-              <th>عنوان</th>
-              <th>وضعیت</th>
-              <th>مرحله فعلی</th>
-              <th>آخرین بروزرسانی</th>
-              <th>عملیات</th>
-            </tr>
-          </thead>
-          <tbody>
-      `;
-
+      let html = '';
       projects.forEach((project) => {
         const id = project.ID || project.Id || project.id || '';
-
+        const stateClass = statusClass(project.Status);
+        const step = project.CurrentStepName || project.CurrentStep || project.CurrentStepID || 'نامشخص';
+        const quantity = project.Quantity !== undefined && project.Quantity !== null && project.Quantity !== ''
+          ? 'تعداد: ' + this.escape(project.Quantity.toLocaleString ? project.Quantity.toLocaleString('fa-IR') : project.Quantity)
+          : '';
         html += `
-          <tr>
-            <td>${this.escape(project.ProjectCode)}</td>
-            <td>${this.escape(project.Title)}</td>
-            <td>
-              <span class="status-badge">
-                ${this.escape(this.statusText(project.Status))}
-              </span>
-            </td>
-            <td>${this.escape(project.CurrentStepName || project.CurrentStep || project.CurrentStepID || '-')}</td>
-            <td>${this.escape(this.formatDate(project.UpdatedAt))}</td>
-            <td>
-              <button
-                type="button"
-                class="btn btn-sm btn-light project-view-button"
-                data-project-id="${this.escape(id)}"
-              >
-                مشاهده
-              </button>
+          <article class="project-list-card">
+            <div class="project-list-card-main">
+              <span class="project-list-card-indicator ${stateClass}" aria-hidden="true"></span>
+              <div class="project-list-card-content">
+                <div class="project-list-card-code">${this.escape(project.ProjectCode || 'بدون کد')}</div>
+                <div class="project-list-card-title">${this.escape(project.Title || project.Name || 'بدون عنوان')}</div>
+                <div class="project-list-card-meta">
+                  <span class="project-list-badge ${stateClass}"><span aria-hidden="true">●</span> ${this.escape(this.statusText(project.Status))}</span>
+                  <span class="project-list-badge">مرحله: ${this.escape(step)}</span>
+                  ${quantity ? '<span class="project-list-badge">' + quantity + '</span>' : ''}
+                </div>
+                <div class="project-list-card-activity">آخرین بروزرسانی: ${this.escape(this.formatDate(project.UpdatedAt))}</div>
+              </div>
+            </div>
+            <div class="project-list-card-actions">
+              <button type="button" class="btn btn-sm btn-light project-view-button" data-project-id="${this.escape(id)}">مشاهده پروژه</button>
               ${this.canManageProcurement() ? `
-                <button
-                  type="button"
-                  class="btn btn-sm btn-secondary project-material-needs-button"
-                  data-project-id="${this.escape(id)}"
-                >
-                  ملزومات
-                </button>
+                <button type="button" class="btn btn-sm btn-secondary project-material-needs-button" data-project-id="${this.escape(id)}">ملزومات</button>
               ` : ''}
-            </td>
-          </tr>
+            </div>
+          </article>
         `;
       });
-
-      html += `
-          </tbody>
-        </table>
-      `;
 
       container.innerHTML = html;
       container.hidden = false;
@@ -876,13 +888,7 @@
       container.querySelectorAll('.project-view-button').forEach((button) => {
         button.addEventListener('click', () => {
           const id = button.getAttribute('data-project-id');
-
-          if (!id) {
-            return;
-          }
-
-          window.location.hash =
-            '#project-detail/' + encodeURIComponent(id);
+          if (id) window.location.hash = '#project-detail/' + encodeURIComponent(id);
         });
       });
     },
