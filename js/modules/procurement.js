@@ -283,10 +283,15 @@
         if (state.loadingProjectNeeds) return;
         state.loadingProjectNeeds = true;
         projectSelect.disabled = true;
+        const submitButton = root.querySelector('#procurement-order-form [type="submit"]');
+        if (submitButton) submitButton.disabled = true;
         try {
           const needs = await loadNeedsForProject(projectSelect.value);
           renderOrderNeedRows(itemsRoot, needs);
-          if (!needs.length) showMessage('برای این پروژه هنوز نیازی ثبت نشده است؛ می‌توانید اقلام سفارش را دستی وارد کنید.', false);
+          const openNeeds = needs.filter(function (need) {
+            return Math.max(0, Number(need.RequestedQuantity || 0) - Number(need.OrderedQuantity || 0)) > 0;
+          });
+          if (!openNeeds.length) showMessage('برای این پروژه نیازِ باز برای سفارش وجود ندارد؛ در صورت نیاز می‌توانید اقلام را دستی وارد کنید.', false);
           else clearMessage();
         } catch (error) {
           showMessage('دریافت نیازهای این پروژه ناموفق بود. اقلام را می‌توانید دستی وارد کنید.', true);
@@ -294,6 +299,7 @@
         } finally {
           state.loadingProjectNeeds = false;
           projectSelect.disabled = false;
+          if (submitButton) submitButton.disabled = false;
         }
       });
     }
