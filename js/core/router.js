@@ -34,6 +34,7 @@
     permissions: [],
     permissionsLoaded: false,
     permissionsRequest: null,
+    serverIsAdmin: false,
 
     routePermissions: {
       dashboard: ['PROJECT_VIEW'],
@@ -104,6 +105,7 @@ getBaseUrl: function () {
       const user = Router.getUser();
 
       return (
+        Router.serverIsAdmin === true ||
         user.IsAdmin === true ||
         String(user.IsAdmin).toLowerCase() === 'true' ||
         String(user.DepartmentCode || '').trim().toUpperCase() === 'ADMIN'
@@ -147,6 +149,10 @@ getBaseUrl: function () {
           }
 
           if (data && data.data) data = data.data;
+
+          // Use the authoritative backend admin flag; the session user may not
+          // include DepartmentCode even when the backend recognizes the admin.
+          Router.serverIsAdmin = !!(data && data.isAdmin === true);
 
           let list = [];
 
