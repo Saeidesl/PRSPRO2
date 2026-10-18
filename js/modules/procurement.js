@@ -348,7 +348,7 @@
     }
     const permissions = window.PMS && window.PMS.Router && Array.isArray(window.PMS.Router.permissions)
       ? window.PMS.Router.permissions : [];
-    const canManage = permissions.indexOf('PROCUREMENT_MANAGE') !== -1;
+    const canManage = !!(window.PMS && window.PMS.Router && typeof window.PMS.Router.isAdmin === 'function' && window.PMS.Router.isAdmin()) || permissions.indexOf('PROCUREMENT_MANAGE') !== -1;
     ['procurement-create-need', 'procurement-create-order', 'procurement-create-receipt'].forEach(function (id) {
       const button = $(id);
       if (button) button.hidden = !canManage;
