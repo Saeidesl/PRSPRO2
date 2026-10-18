@@ -219,7 +219,7 @@
 
             <div class="filter-group" style="margin-bottom:16px;">
               <label for="new-project-title">
-                عنوان پروژه <span style="color:var(--color-danger);">*</span>
+                نام پروژه <span style="color:var(--color-danger);">*</span>
               </label>
 
               <input
