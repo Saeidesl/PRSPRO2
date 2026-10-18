@@ -210,7 +210,9 @@
   function orderItemRow(index, need) {
     need = need || {};
     const remaining = Math.max(0, Number(need.RequestedQuantity || 0) - Number(need.OrderedQuantity || 0));
-    const quantity = need.ID ? (remaining > 0 ? remaining : Number(need.RequestedQuantity || 0)) : '';
+    // Show the saved need in the order form, but never prefill the full original
+    // quantity when it has already been fully ordered (that could duplicate an order).
+    const quantity = need.ID ? (remaining > 0 ? remaining : '') : '';
     return '<div class="card procurement-order-item" data-order-item="' + index + '"><div class="card-header"><strong>قلم ' + (index + 1) +
       '</strong><button type="button" class="btn btn-light" data-remove-item>حذف ردیف</button></div><div class="card-body"><div class="form-grid">' +
       '<input type="hidden" name="MaterialNeedID" value="' + (need.ID ? escapeField(need.ID) : '') + '">' +
@@ -232,14 +234,14 @@
 
   function renderOrderNeedRows(itemsRoot, needs) {
     itemsRoot.innerHTML = '';
-    const openNeeds = (needs || []).filter(function (need) {
-      return Math.max(0, Number(need.RequestedQuantity || 0) - Number(need.OrderedQuantity || 0)) > 0;
-    });
-    if (!openNeeds.length) {
+    // Load every saved need for the selected project, including fully ordered
+    // needs, so the user can review the project's original requirements.
+    const projectNeeds = Array.isArray(needs) ? needs : [];
+    if (!projectNeeds.length) {
       itemsRoot.innerHTML = orderItemRow(0);
       return;
     }
-    itemsRoot.innerHTML = openNeeds.map(function (need, index) {
+    itemsRoot.innerHTML = projectNeeds.map(function (need, index) {
       return orderItemRow(index, need);
     }).join('');
   }
@@ -278,6 +280,7 @@
       projectSelect.addEventListener('change', async function () {
         if (!projectSelect.value) {
           itemsRoot.innerHTML = orderItemRow(0);
+          clearMessage();
           return;
         }
         if (state.loadingProjectNeeds) return;
