@@ -1026,13 +1026,16 @@
         var dataRows = Array.from(rows.querySelectorAll('[data-need-row]')).map(function (row) {
           var get = function (name) { return row.querySelector('[name="' + name + '"]').value.trim(); };
           return {
-            ProjectID: String(projectId),
-            ItemName: get('ItemName'),
-            ItemCode: get('ItemCode'),
-            Unit: get('Unit'),
-            RequestedQuantity: Number(get('RequestedQuantity')),
-            NeededBy: get('NeededBy'),
-            Notes: get('Notes')
+            row: row,
+            payload: {
+              ProjectID: String(projectId),
+              ItemName: get('ItemName'),
+              ItemCode: get('ItemCode'),
+              Unit: get('Unit'),
+              RequestedQuantity: Number(get('RequestedQuantity')),
+              NeededBy: get('NeededBy'),
+              Notes: get('Notes')
+            }
           };
         });
         var submit = form.querySelector('[type="submit"]');
@@ -1042,7 +1045,8 @@
         var saved = 0;
         try {
           for (var i = 0; i < dataRows.length; i++) {
-            await window.PMS.Api.post('/procurement/needs', dataRows[i]);
+            await window.PMS.Api.post('/procurement/needs', dataRows[i].payload);
+            dataRows[i].row.remove();
             saved++;
           }
           modal.remove();
