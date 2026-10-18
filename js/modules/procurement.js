@@ -219,8 +219,13 @@
     // Show the saved need in the order form, but never prefill the full original
     // quantity when it has already been fully ordered (that could duplicate an order).
     const quantity = need.ID ? (remaining > 0 ? remaining : '') : '';
+    const needSummary = need.ID
+      ? '<div class="form-help">نیاز اصلی: ' + number(need.RequestedQuantity) + ' ' + escape(need.Unit || '') +
+        '؛ سفارش قبلی: ' + number(need.OrderedQuantity) +
+        '؛ باقی‌مانده: ' + number(remaining) + (remaining === 0 ? ' — این نیاز قبلاً کامل سفارش داده شده است؛ برای سفارش مجدد، مقدار را آگاهانه وارد کنید.' : '') + '</div>'
+      : '<div class="form-help">قلم جدید سفارش؛ به‌عنوان نیاز اصلی پروژه ثبت نمی‌شود.</div>';
     return '<div class="card procurement-order-item" data-order-item="' + index + '"><div class="card-header"><strong>قلم ' + (index + 1) +
-      '</strong><button type="button" class="btn btn-light" data-remove-item>حذف ردیف</button></div><div class="card-body"><div class="form-grid">' +
+      '</strong><button type="button" class="btn btn-light" data-remove-item>حذف ردیف</button></div><div class="card-body">' + needSummary + '<div class="form-grid">' +
       '<input type="hidden" name="MaterialNeedID" value="' + (need.ID ? escapeField(need.ID) : '') + '">' +
       '<label class="form-group"><span>نام ملزوم *</span><input name="ItemName" required maxlength="200" value="' + escapeField(need.ItemName) + '"></label>' +
       '' +'<label class="form-group"><span>واحد اندازه‌گیری *</span><input name="Unit" required maxlength="100" value="' + escapeField(need.Unit) + '"></label>' +
@@ -361,22 +366,6 @@
       };
       if (isProjectOrder) body.ProjectID = selectedProject;
 
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        if (item.MaterialNeedID) {
-          const sourceNeed = state.needs.find(function (need) {
-            return String(need.ID) === String(item.MaterialNeedID);
-          });
-          if (sourceNeed) {
-            const remaining = Math.max(0, Number(sourceNeed.RequestedQuantity || 0) - Number(sourceNeed.OrderedQuantity || 0));
-            if (item.OrderedQuantity > remaining) {
-              showMessage('مقدار سفارش برای «' + item.ItemName + '» از باقی‌مانده نیاز پروژه بیشتر است. برای مقدار اضافه، ردیف جدید بسازید.', true);
-              return;
-            }
-          }
-        }
-      }
-
       state.saving = true;
       const submit = form.querySelector('[type="submit"]');
       submit.disabled = true;
@@ -415,7 +404,6 @@
       option('', 'انتخاب قلم سفارش', true) + itemOptions + '</select></label>' +
       '<label class="form-group"><span>مقدار دریافت‌شده *</span><input name="QuantityReceived" type="number" min="0.001" step="any" required></label>' +
       '<label class="form-group"><span>تاریخ دریافت</span><input name="ReceivedAt" type="date"></label>' +
-      '<label class="form-group"><span>شناسه پروژه (اختیاری)</span><input name="ProjectID" placeholder="شناسه پروژه"></label>' +
       '<label class="form-group"><span>توضیحات</span><input name="Notes" maxlength="500"></label>' +
       '</div><p class="form-help">برای تحویل مرحله‌ای، هر بار یک رسید جدا ثبت کنید.</p>' +
       '<div class="modal-actions"><button type="submit" class="btn btn-primary">ثبت دریافت</button></div></form>'
@@ -431,7 +419,6 @@
       if (state.saving) return;
       const body = Object.fromEntries(new FormData(form).entries());
       body.QuantityReceived = Number(body.QuantityReceived);
-      if (!body.ProjectID) delete body.ProjectID;
       if (body.ReceivedAt) body.ReceivedAt = new Date(body.ReceivedAt + 'T12:00:00').toISOString();
       state.saving = true;
       const submit = form.querySelector('[type="submit"]');
