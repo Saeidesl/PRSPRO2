@@ -14,8 +14,6 @@
     init: function () {
       this.ensureProjectStyles();
       this.bindEvents();
-      this.loadStageLookups();
-
       const router = window.PMS.Router;
       const canViewProjects = !!(
         router &&
@@ -208,43 +206,39 @@
     },
 
     loadStageLookups: async function () {
-      if (this.stageLookupsLoaded) return;
+      const workflowIds = Array.from(new Set((this.projects || [])
+        .map((project) => String(project.WorkflowID || project.WorkflowId || ''))
+        .filter(Boolean)));
+      if (!workflowIds.length) return;
 
       try {
-        const result = await window.PMS.Api.getCached(
-          '/project-dashboard/lookups',
-          'dashboard_project_lookups_v1'
-        );
-        let data = result && result.data !== undefined ? result.data : result;
-        if (data && data.success === true && data.data !== undefined) data = data.data;
-        if (data && data.data !== undefined) data = data.data;
-
-        let steps = [];
-        if (Array.isArray(data)) steps = data;
-        else if (data && Array.isArray(data.workflowSteps)) steps = data.workflowSteps;
-        else if (data && Array.isArray(data.WorkflowSteps)) steps = data.WorkflowSteps;
-        else if (data && Array.isArray(data.steps)) steps = data.steps;
-        else if (data && Array.isArray(data.items)) steps = data.items;
-
-        this.workflowStepsByWorkflow = {};
-        steps.forEach((step) => {
-          const workflowId = String(step.WorkflowID || step.WorkflowId || step.workflowId || '');
-          if (!workflowId) return;
-          if (!this.workflowStepsByWorkflow[workflowId]) this.workflowStepsByWorkflow[workflowId] = [];
-          this.workflowStepsByWorkflow[workflowId].push(step);
-        });
-        Object.keys(this.workflowStepsByWorkflow).forEach((workflowId) => {
-          this.workflowStepsByWorkflow[workflowId].sort((a, b) =>
+        const entries = await Promise.all(workflowIds.map(async (workflowId) => {
+          const result = await window.PMS.Api.getCached(
+            '/workflows/' + encodeURIComponent(workflowId) + '/steps',
+            'workflow_steps_' + workflowId
+          );
+          let data = result && result.data !== undefined ? result.data : result;
+          for (let i = 0; i < 5 && data && !Array.isArray(data); i++) {
+            if (Array.isArray(data.items)) { data = data.items; break; }
+            if (Array.isArray(data.steps)) { data = data.steps; break; }
+            if (Array.isArray(data.data)) { data = data.data; break; }
+            if (data.data !== undefined) { data = data.data; continue; }
+            break;
+          }
+          return [workflowId, Array.isArray(data) ? data : []];
+        }));
+        const lookup = {};
+        entries.forEach(([workflowId, steps]) => {
+          lookup[workflowId] = steps.sort((a, b) =>
             Number(a.StepOrder || a.Order || a.stepOrder || 0) -
             Number(b.StepOrder || b.Order || b.stepOrder || 0)
           );
         });
-      } catch (error) {
-        // The project list remains usable if optional stage labels cannot be loaded.
-        console.warn('دریافت نام مراحل پروژه‌ها انجام نشد.', error);
-      } finally {
+        this.workflowStepsByWorkflow = lookup;
         this.stageLookupsLoaded = true;
         this.applyFilters();
+      } catch (error) {
+        console.warn('دریافت نام مراحل پروژه‌ها انجام نشد.', error);
       }
     },
 
@@ -284,6 +278,7 @@
       if (cached !== null) {
         this.projects = this.normalizeProjects(cached);
         this.applyFilters();
+        this.loadStageLookups();
 
         if (loading) {
           loading.hidden = true;
@@ -300,6 +295,7 @@
             onRefresh: (data) => {
               this.projects = this.normalizeProjects(data);
               this.applyFilters();
+              this.loadStageLookups();
             },
 
             onError: (error, isBackground) => {
@@ -313,6 +309,7 @@
         if (result && result.cached === false) {
           this.projects = this.normalizeProjects(result.data);
           this.applyFilters();
+          this.loadStageLookups();
         }
 
         if (loading) {
