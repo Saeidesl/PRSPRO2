@@ -425,7 +425,7 @@
     const permissions = window.PMS && window.PMS.Router && Array.isArray(window.PMS.Router.permissions)
       ? window.PMS.Router.permissions : [];
     const canManage = !!(window.PMS && window.PMS.Router && typeof window.PMS.Router.isAdmin === 'function' && window.PMS.Router.isAdmin()) || permissions.indexOf('PROCUREMENT_MANAGE') !== -1;
-    ['procurement-create-need', 'procurement-create-order', 'procurement-create-receipt'].forEach(function (id) {
+    ['procurement-create-project-order', 'procurement-create-general-order', 'procurement-create-receipt'].forEach(function (id) {
       const button = $(id);
       if (button) button.hidden = !canManage;
     });
