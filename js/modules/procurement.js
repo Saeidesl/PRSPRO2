@@ -25,6 +25,12 @@
       .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
   }
 
+  function escapeField(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+  }
+
   function number(value) {
     const n = Number(value);
     return Number.isFinite(n) ? n.toLocaleString('fa-IR') : '۰';
@@ -207,11 +213,11 @@
     const quantity = need.ID ? (remaining > 0 ? remaining : Number(need.RequestedQuantity || 0)) : '';
     return '<div class="card procurement-order-item" data-order-item="' + index + '"><div class="card-header"><strong>قلم ' + (index + 1) +
       '</strong><button type="button" class="btn btn-light" data-remove-item>حذف ردیف</button></div><div class="card-body"><div class="form-grid">' +
-      '<input type="hidden" name="MaterialNeedID" value="' + escape(need.ID || '') + '">' +
-      '<label class="form-group"><span>نام ملزوم *</span><input name="ItemName" required maxlength="200" value="' + escape(need.ItemName || '') + '"></label>' +
-      '<label class="form-group"><span>واحد اندازه‌گیری *</span><input name="Unit" required maxlength="100" value="' + escape(need.Unit || '') + '"></label>' +
-      '<label class="form-group"><span>مقدار سفارش *</span><input name="OrderedQuantity" type="number" min="0.001" step="any" required value="' + escape(quantity === '' ? '' : quantity) + '"></label>' +
-      '<label class="form-group"><span>توضیحات</span><input name="Notes" maxlength="500" value="' + escape(need.Notes || '') + '"></label>' +
+      '<input type="hidden" name="MaterialNeedID" value="' + (need.ID ? escapeField(need.ID) : '') + '">' +
+      '<label class="form-group"><span>نام ملزوم *</span><input name="ItemName" required maxlength="200" value="' + escapeField(need.ItemName) + '"></label>' +
+      '<label class="form-group"><span>کد ملزوم</span><input name="ItemCode" maxlength="100" value="' + escapeField(need.ItemCode) + '"></label>' +'<label class="form-group"><span>واحد اندازه‌گیری *</span><input name="Unit" required maxlength="100" value="' + escapeField(need.Unit) + '"></label>' +
+      '<label class="form-group"><span>مقدار سفارش *</span><input name="OrderedQuantity" type="number" min="0.001" step="any" required value="' + (quantity === '' ? '' : escapeField(quantity)) + '"></label>' +
+      '<label class="form-group"><span>توضیحات</span><input name="Notes" maxlength="500" value="' + escapeField(need.Notes) + '"></label>' +
       '</div></div></div>';
   }
 
@@ -318,6 +324,7 @@
         const item = {
           MaterialNeedID: get('MaterialNeedID'),
           ItemName: get('ItemName'),
+          ItemCode: get('ItemCode'),
           Unit: get('Unit'),
           OrderedQuantity: Number(get('OrderedQuantity')),
           Notes: get('Notes')
