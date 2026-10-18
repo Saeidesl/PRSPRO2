@@ -215,7 +215,7 @@
       '</strong><button type="button" class="btn btn-light" data-remove-item>حذف ردیف</button></div><div class="card-body"><div class="form-grid">' +
       '<input type="hidden" name="MaterialNeedID" value="' + (need.ID ? escapeField(need.ID) : '') + '">' +
       '<label class="form-group"><span>نام ملزوم *</span><input name="ItemName" required maxlength="200" value="' + escapeField(need.ItemName) + '"></label>' +
-      '<label class="form-group"><span>کد ملزوم</span><input name="ItemCode" maxlength="100" value="' + escapeField(need.ItemCode) + '"></label>' +'<label class="form-group"><span>واحد اندازه‌گیری *</span><input name="Unit" required maxlength="100" value="' + escapeField(need.Unit) + '"></label>' +
+      '' +'<label class="form-group"><span>واحد اندازه‌گیری *</span><input name="Unit" required maxlength="100" value="' + escapeField(need.Unit) + '"></label>' +
       '<label class="form-group"><span>مقدار سفارش *</span><input name="OrderedQuantity" type="number" min="0.001" step="any" required value="' + (quantity === '' ? '' : escapeField(quantity)) + '"></label>' +
       '<label class="form-group"><span>توضیحات</span><input name="Notes" maxlength="500" value="' + escapeField(need.Notes) + '"></label>' +
       '</div></div></div>';
@@ -330,7 +330,6 @@
         const item = {
           MaterialNeedID: get('MaterialNeedID'),
           ItemName: get('ItemName'),
-          ItemCode: get('ItemCode'),
           Unit: get('Unit'),
           OrderedQuantity: Number(get('OrderedQuantity')),
           Notes: get('Notes')
