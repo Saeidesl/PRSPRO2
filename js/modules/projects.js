@@ -201,6 +201,23 @@
 
           <form id="project-create-form">
             <div class="filter-group" style="margin-bottom:16px;">
+              <label for="new-project-title">
+                نام پروژه <span style="color:var(--color-danger);">*</span>
+              </label>
+
+              <input
+                type="text"
+                id="new-project-title"
+                name="Title"
+                required
+                maxlength="200"
+                autocomplete="off"
+                placeholder="نام پروژه تولید"
+                style="width:100%;box-sizing:border-box;"
+              >
+            </div>
+
+            <div class="filter-group" style="margin-bottom:16px;">
               <label for="new-project-code">
                 کد پروژه <span style="color:var(--color-danger);">*</span>
               </label>
@@ -213,23 +230,6 @@
                 maxlength="100"
                 autocomplete="off"
                 placeholder="مثلاً PRJ-001"
-                style="width:100%;box-sizing:border-box;"
-              >
-            </div>
-
-            <div class="filter-group" style="margin-bottom:16px;">
-              <label for="new-project-title">
-                نام پروژه <span style="color:var(--color-danger);">*</span>
-              </label>
-
-              <input
-                type="text"
-                id="new-project-title"
-                name="Title"
-                required
-                maxlength="200"
-                autocomplete="off"
-                placeholder="عنوان پروژه تولید"
                 style="width:100%;box-sizing:border-box;"
               >
             </div>
