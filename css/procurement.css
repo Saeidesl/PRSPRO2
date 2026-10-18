@@ -25,3 +25,33 @@
 .procurement-field-name{grid-column:1/-1}.procurement-row-footer{display:grid;gap:7px}.procurement-need-note{line-height:1.8}
 .procurement-submit-actions{position:sticky;bottom:0;z-index:2;padding:12px 0 2px;background:var(--surface-color,#fff)}.procurement-submit-actions .btn{width:100%;min-height:44px}
 }
+
+/* Project-based multi-item warehouse receipt form */
+.procurement-receipt-header{margin-bottom:18px}
+.procurement-receipt-section{margin-top:0}
+.procurement-receipt-items{padding:0 14px}
+.procurement-receipt-list{display:flex;flex-direction:column}
+.procurement-receipt-row{display:grid;grid-template-columns:34px minmax(0,1fr) minmax(130px,180px);gap:12px;align-items:center;padding:14px 2px;border-bottom:1px solid var(--border-color,#e2e8f0)}
+.procurement-receipt-row:last-child{border-bottom:0}
+.procurement-receipt-select{display:flex;align-items:center;justify-content:center;cursor:pointer}
+.procurement-receipt-select input{width:18px;height:18px;accent-color:var(--primary-color,#2563eb);cursor:pointer}
+.procurement-receipt-item-info{display:flex;flex-direction:column;gap:4px;min-width:0}
+.procurement-receipt-item-info strong{font-size:.94rem;overflow-wrap:anywhere}
+.procurement-receipt-item-info span,.procurement-receipt-item-info small{color:var(--text-muted,#64748b);font-size:.8rem;line-height:1.7;overflow-wrap:anywhere}
+.procurement-receipt-quantity{display:flex;flex-direction:column;gap:5px;min-width:0}
+.procurement-receipt-quantity span{font-size:.78rem;color:var(--text-muted,#64748b)}
+.procurement-receipt-quantity input{width:100%;min-width:0;box-sizing:border-box}
+.procurement-receipt-row.is-complete{opacity:.65;background:var(--surface-muted,#f8fafc)}
+.procurement-receipt-status{grid-column:2/-1;color:var(--success-color,#15803d);font-size:.78rem}
+.procurement-receipt-summary{margin-top:14px;padding:12px 14px;border-radius:10px;background:var(--surface-muted,#f3f6f9);font-size:.88rem;line-height:1.8}
+@media(max-width:640px){
+ .procurement-receipt-header{grid-template-columns:minmax(0,1fr)}
+ .procurement-receipt-items{padding:0 10px}
+ .procurement-receipt-row{grid-template-columns:28px minmax(0,1fr);gap:9px;padding:13px 0}
+ .procurement-receipt-select{grid-column:1;grid-row:1;align-self:start;padding-top:3px}
+ .procurement-receipt-item-info{grid-column:2;grid-row:1}
+ .procurement-receipt-quantity{grid-column:2;grid-row:2;display:grid;grid-template-columns:minmax(0,1fr) minmax(100px,42%);align-items:center;gap:8px}
+ .procurement-receipt-quantity span{margin:0}
+ .procurement-receipt-status{grid-column:2;grid-row:3}
+ .procurement-receipt-summary{font-size:.84rem}
+}
