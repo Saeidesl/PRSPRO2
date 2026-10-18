@@ -1,0 +1,27 @@
+/* Responsive table-like rows for procurement orders */
+.procurement-form-card{border:1px solid var(--border-color,#dce4eb);border-radius:16px;overflow:hidden}
+.procurement-form-card>.card-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 22px;background:var(--surface-muted,#f3f6f9);border-bottom:1px solid var(--border-color,#dce4eb)}
+.procurement-form-card>.card-body{padding:22px}
+.procurement-items-section{margin-top:22px;border:1px solid var(--border-color,#dce4eb);border-radius:14px;overflow:hidden}
+.procurement-items-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;background:var(--surface-muted,#f3f6f9);border-bottom:1px solid var(--border-color,#dce4eb)}
+.procurement-items-heading h4{margin:0;font-size:1rem}.procurement-items-heading p{margin:5px 0 0;color:var(--text-muted,#718096);font-size:.83rem}
+.procurement-order-list{padding:0 16px}.procurement-order-row{padding:16px 2px;border-bottom:1px solid var(--border-color,#e2e8f0)}.procurement-order-row:last-child{border-bottom:0}
+.procurement-order-row-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.procurement-row-number{display:inline-flex;align-items:center;padding:5px 10px;border-radius:7px;background:var(--surface-muted,#eef3f7);color:var(--text-color,#334155);font-size:.84rem;font-weight:700}
+.procurement-remove-row{padding:6px 10px;min-height:32px;color:var(--danger-color,#b54747)}
+.procurement-order-fields{display:grid;grid-template-columns:minmax(180px,1.5fr) repeat(5,minmax(105px,1fr));gap:12px;align-items:start}
+.procurement-order-fields .form-group{min-width:0;margin:0}.procurement-order-fields .form-group>span{display:block;margin-bottom:6px;font-size:.8rem;color:var(--text-muted,#64748b)}
+.procurement-order-fields input{width:100%;min-width:0;box-sizing:border-box}.procurement-order-fields input[readonly]{background:var(--surface-muted,#f4f6f8);opacity:.9}
+.procurement-row-footer{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;padding-top:10px}.procurement-need-note{font-size:.78rem;color:var(--text-muted,#64748b)}
+.procurement-surplus-preview{margin:0;font-weight:600;color:var(--warning-color,#a16207)}.procurement-submit-actions{display:flex;justify-content:flex-end;margin-top:18px}
+@media(max-width:1100px){.procurement-order-fields{grid-template-columns:repeat(3,minmax(0,1fr))}.procurement-field-name{grid-column:span 2}}
+@media(max-width:640px){
+.procurement-form-card>.card-header{padding:14px 15px}.procurement-form-card>.card-body{padding:14px}
+.procurement-items-section{margin-top:16px}.procurement-items-heading{align-items:flex-start;padding:13px 12px}.procurement-items-heading p{line-height:1.7}
+.procurement-items-heading .btn{flex-shrink:0;padding:8px 10px;font-size:.82rem}.procurement-order-list{padding:0 12px}
+.procurement-order-row{padding:14px 0}.procurement-order-row-head{margin-bottom:10px}
+.procurement-order-fields{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.procurement-order-fields .form-group{min-width:0}
+.procurement-order-fields .form-group>span{font-size:.76rem;line-height:1.5}.procurement-order-fields input{min-width:0;padding-inline:9px;font-size:.9rem}
+.procurement-field-name{grid-column:1/-1}.procurement-row-footer{display:grid;gap:7px}.procurement-need-note{line-height:1.8}
+.procurement-submit-actions{position:sticky;bottom:0;z-index:2;padding:12px 0 2px;background:var(--surface-color,#fff)}.procurement-submit-actions .btn{width:100%;min-height:44px}
+}
