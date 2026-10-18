@@ -55,6 +55,12 @@
   }
   function clearMessage() {
     const root = $('procurement-modal-root');
+    const message = root && root.querySelector('.procurement-inline-message');
+    if (message) message.remove();
+  }
+
+  function closeModal() {
+    const root = $('procurement-modal-root');
     if (root) root.innerHTML = '';
   }
   function showMessage(message, isError) {
@@ -219,7 +225,8 @@
       '<label class="form-group"><span>نام ملزوم *</span><input name="ItemName" required maxlength="200" value="' + escapeField(need.ItemName) + '"></label>' +
       '' +'<label class="form-group"><span>واحد اندازه‌گیری *</span><input name="Unit" required maxlength="100" value="' + escapeField(need.Unit) + '"></label>' +
       '<label class="form-group"><span>مقدار سفارش *</span><input name="OrderedQuantity" type="number" min="0.001" step="any" required value="' + (quantity === '' ? '' : escapeField(quantity)) + '"></label>' +
-      '<label class="form-group"><span>توضیحات</span><input name="Notes" maxlength="500" value="' + escapeField(need.Notes) + '"></label>' +
+      '<label class="form-group"><span>قیمت واحد (اختیاری)</span><input name="UnitPrice" type="number" min="0" step="any"></label>' +
+      '<label class="form-group"><span>توضیحات قلم</span><input name="Notes" maxlength="500" value="' + escapeField(need.Notes) + '"></label>' +
       '</div></div></div>';
   }
 
@@ -268,7 +275,10 @@
     const root = modal(title,
       '<form id="procurement-order-form" data-order-type="' + orderType + '"><div class="form-grid">' +
       projectField +
+      '<label class="form-group"><span>تأمین‌کننده</span><input name="SupplierName" maxlength="200"></label>' +
       '<label class="form-group"><span>تاریخ سفارش (اختیاری)</span><input name="OrderDate" type="date"></label>' +
+      '<label class="form-group"><span>تاریخ تحویل مورد انتظار</span><input name="ExpectedDeliveryDate" type="date"></label>' +
+      '<label class="form-group"><span>توضیحات سفارش</span><input name="Notes" maxlength="1000"></label>' +
       '</div><div class="card"><div class="card-header"><h4>اقلام موردنیاز</h4></div><div class="card-body">' +
       '<div id="procurement-order-items">' + orderItemRow(0) + '</div>' +
       '<div class="modal-actions"><button type="button" class="btn btn-secondary" id="procurement-add-order-item">+ افزودن ردیف</button></div>' +
@@ -335,6 +345,7 @@
           ItemName: get('ItemName'),
           Unit: get('Unit'),
           OrderedQuantity: Number(get('OrderedQuantity')),
+          UnitPrice: get('UnitPrice') === '' ? '' : Number(get('UnitPrice')),
           Notes: get('Notes')
         };
         if (!item.MaterialNeedID) delete item.MaterialNeedID;
@@ -342,10 +353,29 @@
         return item;
       });
       const body = {
-        OrderDate: header.OrderDate,
+        SupplierName: header.SupplierName || '',
+        OrderDate: header.OrderDate || '',
+        ExpectedDeliveryDate: header.ExpectedDeliveryDate || '',
+        Notes: header.Notes || '',
         Items: items
       };
       if (isProjectOrder) body.ProjectID = selectedProject;
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.MaterialNeedID) {
+          const sourceNeed = state.needs.find(function (need) {
+            return String(need.ID) === String(item.MaterialNeedID);
+          });
+          if (sourceNeed) {
+            const remaining = Math.max(0, Number(sourceNeed.RequestedQuantity || 0) - Number(sourceNeed.OrderedQuantity || 0));
+            if (item.OrderedQuantity > remaining) {
+              showMessage('مقدار سفارش برای «' + item.ItemName + '» از باقی‌مانده نیاز پروژه بیشتر است. برای مقدار اضافه، ردیف جدید بسازید.', true);
+              return;
+            }
+          }
+        }
+      }
 
       state.saving = true;
       const submit = form.querySelector('[type="submit"]');
@@ -353,8 +383,8 @@
       submit.textContent = 'در حال ثبت...';
       try {
         await PMS.Api.post('/procurement/orders', body);
-        clearMessage();
-        await load(true);
+        closeModal();
+        await load();
         showMessage(isProjectOrder ? 'سفارش مرتبط با پروژه ثبت شد.' : 'سفارش عمومی ثبت شد.', false);
       } catch (err) {
         showMessage(err.message || 'ثبت سفارش ناموفق بود.', true);
@@ -408,7 +438,7 @@
       submit.disabled = true; submit.textContent = 'در حال ثبت...';
       try {
         await PMS.Api.post('/procurement/receipts', body);
-        clearMessage(); await load(true); showMessage('دریافت انبار ثبت شد.', false);
+        closeModal(); await load(); showMessage('دریافت انبار ثبت شد.', false);
       } catch (err) {
         showMessage(err.message || 'ثبت دریافت ناموفق بود.', true);
       } finally {
