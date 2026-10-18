@@ -2,7 +2,7 @@
   'use strict';
 
   const $ = function (id) { return document.getElementById(id); };
-  const state = { needs: [], orders: [], projects: [], loading: false, loadingProjectNeeds: false };
+  const state = { needs: [], orders: [], projects: [], loading: false, loadingProjectNeeds: false, saving: false };
 
   function unwrap(value) {
     if (value && value.data !== undefined) return unwrap(value.data);
@@ -247,7 +247,30 @@
       '<label class="form-group"><span>مقدار سفارش *</span><input name="OrderedQuantity" type="number" min="0.001" step="any" required value="' + (quantity === '' ? '' : escapeField(quantity)) + '"></label>' +
       '<label class="form-group"><span>قیمت واحد (اختیاری)</span><input name="UnitPrice" type="number" min="0" step="any"></label>' +
       '<label class="form-group"><span>توضیحات قلم</span><input name="Notes" maxlength="500" value="' + escapeField(need.Notes) + '"></label>' +
-      '</div></div></div>';
+      '</div><div class="form-help" data-surplus-preview hidden></div></div></div>';
+  }
+
+  function updateSurplusPreview(row, isProjectOrder) {
+    const preview = row.querySelector('[data-surplus-preview]');
+    if (!preview) return;
+    if (!isProjectOrder) {
+      preview.hidden = true;
+      return;
+    }
+    const quantityField = row.querySelector('[name="OrderedQuantity"]');
+    const needField = row.querySelector('[name="MaterialNeedID"]');
+    const quantity = Number(quantityField && quantityField.value || 0);
+    const need = state.needs.find(function (item) {
+      return String(item.ID) === String(needField && needField.value || '');
+    });
+    const remaining = need
+      ? Math.max(0, Number(need.RequestedQuantity || 0) - Number(need.OrderedQuantity || 0))
+      : 0;
+    const surplus = Math.max(0, quantity - remaining);
+    preview.textContent = surplus > 0
+      ? 'مازاد خرید قابل ثبت: ' + number(surplus) + ' ' + String((need && need.Unit) || (row.querySelector('[name="Unit"]') || {}).value || '')
+      : 'مازاد خریدی برای این ردیف محاسبه نشده است.';
+    preview.hidden = false;
   }
 
   async function loadNeedsForProject(projectId) {
@@ -321,6 +344,9 @@
         try {
           const needs = await loadNeedsForProject(projectSelect.value);
           renderOrderNeedRows(itemsRoot, needs);
+          itemsRoot.querySelectorAll('[data-order-item]').forEach(function (row) {
+            updateSurplusPreview(row, isProjectOrder);
+          });
           const openNeeds = needs.filter(function (need) {
             return Math.max(0, Number(need.RequestedQuantity || 0) - Number(need.OrderedQuantity || 0)) > 0;
           });
@@ -338,6 +364,14 @@
     }
     root.querySelector('#procurement-add-order-item').addEventListener('click', function () {
       itemsRoot.insertAdjacentHTML('beforeend', orderItemRow(itemsRoot.querySelectorAll('[data-order-item]').length));
+      const rows = itemsRoot.querySelectorAll('[data-order-item]');
+      updateSurplusPreview(rows[rows.length - 1], isProjectOrder);
+    });
+    itemsRoot.addEventListener('input', function (event) {
+      if (event.target.matches('[name="OrderedQuantity"], [name="Unit"], [name="ItemName"]')) {
+        const row = event.target.closest('[data-order-item]');
+        if (row) updateSurplusPreview(row, isProjectOrder);
+      }
     });
     itemsRoot.addEventListener('click', function (event) {
       const button = event.target.closest('[data-remove-item]');
