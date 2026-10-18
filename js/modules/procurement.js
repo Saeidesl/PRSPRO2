@@ -432,54 +432,176 @@
       }
     });
   }
-  function openReceiptForm() {
-    const allItems = [];
-    state.orders.forEach(function (order) {
-      (Array.isArray(order.Items) ? order.Items : []).forEach(function (item) {
-        const remaining = Math.max(0, Number(item.OrderedQuantity || 0) - Number(item.ReceivedQuantity || 0));
-        if (remaining > 0) allItems.push({ order: order, item: item, remaining: remaining });
-      });
-    });
-    const itemOptions = allItems.map(function (entry) {
-      return option(entry.item.ID, (entry.order.OrderNumber || 'سفارش') + ' — ' + entry.item.ItemName +
-        ' — باقی‌مانده ' + number(entry.remaining) + ' ' + (entry.item.Unit || ''), false);
-    }).join('');
+  async function openReceiptForm() {
+    try {
+      await loadProjectsForOrder();
+    } catch (error) {
+      showMessage('دریافت فهرست پروژه‌ها ناموفق بود. لطفاً دوباره تلاش کنید.', true);
+      return;
+    }
+
     const root = modal('ثبت دریافت واقعی انبار',
-      allItems.length ? '<form id="procurement-receipt-form"><div class="form-grid">' +
-      '<label class="form-group"><span>قلم سفارش *</span><select name="PurchaseOrderItemID" required>' +
-      option('', 'انتخاب قلم سفارش', true) + itemOptions + '</select></label>' +
-      '<label class="form-group"><span>مقدار دریافت‌شده *</span><input name="QuantityReceived" type="number" min="0.001" step="any" required></label>' +
+      '<form id="procurement-receipt-form">' +
+      '<div class="form-grid procurement-receipt-header">' +
+      '<label class="form-group"><span>پروژه *</span><select name="ProjectID" required>' + projectOptions() + '</select></label>' +
       '<label class="form-group"><span>تاریخ دریافت</span><input name="ReceivedAt" type="date"></label>' +
-      '<label class="form-group"><span>توضیحات</span><input name="Notes" maxlength="500"></label>' +
-      '</div><p class="form-help">برای تحویل مرحله‌ای، هر بار یک رسید جدا ثبت کنید.</p>' +
-      '<div class="modal-actions"><button type="submit" class="btn btn-primary">ثبت دریافت</button></div></form>'
-      : '<div class="table-empty">قلم سفارشی با مقدار دریافت‌نشده وجود ندارد.</div>');
+      '<label class="form-group"><span>توضیحات دریافت</span><input name="Notes" maxlength="500" placeholder="اختیاری"></label>' +
+      '</div>' +
+      '<section class="procurement-items-section procurement-receipt-section">' +
+      '<div class="procurement-items-heading"><div><h4>اقلام سفارش پروژه</h4><p>اقلام قابل دریافت را انتخاب و مقدار تحویل‌شده هرکدام را وارد کنید.</p></div></div>' +
+      '<div id="procurement-receipt-items" class="procurement-receipt-items"><div class="table-empty">ابتدا پروژه را انتخاب کنید.</div></div>' +
+      '</section>' +
+      '<div class="procurement-receipt-summary" id="procurement-receipt-summary" hidden></div>' +
+      '<div class="modal-actions procurement-submit-actions"><button type="submit" class="btn btn-primary">ثبت دریافت اقلام انتخاب‌شده</button></div>' +
+      '</form>');
+
     const form = root.querySelector('#procurement-receipt-form');
-    if (!form) return;
-    form.querySelector('[name="PurchaseOrderItemID"]').addEventListener('change', function () {
-      const found = allItems.find(function (entry) { return String(entry.item.ID) === String(form.elements.PurchaseOrderItemID.value); });
-      if (found) form.elements.QuantityReceived.max = found.remaining;
+    const projectSelect = form.elements.ProjectID;
+    const itemsContainer = root.querySelector('#procurement-receipt-items');
+    const summary = root.querySelector('#procurement-receipt-summary');
+    const receiveDate = form.elements.ReceivedAt;
+
+    function projectOrderItems(projectId) {
+      const entries = [];
+      state.orders.forEach(function (order) {
+        if (String(order.ProjectID || '') !== String(projectId)) return;
+        (Array.isArray(order.Items) ? order.Items : []).forEach(function (item) {
+          const ordered = Math.max(0, Number(item.OrderedQuantity || 0));
+          const received = Math.max(0, Number(item.ReceivedQuantity || 0));
+          entries.push({
+            order: order,
+            item: item,
+            ordered: ordered,
+            received: received,
+            remaining: Math.max(0, ordered - received)
+          });
+        });
+      });
+      return entries;
+    }
+
+    function renderReceiptItems() {
+      const projectId = projectSelect.value;
+      if (!projectId) {
+        itemsContainer.innerHTML = '<div class="table-empty">ابتدا پروژه را انتخاب کنید.</div>';
+        summary.hidden = true;
+        return;
+      }
+      const entries = projectOrderItems(projectId);
+      if (!entries.length) {
+        itemsContainer.innerHTML = '<div class="table-empty">برای این پروژه سفارشی ثبت نشده است.</div>';
+        summary.hidden = true;
+        return;
+      }
+      itemsContainer.innerHTML = '<div class="procurement-receipt-list">' + entries.map(function (entry, index) {
+        const item = entry.item;
+        const disabled = entry.remaining <= 0;
+        return '<div class="procurement-receipt-row' + (disabled ? ' is-complete' : '') + '" data-receipt-row="' + index + '">' +
+          '<label class="procurement-receipt-select"><input type="checkbox" name="SelectedItem" value="' + escapeField(item.ID) + '"' + (disabled ? ' disabled' : '') + '><span class="procurement-receipt-checkmark"></span></label>' +
+          '<div class="procurement-receipt-item-info"><strong>' + escape(item.ItemName || 'ملزوم') + '</strong>' +
+          '<span>' + escape(entry.order.OrderNumber || 'سفارش') + (item.Unit ? ' · ' + escape(item.Unit) : '') + '</span>' +
+          '<small>سفارش: ' + number(entry.ordered) + ' · دریافت‌شده: ' + number(entry.received) + ' · باقی‌مانده: ' + number(entry.remaining) + '</small></div>' +
+          '<label class="procurement-receipt-quantity"><span>مقدار دریافتی</span><input type="number" name="ReceiptQuantity" min="0.001" step="any" max="' + entry.remaining + '" value="' + (disabled ? '' : entry.remaining) + '"' + (disabled ? ' disabled' : '') + ' placeholder="مقدار"></label>' +
+          (disabled ? '<span class="procurement-receipt-status">دریافت کامل</span>' : '') +
+          '</div>';
+      }).join('') + '</div>';
+      summary.hidden = false;
+      updateReceiptSummary();
+    }
+
+    function updateReceiptSummary() {
+      const rows = Array.from(itemsContainer.querySelectorAll('[data-receipt-row]'));
+      let selectedCount = 0;
+      let selectedQuantity = 0;
+      rows.forEach(function (row) {
+        const checkbox = row.querySelector('[name="SelectedItem"]');
+        const quantity = row.querySelector('[name="ReceiptQuantity"]');
+        if (checkbox && checkbox.checked && quantity && !quantity.disabled) {
+          selectedCount++;
+          selectedQuantity += Number(quantity.value || 0);
+        }
+      });
+      summary.textContent = selectedCount
+        ? 'اقلام انتخاب‌شده: ' + number(selectedCount) + ' · مجموع مقدار دریافتی: ' + number(selectedQuantity)
+        : 'برای ثبت دریافت، یک یا چند قلم را انتخاب کنید.';
+    }
+
+    projectSelect.addEventListener('change', renderReceiptItems);
+    itemsContainer.addEventListener('change', function (event) {
+      if (event.target.matches('[name="SelectedItem"]')) {
+        const row = event.target.closest('[data-receipt-row]');
+        const quantity = row && row.querySelector('[name="ReceiptQuantity"]');
+        if (quantity) quantity.disabled = !event.target.checked;
+      }
+      updateReceiptSummary();
     });
+    itemsContainer.addEventListener('input', updateReceiptSummary);
+
     form.addEventListener('submit', async function (event) {
       event.preventDefault();
       if (state.saving) return;
-      const body = Object.fromEntries(new FormData(form).entries());
-      body.QuantityReceived = Number(body.QuantityReceived);
-      if (body.ReceivedAt) body.ReceivedAt = new Date(body.ReceivedAt + 'T12:00:00').toISOString();
+      const rows = Array.from(itemsContainer.querySelectorAll('[data-receipt-row]'));
+      const selected = rows.filter(function (row) {
+        const checkbox = row.querySelector('[name="SelectedItem"]');
+        return checkbox && checkbox.checked;
+      }).map(function (row) {
+        const checkbox = row.querySelector('[name="SelectedItem"]');
+        const quantity = row.querySelector('[name="ReceiptQuantity"]');
+        const entry = projectOrderItems(projectSelect.value).find(function (x) {
+          return String(x.item.ID) === String(checkbox.value);
+        });
+        return { itemId: checkbox.value, quantity: Number(quantity && quantity.value), entry: entry };
+      });
+
+      if (!selected.length) {
+        showMessage('لطفاً دست‌کم یک قلم را برای دریافت انتخاب کنید.', true);
+        return;
+      }
+      const invalid = selected.find(function (x) {
+        return !x.entry || !Number.isFinite(x.quantity) || x.quantity <= 0 || x.quantity > x.entry.remaining;
+      });
+      if (invalid) {
+        showMessage('مقدار دریافت باید بیشتر از صفر و حداکثر برابر با باقی‌مانده همان قلم باشد.', true);
+        return;
+      }
+
       state.saving = true;
       const submit = form.querySelector('[type="submit"]');
-      submit.disabled = true; submit.textContent = 'در حال ثبت...';
+      submit.disabled = true;
+      submit.textContent = 'در حال ثبت دریافت‌ها...';
+      let saved = 0;
       try {
-        await PMS.Api.post('/procurement/receipts', body);
-        closeModal(); await load(); showMessage('دریافت انبار ثبت شد.', false);
+        for (const receipt of selected) {
+          const body = {
+            PurchaseOrderItemID: receipt.itemId,
+            QuantityReceived: receipt.quantity,
+            Notes: form.elements.Notes.value || ''
+          };
+          if (receiveDate.value) body.ReceivedAt = new Date(receiveDate.value + 'T12:00:00').toISOString();
+          await PMS.Api.post('/procurement/receipts', body);
+          saved++;
+        }
+        closeModal();
+        await load();
+        showMessage('دریافت ' + number(saved) + ' قلم با موفقیت ثبت شد.', false);
       } catch (err) {
-        showMessage(err.message || 'ثبت دریافت ناموفق بود.', true);
+        if (saved > 0) {
+          closeModal();
+          await load();
+          showMessage('دریافت ' + number(saved) + ' قلم ثبت شد؛ ثبت قلم بعدی ناموفق بود: ' + (err.message || 'خطای نامشخص'), true);
+        } else {
+          showMessage(err.message || 'ثبت دریافت ناموفق بود.', true);
+        }
       } finally {
         state.saving = false;
-        if (submit.isConnected) { submit.disabled = false; submit.textContent = 'ثبت دریافت'; }
+        if (submit.isConnected) {
+          submit.disabled = false;
+          submit.textContent = 'ثبت دریافت اقلام انتخاب‌شده';
+        }
       }
     });
   }
+
   function bind(id, callback) {
     const button = $(id);
     if (button && !button.dataset.bound) {
