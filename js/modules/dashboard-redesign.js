@@ -357,6 +357,10 @@
           self.toggleProject(projectId);
           return;
         }
+        if (button.classList.contains('dash-project-material-needs')) {
+          self.openProjectNeedsForm(button.getAttribute('data-project-id'));
+          return;
+        }
         if (button.classList.contains('dash-event-toggle')) {
           var eventId = button.getAttribute('data-event-id');
           self.toggleEventDetails(eventId);
@@ -960,6 +964,100 @@
       this.saveState();
     },
 
+    openProjectNeedsForm: function (projectId) {
+      var self = this;
+      var project = this.projects.find(function (item) {
+        return String(self.getId(item)) === String(projectId);
+      }) || {};
+      var existingModal = document.getElementById('dash-project-needs-modal');
+      if (existingModal) existingModal.remove();
+
+      var modal = document.createElement('div');
+      modal.id = 'dash-project-needs-modal';
+      modal.style.cssText = 'position:fixed;inset:0;z-index:10050;background:var(--color-overlay,rgba(0,0,0,.45));display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto;direction:rtl;';
+      modal.innerHTML = '<div role="dialog" aria-modal="true" aria-labelledby="dash-needs-title" style="background:var(--color-surface,#fff);color:var(--color-text,#222);width:100%;max-width:900px;max-height:92vh;overflow:auto;border-radius:12px;padding:20px;box-sizing:border-box;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px"><div><h3 id="dash-needs-title" style="margin:0 0 6px">ثبت نیازهای ملزومات پروژه</h3><div>' + this.escape(project.ProjectCode || '') + ' — ' + this.escape(project.Title || project.Name || '') + '</div></div><button type="button" class="btn btn-light" data-needs-close>بستن</button></div>' +
+        '<div class="alert alert-info">هر ردیف یک نیاز جداگانه است. برای سفارش‌گذاری، بعداً از دکمه «سفارش مرتبط با پروژه» استفاده کنید.</div>' +
+        '<form id="dash-project-needs-form"><div id="dash-project-needs-rows"></div>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button type="button" class="btn btn-secondary" id="dash-needs-add-row">+ افزودن ردیف</button><button type="submit" class="btn btn-primary">ثبت نیازها</button></div>' +
+        '<div id="dash-project-needs-error" class="alert alert-danger" hidden style="margin-top:12px"></div></form></div>';
+      document.body.appendChild(modal);
+
+      var rows = modal.querySelector('#dash-project-needs-rows');
+      var form = modal.querySelector('#dash-project-needs-form');
+      var errorBox = modal.querySelector('#dash-project-needs-error');
+      var close = function () { if (!modal.dataset.saving) modal.remove(); };
+      modal.querySelector('[data-needs-close]').addEventListener('click', close);
+      modal.addEventListener('click', function (event) { if (event.target === modal) close(); });
+      var addRow = function () {
+        var index = rows.querySelectorAll('[data-need-row]').length;
+        var row = document.createElement('div');
+        row.className = 'card';
+        row.setAttribute('data-need-row', String(index));
+        row.style.cssText = 'margin-top:12px;border:1px solid var(--color-border,#ddd);border-radius:8px;padding:14px;';
+        row.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><strong>نیاز ' + (index + 1) + '</strong><button type="button" class="btn btn-light" data-need-remove>حذف ردیف</button></div>' +
+          '<div class="form-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">' +
+          '<label class="form-group"><span>نام ملزوم *</span><input name="ItemName" required maxlength="200" style="width:100%;box-sizing:border-box"></label>' +
+          '<label class="form-group"><span>کد ملزوم</span><input name="ItemCode" maxlength="100" style="width:100%;box-sizing:border-box"></label>' +
+          '<label class="form-group"><span>واحد اندازه‌گیری *</span><input name="Unit" required maxlength="100" style="width:100%;box-sizing:border-box"></label>' +
+          '<label class="form-group"><span>مقدار موردنیاز *</span><input name="RequestedQuantity" type="number" min="0.001" step="any" required style="width:100%;box-sizing:border-box"></label>' +
+          '<label class="form-group"><span>تاریخ موردنیاز</span><input name="NeededBy" type="date" style="width:100%;box-sizing:border-box"></label>' +
+          '<label class="form-group"><span>توضیحات</span><input name="Notes" maxlength="500" style="width:100%;box-sizing:border-box"></label>' +
+          '</div>';
+        rows.appendChild(row);
+      };
+      modal.querySelector('#dash-needs-add-row').addEventListener('click', addRow);
+      rows.addEventListener('click', function (event) {
+        var remove = event.target.closest('[data-need-remove]');
+        if (!remove) return;
+        if (rows.querySelectorAll('[data-need-row]').length <= 1) {
+          errorBox.textContent = 'حداقل یک ردیف باید باقی بماند.';
+          errorBox.hidden = false;
+          return;
+        }
+        remove.closest('[data-need-row]').remove();
+      });
+      addRow();
+
+      form.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        if (modal.dataset.saving) return;
+        errorBox.hidden = true;
+        var dataRows = Array.from(rows.querySelectorAll('[data-need-row]')).map(function (row) {
+          var get = function (name) { return row.querySelector('[name="' + name + '"]').value.trim(); };
+          return {
+            ProjectID: String(projectId),
+            ItemName: get('ItemName'),
+            ItemCode: get('ItemCode'),
+            Unit: get('Unit'),
+            RequestedQuantity: Number(get('RequestedQuantity')),
+            NeededBy: get('NeededBy'),
+            Notes: get('Notes')
+          };
+        });
+        var submit = form.querySelector('[type="submit"]');
+        modal.dataset.saving = '1';
+        submit.disabled = true;
+        submit.textContent = 'در حال ثبت...';
+        var saved = 0;
+        try {
+          for (var i = 0; i < dataRows.length; i++) {
+            await window.PMS.Api.post('/procurement/needs', dataRows[i]);
+            saved++;
+          }
+          modal.remove();
+          window.alert('تعداد ' + saved + ' نیاز برای پروژه ثبت شد.');
+        } catch (error) {
+          delete modal.dataset.saving;
+          errorBox.textContent = (error && error.message ? error.message : 'ثبت نیازها ناموفق بود.') +
+            (saved ? ' تا پیش از خطا، ' + saved + ' ردیف ثبت شده است؛ فقط ردیف‌های باقی‌مانده را دوباره ثبت کنید.' : '');
+          errorBox.hidden = false;
+          submit.disabled = false;
+          submit.textContent = 'ثبت نیازها';
+        }
+      });
+    },
+
     renderProjectCard: function (project) {
       var id = String(this.getId(project));
       var expanded = !!this.expanded[id];
@@ -985,7 +1083,7 @@
 
       if (expanded) {
         html += '<div class="dash-project-history" id="dash-history-' + this.escape(id) + '">';
-        html += '<div class="dash-history-tools"><strong>خط زمانی تولید</strong><a href="#project-detail/' + encodeURIComponent(id) + '">صفحه جزئیات پروژه ←</a></div>';
+        html += '<div class="dash-history-tools"><strong>خط زمانی تولید</strong><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button type="button" class="btn btn-secondary dash-project-material-needs" data-project-id="' + this.escape(id) + '">ملزومات</button><a href="#project-detail/' + encodeURIComponent(id) + '">صفحه جزئیات پروژه ←</a></div></div>';
         if (!history || (!history.loaded && history.loading)) {
           html += '<div class="dash-skeleton-card"><span></span><span></span><span></span><span></span></div>';
         } else if (history.error) {
