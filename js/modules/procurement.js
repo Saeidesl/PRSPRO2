@@ -182,7 +182,7 @@
     const root = $('procurement-modal-root');
     root.innerHTML = '<div class="card procurement-form-card"><div class="card-header"><h3>' + escape(title) +
       '</h3><button type="button" class="btn btn-light" data-close-procurement>بستن</button></div><div class="card-body">' + body + '</div></div>';
-    root.querySelector('[data-close-procurement]').addEventListener('click', clearMessage);
+    root.querySelector('[data-close-procurement]').addEventListener('click', closeModal);
     root.scrollIntoView({ behavior: 'smooth', block: 'start' });
     return root;
   }
