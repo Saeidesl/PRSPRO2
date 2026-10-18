@@ -1089,9 +1089,6 @@
             '<div class="dash-project-activity">آخرین فعالیت: ' + this.escape(this.formatExactDate(last)) + ' — ' + this.escape(this.relativeTime(last)) + '</div>' +
           '</div><span class="dash-project-chevron" aria-hidden="true">⌄</span>' +
         '</button>';
-      if (canManageProcurement) {
-        html += '<div style="padding:0 15px 12px;display:flex;justify-content:flex-start"><button type="button" class="btn btn-secondary dash-project-material-needs" data-project-id="' + this.escape(id) + '">ملزومات</button></div>';
-      }
 
       if (expanded) {
         html += '<div class="dash-project-history" id="dash-history-' + this.escape(id) + '">';
