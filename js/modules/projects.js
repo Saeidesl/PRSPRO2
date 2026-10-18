@@ -141,7 +141,6 @@
         row.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><strong>نیاز ' + (index + 1) + '</strong><button type="button" class="btn btn-light" data-need-remove>حذف ردیف</button></div>' +
           '<div class="form-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">' +
           '<label class="form-group"><span>نام ملزوم *</span><input name="ItemName" required maxlength="200" style="width:100%;box-sizing:border-box"></label>' +
-          '<label class="form-group"><span>کد ملزوم</span><input name="ItemCode" maxlength="100" style="width:100%;box-sizing:border-box"></label>' +
           '<label class="form-group"><span>واحد اندازه‌گیری *</span><input name="Unit" required maxlength="100" style="width:100%;box-sizing:border-box"></label>' +
           '<label class="form-group"><span>مقدار موردنیاز *</span><input name="RequestedQuantity" type="number" min="0.001" step="any" required style="width:100%;box-sizing:border-box"></label>' +
           '<label class="form-group"><span>تاریخ موردنیاز</span><input name="NeededBy" type="date" style="width:100%;box-sizing:border-box"></label>' +
@@ -173,7 +172,6 @@
             payload: {
               ProjectID: String(projectId),
               ItemName: get('ItemName'),
-              ItemCode: get('ItemCode'),
               Unit: get('Unit'),
               RequestedQuantity: Number(get('RequestedQuantity')),
               NeededBy: get('NeededBy'),
