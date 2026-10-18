@@ -2,7 +2,7 @@
   'use strict';
 
   const $ = function (id) { return document.getElementById(id); };
-  const state = { needs: [], orders: [], projects: [], loading: false };
+  const state = { needs: [], orders: [], projects: [], loading: false, loadingProjectNeeds: false };
 
   function unwrap(value) {
     if (value && value.data !== undefined) return unwrap(value.data);
@@ -201,14 +201,41 @@
     })).join('');
   }
 
-  function orderItemRow(index) {
+  function orderItemRow(index, need) {
+    need = need || {};
+    const remaining = Math.max(0, Number(need.RequestedQuantity || 0) - Number(need.OrderedQuantity || 0));
+    const quantity = need.ID ? (remaining > 0 ? remaining : Number(need.RequestedQuantity || 0)) : '';
     return '<div class="card procurement-order-item" data-order-item="' + index + '"><div class="card-header"><strong>قلم ' + (index + 1) +
       '</strong><button type="button" class="btn btn-light" data-remove-item>حذف ردیف</button></div><div class="card-body"><div class="form-grid">' +
-      '<label class="form-group"><span>نام ملزوم *</span><input name="ItemName" required maxlength="200"></label>' +
-      '<label class="form-group"><span>واحد اندازه‌گیری *</span><input name="Unit" required maxlength="100"></label>' +
-      '<label class="form-group"><span>مقدار موردنیاز *</span><input name="OrderedQuantity" type="number" min="0.001" step="any" required></label>' +
-      '<label class="form-group"><span>توضیحات</span><input name="Notes" maxlength="500"></label>' +
+      '<input type="hidden" name="MaterialNeedID" value="' + escape(need.ID || '') + '">' +
+      '<label class="form-group"><span>نام ملزوم *</span><input name="ItemName" required maxlength="200" value="' + escape(need.ItemName || '') + '"></label>' +
+      '<label class="form-group"><span>واحد اندازه‌گیری *</span><input name="Unit" required maxlength="100" value="' + escape(need.Unit || '') + '"></label>' +
+      '<label class="form-group"><span>مقدار سفارش *</span><input name="OrderedQuantity" type="number" min="0.001" step="any" required value="' + escape(quantity === '' ? '' : quantity) + '"></label>' +
+      '<label class="form-group"><span>توضیحات</span><input name="Notes" maxlength="500" value="' + escape(need.Notes || '') + '"></label>' +
       '</div></div></div>';
+  }
+
+  async function loadNeedsForProject(projectId) {
+    const result = await PMS.Api.get('/procurement/needs');
+    const allNeeds = list(result, ['needs', 'items', 'Needs']);
+    state.needs = allNeeds;
+    return allNeeds.filter(function (need) {
+      return String(need.ProjectID || '') === String(projectId);
+    });
+  }
+
+  function renderOrderNeedRows(itemsRoot, needs) {
+    itemsRoot.innerHTML = '';
+    const openNeeds = (needs || []).filter(function (need) {
+      return Math.max(0, Number(need.RequestedQuantity || 0) - Number(need.OrderedQuantity || 0)) > 0;
+    });
+    if (!openNeeds.length) {
+      itemsRoot.innerHTML = orderItemRow(0);
+      return;
+    }
+    itemsRoot.innerHTML = openNeeds.map(function (need, index) {
+      return orderItemRow(index, need);
+    }).join('');
   }
 
   async function openOrderForm(orderType) {
@@ -240,6 +267,30 @@
       '</div></div><div class="modal-actions"><button type="submit" class="btn btn-primary">ثبت سفارش</button></div></form>');
 
     const itemsRoot = root.querySelector('#procurement-order-items');
+    const projectSelect = root.querySelector('[name="ProjectID"]');
+    if (projectSelect) {
+      projectSelect.addEventListener('change', async function () {
+        if (!projectSelect.value) {
+          itemsRoot.innerHTML = orderItemRow(0);
+          return;
+        }
+        if (state.loadingProjectNeeds) return;
+        state.loadingProjectNeeds = true;
+        projectSelect.disabled = true;
+        try {
+          const needs = await loadNeedsForProject(projectSelect.value);
+          renderOrderNeedRows(itemsRoot, needs);
+          if (!needs.length) showMessage('برای این پروژه هنوز نیازی ثبت نشده است؛ می‌توانید اقلام سفارش را دستی وارد کنید.', false);
+          else clearMessage();
+        } catch (error) {
+          showMessage('دریافت نیازهای این پروژه ناموفق بود. اقلام را می‌توانید دستی وارد کنید.', true);
+          itemsRoot.innerHTML = orderItemRow(0);
+        } finally {
+          state.loadingProjectNeeds = false;
+          projectSelect.disabled = false;
+        }
+      });
+    }
     root.querySelector('#procurement-add-order-item').addEventListener('click', function () {
       itemsRoot.insertAdjacentHTML('beforeend', orderItemRow(itemsRoot.querySelectorAll('[data-order-item]').length));
     });
@@ -265,11 +316,13 @@
           return field ? field.value.trim() : '';
         };
         const item = {
+          MaterialNeedID: get('MaterialNeedID'),
           ItemName: get('ItemName'),
           Unit: get('Unit'),
           OrderedQuantity: Number(get('OrderedQuantity')),
           Notes: get('Notes')
         };
+        if (!item.MaterialNeedID) delete item.MaterialNeedID;
         if (isProjectOrder && selectedProject) item.ProjectID = selectedProject;
         return item;
       });
@@ -370,8 +423,7 @@
       if (button) button.hidden = !canManage;
     });
     if (canManage) {
-      [['procurement-create-need', openNeedForm],
-       ['procurement-create-project-order', function () { openOrderForm('PROJECT'); }],
+      [['procurement-create-project-order', function () { openOrderForm('PROJECT'); }],
        ['procurement-create-general-order', function () { openOrderForm('GENERAL'); }],
        ['procurement-create-receipt', openReceiptForm]].forEach(function (entry) {
         const button = $(entry[0]);
