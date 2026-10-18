@@ -261,7 +261,7 @@
 
     const title = isProjectOrder ? 'ثبت سفارش مرتبط با پروژه' : 'ثبت سفارش عمومی';
     const projectField = isProjectOrder
-      ? '<label class="form-group"><span>پروژه *</span><select name="ProjectID" required>' + projectOptions() + '</select></label>'
+      ? '<label class="form-group"><span>کد پروژه *</span><select name="ProjectID" required>' + projectOptions() + '</select></label>'
       : '';
     const root = modal(title,
       '<form id="procurement-order-form" data-order-type="' + orderType + '"><div class="form-grid">' +
