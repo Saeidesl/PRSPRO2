@@ -108,11 +108,24 @@
       container.innerHTML = '<div class="table-empty">سفارشی ثبت نشده است.</div>';
       return;
     }
-    container.innerHTML = '<table class="data-table"><thead><tr><th>شماره سفارش</th><th>تأمین‌کننده</th><th>تاریخ سفارش</th><th>تاریخ تحویل مورد انتظار</th><th>وضعیت دریافت</th><th>توضیحات</th></tr></thead><tbody>' +
+    container.innerHTML = '<table class="data-table"><thead><tr><th>شماره سفارش</th><th>تأمین‌کننده</th><th>تاریخ سفارش</th><th>تاریخ تحویل مورد انتظار</th><th>اقلام و مازاد خرید</th><th>وضعیت دریافت</th><th>توضیحات</th></tr></thead><tbody>' +
       state.orders.map(function (item) {
+        const itemDetails = (Array.isArray(item.Items) ? item.Items : []).map(function (line) {
+          const surplus = Math.max(0, Number(line.SurplusQuantity) || 0);
+          const priceKnown = line.UnitPrice !== '' && line.UnitPrice !== undefined && line.UnitPrice !== null && isFinite(Number(line.UnitPrice));
+          const surplusCost = line.SurplusCost !== '' && line.SurplusCost !== undefined && line.SurplusCost !== null
+            ? Number(line.SurplusCost) : (priceKnown ? surplus * Number(line.UnitPrice) : null);
+          return '<div class="procurement-order-line"><strong>' + escape(line.ItemName) + '</strong>: ' +
+            number(line.OrderedQuantity) + ' ' + escape(line.Unit || '') +
+            (surplus > 0
+              ? '<div class="form-help">مازاد خرید: ' + number(surplus) + ' ' + escape(line.Unit || '') +
+                (surplusCost !== null ? '؛ ارزش مازاد: ' + number(surplusCost) : '؛ قیمت واحد ثبت نشده') + '</div>'
+              : '') + '</div>';
+        }).join('');
         return '<tr><td>' + escape(item.OrderNumber) + '</td><td>' + escape(item.SupplierName) +
           '</td><td>' + escape(item.OrderDate) + '</td><td>' + escape(item.ExpectedDeliveryDate) +
-          '</td><td>' + escape(statusLabel(item.Status)) + '</td><td>' + escape(item.Notes) + '</td></tr>';
+          '</td><td>' + (itemDetails || '—') + '</td><td>' + escape(statusLabel(item.Status)) +
+          '</td><td>' + escape(item.Notes) + '</td></tr>';
       }).join('') + '</tbody></table>';
   }
 
@@ -124,6 +137,8 @@
     setText('procurement-orders-count', number(summary.activeOrders !== undefined ? summary.activeOrders : (summary.orders !== undefined ? summary.orders : state.orders.length)));
     setText('procurement-orders-open', number(summary.openOrders !== undefined ? summary.openOrders :
       state.orders.filter(function (x) { return String(x.Status).toUpperCase() !== 'RECEIVED'; }).length));
+    setText('procurement-surplus-lines', number(summary.surplusLineCount || 0));
+    setText('procurement-surplus-cost', number(summary.surplusCost || 0));
   }
 
   async function load() {
