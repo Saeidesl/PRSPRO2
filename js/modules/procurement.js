@@ -501,7 +501,7 @@
           '<div class="procurement-receipt-item-info"><strong>' + escape(item.ItemName || 'ملزوم') + '</strong>' +
           '<span>' + escape(entry.order.OrderNumber || 'سفارش') + (item.Unit ? ' · ' + escape(item.Unit) : '') + '</span>' +
           '<small>سفارش: ' + number(entry.ordered) + ' · دریافت‌شده: ' + number(entry.received) + ' · باقی‌مانده: ' + number(entry.remaining) + '</small></div>' +
-          ''<label class="procurement-receipt-quantity"><span>مقدار دریافتی</span><input type="number" name="ReceiptQuantity" min="0.001" step="any" max="' + entry.remaining + '" value="' + (disabled ? '' : entry.remaining) + '" disabled placeholder="مقدار"></label>'' +
+          '<label class="procurement-receipt-quantity"><span>مقدار دریافتی</span><input type="number" name="ReceiptQuantity" min="0.001" step="any" max="' + entry.remaining + '" value="' + (disabled ? '' : entry.remaining) + '" disabled placeholder="مقدار"></label>' +
           (disabled ? '<span class="procurement-receipt-status">دریافت کامل</span>' : '') +
           '</div>';
       }).join('') + '</div>';
