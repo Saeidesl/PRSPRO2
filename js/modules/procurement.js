@@ -109,26 +109,57 @@
       container.innerHTML = '<div class="table-empty">نیازی ثبت نشده است.</div>';
       return;
     }
-    container.innerHTML = '<div class="procurement-table-scroll"><table class="data-table procurement-overview-table"><thead><tr><th>کد پروژه</th><th>ملزوم</th><th>نیاز ثبت‌شده</th><th>در انتظار سفارش</th><th>در انتظار تحویل</th><th>تحویل‌شده</th><th>وضعیت</th></tr></thead><tbody>' +
-      state.needs.map(function (item) {
-        const requested = Math.max(0, Number(item.RequestedQuantity || 0));
-        const ordered = Math.min(requested, Math.max(0, Number(item.OrderedQuantity || 0)));
-        const received = Math.min(ordered, Math.max(0, Number(item.ReceivedQuantity || 0)));
-        const toOrder = Math.max(0, requested - ordered);
-        const toReceive = Math.max(0, ordered - received);
-        let label = 'تحویل کامل', kind = 'complete';
-        if (toOrder > 0 && ordered === 0) { label = 'در انتظار سفارش'; kind = 'waiting'; }
-        else if (toOrder > 0 && toReceive > 0) { label = 'سفارش و تحویل ناقص'; kind = 'partial'; }
-        else if (toOrder > 0) { label = 'در انتظار سفارش'; kind = 'waiting'; }
-        else if (toReceive > 0) { label = received > 0 ? 'تحویل ناقص' : 'در انتظار تحویل'; kind = received > 0 ? 'partial' : 'delivery'; }
-        return '<tr><td data-label="کد پروژه"><strong class="procurement-project-code">' + escape(projectCodeFor(item.ProjectID)) + '</strong></td>' +
-          '<td data-label="ملزوم"><strong>' + escape(item.ItemName) + '</strong><small class="procurement-subtext">' + escape(item.ItemCode || '') + '</small></td>' +
-          '<td data-label="نیاز ثبت‌شده">' + number(requested) + ' ' + escape(item.Unit || '') + '</td>' +
-          '<td data-label="در انتظار سفارش">' + (toOrder > 0 ? '<strong class="procurement-quantity-warn">' + number(toOrder) + '</strong>' : number(0)) + '</td>' +
-          '<td data-label="در انتظار تحویل">' + (toReceive > 0 ? '<strong class="procurement-quantity-pending">' + number(toReceive) + '</strong>' : number(0)) + '</td>' +
-          '<td data-label="تحویل‌شده"><strong class="procurement-quantity-done">' + number(received) + '</strong></td>' +
-          '<td data-label="وضعیت">' + statusBadge(label, kind) + '</td></tr>';
-      }).join('') + '</tbody></table></div>';
+
+    const groups = new Map();
+    state.needs.forEach(function (item) {
+      const projectIdValue = item.ProjectID || '';
+      const groupKey = projectIdValue ? String(projectIdValue) : '__unknown_project__';
+      if (!groups.has(groupKey)) {
+        groups.set(groupKey, {
+          projectId: projectIdValue,
+          label: projectIdValue ? projectCodeFor(projectIdValue) : 'پروژه نامشخص',
+          items: []
+        });
+      }
+      const requested = Math.max(0, Number(item.RequestedQuantity || 0));
+      const ordered = Math.min(requested, Math.max(0, Number(item.OrderedQuantity || 0)));
+      const received = Math.min(ordered, Math.max(0, Number(item.ReceivedQuantity || 0)));
+      const toOrder = Math.max(0, requested - ordered);
+      const toReceive = Math.max(0, ordered - received);
+      let label = 'تحویل کامل', kind = 'complete';
+      if (toOrder > 0 && toReceive > 0) { label = 'نیاز به سفارش و تحویل'; kind = 'partial'; }
+      else if (toOrder > 0) { label = 'در انتظار سفارش'; kind = 'waiting'; }
+      else if (toReceive > 0) { label = received > 0 ? 'تحویل ناقص' : 'در انتظار تحویل'; kind = received > 0 ? 'partial' : 'delivery'; }
+      groups.get(groupKey).items.push({
+        item: item, requested: requested, ordered: ordered, received: received,
+        toOrder: toOrder, toReceive: toReceive, label: label, kind: kind
+      });
+    });
+
+    container.innerHTML = '<div class="procurement-needs-groups">' + Array.from(groups.values()).map(function (group) {
+      const totalNeeds = group.items.length;
+      const waitingOrder = group.items.filter(function (x) { return x.toOrder > 0; }).length;
+      const waitingReceipt = group.items.filter(function (x) { return x.toReceive > 0; }).length;
+      const lines = group.items.map(function (entry) {
+        const item = entry.item;
+        return '<div class="procurement-order-line procurement-need-overview-line">' +
+          '<div class="procurement-line-title"><strong>' + escape(item.ItemName || 'ملزوم بدون نام') + '</strong>' +
+          (item.ItemCode ? '<small>' + escape(item.ItemCode) + '</small>' : '') + '</div>' +
+          '<div class="procurement-line-metrics">' +
+          '<span>نیاز ثبت‌شده: <b>' + number(entry.requested) + ' ' + escape(item.Unit || '') + '</b></span>' +
+          '<span>در انتظار سفارش: <b class="' + (entry.toOrder > 0 ? 'procurement-quantity-warn' : '') + '">' + number(entry.toOrder) + '</b></span>' +
+          '<span>در انتظار تحویل: <b class="' + (entry.toReceive > 0 ? 'procurement-quantity-pending' : '') + '">' + number(entry.toReceive) + '</b></span>' +
+          '<span>تحویل‌شده: <b class="procurement-quantity-done">' + number(entry.received) + '</b></span>' +
+          statusBadge(entry.label, entry.kind) + '</div></div>';
+      }).join('');
+      return '<section class="procurement-needs-project-card">' +
+        '<div class="procurement-needs-project-heading"><div><strong class="procurement-project-code">' + escape(group.label) + '</strong>' +
+        '<span class="procurement-needs-project-count">' + number(totalNeeds) + ' قلم ملزوم</span></div>' +
+        '<div class="procurement-needs-project-summary">' +
+        statusBadge('در انتظار سفارش: ' + number(waitingOrder), waitingOrder ? 'waiting' : 'complete') +
+        statusBadge('در انتظار تحویل: ' + number(waitingReceipt), waitingReceipt ? 'delivery' : 'complete') +
+        '</div></div><div class="procurement-needs-project-items">' + lines + '</div></section>';
+    }).join('') + '</div>';
   }
 
   function renderOrders() {
