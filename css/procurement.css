@@ -150,3 +150,27 @@
 .procurement-item-completion>span{display:inline}
 .procurement-item-completion.is-pending{color:var(--warning-color,#a16207);background:#fff8e8}
 @media(max-width:640px){.procurement-item-receipt-dates,.procurement-item-completion{align-items:flex-start;gap:5px;margin-top:7px}.procurement-item-receipt-dates>strong,.procurement-item-completion>strong{width:100%}}
+
+
+/* Compact dashboard-style cards for procurement overview */
+.procurement-summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+.procurement-summary-card{min-width:0;border:1px solid var(--border-color,#dce4eb);border-radius:14px;background:var(--surface-color,var(--color-surface,#fff));overflow:hidden;box-shadow:var(--shadow-sm,0 1px 3px rgba(15,23,42,.06));transition:border-color .18s ease,box-shadow .18s ease}
+.procurement-summary-card:hover{border-color:var(--color-primary,#7c8da5);box-shadow:var(--shadow-md,0 4px 12px rgba(15,23,42,.08))}
+.procurement-summary-card-head{display:flex;width:100%;min-width:0;align-items:center;justify-content:space-between;gap:12px;padding:16px;text-align:right;color:inherit;background:transparent;border:0;cursor:pointer}
+.procurement-summary-card-main{display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0}
+.procurement-summary-card-main .procurement-project-code{font-size:1rem;line-height:1.6;overflow-wrap:anywhere}
+.procurement-summary-card-meta{color:var(--text-muted,#64748b);font-size:.8rem;line-height:1.7;overflow-wrap:anywhere}
+.procurement-summary-card-status{display:flex;flex-direction:column;align-items:flex-end;gap:7px;flex-shrink:0}
+.procurement-card-hint{font-size:.73rem;color:var(--text-muted,#64748b)}
+.procurement-card-chevron{font-size:1.15rem;line-height:1;transition:transform .18s ease}
+.procurement-summary-card-head.is-expanded .procurement-card-chevron{transform:rotate(180deg)}
+.procurement-summary-card-stats{display:flex;flex-wrap:wrap;gap:7px 16px;padding:0 16px 14px;color:var(--text-muted,#64748b);font-size:.78rem;line-height:1.7}
+.procurement-summary-card-stats span{display:inline-flex;gap:5px;align-items:baseline}
+.procurement-summary-card-stats b{color:var(--text-color,var(--color-text,#263445));font-weight:700}
+.procurement-summary-card-details{border-top:1px solid var(--border-color,#e2e8f0);padding:8px 14px 12px}
+.procurement-summary-card-details[hidden]{display:none!important}
+.procurement-order-detail-meta{display:flex;flex-wrap:wrap;gap:8px 18px;padding:8px 2px 12px;font-size:.82rem;color:var(--text-muted,#64748b)}
+.procurement-order-detail-meta b{color:var(--text-color,var(--color-text,#263445))}
+.procurement-summary-card .procurement-needs-project-items{padding:0 2px}
+.procurement-summary-card .procurement-need-item:last-child,.procurement-summary-card .procurement-order-overview-line:last-child{border-bottom:0}
+@media(max-width:760px){.procurement-summary-grid{grid-template-columns:minmax(0,1fr);gap:11px}.procurement-summary-card-head{padding:14px;gap:8px}.procurement-summary-card-stats{padding:0 14px 12px;gap:6px 12px}}
