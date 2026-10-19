@@ -131,42 +131,60 @@
     return '<span class="procurement-status-badge is-' + kind + '">' + escape(label) + '</span>';
   }
 
+  function bindCardToggles(container) {
+    if (!container || container.dataset.cardToggleBound === '1') return;
+    container.dataset.cardToggleBound = '1';
+    container.addEventListener('click', function (event) {
+      const button = event.target.closest('[data-procurement-toggle]');
+      if (!button || !container.contains(button)) return;
+      const targetId = button.getAttribute('aria-controls');
+      const details = targetId ? document.getElementById(targetId) : null;
+      if (!details) return;
+      const opening = details.hidden;
+      details.hidden = !opening;
+      button.setAttribute('aria-expanded', opening ? 'true' : 'false');
+      const hint = button.querySelector('.procurement-card-hint');
+      if (hint) hint.textContent = opening ? 'بستن جزئیات' : 'مشاهده جزئیات';
+      button.classList.toggle('is-expanded', opening);
+    });
+  }
+
   function renderNeeds() {
     const container = $('procurement-needs-table');
     if (!container) return;
+    bindCardToggles(container);
     if (!state.needs.length) {
       container.innerHTML = '<div class="table-empty">نیازی ثبت نشده است.</div>';
       return;
     }
-
     const groups = new Map();
     state.needs.forEach(function (item) {
       const projectIdValue = item.ProjectID || '';
       const groupKey = projectIdValue ? String(projectIdValue) : '__unknown_project__';
-      if (!groups.has(groupKey)) {
-        groups.set(groupKey, {
-          label: projectIdValue ? projectCodeFor(projectIdValue) : 'پروژه نامشخص',
-          items: []
-        });
-      }
+      if (!groups.has(groupKey)) groups.set(groupKey, {
+        label: projectIdValue ? projectCodeFor(projectIdValue) : 'پروژه نامشخص',
+        items: []
+      });
       const requested = Math.max(0, Number(item.RequestedQuantity || 0));
       const ordered = Math.min(requested, Math.max(0, Number(item.OrderedQuantity || 0)));
       const received = Math.min(ordered, Math.max(0, Number(item.ReceivedQuantity || 0)));
       const toOrder = Math.max(0, requested - ordered);
       const toReceive = Math.max(0, ordered - received);
-      let label = 'تحویل کامل', kind = 'complete';
-      if (toOrder > 0 && toReceive > 0) { label = 'نیاز به سفارش و تحویل'; kind = 'partial'; }
+      let label = 'تأمین کامل', kind = 'complete';
+      if (toOrder > 0 && toReceive > 0) { label = 'نیاز به سفارش و دریافت'; kind = 'partial'; }
       else if (toOrder > 0) { label = 'در انتظار سفارش'; kind = 'waiting'; }
-      else if (toReceive > 0) { label = received > 0 ? 'تحویل ناقص' : 'در انتظار تحویل'; kind = received > 0 ? 'partial' : 'delivery'; }
-      groups.get(groupKey).items.push({
-        item: item, requested: requested, received: received,
-        toOrder: toOrder, toReceive: toReceive, label: label, kind: kind
-      });
+      else if (toReceive > 0) { label = received > 0 ? 'دریافت ناقص' : 'در انتظار دریافت'; kind = received > 0 ? 'partial' : 'delivery'; }
+      groups.get(groupKey).items.push({ item, requested, received, toOrder, toReceive, label, kind });
     });
-
-    const cards = Array.from(groups.values()).map(function (group) {
+    const cards = Array.from(groups.values()).map(function (group, index) {
       const waitingOrder = group.items.filter(function (x) { return x.toOrder > 0; }).length;
       const waitingReceipt = group.items.filter(function (x) { return x.toReceive > 0; }).length;
+      const completed = group.items.filter(function (x) { return x.toOrder === 0 && x.toReceive === 0; }).length;
+      let overallLabel = 'همه اقلام تأمین شده', overallKind = 'complete';
+      if (waitingOrder > 0 && waitingReceipt > 0) { overallLabel = 'نیاز به سفارش و دریافت'; overallKind = 'partial'; }
+      else if (waitingOrder > 0) { overallLabel = 'در انتظار سفارش'; overallKind = 'waiting'; }
+      else if (waitingReceipt > 0) { overallLabel = 'در انتظار دریافت'; overallKind = 'delivery'; }
+      const detailId = 'procurement-needs-detail-' + index;
       const lines = group.items.map(function (entry) {
         const item = entry.item;
         return '<div class="procurement-need-item">' +
@@ -175,34 +193,35 @@
           '<div class="procurement-need-item-values">' +
           '<div><span>نیاز ثبت‌شده</span><strong>' + number(entry.requested) + ' ' + escape(item.Unit || '') + '</strong></div>' +
           '<div><span>در انتظار سفارش</span><strong class="' + (entry.toOrder > 0 ? 'procurement-quantity-warn' : '') + '">' + number(entry.toOrder) + '</strong></div>' +
-          '<div><span>در انتظار تحویل</span><strong class="' + (entry.toReceive > 0 ? 'procurement-quantity-pending' : '') + '">' + number(entry.toReceive) + '</strong></div>' +
-          '<div><span>تحویل‌شده</span><strong class="procurement-quantity-done">' + number(entry.received) + '</strong></div>' +
+          '<div><span>در انتظار دریافت</span><strong class="' + (entry.toReceive > 0 ? 'procurement-quantity-pending' : '') + '">' + number(entry.toReceive) + '</strong></div>' +
+          '<div><span>دریافت‌شده</span><strong class="procurement-quantity-done">' + number(entry.received) + '</strong></div>' +
           '<div class="procurement-need-item-status">' + statusBadge(entry.label, entry.kind) + '</div>' +
           '</div></div>';
       }).join('');
-      return '<section class="procurement-needs-project-card">' +
-        '<div class="procurement-needs-project-heading">' +
-        '<strong class="procurement-project-code">' + escape(group.label) + '</strong>' +
-        '<div class="procurement-needs-project-summary">' +
-        statusBadge('اقلام: ' + number(group.items.length), 'complete') +
-        statusBadge('در انتظار سفارش: ' + number(waitingOrder), waitingOrder ? 'waiting' : 'complete') +
-        statusBadge('در انتظار تحویل: ' + number(waitingReceipt), waitingReceipt ? 'delivery' : 'complete') +
-        '</div></div><div class="procurement-needs-project-items">' + lines + '</div></section>';
+      return '<section class="procurement-summary-card">' +
+        '<button type="button" class="procurement-summary-card-head" data-procurement-toggle aria-expanded="false" aria-controls="' + detailId + '">' +
+        '<span class="procurement-summary-card-main"><strong class="procurement-project-code">' + escape(group.label) + '</strong>' +
+        '<span class="procurement-summary-card-meta">' + number(group.items.length) + ' قلم ملزوم</span></span>' +
+        '<span class="procurement-summary-card-status">' + statusBadge(overallLabel, overallKind) +
+        '<span class="procurement-card-hint">مشاهده جزئیات</span><span class="procurement-card-chevron" aria-hidden="true">⌄</span></span></button>' +
+        '<div class="procurement-summary-card-stats"><span>در انتظار سفارش <b>' + number(waitingOrder) + '</b></span>' +
+        '<span>در انتظار دریافت <b>' + number(waitingReceipt) + '</b></span><span>تأمین کامل <b>' + number(completed) + '</b></span></div>' +
+        '<div class="procurement-summary-card-details" id="' + detailId + '" hidden><div class="procurement-needs-project-items">' + lines + '</div></div></section>';
     });
-    container.innerHTML = '<div class="procurement-needs-groups">' + cards.join('') + '</div>';
+    container.innerHTML = '<div class="procurement-summary-grid">' + cards.join('') + '</div>';
   }
 
   function renderOrders() {
     const container = $('procurement-orders-table');
     if (!container) return;
+    bindCardToggles(container);
     if (!state.orders.length) {
       container.innerHTML = '<div class="table-empty">سفارشی ثبت نشده است.</div>';
       return;
     }
-    const rows = [];
     const needsById = {};
     state.needs.forEach(function (need) { if (need && need.ID) needsById[String(need.ID)] = need; });
-    state.orders.forEach(function (order) {
+    const cards = state.orders.map(function (order, index) {
       const orderDate = order.OrderDate || order.CreatedAt;
       const age = daysSince(orderDate);
       const items = Array.isArray(order.Items) ? order.Items : [];
@@ -235,41 +254,46 @@
         });
         const receiptDates = receiptRecords.length
           ? '<div class="procurement-item-receipt-dates"><strong>تاریخ‌های دریافت:</strong>' +
-            receiptRecords.map(function (receipt) {
-              return '<span>' + escape(formatDate(receipt.ReceivedAt)) + ' — ' +
-                number(receipt.QuantityReceived) + ' ' + escape(line.Unit || '') + '</span>';
-            }).join('') + '</div>'
+            receiptRecords.map(function (receipt) { return '<span>' + escape(formatDate(receipt.ReceivedAt)) + ' — ' + number(receipt.QuantityReceived) + ' ' + escape(line.Unit || '') + '</span>'; }).join('') + '</div>'
           : received >= ordered && ordered > 0
             ? '<div class="procurement-item-receipt-dates"><strong>تاریخ دریافت:</strong><span>مقدار تحویل کامل ثبت شده؛ تاریخچه دریافت از سرور در دسترس نیست</span></div>'
             : '<div class="procurement-item-receipt-dates"><strong>تاریخ دریافت:</strong><span>هنوز دریافتی ثبت نشده</span></div>';
         const completionDays = completedAt ? elapsedDays(orderDate, completedAt) : null;
         const completionText = completedAt
-          ? '<div class="procurement-item-completion"><strong>تاریخ تکمیل دریافت:</strong> ' + escape(formatDate(completedAt)) +
-            ' <span>مدت از سفارش تا تحویل کامل: <b>' + number(completionDays === null ? 0 : completionDays) + ' روز</b></span></div>'
+          ? '<div class="procurement-item-completion"><strong>تاریخ تکمیل دریافت:</strong> ' + escape(formatDate(completedAt)) + ' <span>مدت از سفارش تا تحویل کامل: <b>' + number(completionDays === null ? 0 : completionDays) + ' روز</b></span></div>'
           : received >= ordered && ordered > 0
             ? '<div class="procurement-item-completion"><strong>تحویل کامل است؛</strong> تاریخ تکمیل دریافت در دسترس نیست، بنابراین مدت دقیق قابل محاسبه نیست.</div>'
-            : '<div class="procurement-item-completion is-pending"><strong>مدت تا تحویل کامل:</strong> هنوز تکمیل نشده' +
-              (age === null ? '' : '؛ ' + number(age) + ' روز از تاریخ سفارش گذشته') + '</div>';
-        let status = remaining <= 0 ? statusBadge('تحویل کامل', 'complete') : (received > 0 ? statusBadge('تحویل ناقص', 'partial') : statusBadge('در انتظار تحویل', 'delivery'));
-        return '<div class="procurement-order-line procurement-order-overview-line"><div class="procurement-line-title"><strong>' + escape(line.ItemName) + '</strong>' +
+            : '<div class="procurement-item-completion is-pending"><strong>مدت تا تحویل کامل:</strong> هنوز تکمیل نشده' + (age === null ? '' : '؛ ' + number(age) + ' روز از تاریخ سفارش گذشته') + '</div>';
+        const status = remaining <= 0 ? statusBadge('تحویل کامل', 'complete') : (received > 0 ? statusBadge('تحویل ناقص', 'partial') : statusBadge('در انتظار دریافت', 'delivery'));
+        return '<div class="procurement-order-line procurement-order-overview-line"><div class="procurement-line-title"><strong>' + escape(line.ItemName || 'ملزوم بدون نام') + '</strong>' +
           (line.ItemCode ? '<small>' + escape(line.ItemCode) + '</small>' : '') + '</div>' +
           '<div class="procurement-line-metrics"><span>سفارش: <b>' + number(ordered) + ' ' + escape(line.Unit || '') + '</b></span>' +
-          '<span>تحویل: <b class="procurement-quantity-done">' + number(received) + '</b></span>' +
+          '<span>دریافت: <b class="procurement-quantity-done">' + number(received) + '</b></span>' +
           '<span>مانده: <b class="' + (remaining > 0 ? 'procurement-quantity-pending' : 'procurement-quantity-done') + '">' + number(remaining) + '</b></span>' + status + '</div>' +
           receiptDates + completionText +
-          (surplus > 0 ? '<div class="form-help procurement-surplus-line">مازاد خرید: ' + number(surplus) + ' ' + escape(line.Unit || '') +
-            (surplusCost !== null ? '؛ ارزش مازاد: ' + number(surplusCost) : '؛ قیمت واحد ثبت نشده') + '</div>' : '') +
+          (surplus > 0 ? '<div class="form-help procurement-surplus-line">مازاد خرید: ' + number(surplus) + ' ' + escape(line.Unit || '') + (surplusCost !== null ? '؛ ارزش مازاد: ' + number(surplusCost) : '؛ قیمت واحد ثبت نشده') + '</div>' : '') +
           '</div>';
       }).join('');
-      rows.push('<tr><td data-label="کد پروژه / نوع سفارش"><strong class="procurement-project-code">' + escape(projectLabelText) + '</strong></td>' +
-        '<td data-label="شماره سفارش"><strong>' + escape(order.OrderNumber) + '</strong><small class="procurement-subtext">' + escape(order.SupplierName || 'تأمین‌کننده ثبت نشده') + '</small></td>' +
-        '<td data-label="تاریخ سفارش">' + escape(formatDate(orderDate)) + '</td>' +
-        '<td data-label="مدت سپری‌شده">' + (age === null ? 'نامشخص' : '<strong class="' + (age >= 7 ? 'procurement-quantity-warn' : '') + '">' + number(age) + ' روز</strong>') + '</td>' +
-        '<td data-label="وضعیت اقلام سفارش">' + (itemDetails || '—') + '</td>' +
-        '<td data-label="وضعیت سفارش">' + escape(statusLabel(order.Status)) + '</td></tr>');
+      const itemCount = items.length;
+      const receivedCount = items.filter(function (line) { return Number(line.OrderedQuantity || 0) > 0 && Number(line.ReceivedQuantity || 0) >= Number(line.OrderedQuantity || 0); }).length;
+      const partialCount = items.filter(function (line) { return Number(line.ReceivedQuantity || 0) > 0 && Number(line.ReceivedQuantity || 0) < Number(line.OrderedQuantity || 0); }).length;
+      const pendingCount = Math.max(0, itemCount - receivedCount);
+      let overallLabel = statusLabel(order.Status), overallKind = 'waiting';
+      if (itemCount && receivedCount === itemCount) { overallLabel = 'تحویل کامل'; overallKind = 'complete'; }
+      else if (receivedCount || partialCount) { overallLabel = 'تحویل ناقص'; overallKind = 'partial'; }
+      else if (String(order.Status || '').toUpperCase() === 'CANCELLED') { overallLabel = 'لغوشده'; overallKind = 'waiting'; }
+      else if (!itemCount) { overallLabel = statusLabel(order.Status || 'OPEN'); overallKind = 'waiting'; }
+      const detailId = 'procurement-order-detail-' + index;
+      return '<section class="procurement-summary-card">' +
+        '<button type="button" class="procurement-summary-card-head" data-procurement-toggle aria-expanded="false" aria-controls="' + detailId + '">' +
+        '<span class="procurement-summary-card-main"><strong class="procurement-project-code">' + escape(projectLabelText) + '</strong>' +
+        '<span class="procurement-summary-card-meta">' + escape(order.OrderNumber || 'شماره سفارش ثبت نشده') + ' · ' + escape(order.SupplierName || 'تأمین‌کننده ثبت نشده') + '</span></span>' +
+        '<span class="procurement-summary-card-status">' + statusBadge(overallLabel, overallKind) + '<span class="procurement-card-hint">مشاهده جزئیات</span><span class="procurement-card-chevron" aria-hidden="true">⌄</span></span></button>' +
+        '<div class="procurement-summary-card-stats"><span>تاریخ سفارش <b>' + escape(formatDate(orderDate)) + '</b></span><span>مدت سپری‌شده <b>' + (age === null ? 'نامشخص' : number(age) + ' روز') + '</b></span><span>اقلام <b>' + number(itemCount) + '</b></span><span>در انتظار دریافت <b>' + number(pendingCount) + '</b></span></div>' +
+        '<div class="procurement-summary-card-details" id="' + detailId + '" hidden><div class="procurement-order-detail-meta"><span>تأمین‌کننده: <b>' + escape(order.SupplierName || 'ثبت نشده') + '</b></span><span>وضعیت ثبت‌شده سفارش: <b>' + escape(statusLabel(order.Status)) + '</b></span></div>' +
+        '<div class="procurement-needs-project-items">' + (itemDetails || '<div class="table-empty">اقلامی برای این سفارش ثبت نشده است.</div>') + '</div></div></section>';
     });
-    container.innerHTML = '<div class="procurement-table-scroll"><table class="data-table procurement-orders-overview"><thead><tr><th>کد پروژه / نوع سفارش</th><th>شماره سفارش</th><th>تاریخ سفارش</th><th>مدت سپری‌شده</th><th>وضعیت اقلام سفارش</th><th>وضعیت سفارش</th></tr></thead><tbody>' +
-      rows.join('') + '</tbody></table></div>';
+    container.innerHTML = '<div class="procurement-summary-grid">' + cards.join('') + '</div>';
   }
 
   function renderSummary(summary) {
