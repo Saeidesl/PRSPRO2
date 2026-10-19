@@ -88,7 +88,7 @@
     const project = state.projects.find(function (item) {
       return String(projectId(item)) === String(id);
     });
-    return project ? projectLabel(project) : String(id);
+    return project ? projectLabel(project) : 'کد پروژه نامشخص';
   }
 
   function daysSince(value) {
@@ -121,13 +121,13 @@
         else if (toOrder > 0 && toReceive > 0) { label = 'سفارش و تحویل ناقص'; kind = 'partial'; }
         else if (toOrder > 0) { label = 'در انتظار سفارش'; kind = 'waiting'; }
         else if (toReceive > 0) { label = received > 0 ? 'تحویل ناقص' : 'در انتظار تحویل'; kind = received > 0 ? 'partial' : 'delivery'; }
-        return '<tr><td><strong class="procurement-project-code">' + escape(projectCodeFor(item.ProjectID)) + '</strong></td>' +
-          '<td><strong>' + escape(item.ItemName) + '</strong><small class="procurement-subtext">' + escape(item.ItemCode || '') + '</small></td>' +
-          '<td>' + number(requested) + ' ' + escape(item.Unit || '') + '</td>' +
-          '<td>' + (toOrder > 0 ? '<strong class="procurement-quantity-warn">' + number(toOrder) + '</strong>' : number(0)) + '</td>' +
-          '<td>' + (toReceive > 0 ? '<strong class="procurement-quantity-pending">' + number(toReceive) + '</strong>' : number(0)) + '</td>' +
-          '<td><strong class="procurement-quantity-done">' + number(received) + '</strong></td>' +
-          '<td>' + statusBadge(label, kind) + '</td></tr>';
+        return '<tr><td data-label="کد پروژه"><strong class="procurement-project-code">' + escape(projectCodeFor(item.ProjectID)) + '</strong></td>' +
+          '<td data-label="ملزوم"><strong>' + escape(item.ItemName) + '</strong><small class="procurement-subtext">' + escape(item.ItemCode || '') + '</small></td>' +
+          '<td data-label="نیاز ثبت‌شده">' + number(requested) + ' ' + escape(item.Unit || '') + '</td>' +
+          '<td data-label="در انتظار سفارش">' + (toOrder > 0 ? '<strong class="procurement-quantity-warn">' + number(toOrder) + '</strong>' : number(0)) + '</td>' +
+          '<td data-label="در انتظار تحویل">' + (toReceive > 0 ? '<strong class="procurement-quantity-pending">' + number(toReceive) + '</strong>' : number(0)) + '</td>' +
+          '<td data-label="تحویل‌شده"><strong class="procurement-quantity-done">' + number(received) + '</strong></td>' +
+          '<td data-label="وضعیت">' + statusBadge(label, kind) + '</td></tr>';
       }).join('') + '</tbody></table></div>';
   }
 
@@ -139,12 +139,15 @@
       return;
     }
     const rows = [];
+    const needsById = {};
+    state.needs.forEach(function (need) { if (need && need.ID) needsById[String(need.ID)] = need; });
     state.orders.forEach(function (order) {
       const age = daysSince(order.OrderDate || order.CreatedAt);
       const items = Array.isArray(order.Items) ? order.Items : [];
       const projectLabels = [];
       items.forEach(function (line) {
-        const ids = Array.isArray(line.ProjectIDs) ? line.ProjectIDs : [line.ProjectID || order.ProjectID || ''];
+        const linkedNeed = needsById[String(line.MaterialNeedID || '')];
+        const ids = Array.isArray(line.ProjectIDs) && line.ProjectIDs.length ? line.ProjectIDs : [line.ProjectID || order.ProjectID || (linkedNeed && linkedNeed.ProjectID) || ''];
         ids.forEach(function (id) {
           const label = projectCodeFor(id);
           if (id && projectLabels.indexOf(label) === -1) projectLabels.push(label);
@@ -169,12 +172,12 @@
             (surplusCost !== null ? '؛ ارزش مازاد: ' + number(surplusCost) : '؛ قیمت واحد ثبت نشده') + '</div>' : '') +
           '</div>';
       }).join('');
-      rows.push('<tr><td><strong class="procurement-project-code">' + escape(projectLabelText) + '</strong></td>' +
-        '<td><strong>' + escape(order.OrderNumber) + '</strong><small class="procurement-subtext">' + escape(order.SupplierName || 'تأمین‌کننده ثبت نشده') + '</small></td>' +
-        '<td>' + escape(order.OrderDate || order.CreatedAt || '-') + '</td>' +
-        '<td>' + (age === null ? 'نامشخص' : '<strong class="' + (age >= 7 ? 'procurement-quantity-warn' : '') + '">' + number(age) + ' روز</strong>') + '</td>' +
-        '<td>' + (itemDetails || '—') + '</td>' +
-        '<td>' + escape(statusLabel(order.Status)) + '</td></tr>');
+      rows.push('<tr><td data-label="کد پروژه / نوع سفارش"><strong class="procurement-project-code">' + escape(projectLabelText) + '</strong></td>' +
+        '<td data-label="شماره سفارش"><strong>' + escape(order.OrderNumber) + '</strong><small class="procurement-subtext">' + escape(order.SupplierName || 'تأمین‌کننده ثبت نشده') + '</small></td>' +
+        '<td data-label="تاریخ سفارش">' + escape(order.OrderDate || order.CreatedAt || '-') + '</td>' +
+        '<td data-label="مدت سپری‌شده">' + (age === null ? 'نامشخص' : '<strong class="' + (age >= 7 ? 'procurement-quantity-warn' : '') + '">' + number(age) + ' روز</strong>') + '</td>' +
+        '<td data-label="وضعیت اقلام سفارش">' + (itemDetails || '—') + '</td>' +
+        '<td data-label="وضعیت سفارش">' + escape(statusLabel(order.Status)) + '</td></tr>');
     });
     container.innerHTML = '<div class="procurement-table-scroll"><table class="data-table procurement-orders-overview"><thead><tr><th>کد پروژه / نوع سفارش</th><th>شماره سفارش</th><th>تاریخ سفارش</th><th>مدت سپری‌شده</th><th>وضعیت اقلام سفارش</th><th>وضعیت سفارش</th></tr></thead><tbody>' +
       rows.join('') + '</tbody></table></div>';
