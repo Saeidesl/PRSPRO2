@@ -198,7 +198,7 @@
           '<div class="procurement-need-item-status">' + statusBadge(entry.label, entry.kind) + '</div>' +
           '</div></div>';
       }).join('');
-      return '<section class="procurement-summary-card">' +
+      return '<section class="procurement-summary-card is-' + overallKind + '">' +
         '<button type="button" class="procurement-summary-card-head" data-procurement-toggle aria-expanded="false" aria-controls="' + detailId + '">' +
         '<span class="procurement-summary-card-main"><strong class="procurement-project-code">' + escape(group.label) + '</strong>' +
         '<span class="procurement-summary-card-meta">' + number(group.items.length) + ' قلم ملزوم</span></span>' +
@@ -284,7 +284,7 @@
       else if (String(order.Status || '').toUpperCase() === 'CANCELLED') { overallLabel = 'لغوشده'; overallKind = 'waiting'; }
       else if (!itemCount) { overallLabel = statusLabel(order.Status || 'OPEN'); overallKind = 'waiting'; }
       const detailId = 'procurement-order-detail-' + index;
-      return '<section class="procurement-summary-card">' +
+      return '<section class="procurement-summary-card is-' + overallKind + '">' +
         '<button type="button" class="procurement-summary-card-head" data-procurement-toggle aria-expanded="false" aria-controls="' + detailId + '">' +
         '<span class="procurement-summary-card-main"><strong class="procurement-project-code">' + escape(projectLabelText) + '</strong>' +
         '<span class="procurement-summary-card-meta">' + escape(order.OrderNumber || 'شماره سفارش ثبت نشده') + ' · ' + escape(order.SupplierName || 'تأمین‌کننده ثبت نشده') + '</span></span>' +
