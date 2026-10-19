@@ -89,3 +89,24 @@
  .procurement-orders-overview td:before{content:attr(data-label);font-size:.78rem;color:var(--text-muted,#64748b);font-weight:600}
  .procurement-project-code{max-width:100%}
 }
+
+
+/* Material needs grouped into the same scan-friendly cards as order/receipt items */
+.procurement-needs-groups{display:flex;flex-direction:column;gap:16px}
+.procurement-needs-project-card{border:1px solid var(--border-color,#dce4eb);border-radius:13px;overflow:hidden;background:var(--surface-color,#fff)}
+.procurement-needs-project-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 16px;background:var(--surface-muted,#f3f6f9);border-bottom:1px solid var(--border-color,#dce4eb)}
+.procurement-needs-project-heading>div:first-child{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;min-width:0}
+.procurement-needs-project-count{font-size:.8rem;color:var(--text-muted,#64748b)}
+.procurement-needs-project-summary{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+.procurement-needs-project-items{padding:0 16px}
+.procurement-need-overview-line{padding:13px 0}
+.procurement-need-overview-line .procurement-line-metrics{gap:8px 16px}
+@media(max-width:640px){
+ .procurement-needs-groups{gap:12px}
+ .procurement-needs-project-heading{align-items:flex-start;flex-direction:column;padding:12px}
+ .procurement-needs-project-summary{justify-content:flex-start}
+ .procurement-needs-project-items{padding:0 12px}
+ .procurement-need-overview-line{padding:12px 0}
+ .procurement-need-overview-line .procurement-line-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .procurement-need-overview-line .procurement-status-badge{justify-self:start;grid-column:1/-1}
+}
