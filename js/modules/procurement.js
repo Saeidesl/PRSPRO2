@@ -116,7 +116,6 @@
       const groupKey = projectIdValue ? String(projectIdValue) : '__unknown_project__';
       if (!groups.has(groupKey)) {
         groups.set(groupKey, {
-          projectId: projectIdValue,
           label: projectIdValue ? projectCodeFor(projectIdValue) : 'پروژه نامشخص',
           items: []
         });
@@ -131,35 +130,37 @@
       else if (toOrder > 0) { label = 'در انتظار سفارش'; kind = 'waiting'; }
       else if (toReceive > 0) { label = received > 0 ? 'تحویل ناقص' : 'در انتظار تحویل'; kind = received > 0 ? 'partial' : 'delivery'; }
       groups.get(groupKey).items.push({
-        item: item, requested: requested, ordered: ordered, received: received,
+        item: item, requested: requested, received: received,
         toOrder: toOrder, toReceive: toReceive, label: label, kind: kind
       });
     });
 
-    container.innerHTML = '<div class="procurement-needs-groups">' + Array.from(groups.values()).map(function (group) {
-      const totalNeeds = group.items.length;
+    const cards = Array.from(groups.values()).map(function (group) {
       const waitingOrder = group.items.filter(function (x) { return x.toOrder > 0; }).length;
       const waitingReceipt = group.items.filter(function (x) { return x.toReceive > 0; }).length;
       const lines = group.items.map(function (entry) {
         const item = entry.item;
-        return '<div class="procurement-order-line procurement-need-overview-line">' +
-          '<div class="procurement-line-title"><strong>' + escape(item.ItemName || 'ملزوم بدون نام') + '</strong>' +
+        return '<div class="procurement-need-item">' +
+          '<div class="procurement-need-item-heading"><strong>' + escape(item.ItemName || 'ملزوم بدون نام') + '</strong>' +
           (item.ItemCode ? '<small>' + escape(item.ItemCode) + '</small>' : '') + '</div>' +
-          '<div class="procurement-line-metrics">' +
-          '<span>نیاز ثبت‌شده: <b>' + number(entry.requested) + ' ' + escape(item.Unit || '') + '</b></span>' +
-          '<span>در انتظار سفارش: <b class="' + (entry.toOrder > 0 ? 'procurement-quantity-warn' : '') + '">' + number(entry.toOrder) + '</b></span>' +
-          '<span>در انتظار تحویل: <b class="' + (entry.toReceive > 0 ? 'procurement-quantity-pending' : '') + '">' + number(entry.toReceive) + '</b></span>' +
-          '<span>تحویل‌شده: <b class="procurement-quantity-done">' + number(entry.received) + '</b></span>' +
-          statusBadge(entry.label, entry.kind) + '</div></div>';
+          '<div class="procurement-need-item-values">' +
+          '<div><span>نیاز ثبت‌شده</span><strong>' + number(entry.requested) + ' ' + escape(item.Unit || '') + '</strong></div>' +
+          '<div><span>در انتظار سفارش</span><strong class="' + (entry.toOrder > 0 ? 'procurement-quantity-warn' : '') + '">' + number(entry.toOrder) + '</strong></div>' +
+          '<div><span>در انتظار تحویل</span><strong class="' + (entry.toReceive > 0 ? 'procurement-quantity-pending' : '') + '">' + number(entry.toReceive) + '</strong></div>' +
+          '<div><span>تحویل‌شده</span><strong class="procurement-quantity-done">' + number(entry.received) + '</strong></div>' +
+          '<div class="procurement-need-item-status">' + statusBadge(entry.label, entry.kind) + '</div>' +
+          '</div></div>';
       }).join('');
       return '<section class="procurement-needs-project-card">' +
-        '<div class="procurement-needs-project-heading"><div><strong class="procurement-project-code">' + escape(group.label) + '</strong>' +
-        '<span class="procurement-needs-project-count">' + number(totalNeeds) + ' قلم ملزوم</span></div>' +
+        '<div class="procurement-needs-project-heading">' +
+        '<strong class="procurement-project-code">' + escape(group.label) + '</strong>' +
         '<div class="procurement-needs-project-summary">' +
+        statusBadge('اقلام: ' + number(group.items.length), 'complete') +
         statusBadge('در انتظار سفارش: ' + number(waitingOrder), waitingOrder ? 'waiting' : 'complete') +
         statusBadge('در انتظار تحویل: ' + number(waitingReceipt), waitingReceipt ? 'delivery' : 'complete') +
         '</div></div><div class="procurement-needs-project-items">' + lines + '</div></section>';
-    }).join('') + '</div>';
+    });
+    container.innerHTML = '<div class="procurement-needs-groups">' + cards.join('') + '</div>';
   }
 
   function renderOrders() {
