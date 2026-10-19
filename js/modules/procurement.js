@@ -4,6 +4,36 @@
   const $ = function (id) { return document.getElementById(id); };
   const state = { needs: [], orders: [], projects: [], loading: false, loadingProjectNeeds: false, saving: false };
 
+  function jalaliDateToIso(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    const ascii = raw.replace(/[۰-۹٠-٩]/g, function (digit) {
+      const persian = '۰۱۲۳۴۵۶۷۸۹';
+      const arabic = '٠١٢٣٤٥٦٧٨٩';
+      const index = persian.indexOf(digit);
+      return String(index >= 0 ? index : arabic.indexOf(digit));
+    }).replace(/[.-]/g, '/');
+    const match = ascii.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+    if (!match) throw new Error('تاریخ را به شکل شمسی سال/ماه/روز وارد کنید؛ مانند ۱۴۰۵/۰۷/۲۷.');
+    const jy = Number(match[1]), jm = Number(match[2]), jd = Number(match[3]);
+    if (jm < 1 || jm > 12 || jd < 1 || jd > 31) throw new Error('تاریخ شمسی معتبر نیست.');
+    const formatter = new Intl.DateTimeFormat('en-US-u-ca-persian-nu-latn', {
+      year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'UTC'
+    });
+    const start = Date.UTC(jy + 621, 2, 18);
+    for (let offset = 0; offset < 371; offset++) {
+      const date = new Date(start + offset * 86400000);
+      const parts = {};
+      formatter.formatToParts(date).forEach(function (part) {
+        if (part.type === 'year' || part.type === 'month' || part.type === 'day') parts[part.type] = Number(part.value);
+      });
+      if (parts.year === jy && parts.month === jm && parts.day === jd) {
+        return date.getUTCFullYear() + '-' + String(date.getUTCMonth() + 1).padStart(2, '0') + '-' + String(date.getUTCDate()).padStart(2, '0');
+      }
+    }
+    throw new Error('این تاریخ شمسی معتبر نیست.');
+  }
+
   function unwrap(value) {
     if (value && value.data !== undefined) return unwrap(value.data);
     return value;
@@ -493,8 +523,8 @@
       '<form id="procurement-order-form" data-order-type="' + orderType + '"><div class="form-grid">' +
       projectField +
       '<label class="form-group"><span>تأمین‌کننده</span><input name="SupplierName" maxlength="200"></label>' +
-      '<label class="form-group"><span>تاریخ سفارش (اختیاری)</span><input name="OrderDate" type="date"></label>' +
-      '<label class="form-group"><span>تاریخ تحویل مورد انتظار</span><input name="ExpectedDeliveryDate" type="date"></label>' +
+      '<label class="form-group"><span>تاریخ سفارش (اختیاری)</span><input name="OrderDate" type="text" inputmode="numeric" placeholder="۱۴۰۵/۰۷/۲۷"></label>' +
+      '<label class="form-group"><span>تاریخ تحویل مورد انتظار</span><input name="ExpectedDeliveryDate" type="text" inputmode="numeric" placeholder="۱۴۰۵/۰۷/۲۷"></label>' +
       '<label class="form-group"><span>توضیحات سفارش</span><input name="Notes" maxlength="1000"></label>' +
       '</div><section class="procurement-items-section"><div class="procurement-items-heading"><div><h4>اقلام سفارش</h4><p>اقلام را در ردیف‌های زیر بررسی یا ویرایش کنید.</p></div><button type="button" class="btn btn-secondary" id="procurement-add-order-item">+ افزودن ردیف</button></div>' +
       '<div class="procurement-order-list" id="procurement-order-items">' + orderItemRow(0) + '</div></section>' +
@@ -561,6 +591,14 @@
       if (state.saving) return;
       const form = event.currentTarget;
       const header = Object.fromEntries(new FormData(form).entries());
+      let orderDateIso = '', expectedDeliveryDateIso = '';
+      try {
+        orderDateIso = jalaliDateToIso(header.OrderDate);
+        expectedDeliveryDateIso = jalaliDateToIso(header.ExpectedDeliveryDate);
+      } catch (dateError) {
+        showMessage(dateError.message || 'تاریخ سفارش معتبر نیست.', true);
+        return;
+      }
       const selectedProject = isProjectOrder ? header.ProjectID : '';
       const items = Array.from(form.querySelectorAll('[data-order-item]')).map(function (row) {
         const get = function (name) {
@@ -581,8 +619,8 @@
       });
       const body = {
         SupplierName: header.SupplierName || '',
-        OrderDate: header.OrderDate || '',
-        ExpectedDeliveryDate: header.ExpectedDeliveryDate || '',
+        OrderDate: orderDateIso,
+        ExpectedDeliveryDate: expectedDeliveryDateIso,
         Notes: header.Notes || '',
         Items: items
       };
@@ -620,7 +658,7 @@
       '<form id="procurement-receipt-form">' +
       '<div class="form-grid procurement-receipt-header">' +
       '<label class="form-group"><span>پروژه / نوع سفارش *</span><select name="ProjectID" required>' + receiptProjectOptions() + '</select></label>' +
-      '<label class="form-group"><span>تاریخ دریافت</span><input name="ReceivedAt" type="date"></label>' +
+      '<label class="form-group"><span>تاریخ دریافت</span><input name="ReceivedAt" type="text" inputmode="numeric" placeholder="۱۴۰۵/۰۷/۲۷"></label>' +
       '<label class="form-group"><span>توضیحات دریافت</span><input name="Notes" maxlength="500" placeholder="اختیاری"></label>' +
       '</div>' +
       '<section class="procurement-items-section procurement-receipt-section">' +
@@ -774,7 +812,7 @@
             QuantityReceived: receipt.quantity,
             Notes: form.elements.Notes.value || ''
           };
-          if (receiveDate.value) body.ReceivedAt = new Date(receiveDate.value + 'T12:00:00').toISOString();
+          if (receiveDate.value) body.ReceivedAt = new Date(jalaliDateToIso(receiveDate.value) + 'T12:00:00Z').toISOString();
           return body;
         });
         await PMS.Api.post('/procurement/receipts/batch', { Receipts: receipts });
