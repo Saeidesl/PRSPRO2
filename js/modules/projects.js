@@ -1,6 +1,30 @@
 (function () {
   'use strict';
 
+  function projectJalaliDateToIso(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    const ascii = raw.replace(/[۰-۹٠-٩]/g, function (digit) {
+      const persian = '۰۱۲۳۴۵۶۷۸۹';
+      const arabic = '٠١٢٣٤٥٦٧٨٩';
+      const index = persian.indexOf(digit);
+      return String(index >= 0 ? index : arabic.indexOf(digit));
+    }).replace(/[.-]/g, '/');
+    const match = ascii.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+    if (!match) throw new Error('تاریخ را به شکل شمسی سال/ماه/روز وارد کنید؛ مانند ۱۴۰۵/۰۷/۲۷.');
+    const jy = Number(match[1]), jm = Number(match[2]), jd = Number(match[3]);
+    if (jm < 1 || jm > 12 || jd < 1 || jd > 31) throw new Error('تاریخ شمسی معتبر نیست.');
+    const formatter = new Intl.DateTimeFormat('en-US-u-ca-persian-nu-latn', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'UTC' });
+    const start = Date.UTC(jy + 621, 2, 18);
+    for (let offset = 0; offset < 371; offset++) {
+      const date = new Date(start + offset * 86400000);
+      const parts = {};
+      formatter.formatToParts(date).forEach(function (part) { if (part.type === 'year' || part.type === 'month' || part.type === 'day') parts[part.type] = Number(part.value); });
+      if (parts.year === jy && parts.month === jm && parts.day === jd) return date.getUTCFullYear() + '-' + String(date.getUTCMonth() + 1).padStart(2, '0') + '-' + String(date.getUTCDate()).padStart(2, '0');
+    }
+    throw new Error('این تاریخ شمسی معتبر نیست.');
+  }
+
   const CACHE_KEY = window.PMS.Cache.keys.PROJECTS;
 
   const Projects = {
@@ -143,7 +167,7 @@
           '<label class="form-group"><span>نام ملزوم *</span><input name="ItemName" required maxlength="200" style="width:100%;box-sizing:border-box"></label>' +
           '<label class="form-group"><span>واحد اندازه‌گیری *</span><input name="Unit" required maxlength="100" style="width:100%;box-sizing:border-box"></label>' +
           '<label class="form-group"><span>مقدار موردنیاز *</span><input name="RequestedQuantity" type="number" min="0.001" step="any" required style="width:100%;box-sizing:border-box"></label>' +
-          '<label class="form-group"><span>تاریخ موردنیاز</span><input name="NeededBy" type="date" style="width:100%;box-sizing:border-box"></label>' +
+          '<label class="form-group"><span>تاریخ موردنیاز</span><input name="NeededBy" type="text" inputmode="numeric" placeholder="۱۴۰۵/۰۷/۲۷" style="width:100%;box-sizing:border-box"></label>' +
           '<label class="form-group"><span>توضیحات</span><input name="Notes" maxlength="500" style="width:100%;box-sizing:border-box"></label></div>';
         rows.appendChild(row);
       };
@@ -185,6 +209,9 @@
         submit.textContent = 'در حال ثبت...';
         let saved = 0;
         try {
+          dataRows.forEach((entry) => {
+            entry.payload.NeededBy = projectJalaliDateToIso(entry.payload.NeededBy);
+          });
           for (let i = 0; i < dataRows.length; i++) {
             await window.PMS.Api.post('/procurement/needs', dataRows[i].payload);
             dataRows[i].row.remove();
