@@ -396,6 +396,13 @@
     })).join('');
   }
 
+  function receiptProjectOptions() {
+    return [option('', 'انتخاب پروژه یا سفارش عمومی', true), option('__GENERAL__', 'سفارش عمومی', false)]
+      .concat(state.projects.map(function (project) {
+        return option(projectId(project), projectLabel(project), false);
+      })).join('');
+  }
+
   function orderItemRow(index, need) {
     need = need || {};
     const remaining = Math.max(0, Number(need.RequestedQuantity || 0) - Number(need.OrderedQuantity || 0));
@@ -450,9 +457,10 @@
 
   function renderOrderNeedRows(itemsRoot, needs) {
     itemsRoot.innerHTML = '';
-    // Load every saved need for the selected project, including fully ordered
-    // needs, so the user can review the project's original requirements.
-    const projectNeeds = Array.isArray(needs) ? needs : [];
+    // Only show needs that still have an un-ordered quantity. The original need remains unchanged.
+    const projectNeeds = (Array.isArray(needs) ? needs : []).filter(function (need) {
+      return Math.max(0, Number(need.RequestedQuantity || 0) - Number(need.OrderedQuantity || 0)) > 0;
+    });
     if (!projectNeeds.length) {
       itemsRoot.innerHTML = orderItemRow(0);
       return;
@@ -611,12 +619,12 @@
     const root = modal('ثبت دریافت واقعی انبار',
       '<form id="procurement-receipt-form">' +
       '<div class="form-grid procurement-receipt-header">' +
-      '<label class="form-group"><span>پروژه *</span><select name="ProjectID" required>' + projectOptions() + '</select></label>' +
+      '<label class="form-group"><span>پروژه / نوع سفارش *</span><select name="ProjectID" required>' + receiptProjectOptions() + '</select></label>' +
       '<label class="form-group"><span>تاریخ دریافت</span><input name="ReceivedAt" type="date"></label>' +
       '<label class="form-group"><span>توضیحات دریافت</span><input name="Notes" maxlength="500" placeholder="اختیاری"></label>' +
       '</div>' +
       '<section class="procurement-items-section procurement-receipt-section">' +
-      '<div class="procurement-items-heading"><div><h4>اقلام سفارش پروژه</h4><p>اقلام قابل دریافت را انتخاب و مقدار تحویل‌شده هرکدام را وارد کنید.</p></div></div>' +
+      '<div class="procurement-items-heading"><div><h4>اقلام قابل دریافت</h4><p>پروژه را انتخاب کنید یا برای سفارش عمومی «سفارش عمومی» را برگزینید.</p></div></div>' +
       '<div id="procurement-receipt-items" class="procurement-receipt-items"><div class="table-empty">ابتدا پروژه را انتخاب کنید.</div></div>' +
       '</section>' +
       '<div class="procurement-receipt-summary" id="procurement-receipt-summary" hidden></div>' +
@@ -638,17 +646,31 @@
       state.orders.forEach(function (order) {
         (Array.isArray(order.Items) ? order.Items : []).forEach(function (item) {
           const need = needsById[String(item.MaterialNeedID || '')];
-          const linkedProjectId = item.ProjectID || order.ProjectID || (need && need.ProjectID) || '';
-          if (String(linkedProjectId) !== String(projectId)) return;
-          const ordered = Math.max(0, Number(item.OrderedQuantity || 0));
-          const received = Math.max(0, Number(item.ReceivedQuantity || 0));
+          const projectIds = Array.isArray(item.ProjectIDs) ? item.ProjectIDs.map(String) : [];
+          const legacyProjectId = item.ProjectID || order.ProjectID || (need && need.ProjectID) || '';
+          const general = projectIds.length === 0 && !legacyProjectId;
+          if (projectId === '__GENERAL__' ? !general : !(projectIds.includes(String(projectId)) || String(legacyProjectId) === String(projectId))) return;
+
+          const allocations = Array.isArray(item.Allocations) ? item.Allocations : [];
+          const hasProjectAllocations = allocations.length > 0;
+          const allocated = hasProjectAllocations
+            ? allocations.filter(function (allocation) { return String(allocation.ProjectID || '') === String(projectId); })
+                .reduce(function (sum, allocation) { return sum + Math.max(0, Number(allocation.AllocatedQuantity) || 0); }, 0)
+            : Math.max(0, Number(item.OrderedQuantity || 0));
+          const receiptRecords = Array.isArray(item.Receipts) ? item.Receipts : [];
+          const receivedForSelection = hasProjectAllocations
+            ? receiptRecords.filter(function (receipt) { return String(receipt.ProjectID || '') === String(projectId); })
+                .reduce(function (sum, receipt) { return sum + Math.max(0, Number(receipt.QuantityReceived) || 0); }, 0)
+            : Math.max(0, Number(item.ReceivedQuantity || 0));
+          const ordered = projectId === '__GENERAL__' ? Math.max(0, Number(item.OrderedQuantity || 0)) : allocated;
+          const received = projectId === '__GENERAL__' ? Math.max(0, Number(item.ReceivedQuantity || 0)) : receivedForSelection;
           entries.push({
             order: order,
             item: item,
             ordered: ordered,
             received: received,
-            remaining: Math.max(0, Number(item.RemainingQuantity !== undefined ? item.RemainingQuantity : ordered - received)),
-            projectId: String(linkedProjectId)
+            remaining: Math.max(0, ordered - received),
+            projectId: projectId === '__GENERAL__' ? '' : String(projectId)
           });
         });
       });
@@ -658,7 +680,7 @@
     function renderReceiptItems() {
       const projectId = projectSelect.value;
       if (!projectId) {
-        itemsContainer.innerHTML = '<div class="table-empty">ابتدا پروژه را انتخاب کنید.</div>';
+        itemsContainer.innerHTML = '<div class="table-empty">ابتدا پروژه یا سفارش عمومی را انتخاب کنید.</div>';
         summary.hidden = true;
         return;
       }
@@ -744,30 +766,23 @@
       const submit = form.querySelector('[type="submit"]');
       submit.disabled = true;
       submit.textContent = 'در حال ثبت دریافت‌ها...';
-      let saved = 0;
       try {
-        for (const receipt of selected) {
+        const receipts = selected.map(function (receipt) {
           const body = {
             PurchaseOrderItemID: receipt.itemId,
-            ProjectID: projectSelect.value,
+            ProjectID: projectSelect.value === '__GENERAL__' ? '' : projectSelect.value,
             QuantityReceived: receipt.quantity,
             Notes: form.elements.Notes.value || ''
           };
           if (receiveDate.value) body.ReceivedAt = new Date(receiveDate.value + 'T12:00:00').toISOString();
-          await PMS.Api.post('/procurement/receipts', body);
-          saved++;
-        }
+          return body;
+        });
+        await PMS.Api.post('/procurement/receipts/batch', { Receipts: receipts });
         closeModal();
         await load();
-        showMessage('دریافت ' + number(saved) + ' قلم با موفقیت ثبت شد.', false);
+        showMessage('دریافت ' + number(selected.length) + ' قلم با موفقیت ثبت شد.', false);
       } catch (err) {
-        if (saved > 0) {
-          closeModal();
-          await load();
-          showMessage('دریافت ' + number(saved) + ' قلم ثبت شد؛ ثبت قلم بعدی ناموفق بود: ' + (err.message || 'خطای نامشخص'), true);
-        } else {
-          showMessage(err.message || 'ثبت دریافت ناموفق بود.', true);
-        }
+        showMessage(err.message || 'ثبت دریافت ناموفق بود؛ هیچ قلمی نباید ثبت شده باشد. وضعیت سفارش‌ها را دوباره بررسی کنید.', true);
       } finally {
         state.saving = false;
         if (submit.isConnected) {
