@@ -766,9 +766,8 @@
       const submit = form.querySelector('[type="submit"]');
       submit.disabled = true;
       submit.textContent = 'در حال ثبت دریافت‌ها...';
-      let saved = 0;
       try {
-        for (const receipt of selected) {
+        const receipts = selected.map(function (receipt) {
           const body = {
             PurchaseOrderItemID: receipt.itemId,
             ProjectID: projectSelect.value === '__GENERAL__' ? '' : projectSelect.value,
@@ -776,20 +775,14 @@
             Notes: form.elements.Notes.value || ''
           };
           if (receiveDate.value) body.ReceivedAt = new Date(receiveDate.value + 'T12:00:00').toISOString();
-          await PMS.Api.post('/procurement/receipts', body);
-          saved++;
-        }
+          return body;
+        });
+        await PMS.Api.post('/procurement/receipts/batch', { Receipts: receipts });
         closeModal();
         await load();
-        showMessage('دریافت ' + number(saved) + ' قلم با موفقیت ثبت شد.', false);
+        showMessage('دریافت ' + number(selected.length) + ' قلم با موفقیت ثبت شد.', false);
       } catch (err) {
-        if (saved > 0) {
-          closeModal();
-          await load();
-          showMessage('دریافت ' + number(saved) + ' قلم ثبت شد؛ ثبت قلم بعدی ناموفق بود: ' + (err.message || 'خطای نامشخص'), true);
-        } else {
-          showMessage(err.message || 'ثبت دریافت ناموفق بود.', true);
-        }
+        showMessage(err.message || 'ثبت دریافت ناموفق بود؛ هیچ قلمی نباید ثبت شده باشد. وضعیت سفارش‌ها را دوباره بررسی کنید.', true);
       } finally {
         state.saving = false;
         if (submit.isConnected) {
