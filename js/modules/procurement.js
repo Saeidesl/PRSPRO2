@@ -239,13 +239,17 @@
               return '<span>' + escape(formatDate(receipt.ReceivedAt)) + ' — ' +
                 number(receipt.QuantityReceived) + ' ' + escape(line.Unit || '') + '</span>';
             }).join('') + '</div>'
-          : '<div class="procurement-item-receipt-dates"><strong>تاریخ دریافت:</strong><span>هنوز دریافتی ثبت نشده</span></div>';
+          : received >= ordered && ordered > 0
+            ? '<div class="procurement-item-receipt-dates"><strong>تاریخ دریافت:</strong><span>مقدار تحویل کامل ثبت شده؛ تاریخچه دریافت از سرور در دسترس نیست</span></div>'
+            : '<div class="procurement-item-receipt-dates"><strong>تاریخ دریافت:</strong><span>هنوز دریافتی ثبت نشده</span></div>';
         const completionDays = completedAt ? elapsedDays(orderDate, completedAt) : null;
         const completionText = completedAt
           ? '<div class="procurement-item-completion"><strong>تاریخ تکمیل دریافت:</strong> ' + escape(formatDate(completedAt)) +
             ' <span>مدت از سفارش تا تحویل کامل: <b>' + number(completionDays === null ? 0 : completionDays) + ' روز</b></span></div>'
-          : '<div class="procurement-item-completion is-pending"><strong>مدت تا تحویل کامل:</strong> هنوز تکمیل نشده' +
-            (age === null ? '' : '؛ ' + number(age) + ' روز از تاریخ سفارش گذشته') + '</div>';
+          : received >= ordered && ordered > 0
+            ? '<div class="procurement-item-completion"><strong>تحویل کامل است؛</strong> تاریخ تکمیل دریافت در دسترس نیست، بنابراین مدت دقیق قابل محاسبه نیست.</div>'
+            : '<div class="procurement-item-completion is-pending"><strong>مدت تا تحویل کامل:</strong> هنوز تکمیل نشده' +
+              (age === null ? '' : '؛ ' + number(age) + ' روز از تاریخ سفارش گذشته') + '</div>';
         let status = remaining <= 0 ? statusBadge('تحویل کامل', 'complete') : (received > 0 ? statusBadge('تحویل ناقص', 'partial') : statusBadge('در انتظار تحویل', 'delivery'));
         return '<div class="procurement-order-line procurement-order-overview-line"><div class="procurement-line-title"><strong>' + escape(line.ItemName) + '</strong>' +
           (line.ItemCode ? '<small>' + escape(line.ItemCode) + '</small>' : '') + '</div>' +
