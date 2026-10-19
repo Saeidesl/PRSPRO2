@@ -83,6 +83,25 @@
     if (el) el.textContent = value;
   }
 
+  function projectCodeFor(id) {
+    if (!id) return 'سفارش عمومی';
+    const project = state.projects.find(function (item) {
+      return String(projectId(item)) === String(id);
+    });
+    return project ? projectLabel(project) : String(id);
+  }
+
+  function daysSince(value) {
+    if (!value) return null;
+    const parsed = new Date(value);
+    if (!Number.isFinite(parsed.getTime())) return null;
+    return Math.max(0, Math.floor((new Date().setHours(0, 0, 0, 0) - new Date(parsed).setHours(0, 0, 0, 0)) / 86400000));
+  }
+
+  function statusBadge(label, kind) {
+    return '<span class="procurement-status-badge is-' + kind + '">' + escape(label) + '</span>';
+  }
+
   function renderNeeds() {
     const container = $('procurement-needs-table');
     if (!container) return;
@@ -90,15 +109,26 @@
       container.innerHTML = '<div class="table-empty">نیازی ثبت نشده است.</div>';
       return;
     }
-    container.innerHTML = '<table class="data-table"><thead><tr><th>ملزوم</th><th>پروژه</th><th>مقدار موردنیاز</th><th>سفارش‌شده</th><th>دریافت‌شده</th><th>باقی‌مانده سفارش</th><th>وضعیت</th></tr></thead><tbody>' +
+    container.innerHTML = '<div class="procurement-table-scroll"><table class="data-table procurement-overview-table"><thead><tr><th>کد پروژه</th><th>ملزوم</th><th>نیاز ثبت‌شده</th><th>در انتظار سفارش</th><th>در انتظار تحویل</th><th>تحویل‌شده</th><th>وضعیت</th></tr></thead><tbody>' +
       state.needs.map(function (item) {
-        return '<tr><td>' + escape(item.ItemName) + '</td><td>' +
-          escape(item.ProjectCode || item.ProjectID || 'موجودی عمومی') + '</td><td>' +
-          number(item.RequestedQuantity) + ' ' + escape(item.Unit) + '</td><td>' +
-          number(item.OrderedQuantity) + '</td><td>' + number(item.ReceivedQuantity) +
-          '</td><td>' + number(Math.max(0, Number(item.RequestedQuantity || 0) - Number(item.OrderedQuantity || 0))) +
-          '</td><td>' + escape(statusLabel(item.CalculatedStatus || item.ProcurementStatus || item.Status)) + '</td></tr>';
-      }).join('') + '</tbody></table>';
+        const requested = Math.max(0, Number(item.RequestedQuantity || 0));
+        const ordered = Math.min(requested, Math.max(0, Number(item.OrderedQuantity || 0)));
+        const received = Math.min(ordered, Math.max(0, Number(item.ReceivedQuantity || 0)));
+        const toOrder = Math.max(0, requested - ordered);
+        const toReceive = Math.max(0, ordered - received);
+        let label = 'تحویل کامل', kind = 'complete';
+        if (toOrder > 0 && ordered === 0) { label = 'در انتظار سفارش'; kind = 'waiting'; }
+        else if (toOrder > 0 && toReceive > 0) { label = 'سفارش و تحویل ناقص'; kind = 'partial'; }
+        else if (toOrder > 0) { label = 'در انتظار سفارش'; kind = 'waiting'; }
+        else if (toReceive > 0) { label = received > 0 ? 'تحویل ناقص' : 'در انتظار تحویل'; kind = received > 0 ? 'partial' : 'delivery'; }
+        return '<tr><td><strong class="procurement-project-code">' + escape(projectCodeFor(item.ProjectID)) + '</strong></td>' +
+          '<td><strong>' + escape(item.ItemName) + '</strong><small class="procurement-subtext">' + escape(item.ItemCode || '') + '</small></td>' +
+          '<td>' + number(requested) + ' ' + escape(item.Unit || '') + '</td>' +
+          '<td>' + (toOrder > 0 ? '<strong class="procurement-quantity-warn">' + number(toOrder) + '</strong>' : number(0)) + '</td>' +
+          '<td>' + (toReceive > 0 ? '<strong class="procurement-quantity-pending">' + number(toReceive) + '</strong>' : number(0)) + '</td>' +
+          '<td><strong class="procurement-quantity-done">' + number(received) + '</strong></td>' +
+          '<td>' + statusBadge(label, kind) + '</td></tr>';
+      }).join('') + '</tbody></table></div>';
   }
 
   function renderOrders() {
@@ -108,25 +138,46 @@
       container.innerHTML = '<div class="table-empty">سفارشی ثبت نشده است.</div>';
       return;
     }
-    container.innerHTML = '<table class="data-table"><thead><tr><th>شماره سفارش</th><th>تأمین‌کننده</th><th>تاریخ سفارش</th><th>تاریخ تحویل مورد انتظار</th><th>اقلام و مازاد خرید</th><th>وضعیت دریافت</th><th>توضیحات</th></tr></thead><tbody>' +
-      state.orders.map(function (item) {
-        const itemDetails = (Array.isArray(item.Items) ? item.Items : []).map(function (line) {
-          const surplus = Math.max(0, Number(line.SurplusQuantity) || 0);
-          const priceKnown = line.UnitPrice !== '' && line.UnitPrice !== undefined && line.UnitPrice !== null && isFinite(Number(line.UnitPrice));
-          const surplusCost = line.SurplusCost !== '' && line.SurplusCost !== undefined && line.SurplusCost !== null
-            ? Number(line.SurplusCost) : (priceKnown ? surplus * Number(line.UnitPrice) : null);
-          return '<div class="procurement-order-line"><strong>' + escape(line.ItemName) + '</strong>: ' +
-            number(line.OrderedQuantity) + ' ' + escape(line.Unit || '') +
-            (surplus > 0
-              ? '<div class="form-help">مازاد خرید: ' + number(surplus) + ' ' + escape(line.Unit || '') +
-                (surplusCost !== null ? '؛ ارزش مازاد: ' + number(surplusCost) : '؛ قیمت واحد ثبت نشده') + '</div>'
-              : '') + '</div>';
-        }).join('');
-        return '<tr><td>' + escape(item.OrderNumber) + '</td><td>' + escape(item.SupplierName) +
-          '</td><td>' + escape(item.OrderDate) + '</td><td>' + escape(item.ExpectedDeliveryDate) +
-          '</td><td>' + (itemDetails || '—') + '</td><td>' + escape(statusLabel(item.Status)) +
-          '</td><td>' + escape(item.Notes) + '</td></tr>';
-      }).join('') + '</tbody></table>';
+    const rows = [];
+    state.orders.forEach(function (order) {
+      const age = daysSince(order.OrderDate || order.CreatedAt);
+      const items = Array.isArray(order.Items) ? order.Items : [];
+      const projectLabels = [];
+      items.forEach(function (line) {
+        const ids = Array.isArray(line.ProjectIDs) ? line.ProjectIDs : [line.ProjectID || order.ProjectID || ''];
+        ids.forEach(function (id) {
+          const label = projectCodeFor(id);
+          if (id && projectLabels.indexOf(label) === -1) projectLabels.push(label);
+        });
+      });
+      const projectLabelText = projectLabels.length ? projectLabels.join('، ') : 'سفارش عمومی';
+      const itemDetails = items.map(function (line) {
+        const ordered = Math.max(0, Number(line.OrderedQuantity || 0));
+        const received = Math.min(ordered, Math.max(0, Number(line.ReceivedQuantity || 0)));
+        const remaining = Math.max(0, ordered - received);
+        const surplus = Math.max(0, Number(line.SurplusQuantity) || 0);
+        const priceKnown = line.UnitPrice !== '' && line.UnitPrice !== undefined && line.UnitPrice !== null && isFinite(Number(line.UnitPrice));
+        const surplusCost = line.SurplusCost !== '' && line.SurplusCost !== undefined && line.SurplusCost !== null
+          ? Number(line.SurplusCost) : (priceKnown ? surplus * Number(line.UnitPrice) : null);
+        let status = remaining <= 0 ? statusBadge('تحویل کامل', 'complete') : (received > 0 ? statusBadge('تحویل ناقص', 'partial') : statusBadge('در انتظار تحویل', 'delivery'));
+        return '<div class="procurement-order-line procurement-order-overview-line"><div class="procurement-line-title"><strong>' + escape(line.ItemName) + '</strong>' +
+          (line.ItemCode ? '<small>' + escape(line.ItemCode) + '</small>' : '') + '</div>' +
+          '<div class="procurement-line-metrics"><span>سفارش: <b>' + number(ordered) + ' ' + escape(line.Unit || '') + '</b></span>' +
+          '<span>تحویل: <b class="procurement-quantity-done">' + number(received) + '</b></span>' +
+          '<span>مانده: <b class="' + (remaining > 0 ? 'procurement-quantity-pending' : 'procurement-quantity-done') + '">' + number(remaining) + '</b></span>' + status + '</div>' +
+          (surplus > 0 ? '<div class="form-help procurement-surplus-line">مازاد خرید: ' + number(surplus) + ' ' + escape(line.Unit || '') +
+            (surplusCost !== null ? '؛ ارزش مازاد: ' + number(surplusCost) : '؛ قیمت واحد ثبت نشده') + '</div>' : '') +
+          '</div>';
+      }).join('');
+      rows.push('<tr><td><strong class="procurement-project-code">' + escape(projectLabelText) + '</strong></td>' +
+        '<td><strong>' + escape(order.OrderNumber) + '</strong><small class="procurement-subtext">' + escape(order.SupplierName || 'تأمین‌کننده ثبت نشده') + '</small></td>' +
+        '<td>' + escape(order.OrderDate || order.CreatedAt || '-') + '</td>' +
+        '<td>' + (age === null ? 'نامشخص' : '<strong class="' + (age >= 7 ? 'procurement-quantity-warn' : '') + '">' + number(age) + ' روز</strong>') + '</td>' +
+        '<td>' + (itemDetails || '—') + '</td>' +
+        '<td>' + escape(statusLabel(order.Status)) + '</td></tr>');
+    });
+    container.innerHTML = '<div class="procurement-table-scroll"><table class="data-table procurement-orders-overview"><thead><tr><th>کد پروژه / نوع سفارش</th><th>شماره سفارش</th><th>تاریخ سفارش</th><th>مدت سپری‌شده</th><th>وضعیت اقلام سفارش</th><th>وضعیت سفارش</th></tr></thead><tbody>' +
+      rows.join('') + '</tbody></table></div>';
   }
 
   function renderSummary(summary) {
@@ -155,7 +206,8 @@
       const results = await Promise.all([
         PMS.Api.get('/procurement/dashboard'),
         PMS.Api.get('/procurement/needs'),
-        PMS.Api.get('/procurement/orders')
+        PMS.Api.get('/procurement/orders'),
+        loadProjectsForOrder()
       ]);
       const summaryData = unwrap(results[0]) || {};
       state.needs = list(results[1], ['needs', 'items', 'Needs']);
