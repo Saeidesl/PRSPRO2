@@ -138,3 +138,15 @@
  .procurement-need-item-values>div{min-width:0}
  .procurement-need-item-values>.procurement-need-item-status{grid-column:1/-1;align-items:flex-start}
 }
+
+
+/* Receipt timeline and completion duration for each ordered item */
+.procurement-item-receipt-dates,
+.procurement-item-completion{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;margin-top:8px;font-size:.79rem;line-height:1.8}
+.procurement-item-receipt-dates>strong,
+.procurement-item-completion>strong{color:var(--text-muted,#64748b);font-weight:700}
+.procurement-item-receipt-dates>span{display:inline-flex;padding:2px 7px;border-radius:6px;background:var(--surface-muted,#f3f6f9);overflow-wrap:anywhere}
+.procurement-item-completion{padding:7px 9px;border-radius:7px;background:var(--surface-muted,#f3f6f9)}
+.procurement-item-completion>span{display:inline}
+.procurement-item-completion.is-pending{color:var(--warning-color,#a16207);background:#fff8e8}
+@media(max-width:640px){.procurement-item-receipt-dates,.procurement-item-completion{align-items:flex-start;gap:5px;margin-top:7px}.procurement-item-receipt-dates>strong,.procurement-item-completion>strong{width:100%}}
