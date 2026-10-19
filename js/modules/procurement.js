@@ -91,11 +91,40 @@
     return project ? projectLabel(project) : 'کد پروژه نامشخص';
   }
 
-  function daysSince(value) {
+  function parseDate(value) {
     if (!value) return null;
-    const parsed = new Date(value);
-    if (!Number.isFinite(parsed.getTime())) return null;
-    return Math.max(0, Math.floor((new Date().setHours(0, 0, 0, 0) - new Date(parsed).setHours(0, 0, 0, 0)) / 86400000));
+    if (value instanceof Date) return Number.isFinite(value.getTime()) ? value : null;
+    const textValue = String(value).trim();
+    const dateOnly = textValue.match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);
+    const parsed = dateOnly
+      ? new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]))
+      : new Date(textValue);
+    return Number.isFinite(parsed.getTime()) ? parsed : null;
+  }
+
+  function formatDate(value) {
+    const parsed = parseDate(value);
+    if (!parsed) return 'نامشخص';
+    try {
+      return new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
+        year: 'numeric', month: '2-digit', day: '2-digit'
+      }).format(parsed);
+    } catch (error) {
+      return new Intl.DateTimeFormat('fa-IR').format(parsed);
+    }
+  }
+
+  function elapsedDays(startValue, endValue) {
+    const start = parseDate(startValue);
+    const end = parseDate(endValue);
+    if (!start || !end) return null;
+    const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+    const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime();
+    return Math.max(0, Math.floor((endDay - startDay) / 86400000));
+  }
+
+  function daysSince(value) {
+    return elapsedDays(value, new Date());
   }
 
   function statusBadge(label, kind) {
@@ -174,7 +203,8 @@
     const needsById = {};
     state.needs.forEach(function (need) { if (need && need.ID) needsById[String(need.ID)] = need; });
     state.orders.forEach(function (order) {
-      const age = daysSince(order.OrderDate || order.CreatedAt);
+      const orderDate = order.OrderDate || order.CreatedAt;
+      const age = daysSince(orderDate);
       const items = Array.isArray(order.Items) ? order.Items : [];
       const projectLabels = [];
       items.forEach(function (line) {
@@ -194,19 +224,42 @@
         const priceKnown = line.UnitPrice !== '' && line.UnitPrice !== undefined && line.UnitPrice !== null && isFinite(Number(line.UnitPrice));
         const surplusCost = line.SurplusCost !== '' && line.SurplusCost !== undefined && line.SurplusCost !== null
           ? Number(line.SurplusCost) : (priceKnown ? surplus * Number(line.UnitPrice) : null);
+        const receiptRecords = Array.isArray(line.Receipts) ? line.Receipts.slice().sort(function (a, b) {
+          return (parseDate(a.ReceivedAt) || new Date(0)) - (parseDate(b.ReceivedAt) || new Date(0));
+        }) : [];
+        let cumulativeReceived = 0;
+        let completedAt = null;
+        receiptRecords.forEach(function (receipt) {
+          cumulativeReceived += Math.max(0, Number(receipt.QuantityReceived) || 0);
+          if (!completedAt && ordered > 0 && cumulativeReceived >= ordered) completedAt = receipt.ReceivedAt;
+        });
+        const receiptDates = receiptRecords.length
+          ? '<div class="procurement-item-receipt-dates"><strong>تاریخ‌های دریافت:</strong>' +
+            receiptRecords.map(function (receipt) {
+              return '<span>' + escape(formatDate(receipt.ReceivedAt)) + ' — ' +
+                number(receipt.QuantityReceived) + ' ' + escape(line.Unit || '') + '</span>';
+            }).join('') + '</div>'
+          : '<div class="procurement-item-receipt-dates"><strong>تاریخ دریافت:</strong><span>هنوز دریافتی ثبت نشده</span></div>';
+        const completionDays = completedAt ? elapsedDays(orderDate, completedAt) : null;
+        const completionText = completedAt
+          ? '<div class="procurement-item-completion"><strong>تاریخ تکمیل دریافت:</strong> ' + escape(formatDate(completedAt)) +
+            ' <span>مدت از سفارش تا تحویل کامل: <b>' + number(completionDays === null ? 0 : completionDays) + ' روز</b></span></div>'
+          : '<div class="procurement-item-completion is-pending"><strong>مدت تا تحویل کامل:</strong> هنوز تکمیل نشده' +
+            (age === null ? '' : '؛ ' + number(age) + ' روز از تاریخ سفارش گذشته') + '</div>';
         let status = remaining <= 0 ? statusBadge('تحویل کامل', 'complete') : (received > 0 ? statusBadge('تحویل ناقص', 'partial') : statusBadge('در انتظار تحویل', 'delivery'));
         return '<div class="procurement-order-line procurement-order-overview-line"><div class="procurement-line-title"><strong>' + escape(line.ItemName) + '</strong>' +
           (line.ItemCode ? '<small>' + escape(line.ItemCode) + '</small>' : '') + '</div>' +
           '<div class="procurement-line-metrics"><span>سفارش: <b>' + number(ordered) + ' ' + escape(line.Unit || '') + '</b></span>' +
           '<span>تحویل: <b class="procurement-quantity-done">' + number(received) + '</b></span>' +
           '<span>مانده: <b class="' + (remaining > 0 ? 'procurement-quantity-pending' : 'procurement-quantity-done') + '">' + number(remaining) + '</b></span>' + status + '</div>' +
+          receiptDates + completionText +
           (surplus > 0 ? '<div class="form-help procurement-surplus-line">مازاد خرید: ' + number(surplus) + ' ' + escape(line.Unit || '') +
             (surplusCost !== null ? '؛ ارزش مازاد: ' + number(surplusCost) : '؛ قیمت واحد ثبت نشده') + '</div>' : '') +
           '</div>';
       }).join('');
       rows.push('<tr><td data-label="کد پروژه / نوع سفارش"><strong class="procurement-project-code">' + escape(projectLabelText) + '</strong></td>' +
         '<td data-label="شماره سفارش"><strong>' + escape(order.OrderNumber) + '</strong><small class="procurement-subtext">' + escape(order.SupplierName || 'تأمین‌کننده ثبت نشده') + '</small></td>' +
-        '<td data-label="تاریخ سفارش">' + escape(order.OrderDate || order.CreatedAt || '-') + '</td>' +
+        '<td data-label="تاریخ سفارش">' + escape(formatDate(orderDate)) + '</td>' +
         '<td data-label="مدت سپری‌شده">' + (age === null ? 'نامشخص' : '<strong class="' + (age >= 7 ? 'procurement-quantity-warn' : '') + '">' + number(age) + ' روز</strong>') + '</td>' +
         '<td data-label="وضعیت اقلام سفارش">' + (itemDetails || '—') + '</td>' +
         '<td data-label="وضعیت سفارش">' + escape(statusLabel(order.Status)) + '</td></tr>');
