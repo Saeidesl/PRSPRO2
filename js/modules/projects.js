@@ -498,6 +498,15 @@
               ></textarea>
             </div>
 
+            ${this.canManageProcurement() ? `
+              <div class="alert alert-info" style="margin-bottom:16px;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                  <input type="checkbox" id="new-project-add-needs">
+                  <span>پس از ثبت پروژه، ثبت نیازهای ملزومات این پروژه را هم انجام بدهم</span>
+                </label>
+              </div>
+            ` : ''}
+
             <div style="
               display:flex;
               justify-content:flex-start;
@@ -673,6 +682,8 @@
       const quantityInput = modal.querySelector('#new-project-quantity');
       const workflowSelect = modal.querySelector('#new-project-workflow');
       const descriptionInput = modal.querySelector('#new-project-description');
+      const addNeedsInput = modal.querySelector('#new-project-add-needs');
+      const shouldAddNeeds = !!(addNeedsInput && addNeedsInput.checked);
       const submitButton = modal.querySelector('#project-create-submit');
 
       const project = {
@@ -745,6 +756,10 @@
         }
 
         alert('پروژه با موفقیت ثبت شد.');
+
+        if (shouldAddNeeds) {
+          this.openProjectNeedsForm(createdId);
+        }
 
         // Refresh the list only when the user is allowed to view projects.
         const router = window.PMS.Router;
