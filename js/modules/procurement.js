@@ -680,7 +680,7 @@
     function renderReceiptItems() {
       const projectId = projectSelect.value;
       if (!projectId) {
-        itemsContainer.innerHTML = '<div class="table-empty">ابتدا پروژه را انتخاب کنید.</div>';
+        itemsContainer.innerHTML = '<div class="table-empty">ابتدا پروژه یا سفارش عمومی را انتخاب کنید.</div>';
         summary.hidden = true;
         return;
       }
