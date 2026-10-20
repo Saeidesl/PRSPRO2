@@ -524,6 +524,11 @@
               ></textarea>
             </div>
 
+            <div style="margin:0 0 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <button type="button" id="new-project-color-size-button" class="btn btn-secondary">تعریف رنگ‌بندی و سایزبندی</button>
+              <span id="new-project-color-size-summary" style="font-size:12px;color:var(--color-text-secondary);">اختیاری؛ رنگ‌ها و سایزهای این پروژه را تعریف کنید.</span>
+            </div>
+
             ${this.canManageProcurement() ? `
               <div class="alert alert-info" style="margin-bottom:16px;">
                 <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
@@ -578,6 +583,11 @@
           this.modal = null;
         }
       };
+
+      const colorSizeButton = modal.querySelector('#new-project-color-size-button');
+      if (colorSizeButton) {
+        colorSizeButton.addEventListener('click', () => this.openColorSizeForm(modal));
+      }
 
       closeButton.addEventListener('click', closeModal);
       cancelButton.addEventListener('click', closeModal);
@@ -666,6 +676,55 @@
       }
     },
 
+    openColorSizeForm: function (projectModal) {
+      const existing = document.getElementById('project-color-size-modal');
+      if (existing) existing.remove();
+      let saved = { colors: [], sizes: [] };
+      try { saved = JSON.parse(projectModal.dataset.colorSizeJson || '{"colors":[],"sizes":[]}'); } catch (error) {}
+
+      const modal = document.createElement('div');
+      modal.id = 'project-color-size-modal';
+      modal.style.cssText = 'position:fixed;inset:0;z-index:10020;background:rgba(0,0,0,.48);display:flex;align-items:center;justify-content:center;padding:16px;direction:rtl;';
+      modal.innerHTML = '<div role="dialog" aria-modal="true" aria-labelledby="project-color-size-title" style="background:var(--color-surface,#fff);color:var(--color-text,#222);width:100%;max-width:620px;max-height:90vh;overflow:auto;border-radius:14px;padding:20px;box-sizing:border-box;">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px"><h3 id="project-color-size-title" style="margin:0">رنگ‌بندی و سایزبندی پروژه</h3><button type="button" class="btn btn-light" data-color-size-close>بستن</button></div>' +
+        '<p style="font-size:12px;color:var(--color-text-secondary);line-height:1.9;margin:0 0 14px">هر رنگ یا سایز را در یک خط وارد کنید. این مشخصات همراه پروژه ذخیره می‌شود؛ مقدار تولید هر ترکیب از طریق رویدادها ثبت می‌شود.</p>' +
+        '<form id="project-color-size-form"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">' +
+        '<label style="display:block;font-weight:700">رنگ‌ها<textarea name="colors" rows="7" placeholder="مشکی&#10;سفید&#10;سرمه‌ای" style="display:block;width:100%;box-sizing:border-box;margin-top:7px;padding:10px;border:1px solid var(--color-border,#ddd);border-radius:9px;background:var(--color-surface,#fff);color:inherit;font:inherit"></textarea></label>' +
+        '<label style="display:block;font-weight:700">سایزها<textarea name="sizes" rows="7" placeholder="S&#10;M&#10;L&#10;XL" style="display:block;width:100%;box-sizing:border-box;margin-top:7px;padding:10px;border:1px solid var(--color-border,#ddd);border-radius:9px;background:var(--color-surface,#fff);color:inherit;font:inherit"></textarea></label>' +
+        '</div><div id="project-color-size-error" class="alert alert-danger" hidden style="margin-top:12px"></div><div style="display:flex;gap:8px;justify-content:flex-start;margin-top:16px;flex-wrap:wrap"><button type="submit" class="btn btn-primary">ذخیره مشخصات</button><button type="button" class="btn btn-light" data-color-size-clear>پاک کردن</button></div></form></div>';
+      document.body.appendChild(modal);
+      const form = modal.querySelector('#project-color-size-form');
+      const colorsInput = form.elements.namedItem('colors');
+      const sizesInput = form.elements.namedItem('sizes');
+      const errorBox = modal.querySelector('#project-color-size-error');
+      colorsInput.value = (saved.colors || []).join('\n');
+      sizesInput.value = (saved.sizes || []).join('\n');
+      const close = () => modal.remove();
+      modal.querySelector('[data-color-size-close]').addEventListener('click', close);
+      modal.addEventListener('click', (event) => { if (event.target === modal) close(); });
+      modal.querySelector('[data-color-size-clear]').addEventListener('click', () => { colorsInput.value = ''; sizesInput.value = ''; errorBox.hidden = true; });
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const normalize = (value) => Array.from(new Set(String(value || '').split(/\r?\n|,/).map((item) => item.trim()).filter(Boolean)));
+        const colors = normalize(colorsInput.value);
+        const sizes = normalize(sizesInput.value);
+        if (colors.length > 100 || sizes.length > 100) {
+          errorBox.textContent = 'حداکثر ۱۰۰ رنگ و ۱۰۰ سایز می‌توانید ثبت کنید.';
+          errorBox.hidden = false;
+          return;
+        }
+        if (colors.some((item) => item.length > 80) || sizes.some((item) => item.length > 40)) {
+          errorBox.textContent = 'نام هر رنگ حداکثر ۸۰ و نام هر سایز حداکثر ۴۰ نویسه باشد.';
+          errorBox.hidden = false;
+          return;
+        }
+        projectModal.dataset.colorSizeJson = JSON.stringify({ colors: colors, sizes: sizes });
+        const summary = projectModal.querySelector('#new-project-color-size-summary');
+        if (summary) summary.textContent = (colors.length || sizes.length) ? colors.length + ' رنگ و ' + sizes.length + ' سایز انتخاب شده' : 'هنوز رنگ یا سایزی تعریف نشده است.';
+        close();
+      });
+    },
+
     normalizeWorkflows: function (response) {
       let data = response;
 
@@ -712,12 +771,18 @@
       const shouldAddNeeds = !!(addNeedsInput && addNeedsInput.checked);
       const submitButton = modal.querySelector('#project-create-submit');
 
+      let colorSize = { colors: [], sizes: [] };
+      try { colorSize = JSON.parse(modal.dataset.colorSizeJson || '{"colors":[],"sizes":[]}'); } catch (error) {}
       const project = {
         ProjectCode: codeInput.value.trim(),
         Title: titleInput.value.trim(),
         Quantity: quantityInput.value.trim() === '' ? '' : Number(quantityInput.value),
         WorkflowID: workflowSelect.value,
-        Description: descriptionInput.value.trim()
+        Description: descriptionInput.value.trim(),
+        ColorSizeJSON: JSON.stringify({
+          colors: Array.isArray(colorSize.colors) ? colorSize.colors : [],
+          sizes: Array.isArray(colorSize.sizes) ? colorSize.sizes : []
+        })
       };
 
       if (!project.ProjectCode) {
@@ -732,7 +797,8 @@
         return;
       }
 
-      if (!Number.isFinite(project.Quantity) || project.Quantity < 1 || !Number.isInteger(project.Quantity)) {
+      if (quantityInput.value.trim() !== '' &&
+          (!Number.isFinite(project.Quantity) || project.Quantity < 1 || !Number.isInteger(project.Quantity))) {
         this.showFormError(modal, 'تعداد پروژه باید یک عدد صحیح بزرگ‌تر از صفر باشد.');
         quantityInput.focus();
         return;
