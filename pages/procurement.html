@@ -61,4 +61,33 @@
   </div>
   <div id="procurement-modal-root"></div>
 </section>
+<script>
+(function () {
+  var root = document.getElementById('procurement-content');
+  if (!root || root.dataset.tabsBound === '1') return;
+  root.dataset.tabsBound = '1';
+  function activate(name) {
+    root.querySelectorAll('[data-procurement-tab]').forEach(function (tab) {
+      var active = tab.getAttribute('data-procurement-tab') === name;
+      tab.classList.toggle('is-active', active);
+      tab.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    root.querySelectorAll('[data-procurement-panel]').forEach(function (panel) {
+      var active = panel.getAttribute('data-procurement-panel') === name;
+      panel.classList.toggle('is-active', active);
+      panel.hidden = !active;
+    });
+  }
+  root.addEventListener('click', function (event) {
+    var tab = event.target.closest('[data-procurement-tab]');
+    var shortcut = event.target.closest('[data-procurement-tab-jump]');
+    if (tab && root.contains(tab)) {
+      activate(tab.getAttribute('data-procurement-tab'));
+      return;
+    }
+    if (shortcut && root.contains(shortcut)) activate(shortcut.getAttribute('data-procurement-tab-jump'));
+  });
+  activate('overview');
+})();
+</script>
 <script src="js/modules/procurement.js?v=20261019-jalali-date-fix-1"></script>
