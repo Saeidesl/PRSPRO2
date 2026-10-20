@@ -280,3 +280,44 @@
   .procurement-overview-shortcuts{grid-template-columns:minmax(0,1fr);gap:9px}
   .procurement-shortcut{padding:13px}
 }
+
+
+/* Compact procurement entry forms; keep row actions at the bottom of each section */
+.procurement-form-card>.card-header{padding:12px 16px}
+.procurement-form-card>.card-header h3{margin:0;font-size:1rem}
+.procurement-form-card>.card-body{padding:14px 16px}
+.procurement-form-card .form-grid{gap:10px 12px}
+.procurement-form-card .form-group{margin-bottom:0;min-width:0}
+.procurement-form-card .form-group>span{margin-bottom:4px;font-size:.82rem}
+.procurement-form-card input,.procurement-form-card select,.procurement-form-card textarea{min-height:36px;padding:7px 10px}
+.procurement-items-section{margin-top:14px}
+.procurement-items-heading{padding:10px 14px}
+.procurement-items-heading p{margin-top:3px;font-size:.78rem}
+.procurement-order-list{padding:0 12px}
+.procurement-order-row{padding:10px 2px}
+.procurement-order-row-head{margin-bottom:7px}
+.procurement-order-fields{gap:8px 10px}
+.procurement-order-fields .form-group>span{margin-bottom:3px;font-size:.76rem}
+.procurement-order-fields input{min-height:34px;padding:6px 8px}
+.procurement-row-footer{padding-top:7px;gap:7px 12px}
+.procurement-remove-row{align-self:flex-start;margin-inline-start:auto}
+.procurement-items-actions{display:flex;justify-content:flex-start;padding:10px 14px;border-top:1px solid var(--border-color,#e2e8f0);background:var(--surface-muted,#f8fafc)}
+.procurement-submit-actions{margin-top:12px;padding-top:10px;border-top:1px solid var(--border-color,#e2e8f0)}
+.procurement-receipt-row{padding:9px 2px;gap:9px}
+.procurement-receipt-item-info{gap:2px}
+.procurement-receipt-summary{margin-top:10px;padding:9px 12px}
+@media(max-width:640px){
+ .procurement-form-card>.card-header{padding:10px 12px}
+ .procurement-form-card>.card-body{padding:10px 12px}
+ .procurement-form-card .form-grid{gap:8px}
+ .procurement-items-heading{padding:9px 10px}
+ .procurement-order-list{padding:0 9px}
+ .procurement-order-row{padding:9px 0}
+ .procurement-order-fields{gap:7px}
+ .procurement-row-footer{gap:7px}
+ .procurement-items-actions{padding:9px 10px}
+ .procurement-items-actions .btn{width:100%;min-height:40px}
+ .procurement-remove-row{margin-inline-start:0}
+ .procurement-submit-actions{position:sticky;bottom:0;z-index:3;padding:9px 0 2px;background:var(--surface-color,#fff)}
+ .procurement-submit-actions .btn{width:100%;min-height:42px}
+}
