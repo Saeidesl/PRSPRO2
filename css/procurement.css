@@ -321,3 +321,14 @@
  .procurement-submit-actions{position:sticky;bottom:0;z-index:3;padding:9px 0 2px;background:var(--surface-color,#fff)}
  .procurement-submit-actions .btn{width:100%;min-height:42px}
 }
+
+
+/* Search and status filters for procurement project lists */
+.procurement-list-controls{display:grid;grid-template-columns:minmax(0,2fr) minmax(220px,1fr);gap:12px;margin:14px 0 16px;padding:12px;border:1px solid var(--border-color,#dce4eb);border-radius:12px;background:var(--surface-muted,#f8fafc)}
+.procurement-list-controls label{display:flex;flex-direction:column;gap:5px;min-width:0;margin:0}
+.procurement-list-controls label>span{font-size:.8rem;font-weight:600;color:var(--text-muted,#64748b)}
+.procurement-list-controls input,.procurement-list-controls select{width:100%;min-width:0;min-height:40px;box-sizing:border-box;padding:8px 11px;border:1px solid var(--border-color,#cbd5e1);border-radius:8px;background:var(--surface-color,#fff);color:var(--text-color,inherit);font:inherit}
+.procurement-list-controls input:focus,.procurement-list-controls select:focus{outline:2px solid var(--primary-color,#2563eb);outline-offset:1px}
+.procurement-summary-card[hidden],.procurement-filter-empty[hidden]{display:none!important}
+.procurement-filter-empty{margin-top:10px}
+@media(max-width:640px){.procurement-list-controls{grid-template-columns:minmax(0,1fr);gap:9px;padding:10px;margin:10px 0 13px}.procurement-list-controls input,.procurement-list-controls select{min-height:42px}}
