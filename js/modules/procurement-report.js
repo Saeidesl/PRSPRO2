@@ -78,12 +78,46 @@
       el.textContent = message || '';
       el.hidden = !message;
     },
+    jalaliDateToIso: function (value) {
+      const raw = String(value || '').trim();
+      if (!raw) return '';
+      const ascii = raw.replace(/[۰-۹٠-٩]/g, function (digit) {
+        const persian = '۰۱۲۳۴۵۶۷۸۹';
+        const arabic = '٠١٢٣٤٥٦٧٨٩';
+        const index = persian.indexOf(digit);
+        return String(index >= 0 ? index : arabic.indexOf(digit));
+      }).replace(/[.-]/g, '/');
+      const match = ascii.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+      if (!match) throw new Error('تاریخ را به شکل شمسی سال/ماه/روز وارد کنید؛ مانند ۱۴۰۵/۰۷/۲۷.');
+      const jy = Number(match[1]), jm = Number(match[2]), jd = Number(match[3]);
+      if (jm < 1 || jm > 12 || jd < 1 || jd > 31) throw new Error('تاریخ شمسی معتبر نیست.');
+      const formatter = new Intl.DateTimeFormat('en-US-u-ca-persian-nu-latn', {
+        year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'UTC'
+      });
+      const start = Date.UTC(jy + 621, 2, 18);
+      for (let offset = 0; offset < 371; offset++) {
+        const date = new Date(start + offset * 86400000);
+        const parts = {};
+        formatter.formatToParts(date).forEach(function (part) {
+          if (part.type === 'year' || part.type === 'month' || part.type === 'day') parts[part.type] = Number(part.value);
+        });
+        if (parts.year === jy && parts.month === jm && parts.day === jd) {
+          return date.getUTCFullYear() + '-' + String(date.getUTCMonth() + 1).padStart(2, '0') + '-' + String(date.getUTCDate()).padStart(2, '0');
+        }
+      }
+      throw new Error('این تاریخ شمسی معتبر نیست.');
+    },
     filters: function () {
       const val = id => (this.el(id) && this.el(id).value || '').trim().toLocaleLowerCase();
+      const fromRaw = this.el('prc-report-from') ? this.el('prc-report-from').value : '';
+      const toRaw = this.el('prc-report-to') ? this.el('prc-report-to').value : '';
+      const from = this.jalaliDateToIso(fromRaw);
+      const to = this.jalaliDateToIso(toRaw);
+      if (from && to && from > to) throw new Error('تاریخ شروع نباید بعد از تاریخ پایان باشد.');
       return {
         type: val('prc-report-type') || 'summary',
-        from: this.el('prc-report-from') ? this.el('prc-report-from').value : '',
-        to: this.el('prc-report-to') ? this.el('prc-report-to').value : '',
+        from: from,
+        to: to,
         project: val('prc-report-project'),
         material: val('prc-report-material'),
         supplier: val('prc-report-supplier'),
