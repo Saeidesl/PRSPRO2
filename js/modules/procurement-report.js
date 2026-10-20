@@ -163,12 +163,16 @@
       }));
       return rows;
     },
-    flattenReceipts: function (orders, filters) {
+    flattenReceipts: function (orders, filters, projects) {
       const rows = [];
       orders.forEach(order => (Array.isArray(order.Items) ? order.Items : []).forEach(item => {
         (Array.isArray(item.Receipts) ? item.Receipts : []).forEach(receipt => {
           if (!this.inDateRange(receipt.ReceivedAt, filters)) return;
-          if (filters.project && !this.projectMatches({ ProjectID: receipt.ProjectID, ProjectLabels: item.ProjectLabels || order.ProjectLabels }, filters)) return;
+          if (filters.project) {
+            const project = (projects || []).find(p => String(p.ID || '') === String(receipt.ProjectID || ''));
+            const projectValues = [receipt.ProjectID, project && project.ProjectCode, project && project.Title];
+            if (!projectValues.some(value => String(value || '').toLocaleLowerCase().includes(filters.project))) return;
+          }
           if (!this.materialMatches(item, filters)) return;
           if (filters.supplier && !String(order.SupplierName || '').toLocaleLowerCase().includes(filters.supplier)) return;
           rows.push({
@@ -188,7 +192,7 @@
       const needs = filtered.needs;
       const orders = filtered.orders;
       const orderItems = this.flattenOrderItems(orders).filter(row => !filters.material || (row.item + ' ' + row.code).toLocaleLowerCase().includes(filters.material));
-      const receipts = this.flattenReceipts(data.orders, filters);
+      const receipts = this.flattenReceipts(data.orders, filters, data.projects);
       const total = (rows, key) => rows.reduce((sum, row) => sum + this.raw(row[key]), 0);
       const requested = total(needs, 'RequestedQuantity');
       const neededOrdered = total(needs, 'OrderedQuantity');
