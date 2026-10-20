@@ -40,8 +40,52 @@
     },
     getData: async function (fresh) {
       if (this.data && !fresh) return this.data;
-      const response = await window.PMS.Api.get('/procurement/reports');
-      const data = window.PMS.Api.extractData(response) || {};
+      let data;
+      try {
+        const response = await window.PMS.Api.get('/procurement/reports');
+        data = window.PMS.Api.extractData(response) || {};
+      } catch (reportEndpointError) {
+        // Older Apps Script deployments can still serve reports from the existing list endpoints.
+        const results = await Promise.all([
+          window.PMS.Api.get('/procurement/needs'),
+          window.PMS.Api.get('/procurement/orders')
+        ]);
+        const needsValue = window.PMS.Api.extractData(results[0]);
+        const ordersValue = window.PMS.Api.extractData(results[1]);
+        const toArray = value => Array.isArray(value) ? value :
+          (value && Array.isArray(value.items) ? value.items :
+          (value && Array.isArray(value.projects) ? value.projects : []));
+        let projects = [];
+        try {
+          projects = toArray(window.PMS.Api.extractData(await window.PMS.Api.get('/projects')));
+        } catch (projectLookupError) {}
+        const projectById = new Map(projects.map(project => [String(project.ID || project.ProjectID || project.Id || project.id || ''), project]));
+        const projectLabel = id => {
+          const project = projectById.get(String(id || ''));
+          return project ? [project.ProjectCode || project.Code, project.Title || project.Name].filter(Boolean).join(' — ') : String(id || '');
+        };
+        data = {
+          generatedAt: new Date().toISOString(),
+          projects: projects,
+          needs: toArray(needsValue).map(need => {
+            const project = projectById.get(String(need.ProjectID || ''));
+            return Object.assign({}, need, {
+              ProjectCode: project ? (project.ProjectCode || project.Code || '') : '',
+              ProjectTitle: project ? (project.Title || project.Name || '') : ''
+            });
+          }),
+          orders: toArray(ordersValue).map(order => {
+            const ids = Array.isArray(order.ProjectIDs) ? order.ProjectIDs : (order.ProjectID ? [order.ProjectID] : []);
+            return Object.assign({}, order, {
+              ProjectLabels: ids.map(projectLabel),
+              Items: (Array.isArray(order.Items) ? order.Items : []).map(item => {
+                const itemIds = Array.isArray(item.ProjectIDs) ? item.ProjectIDs : (item.ProjectID ? [item.ProjectID] : []);
+                return Object.assign({}, item, { ProjectLabels: itemIds.map(projectLabel) });
+              })
+            });
+          })
+        };
+      }
       this.data = {
         generatedAt: data.generatedAt || new Date().toISOString(),
         projects: Array.isArray(data.projects) ? data.projects : [],
