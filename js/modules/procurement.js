@@ -483,11 +483,26 @@
     if (error) { error.hidden = true; error.textContent = ''; }
     if (button) button.disabled = true;
     try {
-      const results = await Promise.all([
-        PMS.Api.get('/procurement/workspace'),
-        loadProjectsForOrder()
-      ]);
-      const workspace = unwrap(results[0]) || {};
+      const workspacePromise = (async function () {
+        try {
+          return unwrap(await PMS.Api.get('/procurement/workspace')) || {};
+        } catch (workspaceError) {
+          // Keep the current page compatible while an older Apps Script deployment is active.
+          const legacy = await Promise.all([
+            PMS.Api.get('/procurement/dashboard'),
+            PMS.Api.get('/procurement/needs'),
+            PMS.Api.get('/procurement/orders')
+          ]);
+          const dashboard = unwrap(legacy[0]) || {};
+          return {
+            summary: dashboard.summary || dashboard,
+            needs: list(legacy[1], ['needs', 'items', 'Needs']),
+            orders: list(legacy[2], ['orders', 'items', 'Orders'])
+          };
+        }
+      })();
+      const results = await Promise.all([workspacePromise, loadProjectsForOrder()]);
+      const workspace = results[0] || {};
       state.needs = list(workspace.needs, ['needs', 'items', 'Needs']);
       state.orders = list(workspace.orders, ['orders', 'items', 'Orders']);
       renderSummary(workspace.summary || {});
