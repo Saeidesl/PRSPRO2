@@ -521,7 +521,7 @@
       ? '<span class="procurement-need-note">نیاز اصلی: ' + number(need.RequestedQuantity) + ' ' + escape(need.Unit || '') + ' · سفارش قبلی: ' + number(need.OrderedQuantity) + ' · باقی‌مانده: ' + number(remaining) + (remaining === 0 ? ' · نیاز قبلاً کامل سفارش داده شده است' : '') + '</span>'
       : '<span class="procurement-need-note">قلم جدید؛ خارج از نیاز اصلی ثبت‌شده پروژه</span>';
     return '<div class="procurement-order-row" data-order-item="' + index + '">' +
-      '<div class="procurement-order-row-head"><span class="procurement-row-number">ردیف ' + (index + 1) + '</span><button type="button" class="btn btn-light procurement-remove-row" data-remove-item aria-label="حذف ردیف">حذف</button></div>' +
+      '<div class="procurement-order-row-head"><span class="procurement-row-number">ردیف ' + (index + 1) + '</span></div>' +
       '<input type="hidden" name="MaterialNeedID" value="' + (need.ID ? escapeField(need.ID) : '') + '">' +
       '<div class="procurement-order-fields">' +
       '<label class="form-group procurement-field-name"><span>نام ملزوم *</span><input name="ItemName" required maxlength="200" value="' + escapeField(need.ItemName) + '"></label>' +
@@ -530,7 +530,7 @@
       '<label class="form-group"><span>مقدار سفارش *</span><input name="OrderedQuantity" type="number" min="0.001" step="any" required value="' + (quantity === '' ? '' : escapeField(quantity)) + '"></label>' +
       '<label class="form-group"><span>قیمت واحد (اختیاری)</span><input name="UnitPrice" type="number" min="0" step="any"></label>' +
       '<label class="form-group"><span>توضیحات قلم</span><input name="Notes" maxlength="500" value="' + escapeField(need.Notes) + '"></label>' +
-      '</div><div class="procurement-row-footer">' + needSummary + '<div class="form-help procurement-surplus-preview" data-surplus-preview hidden></div></div></div>';
+      '</div><div class="procurement-row-footer">' + needSummary + '<div class="form-help procurement-surplus-preview" data-surplus-preview hidden></div><button type="button" class="btn btn-light procurement-remove-row" data-remove-item aria-label="حذف ردیف">حذف این ردیف</button></div></div>';
   }
 
   function updateSurplusPreview(row, isProjectOrder) {
@@ -606,8 +606,8 @@
       '<label class="form-group"><span>تاریخ سفارش (اختیاری)</span><input name="OrderDate" type="text" inputmode="numeric" placeholder="۱۴۰۵/۰۷/۲۷"></label>' +
       '<label class="form-group"><span>تاریخ تحویل مورد انتظار</span><input name="ExpectedDeliveryDate" type="text" inputmode="numeric" placeholder="۱۴۰۵/۰۷/۲۷"></label>' +
       '<label class="form-group"><span>توضیحات سفارش</span><input name="Notes" maxlength="1000"></label>' +
-      '</div><section class="procurement-items-section"><div class="procurement-items-heading"><div><h4>اقلام سفارش</h4><p>اقلام را در ردیف‌های زیر بررسی یا ویرایش کنید.</p></div><button type="button" class="btn btn-secondary" id="procurement-add-order-item">+ افزودن ردیف</button></div>' +
-      '<div class="procurement-order-list" id="procurement-order-items">' + orderItemRow(0) + '</div></section>' +
+      '</div><section class="procurement-items-section"><div class="procurement-items-heading"><div><h4>اقلام سفارش</h4><p>اطلاعات هر قلم را در ردیف مربوط وارد کنید.</p></div></div>' +
+      '<div class="procurement-order-list" id="procurement-order-items">' + orderItemRow(0) + '</div><div class="procurement-items-actions"><button type="button" class="btn btn-secondary" id="procurement-add-order-item">+ افزودن ردیف</button></div></section>' +
       '<div class="modal-actions procurement-submit-actions"><button type="submit" class="btn btn-primary">ثبت سفارش</button></div></form>');
 
     const itemsRoot = root.querySelector('#procurement-order-items');
