@@ -232,3 +232,51 @@
   .procurement-summary-card-stats{margin:0 12px 12px;padding:10px;gap:7px 10px}
   .procurement-summary-card-details{padding:10px 12px 13px}
 }
+
+
+/* Clear, low-clutter navigation for the procurement workspace */
+.procurement-tabs{
+  display:flex;align-items:stretch;gap:8px;margin:0 0 20px;padding:7px;
+  border:1px solid var(--color-border,#dce4eb);border-radius:14px;
+  background:var(--color-background,#f6f8fb);overflow-x:auto;
+}
+.procurement-tab{
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;flex:1 0 auto;
+  min-height:48px;padding:10px 16px;border:1px solid transparent;border-radius:10px;
+  background:transparent;color:var(--color-text-secondary,#64748b);
+  font:inherit;font-size:.9rem;font-weight:650;white-space:nowrap;cursor:pointer;
+  transition:background .15s ease,color .15s ease,border-color .15s ease,box-shadow .15s ease;
+}
+.procurement-tab:hover{background:var(--color-surface,#fff);color:var(--color-text,#1f2937)}
+.procurement-tab.is-active{background:var(--color-surface,#fff);color:var(--color-primary,#2458a6);border-color:var(--color-border,#dce4eb);box-shadow:0 2px 6px rgba(15,23,42,.06)}
+.procurement-tab:focus-visible,.procurement-shortcut:focus-visible{outline:3px solid rgba(37,99,235,.3);outline-offset:2px}
+.procurement-tab-icon{font-size:1.15rem;line-height:1}
+.procurement-tab-count{display:inline-flex;align-items:center;justify-content:center;min-width:23px;height:23px;padding:0 6px;border-radius:7px;background:var(--color-background,#eef2f7);color:var(--color-text-secondary,#475569);font-size:.75rem;font-weight:800}
+.procurement-tab.is-active .procurement-tab-count{background:#e8efff;color:#244fa0}
+.procurement-tab-panel{min-width:0;animation:procurement-panel-in .16s ease-out}
+.procurement-tab-panel[hidden]{display:none!important}
+@keyframes procurement-panel-in{from{opacity:.65;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
+.procurement-panel-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 14px;padding:0 2px}
+.procurement-panel-heading h3{margin:0;color:var(--color-text,#1f2937);font-size:1.05rem;font-weight:800}
+.procurement-panel-heading p{margin:5px 0 0;color:var(--color-text-secondary,#64748b);font-size:.83rem;line-height:1.8}
+.procurement-dashboard-stats{margin-bottom:18px}
+.procurement-overview-shortcuts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+.procurement-shortcut{display:flex;align-items:center;gap:12px;min-width:0;padding:16px;text-align:right;border:1px solid var(--color-border,#dce4eb);border-radius:12px;background:var(--color-surface,#fff);color:var(--color-text,#1f2937);cursor:pointer;transition:border-color .15s ease,box-shadow .15s ease}
+.procurement-shortcut:hover{border-color:var(--color-primary,#2458a6);box-shadow:0 3px 10px rgba(15,23,42,.06)}
+.procurement-shortcut-symbol{display:flex;align-items:center;justify-content:center;flex:0 0 42px;width:42px;height:42px;border-radius:10px;background:var(--color-background,#eef2f7);color:var(--color-primary,#2458a6);font-size:1.3rem}
+.procurement-shortcut>span:nth-child(2){display:flex;flex-direction:column;gap:5px;min-width:0}
+.procurement-shortcut strong{font-size:.88rem;line-height:1.6}
+.procurement-shortcut small{color:var(--color-text-secondary,#64748b);font-size:.78rem;font-weight:400;line-height:1.7}
+.procurement-shortcut-arrow{margin-inline-start:auto;color:var(--color-primary,#2458a6);font-size:1.2rem}
+.procurement-panel-help{margin-top:14px;line-height:1.8}
+@media(max-width:760px){
+  .procurement-tabs{gap:5px;margin-bottom:16px;padding:5px;border-radius:12px}
+  .procurement-tab{justify-content:flex-start;min-height:45px;padding:9px 12px;font-size:.82rem;gap:7px}
+  .procurement-tab-icon{font-size:1rem}
+  .procurement-tab-count{min-width:20px;height:20px}
+  .procurement-panel-heading{margin-bottom:12px}
+  .procurement-panel-heading h3{font-size:1rem}
+  .procurement-panel-heading p{font-size:.79rem}
+  .procurement-overview-shortcuts{grid-template-columns:minmax(0,1fr);gap:9px}
+  .procurement-shortcut{padding:13px}
+}

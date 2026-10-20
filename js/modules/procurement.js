@@ -414,6 +414,8 @@
       state.orders.filter(function (x) { return String(x.Status).toUpperCase() !== 'RECEIVED'; }).length));
     setText('procurement-surplus-lines', number(summary.surplusLineCount || 0));
     setText('procurement-surplus-cost', number(summary.surplusCost || 0));
+    setText('procurement-tab-needs-count', number(state.needs.length));
+    setText('procurement-tab-orders-count', number(state.orders.length));
   }
 
   async function load() {
