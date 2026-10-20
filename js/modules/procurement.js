@@ -2,7 +2,7 @@
   'use strict';
 
   const $ = function (id) { return document.getElementById(id); };
-  const state = { needs: [], orders: [], projects: [], loading: false, loadingProjectNeeds: false, saving: false };
+  const state = { needs: [], orders: [], projects: [], loading: false, loadingProjectNeeds: false, saving: false, filters: { needs: { status: 'active', query: '' }, orders: { status: 'active', query: '' } } };
 
   function jalaliDateToIso(value) {
     const raw = String(value || '').trim();
@@ -242,7 +242,8 @@
           '<div class="procurement-need-item-status">' + statusBadge(entry.label, entry.kind) + '</div>' +
           '</div></div>';
       }).join('');
-      return '<section class="procurement-summary-card is-' + overallKind + '">' +
+      const filterStatus = waitingOrder > 0 && waitingReceipt > 0 ? 'partial' : (waitingOrder > 0 ? 'waiting-order' : (waitingReceipt > 0 ? 'waiting-receipt' : 'complete'));
+      return '<section class="procurement-summary-card is-' + overallKind + '" data-procurement-card data-filter-status="' + filterStatus + '">' +
         '<button type="button" class="procurement-summary-card-head" data-procurement-toggle aria-expanded="false" aria-controls="' + detailId + '">' +
         '<span class="procurement-summary-card-main"><strong class="procurement-project-code">' + escape(group.label) + '</strong>' +
         '<span class="procurement-summary-card-meta">' + number(group.items.length) + ' قلم ملزوم</span></span>' +
@@ -253,6 +254,52 @@
         '<div class="procurement-summary-card-details" id="' + detailId + '" hidden><div class="procurement-needs-project-items">' + lines + '</div></div></section>';
     });
     container.innerHTML = '<div class="procurement-summary-grid">' + cards.join('') + '</div>';
+    applyProcurementFilters('needs');
+  }
+
+  function applyProcurementFilters(type) {
+    const container = $(type === 'needs' ? 'procurement-needs-table' : 'procurement-orders-table');
+    if (!container) return;
+    const controls = document.querySelector('[data-procurement-controls="' + type + '"]');
+    const filter = state.filters[type] || { status: 'active', query: '' };
+    const cards = Array.from(container.querySelectorAll('[data-procurement-card]'));
+    let visible = 0;
+    cards.forEach(function (card) {
+      const status = card.getAttribute('data-filter-status') || '';
+      const statusMatch = filter.status === 'all' ||
+        (filter.status === 'active' ? (type === 'needs' ? status === 'waiting-order' || status === 'partial' : status !== 'complete') : status === filter.status);
+      const queryMatch = !filter.query || String(card.textContent || '').toLocaleLowerCase().indexOf(filter.query.toLocaleLowerCase()) !== -1;
+      const show = statusMatch && queryMatch;
+      card.hidden = !show;
+      if (show) visible++;
+    });
+    let empty = container.querySelector('[data-procurement-filter-empty]');
+    if (!empty) {
+      empty = document.createElement('div');
+      empty.className = 'table-empty procurement-filter-empty';
+      empty.setAttribute('data-procurement-filter-empty', '1');
+      container.appendChild(empty);
+    }
+    empty.hidden = visible > 0 || cards.length === 0;
+    empty.textContent = filter.query ? 'موردی با این عبارت و وضعیت پیدا نشد.' : 'موردی با این وضعیت برای نمایش وجود ندارد.';
+  }
+
+  function bindProcurementFilters() {
+    document.querySelectorAll('[data-procurement-controls]').forEach(function (controls) {
+      if (controls.dataset.bound === '1') return;
+      controls.dataset.bound = '1';
+      const type = controls.getAttribute('data-procurement-controls');
+      const search = controls.querySelector('[data-procurement-search]');
+      const status = controls.querySelector('[data-procurement-status]');
+      if (search) search.addEventListener('input', function () {
+        state.filters[type].query = String(search.value || '').trim();
+        applyProcurementFilters(type);
+      });
+      if (status) status.addEventListener('change', function () {
+        state.filters[type].status = status.value || 'active';
+        applyProcurementFilters(type);
+      });
+    });
   }
 
   function canManageProcurement() {
@@ -392,7 +439,8 @@
       else if (String(order.Status || '').toUpperCase() === 'CANCELLED') { overallLabel = 'لغوشده'; overallKind = 'waiting'; }
       else if (!itemCount) { overallLabel = statusLabel(order.Status || 'OPEN'); overallKind = 'waiting'; }
       const detailId = 'procurement-order-detail-' + index;
-      return '<section class="procurement-summary-card is-' + overallKind + '">' +
+      const filterStatus = overallKind === 'complete' ? 'complete' : (overallKind === 'partial' ? 'partial' : (String(order.Status || '').toUpperCase() === 'CANCELLED' ? 'cancelled' : 'waiting'));
+      return '<section class="procurement-summary-card is-' + overallKind + '" data-procurement-card data-filter-status="' + filterStatus + '">' +
         '<button type="button" class="procurement-summary-card-head" data-procurement-toggle aria-expanded="false" aria-controls="' + detailId + '">' +
         '<span class="procurement-summary-card-main"><strong class="procurement-project-code">' + escape(projectLabelText) + '</strong>' +
         '<span class="procurement-summary-card-meta">' + escape(order.OrderNumber || 'شماره سفارش ثبت نشده') + ' · ' + escape(order.SupplierName || 'تأمین‌کننده ثبت نشده') + '</span></span>' +
@@ -402,6 +450,7 @@
         '<div class="procurement-needs-project-items">' + (itemDetails || '<div class="table-empty">اقلامی برای این سفارش ثبت نشده است.</div>') + '</div></div></section>';
     });
     container.innerHTML = '<div class="procurement-summary-grid">' + cards.join('') + '</div>';
+    applyProcurementFilters('orders');
   }
 
   function renderSummary(summary) {
@@ -923,6 +972,7 @@
   }
 
   function init() {
+    bindProcurementFilters();
     const refresh = $('procurement-refresh');
     if (refresh && !refresh.dataset.bound) {
       refresh.dataset.bound = '1';
