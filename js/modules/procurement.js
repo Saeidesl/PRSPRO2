@@ -234,8 +234,6 @@
           '<div class="procurement-need-item-status">' + statusBadge(entry.label, entry.kind) + '</div>' +
           '</div></div>';
       }).join('');
-      const orderHasPending = items.some(function (line) { return Number(line.OrderedQuantity || 0) > Number(line.ReceivedQuantity || 0); });
-      const orderReceiveButton = orderHasPending && canManageProcurement() ? '<button type="button" class="btn btn-primary procurement-receive-order-button" data-receive-order="' + escapeField(order.ID || order.PurchaseOrderID || '') + '">تحویل گرفتن سفارش</button>' : '';
       return '<section class="procurement-summary-card is-' + overallKind + '">' +
         '<button type="button" class="procurement-summary-card-head" data-procurement-toggle aria-expanded="false" aria-controls="' + detailId + '">' +
         '<span class="procurement-summary-card-main"><strong class="procurement-project-code">' + escape(group.label) + '</strong>' +
@@ -321,6 +319,8 @@
           (surplus > 0 ? '<div class="form-help procurement-surplus-line">مازاد خرید: ' + number(surplus) + ' ' + escape(line.Unit || '') + (surplusCost !== null ? '؛ ارزش مازاد: ' + number(surplusCost) : '؛ قیمت واحد ثبت نشده') + '</div>' : '') +
           '</div>';
       }).join('');
+      const orderHasPending = items.some(function (line) { return Number(line.OrderedQuantity || 0) > Number(line.ReceivedQuantity || 0); });
+      const orderReceiveButton = orderHasPending && canManageProcurement() ? '<button type="button" class="btn btn-primary procurement-receive-order-button" data-receive-order="' + escapeField(order.ID || order.PurchaseOrderID || '') + '">تحویل گرفتن سفارش</button>' : '';
       const itemCount = items.length;
       const receivedCount = items.filter(function (line) { return Number(line.OrderedQuantity || 0) > 0 && Number(line.ReceivedQuantity || 0) >= Number(line.OrderedQuantity || 0); }).length;
       const partialCount = items.filter(function (line) { return Number(line.ReceivedQuantity || 0) > 0 && Number(line.ReceivedQuantity || 0) < Number(line.OrderedQuantity || 0); }).length;
