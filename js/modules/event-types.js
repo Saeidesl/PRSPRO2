@@ -595,6 +595,13 @@
               '</label>' +
               '<small class="et-muted">این گزینه قدیمی حفظ شده تا تنظیمات قبلی نوع رویداد از بین نرود.</small>' +
             '</div>' +
+            '<div class="form-group et-full">' +
+              '<strong>رنگ‌بندی و سایزبندی پروژه</strong>' +
+              '<label style="display:block;margin-top:8px"><input name="UseProjectColors" type="checkbox"> هنگام ثبت این رویداد، رنگ پروژه انتخاب شود</label>' +
+              '<label style="display:block;margin-top:8px"><input name="UseProjectSizes" type="checkbox"> هنگام ثبت این رویداد، سایز پروژه انتخاب شود</label>' +
+              '<label style="display:block;margin-top:8px"><input name="TrackVariantQuantity" type="checkbox"> مقدار تولید/تحویل برای ترکیب انتخاب‌شده ثبت شود</label>' +
+              '<small class="et-muted">فهرست رنگ و سایز از مشخصات همان پروژه خوانده می‌شود. برای مثال، رویداد برش می‌تواند رنگ، سایز و مقدار برش را ثبت کند.</small>' +
+            '</div>' +
 
           '</div>' +
         '</section>' +
@@ -718,6 +725,9 @@
       setFieldChecked(form, 'AllowAttachments', item.AllowAttachments);
       setFieldChecked(form, 'MovesProjectToStep', item.MovesProjectToStep);
       setFieldChecked(form, 'AllowVoid', item.AllowVoid);
+      setFieldChecked(form, 'UseProjectColors', item.UseProjectColors);
+      setFieldChecked(form, 'UseProjectSizes', item.UseProjectSizes);
+      setFieldChecked(form, 'TrackVariantQuantity', item.TrackVariantQuantity);
 
       setSelectedCheckboxes(form, 'AllowedDepartmentIDs', item.AllowedDepartmentIDs);
       setSelectedCheckboxes(form, 'AllowedUserIDs', item.AllowedUserIDs);
@@ -790,7 +800,10 @@
         AvailableDepartmentIDs: selectedValues(form, 'AvailableDepartmentIDs'),
         AllowAttachments: fieldChecked(form, 'AllowAttachments'),
         MovesProjectToStep: fieldChecked(form, 'MovesProjectToStep'),
-        AllowVoid: fieldChecked(form, 'AllowVoid')
+        AllowVoid: fieldChecked(form, 'AllowVoid'),
+        UseProjectColors: fieldChecked(form, 'UseProjectColors'),
+        UseProjectSizes: fieldChecked(form, 'UseProjectSizes'),
+        TrackVariantQuantity: fieldChecked(form, 'TrackVariantQuantity')
       };
 
       if (!payload.Name || !payload.Code) {
