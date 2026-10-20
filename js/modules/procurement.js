@@ -254,7 +254,6 @@
         '<div class="procurement-summary-card-details" id="' + detailId + '" hidden><div class="procurement-needs-project-items">' + lines + '</div></div></section>';
     });
     container.innerHTML = '<div class="procurement-summary-grid">' + cards.join('') + '</div>';
-    applyProcurementFilters('orders');
     applyProcurementFilters('needs');
   }
 
@@ -451,6 +450,7 @@
         '<div class="procurement-needs-project-items">' + (itemDetails || '<div class="table-empty">اقلامی برای این سفارش ثبت نشده است.</div>') + '</div></div></section>';
     });
     container.innerHTML = '<div class="procurement-summary-grid">' + cards.join('') + '</div>';
+    applyProcurementFilters('orders');
   }
 
   function renderSummary(summary) {
