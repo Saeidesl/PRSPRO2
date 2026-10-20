@@ -267,7 +267,11 @@
     cards.forEach(function (card) {
       const status = card.getAttribute('data-filter-status') || '';
       const statusMatch = filter.status === 'all' ||
-        (filter.status === 'active' ? (type === 'needs' ? status === 'waiting-order' || status === 'partial' : status !== 'complete') : status === filter.status);
+        (filter.status === 'active'
+          ? (type === 'needs'
+              ? status === 'waiting-order' || status === 'partial'
+              : status !== 'complete' && status !== 'cancelled')
+          : status === filter.status);
       const queryMatch = !filter.query || String(card.textContent || '').toLocaleLowerCase().indexOf(filter.query.toLocaleLowerCase()) !== -1;
       const show = statusMatch && queryMatch;
       card.hidden = !show;
@@ -373,6 +377,7 @@
       const orderDate = order.OrderDate || order.CreatedAt;
       const age = daysSince(orderDate);
       const items = Array.isArray(order.Items) ? order.Items : [];
+      const isCancelledOrder = String(order.Status || '').toUpperCase() === 'CANCELLED';
       const projectLabels = [];
       items.forEach(function (line) {
         const linkedNeed = needsById[String(line.MaterialNeedID || '')];
@@ -416,7 +421,7 @@
         const linkedNeed = needsById[String(line.MaterialNeedID || '')];
         const linkedProjects = Array.isArray(line.ProjectIDs) && line.ProjectIDs.length ? line.ProjectIDs.map(String) : [line.ProjectID || order.ProjectID || (linkedNeed && linkedNeed.ProjectID) || ''].filter(Boolean).map(String);
         const receiveProject = linkedProjects.length === 1 ? linkedProjects[0] : '';
-        const receiveButton = remaining > 0 && canManageProcurement() ? '<button type="button" class="btn btn-primary procurement-receive-item-button" data-receive-order="' + escapeField(order.ID || order.PurchaseOrderID || '') + '" data-receive-item="' + escapeField(line.ID || line.PurchaseOrderItemID || '') + '" data-receive-project="' + escapeField(receiveProject) + '">تحویل گرفتن</button>' : '';
+        const receiveButton = remaining > 0 && !isCancelledOrder && canManageProcurement() ? '<button type="button" class="btn btn-primary procurement-receive-item-button" data-receive-order="' + escapeField(order.ID || order.PurchaseOrderID || '') + '" data-receive-item="' + escapeField(line.ID || line.PurchaseOrderItemID || '') + '" data-receive-project="' + escapeField(receiveProject) + '">تحویل گرفتن</button>' : '';
         return '<div class="procurement-order-line procurement-order-overview-line"><div class="procurement-line-title"><strong>' + escape(line.ItemName || 'ملزوم بدون نام') + '</strong>' +
           (line.ItemCode ? '<small>' + escape(line.ItemCode) + '</small>' : '') + '</div>' +
           '<div class="procurement-line-metrics"><span>سفارش: <b>' + number(ordered) + ' ' + escape(line.Unit || '') + '</b></span>' +
@@ -427,7 +432,7 @@
           '</div>';
       }).join('');
       const orderHasPending = items.some(function (line) { return Number(line.OrderedQuantity || 0) > Number(line.ReceivedQuantity || 0); });
-      const orderReceiveButton = orderHasPending && canManageProcurement() ? '<button type="button" class="btn btn-primary procurement-receive-order-button" data-receive-order="' + escapeField(order.ID || order.PurchaseOrderID || '') + '">تحویل گرفتن سفارش</button>' : '';
+      const orderReceiveButton = orderHasPending && !isCancelledOrder && canManageProcurement() ? '<button type="button" class="btn btn-primary procurement-receive-order-button" data-receive-order="' + escapeField(order.ID || order.PurchaseOrderID || '') + '">تحویل گرفتن سفارش</button>' : '';
       const printOrderButton = '<button type="button" class="btn btn-secondary procurement-print-order-button" data-print-order-sheet="' + index + '">چاپ برگه سفارش ملزومات</button>';
       const itemCount = items.length;
       const receivedCount = items.filter(function (line) { return Number(line.OrderedQuantity || 0) > 0 && Number(line.ReceivedQuantity || 0) >= Number(line.OrderedQuantity || 0); }).length;
@@ -479,15 +484,13 @@
     if (button) button.disabled = true;
     try {
       const results = await Promise.all([
-        PMS.Api.get('/procurement/dashboard'),
-        PMS.Api.get('/procurement/needs'),
-        PMS.Api.get('/procurement/orders'),
+        PMS.Api.get('/procurement/workspace'),
         loadProjectsForOrder()
       ]);
-      const summaryData = unwrap(results[0]) || {};
-      state.needs = list(results[1], ['needs', 'items', 'Needs']);
-      state.orders = list(results[2], ['orders', 'items', 'Orders']);
-      renderSummary(summaryData.summary || summaryData);
+      const workspace = unwrap(results[0]) || {};
+      state.needs = list(workspace.needs, ['needs', 'items', 'Needs']);
+      state.orders = list(workspace.orders, ['orders', 'items', 'Orders']);
+      renderSummary(workspace.summary || {});
       renderNeeds();
       renderOrders();
       if (content) content.hidden = false;
@@ -542,9 +545,13 @@
         state.projects = normalizeProjects(result.data);
       }
     } catch (error) {
-      // Try the direct API if this client does not support cached requests here.
-      const result = await PMS.Api.get('/projects');
-      state.projects = normalizeProjects(result);
+      // A project lookup failure must not prevent read-only procurement lists from loading.
+      try {
+        const result = await PMS.Api.get('/projects');
+        state.projects = normalizeProjects(result);
+      } catch (fallbackError) {
+        state.projects = [];
+      }
     }
     return state.projects;
   }
@@ -811,6 +818,7 @@
         if (need && need.ID) needsById[String(need.ID)] = need;
       });
       state.orders.forEach(function (order) {
+        if (String(order.Status || '').toUpperCase() === 'CANCELLED') return;
         (Array.isArray(order.Items) ? order.Items : []).forEach(function (item) {
           const need = needsById[String(item.MaterialNeedID || '')];
           const projectIds = Array.isArray(item.ProjectIDs) ? item.ProjectIDs.map(String) : [];
@@ -909,13 +917,14 @@
       event.preventDefault();
       if (state.saving) return;
       const rows = Array.from(itemsContainer.querySelectorAll('[data-receipt-row]'));
+      const availableEntries = projectOrderItems(projectSelect.value);
       const selected = rows.filter(function (row) {
         const checkbox = row.querySelector('[name="SelectedItem"]');
         return checkbox && checkbox.checked;
       }).map(function (row) {
         const checkbox = row.querySelector('[name="SelectedItem"]');
         const quantity = row.querySelector('[name="ReceiptQuantity"]');
-        const entry = projectOrderItems(projectSelect.value).find(function (x) {
+        const entry = availableEntries.find(function (x) {
           return String(x.item.ID) === String(checkbox.value);
         });
         return { itemId: checkbox.value, quantity: Number(quantity && quantity.value), entry: entry };
@@ -953,7 +962,7 @@
         await load();
         showMessage('دریافت ' + number(selected.length) + ' قلم با موفقیت ثبت شد.', false);
       } catch (err) {
-        showMessage(err.message || 'ثبت دریافت ناموفق بود؛ هیچ قلمی نباید ثبت شده باشد. وضعیت سفارش‌ها را دوباره بررسی کنید.', true);
+        showMessage(err.message || 'ثبت دریافت ناموفق بود. برای اطمینان از وضعیت نهایی، فهرست سفارش‌ها و دریافت‌ها را به‌روزرسانی کنید؛ در خطای سیستمی ممکن است بخشی از عملیات نیازمند بررسی باشد.', true);
       } finally {
         state.saving = false;
         if (submit.isConnected) {
