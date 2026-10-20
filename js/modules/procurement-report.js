@@ -165,25 +165,30 @@
     },
     flattenReceipts: function (orders, filters, projects) {
       const rows = [];
-      orders.forEach(order => (Array.isArray(order.Items) ? order.Items : []).forEach(item => {
-        (Array.isArray(item.Receipts) ? item.Receipts : []).forEach(receipt => {
-          if (!this.inDateRange(receipt.ReceivedAt, filters)) return;
-          if (filters.project) {
-            const project = (projects || []).find(p => String(p.ID || '') === String(receipt.ProjectID || ''));
-            const projectValues = [receipt.ProjectID, project && project.ProjectCode, project && project.Title, receipt.ProjectID ? '' : 'عمومی'];
-            if (!projectValues.some(value => String(value || '').toLocaleLowerCase().includes(filters.project))) return;
-          }
-          if (!this.materialMatches(item, filters)) return;
-          if (filters.supplier && !String(order.SupplierName || '').toLocaleLowerCase().includes(filters.supplier)) return;
-          rows.push({
-            date: receipt.ReceivedAt || '', order: order.OrderNumber || order.ID || '',
-            project: (item.ProjectLabels || order.ProjectLabels || []).join('، ') || receipt.ProjectID || 'عمومی',
-            supplier: order.SupplierName || '', item: item.ItemName || '', code: item.ItemCode || '',
-            quantity: this.raw(receipt.QuantityReceived), unit: item.Unit || '',
-            notes: receipt.Notes || ''
+      orders.forEach(order => {
+        if (filters.status !== 'all' && !this.statusMatches(this.orderState(order), filters.status)) return;
+        (Array.isArray(order.Items) ? order.Items : []).forEach(item => {
+          (Array.isArray(item.Receipts) ? item.Receipts : []).forEach(receipt => {
+            if (!this.inDateRange(receipt.ReceivedAt, filters)) return;
+            if (filters.project) {
+              const project = (projects || []).find(p => String(p.ID || '') === String(receipt.ProjectID || ''));
+              const projectValues = [receipt.ProjectID, project && project.ProjectCode, project && project.Title, receipt.ProjectID ? '' : 'عمومی'];
+              if (!projectValues.some(value => String(value || '').toLocaleLowerCase().includes(filters.project))) return;
+            }
+            if (!this.materialMatches(item, filters)) return;
+            if (filters.supplier && !String(order.SupplierName || '').toLocaleLowerCase().includes(filters.supplier)) return;
+            rows.push({
+              date: receipt.ReceivedAt || '', order: order.OrderNumber || order.ID || '',
+              project: receipt.ProjectID
+                ? (((projects || []).find(p => String(p.ID || '') === String(receipt.ProjectID)) || {}).ProjectCode || receipt.ProjectID)
+                : 'عمومی',
+              supplier: order.SupplierName || '', item: item.ItemName || '', code: item.ItemCode || '',
+              quantity: this.raw(receipt.QuantityReceived), unit: item.Unit || '',
+              notes: receipt.Notes || ''
+            });
           });
         });
-      }));
+      });
       return rows.sort((a, b) => this.dateKey(b.date).localeCompare(this.dateKey(a.date)));
     },
     render: function (data) {
