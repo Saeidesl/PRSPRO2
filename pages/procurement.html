@@ -48,12 +48,20 @@
       <div class="procurement-panel-heading">
         <div><h3>نیازهای ملزومات</h3><p>اقلام موردنیاز هر پروژه، مقدار سفارش‌داده‌شده و مقدار باقی‌مانده برای سفارش.</p></div>
       </div>
+      <div class="procurement-list-controls" data-procurement-controls="needs">
+        <label class="procurement-search"><span>جستجو در نیازها</span><input type="search" data-procurement-search="needs" placeholder="جستجوی پروژه، ملزوم، کد، توضیحات..." autocomplete="off"></label>
+        <label class="procurement-status-filter"><span>وضعیت تأمین</span><select data-procurement-status="needs"><option value="active" selected>موارد نیازمند پیگیری</option><option value="all">همه وضعیت‌ها</option><option value="waiting-order">در انتظار سفارش</option><option value="waiting-receipt">در انتظار دریافت</option><option value="partial">نیاز به سفارش و دریافت</option><option value="complete">تأمین کامل</option></select></label>
+      </div>
       <div id="procurement-needs-table" class="table-wrapper"></div>
     </section>
 
     <section class="procurement-tab-panel" id="procurement-panel-orders" role="tabpanel" data-procurement-panel="orders" hidden>
       <div class="procurement-panel-heading">
         <div><h3>سفارش‌های خرید و دریافت انبار</h3><p>سفارش‌ها را باز کنید تا اقلام، دریافت‌های ثبت‌شده و مقدار باقی‌مانده را ببینید.</p></div>
+      </div>
+      <div class="procurement-list-controls" data-procurement-controls="orders">
+        <label class="procurement-search"><span>جستجو در سفارش‌ها</span><input type="search" data-procurement-search="orders" placeholder="جستجوی پروژه، شماره سفارش، ملزوم، تأمین‌کننده..." autocomplete="off"></label>
+        <label class="procurement-status-filter"><span>وضعیت سفارش / دریافت</span><select data-procurement-status="orders"><option value="active" selected>سفارش‌های نیازمند پیگیری</option><option value="all">همه وضعیت‌ها</option><option value="waiting">در انتظار دریافت</option><option value="partial">دریافت ناقص</option><option value="complete">تحویل کامل</option><option value="cancelled">لغوشده</option></select></label>
       </div>
       <div id="procurement-orders-table" class="table-wrapper"></div>
       <p class="form-help procurement-panel-help">برای ثبت دریافت جدید از دکمه «ثبت دریافت انبار» در بالای صفحه استفاده کنید. مقدار سفارش‌شده و مقدار تحویل‌شده جداگانه پیگیری می‌شوند.</p>
