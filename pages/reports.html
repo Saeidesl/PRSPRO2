@@ -40,8 +40,24 @@
   ></div>
 
   <div class="card" id="project-report-builder" style="margin-bottom:18px"><div class="card-header"><h3>گزارش از پروژه‌ها</h3><p>انتخاب پروژه، رویدادهای موردنظر و چاپ A4</p></div><div class="card-body"><label>جست‌وجوی پروژه<input id="pr-project-search" type="search" placeholder="کد یا عنوان پروژه" style="display:block;width:100%;margin:6px 0"><select id="pr-project" style="width:100%"><option value="">انتخاب پروژه...</option></select></label><div style="margin-top:14px"><label><input type="checkbox" id="pr-show-staff" checked> اپراتورها</label>　<label><input type="checkbox" id="pr-show-events" checked> رویدادها</label>　<label><input type="checkbox" id="pr-show-supplies" checked> ملزومات</label></div><div id="pr-event-picker" hidden><h4>رویدادهای مهم</h4><div id="pr-events-list"></div></div><div id="pr-builder-error" class="alert alert-danger" hidden></div><button type="button" class="btn btn-primary" id="pr-generate" disabled>ساخت پیش‌نمایش</button> <button type="button" class="btn btn-light" id="pr-print" disabled>چاپ A4</button><div id="pr-preview" hidden></div></div></div>
-v>
 
+  <section class="card procurement-report-builder" id="procurement-report-builder">
+    <div class="card-header"><div><h3>گزارش جامع تأمین ملزومات</h3><p>گزارش‌گیری از نیازها، سفارش‌ها، دریافت‌های انبار، تأمین پروژه‌ها، تأمین‌کنندگان و روند زمانی</p></div></div>
+    <div class="card-body">
+      <div class="procurement-report-filters">
+        <label>نوع گزارش<select id="prc-report-type"><option value="summary">خلاصه مدیریتی</option><option value="needs">نیازهای ملزومات</option><option value="orders">سفارش‌های خرید</option><option value="receipts">دریافت‌های انبار</option><option value="materials">تحلیل بر اساس ملزوم</option><option value="projects">تحلیل بر اساس پروژه</option><option value="suppliers">تحلیل تأمین‌کنندگان</option><option value="monthly">روند ماهانه</option></select></label>
+        <label>از تاریخ سفارش / ثبت<input type="date" id="prc-report-from"></label>
+        <label>تا تاریخ سفارش / ثبت<input type="date" id="prc-report-to"></label>
+        <label>پروژه<input type="search" id="prc-report-project" placeholder="کد یا عنوان پروژه"></label>
+        <label>ملزوم<input type="search" id="prc-report-material" placeholder="نام یا کد ملزوم"></label>
+        <label>تأمین‌کننده<input type="search" id="prc-report-supplier" placeholder="نام تأمین‌کننده"></label>
+        <label>وضعیت<select id="prc-report-status"><option value="all">همه وضعیت‌ها</option><option value="open">نیازمند پیگیری</option><option value="complete">تکمیل‌شده</option><option value="cancelled">لغوشده</option><option value="partial">ناقص / جزئی</option></select></label>
+      </div>
+      <div class="procurement-report-actions"><button type="button" class="btn btn-primary" id="prc-report-generate">ساخت گزارش</button><button type="button" class="btn btn-light" id="prc-report-refresh">دریافت اطلاعات تازه</button><button type="button" class="btn btn-secondary" id="prc-report-csv" disabled>خروجی CSV</button><button type="button" class="btn btn-light" id="prc-report-print" disabled>چاپ / ذخیره PDF</button><span id="prc-report-status" role="status" aria-live="polite"></span></div>
+      <div id="prc-report-error" class="alert alert-danger" hidden></div>
+      <div id="prc-report-results" class="procurement-report-results" aria-live="polite"><p class="form-help">برای جلوگیری از کند شدن صفحه، اطلاعات گزارش فقط هنگام درخواست شما دریافت می‌شود. فیلترها را انتخاب کنید و «ساخت گزارش» را بزنید.</p></div>
+    </div>
+  </section>
 
   <div
     id="reports-content"
@@ -206,4 +222,5 @@ v>
 </section>
 
 <script src="js/modules/reports.js"></script>
+<script src="js/modules/procurement-report.js"></script>
 <script src="js/modules/project-report.js"></script>
