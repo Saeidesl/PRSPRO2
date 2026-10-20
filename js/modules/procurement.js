@@ -545,9 +545,13 @@
         state.projects = normalizeProjects(result.data);
       }
     } catch (error) {
-      // Try the direct API if this client does not support cached requests here.
-      const result = await PMS.Api.get('/projects');
-      state.projects = normalizeProjects(result);
+      // A project lookup failure must not prevent read-only procurement lists from loading.
+      try {
+        const result = await PMS.Api.get('/projects');
+        state.projects = normalizeProjects(result);
+      } catch (fallbackError) {
+        state.projects = [];
+      }
     }
     return state.projects;
   }
