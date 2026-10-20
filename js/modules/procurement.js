@@ -165,6 +165,14 @@
     if (!container || container.dataset.cardToggleBound === '1') return;
     container.dataset.cardToggleBound = '1';
     container.addEventListener('click', function (event) {
+      const printButton = event.target.closest('[data-print-order-sheet]');
+      if (printButton && container.contains(printButton)) {
+        event.preventDefault(); event.stopPropagation();
+        const orderIndex = Number(printButton.getAttribute('data-print-order-sheet'));
+        const order = Number.isInteger(orderIndex) ? state.orders[orderIndex] : null;
+        if (order) openOrderSupplySheet(order);
+        return;
+      }
       const receiveButton = event.target.closest('[data-receive-order]');
       if (receiveButton && container.contains(receiveButton)) {
         event.preventDefault(); event.stopPropagation();
@@ -252,6 +260,58 @@
     return !!(window.PMS && window.PMS.Router && typeof window.PMS.Router.isAdmin === 'function' && window.PMS.Router.isAdmin()) || permissions.indexOf('PROCUREMENT_MANAGE') !== -1;
   }
 
+  function openOrderSupplySheet(order) {
+    const items = Array.isArray(order.Items) ? order.Items : [];
+    const needsById = {};
+    state.needs.forEach(function (need) { if (need && need.ID) needsById[String(need.ID)] = need; });
+    const projectLabels = [];
+    items.forEach(function (line) {
+      const linkedNeed = needsById[String(line.MaterialNeedID || '')];
+      const ids = Array.isArray(line.ProjectIDs) && line.ProjectIDs.length
+        ? line.ProjectIDs
+        : [line.ProjectID || order.ProjectID || (linkedNeed && linkedNeed.ProjectID) || ''];
+      ids.forEach(function (id) {
+        if (!id) return;
+        const label = projectCodeFor(id);
+        if (projectLabels.indexOf(label) === -1) projectLabels.push(label);
+      });
+    });
+    const projectText = projectLabels.length ? projectLabels.join('، ') : 'سفارش عمومی';
+    const itemRows = items.map(function (line, index) {
+      const color = line.ColorBreakdown || line.Colors || line.Color || line.Colour || '';
+      const description = line.Description || line.Notes || '';
+      return '<tr><td class="num">' + number(index + 1) + '</td><td><strong>' + escape(line.ItemName || 'ملزوم بدون نام') + '</strong>' +
+        (line.ItemCode ? '<div class="sub">' + escape(line.ItemCode) + '</div>' : '') + '</td>' +
+        '<td class="qty">' + number(line.OrderedQuantity || 0) + '</td><td>' + escape(line.Unit || '') + '</td>' +
+        '<td class="color-cell">' + (color ? escape(color) : '&nbsp;') + '</td><td class="desc-cell">' + (description ? escape(description) : '&nbsp;') + '</td></tr>';
+    }).join('');
+    const date = formatDate(order.OrderDate || order.CreatedAt);
+    const orderNo = order.OrderNumber || order.ID || order.PurchaseOrderID || '—';
+    const notes = order.Notes || '';
+    const win = window.open('', '_blank');
+    if (!win) {
+      window.alert('باز شدن برگه مسدود شد. اجازه بازشدن پنجره برای این سایت را فعال کنید و دوباره تلاش کنید.');
+      return;
+    }
+    const page = '<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
+      '<title>برگه درخواست خرید - ' + escape(orderNo) + '</title><style>' +
+      '*{box-sizing:border-box}body{margin:0;background:#eee;color:#111;font-family:Tahoma,Arial,sans-serif}.toolbar{position:sticky;top:0;z-index:2;background:#222;color:#fff;padding:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}.toolbar button{border:1px solid #fff;background:#fff;color:#111;border-radius:5px;padding:9px 15px;font:inherit;cursor:pointer}.sheet-wrap{padding:20px}.sheet{width:794px;min-height:1123px;margin:0 auto;background:#fff;padding:34px;border:1px solid #111;box-shadow:0 3px 14px #bbb;direction:rtl;font-size:13px}.sheet-header{display:flex;justify-content:space-between;align-items:center;border:2px solid #111;padding:14px;margin-bottom:14px}.brand{font-size:22px;font-weight:bold}.subtitle{font-size:12px;margin-top:6px}.stamp{border:1px solid #111;padding:10px;text-align:center;min-width:140px;line-height:1.9}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}.meta div{border:1px solid #333;padding:9px;min-height:37px}.label{font-weight:bold}.items{width:100%;border-collapse:collapse;table-layout:fixed}.items th,.items td{border:1px solid #111;padding:9px 7px;text-align:right;vertical-align:middle;overflow-wrap:anywhere}.items th{background:#eee;text-align:center}.items .num{width:6%;text-align:center}.items td:nth-child(2){width:27%}.items .qty{width:12%;text-align:center}.items td:nth-child(4){width:9%;text-align:center}.items .color-cell{width:21%;min-height:45px}.items .desc-cell{width:25%}.sub{font-size:10px;margin-top:4px}.section-title{font-size:14px;font-weight:bold;border:1px solid #111;padding:8px;margin-top:16px}.swatch{height:210px;border:1px solid #111;border-top:0;position:relative;background:#fff}.swatch:before{content:"";position:absolute;inset:10px;border:1px dashed #aaa}.swatch-label{position:absolute;top:14px;right:14px;background:#fff;padding:4px 8px;font-size:11px}.notes{min-height:48px;border:1px solid #111;border-top:0;padding:10px;white-space:pre-wrap}.signatures{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px}.signatures div{border:1px solid #111;height:76px;padding:8px;font-weight:bold}.foot{border-top:1px solid #111;margin-top:18px;padding-top:8px;font-size:10px;display:flex;justify-content:space-between}.num,.qty{font-variant-numeric:tabular-nums}@media print{body{background:#fff}.toolbar{display:none}.sheet-wrap{padding:0}.sheet{width:100%;min-height:0;margin:0;border:0;box-shadow:none;padding:10mm;page-break-after:avoid}@page{size:A4;margin:0}}' +
+      '</style></head><body><div class="toolbar"><button type="button" onclick="window.print()">چاپ / ذخیره PDF</button><button type="button" onclick="downloadPng()">دانلود عکس PNG</button><button type="button" onclick="window.close()">بستن</button></div>' +
+      '<div class="sheet-wrap"><main class="sheet" id="sheet"><header class="sheet-header"><div><div class="brand">برگه درخواست خرید ملزومات</div><div class="subtitle">فرم رسمی درخواست تأمین ملزومات تولید</div></div><div class="stamp"><b>شماره سفارش</b><br>' + escape(orderNo) + '<br><b>تاریخ</b> ' + escape(date) + '</div></header>' +
+      '<section class="meta"><div><span class="label">کد / عنوان پروژه:</span> ' + escape(projectText) + '</div><div><span class="label">تأمین‌کننده:</span> ' + escape(order.SupplierName || '................................') + '</div>' +
+      '<div><span class="label">تاریخ تحویل مورد انتظار:</span> ' + escape(order.ExpectedDeliveryDate ? formatDate(order.ExpectedDeliveryDate) : '................................') + '</div><div><span class="label">تعداد اقلام:</span> ' + number(items.length) + '</div></section>' +
+      '<table class="items"><thead><tr><th class="num">ردیف</th><th>نام ملزوم / کد</th><th class="qty">مقدار</th><th>واحد</th><th class="color-cell">رنگ‌بندی</th><th class="desc-cell">توضیحات</th></tr></thead><tbody>' +
+      (itemRows || '<tr><td colspan="6">قلمی برای این سفارش ثبت نشده است.</td></tr>') + '</tbody></table>' +
+      '<div class="section-title">محل چسباندن نمونه پارچه / نمونه رنگ</div><div class="swatch"><span class="swatch-label">نمونه پارچه را در این قسمت بچسبانید</span></div>' +
+      '<div class="section-title">توضیحات تکمیلی</div><div class="notes">' + (notes ? escape(notes) : ' ') + '</div>' +
+      '<section class="signatures"><div>تنظیم‌کننده برگه<br><br>نام و امضا:</div><div>مسئول خرید<br><br>نام و امضا:</div><div>تأیید نهایی<br><br>نام و امضا:</div></section>' +
+      '<footer class="foot"><span>فرم درخواست خرید ملزومات</span><span>این برگه همراه سفارش به مسئول خرید تحویل شود.</span></footer></main></div>' +
+      '<script>function downloadPng(){var el=document.getElementById("sheet");var css=' + JSON.stringify(' *{box-sizing:border-box}body{margin:0;background:#fff;color:#111;font-family:Tahoma,Arial,sans-serif}.sheet{width:794px;min-height:1123px;background:#fff;padding:34px;direction:rtl;font-size:13px}.sheet-header{display:flex;justify-content:space-between;align-items:center;border:2px solid #111;padding:14px;margin-bottom:14px}.brand{font-size:22px;font-weight:bold}.subtitle{font-size:12px;margin-top:6px}.stamp{border:1px solid #111;padding:10px;text-align:center;min-width:140px;line-height:1.9}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}.meta div{border:1px solid #333;padding:9px;min-height:37px}.label{font-weight:bold}.items{width:100%;border-collapse:collapse;table-layout:fixed}.items th,.items td{border:1px solid #111;padding:9px 7px;text-align:right;vertical-align:middle;overflow-wrap:anywhere}.items th{background:#eee;text-align:center}.items .num{width:6%;text-align:center}.items td:nth-child(2){width:27%}.items .qty{width:12%;text-align:center}.items td:nth-child(4){width:9%;text-align:center}.items .color-cell{width:21%}.items .desc-cell{width:25%}.sub{font-size:10px;margin-top:4px}.section-title{font-size:14px;font-weight:bold;border:1px solid #111;padding:8px;margin-top:16px}.swatch{height:210px;border:1px solid #111;border-top:0;position:relative;background:#fff}.swatch:before{content:"";position:absolute;inset:10px;border:1px dashed #aaa}.swatch-label{position:absolute;top:14px;right:14px;background:#fff;padding:4px 8px;font-size:11px}.notes{min-height:48px;border:1px solid #111;border-top:0;padding:10px;white-space:pre-wrap}.signatures{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px}.signatures div{border:1px solid #111;height:76px;padding:8px;font-weight:bold}.foot{border-top:1px solid #111;margin-top:18px;padding-top:8px;font-size:10px;display:flex;justify-content:space-between}.num,.qty{font-variant-numeric:tabular-nums}') + ';var html=el.outerHTML;var svg="<svg xmlns=\\"http://www.w3.org/2000/svg\\" width=\\"794\\" height=\\"1123\\"><foreignObject width=\\"100%\\" height=\\"100%\\"><div xmlns=\\"http://www.w3.org/1999/xhtml\\" style=\\"width:794px;height:1123px;background:#fff;\\"><style>"+css+"</style>"+html+"</div></foreignObject></svg>";var blob=new Blob([svg],{type:"image/svg+xml;charset=utf-8"});var url=URL.createObjectURL(blob);var img=new Image();img.onload=function(){var c=document.createElement("canvas");c.width=1588;c.height=2246;var ctx=c.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,c.width,c.height);ctx.scale(2,2);ctx.drawImage(img,0,0,794,1123);URL.revokeObjectURL(url);c.toBlob(function(png){if(!png){alert("ساخت عکس ناموفق بود؛ از چاپ PDF استفاده کنید.");return;}var a=document.createElement("a");a.href=URL.createObjectURL(png);a.download="supply-order-' + String(orderNo).replace(/[^a-zA-Z0-9_-]/g,'') + '.png";a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},1000);},"image/png");};img.onerror=function(){URL.revokeObjectURL(url);alert("ساخت عکس در این مرورگر پشتیبانی نشد؛ از چاپ PDF استفاده کنید.");};img.src=url;}</script></body></html>';
+    win.document.open();
+    win.document.write(page);
+    win.document.close();
+  }
+
   function renderOrders() {
     const container = $('procurement-orders-table');
     if (!container) return;
@@ -321,6 +381,7 @@
       }).join('');
       const orderHasPending = items.some(function (line) { return Number(line.OrderedQuantity || 0) > Number(line.ReceivedQuantity || 0); });
       const orderReceiveButton = orderHasPending && canManageProcurement() ? '<button type="button" class="btn btn-primary procurement-receive-order-button" data-receive-order="' + escapeField(order.ID || order.PurchaseOrderID || '') + '">تحویل گرفتن سفارش</button>' : '';
+      const printOrderButton = '<button type="button" class="btn btn-secondary procurement-print-order-button" data-print-order-sheet="' + index + '">چاپ برگه سفارش ملزومات</button>';
       const itemCount = items.length;
       const receivedCount = items.filter(function (line) { return Number(line.OrderedQuantity || 0) > 0 && Number(line.ReceivedQuantity || 0) >= Number(line.OrderedQuantity || 0); }).length;
       const partialCount = items.filter(function (line) { return Number(line.ReceivedQuantity || 0) > 0 && Number(line.ReceivedQuantity || 0) < Number(line.OrderedQuantity || 0); }).length;
@@ -336,7 +397,7 @@
         '<span class="procurement-summary-card-main"><strong class="procurement-project-code">' + escape(projectLabelText) + '</strong>' +
         '<span class="procurement-summary-card-meta">' + escape(order.OrderNumber || 'شماره سفارش ثبت نشده') + ' · ' + escape(order.SupplierName || 'تأمین‌کننده ثبت نشده') + '</span></span>' +
         '<span class="procurement-summary-card-status">' + statusBadge(overallLabel, overallKind) + '<span class="procurement-card-hint">مشاهده جزئیات</span><span class="procurement-card-chevron" aria-hidden="true">⌄</span></span></button>' +
-        '<div class="procurement-summary-card-stats"><span>تاریخ سفارش <b>' + escape(formatDate(orderDate)) + '</b></span><span>مدت سپری‌شده <b>' + (age === null ? 'نامشخص' : number(age) + ' روز') + '</b></span><span>اقلام <b>' + number(itemCount) + '</b></span><span>در انتظار دریافت <b>' + number(pendingCount) + '</b></span>' + orderReceiveButton + '</div>' +
+        '<div class="procurement-summary-card-stats"><span>تاریخ سفارش <b>' + escape(formatDate(orderDate)) + '</b></span><span>مدت سپری‌شده <b>' + (age === null ? 'نامشخص' : number(age) + ' روز') + '</b></span><span>اقلام <b>' + number(itemCount) + '</b></span><span>در انتظار دریافت <b>' + number(pendingCount) + '</b></span>' + orderReceiveButton + printOrderButton + '</div>' +
         '<div class="procurement-summary-card-details" id="' + detailId + '" hidden><div class="procurement-order-detail-meta"><span>تأمین‌کننده: <b>' + escape(order.SupplierName || 'ثبت نشده') + '</b></span><span>وضعیت ثبت‌شده سفارش: <b>' + escape(statusLabel(order.Status)) + '</b></span></div>' +
         '<div class="procurement-needs-project-items">' + (itemDetails || '<div class="table-empty">اقلامی برای این سفارش ثبت نشده است.</div>') + '</div></div></section>';
     });
