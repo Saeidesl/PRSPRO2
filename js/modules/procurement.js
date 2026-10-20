@@ -267,7 +267,11 @@
     cards.forEach(function (card) {
       const status = card.getAttribute('data-filter-status') || '';
       const statusMatch = filter.status === 'all' ||
-        (filter.status === 'active' ? (type === 'needs' ? status === 'waiting-order' || status === 'partial' : status !== 'complete') : status === filter.status);
+        (filter.status === 'active'
+          ? (type === 'needs'
+              ? status === 'waiting-order' || status === 'partial'
+              : status !== 'complete' && status !== 'cancelled')
+          : status === filter.status);
       const queryMatch = !filter.query || String(card.textContent || '').toLocaleLowerCase().indexOf(filter.query.toLocaleLowerCase()) !== -1;
       const show = statusMatch && queryMatch;
       card.hidden = !show;
@@ -479,15 +483,13 @@
     if (button) button.disabled = true;
     try {
       const results = await Promise.all([
-        PMS.Api.get('/procurement/dashboard'),
-        PMS.Api.get('/procurement/needs'),
-        PMS.Api.get('/procurement/orders'),
+        PMS.Api.get('/procurement/workspace'),
         loadProjectsForOrder()
       ]);
-      const summaryData = unwrap(results[0]) || {};
-      state.needs = list(results[1], ['needs', 'items', 'Needs']);
-      state.orders = list(results[2], ['orders', 'items', 'Orders']);
-      renderSummary(summaryData.summary || summaryData);
+      const workspace = unwrap(results[0]) || {};
+      state.needs = list(workspace.needs, ['needs', 'items', 'Needs']);
+      state.orders = list(workspace.orders, ['orders', 'items', 'Orders']);
+      renderSummary(workspace.summary || {});
       renderNeeds();
       renderOrders();
       if (content) content.hidden = false;
