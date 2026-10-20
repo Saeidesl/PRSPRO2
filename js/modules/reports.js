@@ -15,6 +15,7 @@
 
     init: function () {
       this.bindEvents();
+      if (window.PMS.Modules.ProjectReport) window.PMS.Modules.ProjectReport.init();
       this.load();
     },
 
