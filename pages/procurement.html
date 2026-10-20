@@ -14,17 +14,50 @@
   <div id="procurement-loading" class="loading-state">در حال دریافت اطلاعات تأمین...</div>
   <div id="procurement-error" class="alert alert-danger" hidden></div>
   <div id="procurement-content" hidden>
-    <div class="dashboard-stats">
-      <div class="stat-card"><div class="stat-card-label">نیازهای فعال</div><div class="stat-card-value" id="procurement-needs-count">۰</div></div>
-      <div class="stat-card"><div class="stat-card-label">نیازهای بدون سفارش کامل</div><div class="stat-card-value" id="procurement-needs-open">۰</div></div>
-      <div class="stat-card"><div class="stat-card-label">سفارش‌های ثبت‌شده</div><div class="stat-card-value" id="procurement-orders-count">۰</div></div>
-      <div class="stat-card"><div class="stat-card-label">سفارش‌های دریافت ناقص</div><div class="stat-card-value" id="procurement-orders-open">۰</div></div>
-      <div class="stat-card"><div class="stat-card-label">اقلام دارای مازاد خرید</div><div class="stat-card-value" id="procurement-surplus-lines">۰</div></div>
-      <div class="stat-card"><div class="stat-card-label">ارزش مازاد با قیمت ثبت‌شده</div><div class="stat-card-value" id="procurement-surplus-cost">۰</div></div>
-    </div>
-    <div class="card"><div class="card-header"><h3>نیازهای ملزومات</h3></div><div class="card-body"><div id="procurement-needs-table" class="table-wrapper"></div></div></div>
-    <div class="card"><div class="card-header"><h3>سفارش‌های خرید و دریافت انبار</h3></div><div class="card-body"><div id="procurement-orders-table" class="table-wrapper"></div></div></div>
-    <p class="form-help">مقدار سفارش‌شده با مقدار تحویل‌شده متفاوت است. سفارش‌ها می‌توانند چند قلم داشته باشند و دریافت هر قلم در چند مرحله ثبت شود.</p>
+    <nav class="procurement-tabs" role="tablist" aria-label="بخش‌های تأمین ملزومات">
+      <button type="button" class="procurement-tab is-active" role="tab" aria-selected="true" aria-controls="procurement-panel-overview" data-procurement-tab="overview">
+        <span class="procurement-tab-icon">▦</span><span>خلاصه وضعیت</span>
+      </button>
+      <button type="button" class="procurement-tab" role="tab" aria-selected="false" aria-controls="procurement-panel-needs" data-procurement-tab="needs">
+        <span class="procurement-tab-icon">☷</span><span>نیازهای ملزومات</span><span class="procurement-tab-count" id="procurement-tab-needs-count">۰</span>
+      </button>
+      <button type="button" class="procurement-tab" role="tab" aria-selected="false" aria-controls="procurement-panel-orders" data-procurement-tab="orders">
+        <span class="procurement-tab-icon">▤</span><span>سفارش‌های خرید و دریافت</span><span class="procurement-tab-count" id="procurement-tab-orders-count">۰</span>
+      </button>
+    </nav>
+
+    <section class="procurement-tab-panel is-active" id="procurement-panel-overview" role="tabpanel" data-procurement-panel="overview">
+      <div class="procurement-panel-heading">
+        <div><h3>خلاصه وضعیت تأمین</h3><p>نمای کلی از نیازها، سفارش‌ها و مواردی که هنوز باید پیگیری شوند.</p></div>
+      </div>
+      <div class="dashboard-stats procurement-dashboard-stats">
+        <div class="stat-card"><div class="stat-card-label">نیازهای فعال</div><div class="stat-card-value" id="procurement-needs-count">۰</div></div>
+        <div class="stat-card"><div class="stat-card-label">نیازهای بدون سفارش کامل</div><div class="stat-card-value" id="procurement-needs-open">۰</div></div>
+        <div class="stat-card"><div class="stat-card-label">سفارش‌های ثبت‌شده</div><div class="stat-card-value" id="procurement-orders-count">۰</div></div>
+        <div class="stat-card"><div class="stat-card-label">سفارش‌های دریافت ناقص</div><div class="stat-card-value" id="procurement-orders-open">۰</div></div>
+        <div class="stat-card"><div class="stat-card-label">اقلام دارای مازاد خرید</div><div class="stat-card-value" id="procurement-surplus-lines">۰</div></div>
+        <div class="stat-card"><div class="stat-card-label">ارزش مازاد با قیمت ثبت‌شده</div><div class="stat-card-value" id="procurement-surplus-cost">۰</div></div>
+      </div>
+      <div class="procurement-overview-shortcuts">
+        <button type="button" class="procurement-shortcut" data-procurement-tab-jump="needs"><span class="procurement-shortcut-symbol">☷</span><span><strong>بررسی نیازهای ملزومات</strong><small>ببینید چه اقلامی هنوز باید سفارش داده شوند.</small></span><span class="procurement-shortcut-arrow">←</span></button>
+        <button type="button" class="procurement-shortcut" data-procurement-tab-jump="orders"><span class="procurement-shortcut-symbol">▤</span><span><strong>پیگیری سفارش‌ها و دریافت‌ها</strong><small>وضعیت سفارش و مقدار تحویل‌شده هر قلم را بررسی کنید.</small></span><span class="procurement-shortcut-arrow">←</span></button>
+      </div>
+    </section>
+
+    <section class="procurement-tab-panel" id="procurement-panel-needs" role="tabpanel" data-procurement-panel="needs" hidden>
+      <div class="procurement-panel-heading">
+        <div><h3>نیازهای ملزومات</h3><p>اقلام موردنیاز هر پروژه، مقدار سفارش‌داده‌شده و مقدار باقی‌مانده برای سفارش.</p></div>
+      </div>
+      <div id="procurement-needs-table" class="table-wrapper"></div>
+    </section>
+
+    <section class="procurement-tab-panel" id="procurement-panel-orders" role="tabpanel" data-procurement-panel="orders" hidden>
+      <div class="procurement-panel-heading">
+        <div><h3>سفارش‌های خرید و دریافت انبار</h3><p>سفارش‌ها را باز کنید تا اقلام، دریافت‌های ثبت‌شده و مقدار باقی‌مانده را ببینید.</p></div>
+      </div>
+      <div id="procurement-orders-table" class="table-wrapper"></div>
+      <p class="form-help procurement-panel-help">برای ثبت دریافت جدید از دکمه «ثبت دریافت انبار» در بالای صفحه استفاده کنید. مقدار سفارش‌شده و مقدار تحویل‌شده جداگانه پیگیری می‌شوند.</p>
+    </section>
   </div>
   <div id="procurement-modal-root"></div>
 </section>
