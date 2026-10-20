@@ -165,6 +165,12 @@
     if (!container || container.dataset.cardToggleBound === '1') return;
     container.dataset.cardToggleBound = '1';
     container.addEventListener('click', function (event) {
+      const receiveButton = event.target.closest('[data-receive-order]');
+      if (receiveButton && container.contains(receiveButton)) {
+        event.preventDefault(); event.stopPropagation();
+        openReceiptForm({ orderId: receiveButton.getAttribute('data-receive-order') || '', itemId: receiveButton.getAttribute('data-receive-item') || '', projectId: receiveButton.getAttribute('data-receive-project') || '' });
+        return;
+      }
       const button = event.target.closest('[data-procurement-toggle]');
       if (!button || !container.contains(button)) return;
       const targetId = button.getAttribute('aria-controls');
@@ -228,6 +234,8 @@
           '<div class="procurement-need-item-status">' + statusBadge(entry.label, entry.kind) + '</div>' +
           '</div></div>';
       }).join('');
+      const orderHasPending = items.some(function (line) { return Number(line.OrderedQuantity || 0) > Number(line.ReceivedQuantity || 0); });
+      const orderReceiveButton = orderHasPending && canManageProcurement() ? '<button type="button" class="btn btn-primary procurement-receive-order-button" data-receive-order="' + escapeField(order.ID || order.PurchaseOrderID || '') + '">تحویل گرفتن سفارش</button>' : '';
       return '<section class="procurement-summary-card is-' + overallKind + '">' +
         '<button type="button" class="procurement-summary-card-head" data-procurement-toggle aria-expanded="false" aria-controls="' + detailId + '">' +
         '<span class="procurement-summary-card-main"><strong class="procurement-project-code">' + escape(group.label) + '</strong>' +
@@ -239,6 +247,11 @@
         '<div class="procurement-summary-card-details" id="' + detailId + '" hidden><div class="procurement-needs-project-items">' + lines + '</div></div></section>';
     });
     container.innerHTML = '<div class="procurement-summary-grid">' + cards.join('') + '</div>';
+  }
+
+  function canManageProcurement() {
+    const permissions = window.PMS && window.PMS.Router && Array.isArray(window.PMS.Router.permissions) ? window.PMS.Router.permissions : [];
+    return !!(window.PMS && window.PMS.Router && typeof window.PMS.Router.isAdmin === 'function' && window.PMS.Router.isAdmin()) || permissions.indexOf('PROCUREMENT_MANAGE') !== -1;
   }
 
   function renderOrders() {
@@ -295,12 +308,16 @@
             ? '<div class="procurement-item-completion"><strong>تحویل کامل است؛</strong> تاریخ تکمیل دریافت در دسترس نیست، بنابراین مدت دقیق قابل محاسبه نیست.</div>'
             : '<div class="procurement-item-completion is-pending"><strong>مدت تا تحویل کامل:</strong> هنوز تکمیل نشده' + (age === null ? '' : '؛ ' + number(age) + ' روز از تاریخ سفارش گذشته') + '</div>';
         const status = remaining <= 0 ? statusBadge('تحویل کامل', 'complete') : (received > 0 ? statusBadge('تحویل ناقص', 'partial') : statusBadge('در انتظار دریافت', 'delivery'));
+        const linkedNeed = needsById[String(line.MaterialNeedID || '')];
+        const linkedProjects = Array.isArray(line.ProjectIDs) && line.ProjectIDs.length ? line.ProjectIDs.map(String) : [line.ProjectID || order.ProjectID || (linkedNeed && linkedNeed.ProjectID) || ''].filter(Boolean).map(String);
+        const receiveProject = linkedProjects.length === 1 ? linkedProjects[0] : '';
+        const receiveButton = remaining > 0 && canManageProcurement() ? '<button type="button" class="btn btn-primary procurement-receive-item-button" data-receive-order="' + escapeField(order.ID || order.PurchaseOrderID || '') + '" data-receive-item="' + escapeField(line.ID || line.PurchaseOrderItemID || '') + '" data-receive-project="' + escapeField(receiveProject) + '">تحویل گرفتن</button>' : '';
         return '<div class="procurement-order-line procurement-order-overview-line"><div class="procurement-line-title"><strong>' + escape(line.ItemName || 'ملزوم بدون نام') + '</strong>' +
           (line.ItemCode ? '<small>' + escape(line.ItemCode) + '</small>' : '') + '</div>' +
           '<div class="procurement-line-metrics"><span>سفارش: <b>' + number(ordered) + ' ' + escape(line.Unit || '') + '</b></span>' +
           '<span>دریافت: <b class="procurement-quantity-done">' + number(received) + '</b></span>' +
           '<span>مانده: <b class="' + (remaining > 0 ? 'procurement-quantity-pending' : 'procurement-quantity-done') + '">' + number(remaining) + '</b></span>' + status + '</div>' +
-          receiptDates + completionText +
+          receiptDates + completionText + receiveButton +
           (surplus > 0 ? '<div class="form-help procurement-surplus-line">مازاد خرید: ' + number(surplus) + ' ' + escape(line.Unit || '') + (surplusCost !== null ? '؛ ارزش مازاد: ' + number(surplusCost) : '؛ قیمت واحد ثبت نشده') + '</div>' : '') +
           '</div>';
       }).join('');
@@ -319,7 +336,7 @@
         '<span class="procurement-summary-card-main"><strong class="procurement-project-code">' + escape(projectLabelText) + '</strong>' +
         '<span class="procurement-summary-card-meta">' + escape(order.OrderNumber || 'شماره سفارش ثبت نشده') + ' · ' + escape(order.SupplierName || 'تأمین‌کننده ثبت نشده') + '</span></span>' +
         '<span class="procurement-summary-card-status">' + statusBadge(overallLabel, overallKind) + '<span class="procurement-card-hint">مشاهده جزئیات</span><span class="procurement-card-chevron" aria-hidden="true">⌄</span></span></button>' +
-        '<div class="procurement-summary-card-stats"><span>تاریخ سفارش <b>' + escape(formatDate(orderDate)) + '</b></span><span>مدت سپری‌شده <b>' + (age === null ? 'نامشخص' : number(age) + ' روز') + '</b></span><span>اقلام <b>' + number(itemCount) + '</b></span><span>در انتظار دریافت <b>' + number(pendingCount) + '</b></span></div>' +
+        '<div class="procurement-summary-card-stats"><span>تاریخ سفارش <b>' + escape(formatDate(orderDate)) + '</b></span><span>مدت سپری‌شده <b>' + (age === null ? 'نامشخص' : number(age) + ' روز') + '</b></span><span>اقلام <b>' + number(itemCount) + '</b></span><span>در انتظار دریافت <b>' + number(pendingCount) + '</b></span>' + orderReceiveButton + '</div>' +
         '<div class="procurement-summary-card-details" id="' + detailId + '" hidden><div class="procurement-order-detail-meta"><span>تأمین‌کننده: <b>' + escape(order.SupplierName || 'ثبت نشده') + '</b></span><span>وضعیت ثبت‌شده سفارش: <b>' + escape(statusLabel(order.Status)) + '</b></span></div>' +
         '<div class="procurement-needs-project-items">' + (itemDetails || '<div class="table-empty">اقلامی برای این سفارش ثبت نشده است.</div>') + '</div></div></section>';
     });
@@ -646,7 +663,7 @@
       }
     });
   }
-  async function openReceiptForm() {
+  async function openReceiptForm(options) { options = options || {};
     try {
       await loadProjectsForOrder();
     } catch (error) {
@@ -688,6 +705,8 @@
           const legacyProjectId = item.ProjectID || order.ProjectID || (need && need.ProjectID) || '';
           const general = projectIds.length === 0 && !legacyProjectId;
           if (projectId === '__GENERAL__' ? !general : !(projectIds.includes(String(projectId)) || String(legacyProjectId) === String(projectId))) return;
+          if (options.orderId && String(order.ID || order.PurchaseOrderID || '') !== String(options.orderId)) return;
+          if (options.itemId && String(item.ID || item.PurchaseOrderItemID || '') !== String(options.itemId)) return;
 
           const allocations = Array.isArray(item.Allocations) ? item.Allocations : [];
           const hasProjectAllocations = allocations.length > 0;
@@ -731,12 +750,13 @@
       itemsContainer.innerHTML = '<div class="procurement-receipt-list">' + entries.map(function (entry, index) {
         const item = entry.item;
         const disabled = entry.remaining <= 0;
+        const preselected = !disabled && ((options.itemId && String(item.ID || item.PurchaseOrderItemID || '') === String(options.itemId)) || (options.orderId && String(entry.order.ID || entry.order.PurchaseOrderID || '') === String(options.orderId)));
         return '<div class="procurement-receipt-row' + (disabled ? ' is-complete' : '') + '" data-receipt-row="' + index + '">' +
-          '<label class="procurement-receipt-select"><input type="checkbox" name="SelectedItem" value="' + escapeField(item.ID) + '"' + (disabled ? ' disabled' : '') + '><span class="procurement-receipt-checkmark"></span></label>' +
+          '<label class="procurement-receipt-select"><input type="checkbox" name="SelectedItem" value="' + escapeField(item.ID || item.PurchaseOrderItemID || '') + '"' + (disabled ? ' disabled' : '') + (preselected ? ' checked' : '') + '><span class="procurement-receipt-checkmark"></span></label>' +
           '<div class="procurement-receipt-item-info"><strong>' + escape(item.ItemName || 'ملزوم') + '</strong>' +
           '<span>' + escape(entry.order.OrderNumber || 'سفارش') + (item.Unit ? ' · ' + escape(item.Unit) : '') + '</span>' +
           '<small>سفارش: ' + number(entry.ordered) + ' · دریافت‌شده: ' + number(entry.received) + ' · باقی‌مانده: ' + number(entry.remaining) + '</small></div>' +
-          '<label class="procurement-receipt-quantity"><span>مقدار دریافتی</span><input type="number" name="ReceiptQuantity" min="0.001" step="any" max="' + entry.remaining + '" value="' + (disabled ? '' : entry.remaining) + '" disabled placeholder="مقدار"></label>' +
+          '<label class="procurement-receipt-quantity"><span>مقدار دریافتی</span><input type="number" name="ReceiptQuantity" min="0.001" step="any" max="' + entry.remaining + '" value="' + (disabled ? '' : entry.remaining) + '"' + (disabled || !preselected ? ' disabled' : '') + ' placeholder="مقدار"></label>' +
           (disabled ? '<span class="procurement-receipt-status">دریافت کامل</span>' : '') +
           '</div>';
       }).join('') + '</div>';
@@ -762,6 +782,7 @@
     }
 
     projectSelect.addEventListener('change', renderReceiptItems);
+    if (options.projectId) { projectSelect.value = options.projectId; renderReceiptItems(); }
     itemsContainer.addEventListener('change', function (event) {
       if (event.target.matches('[name="SelectedItem"]')) {
         const row = event.target.closest('[data-receipt-row]');
@@ -844,9 +865,7 @@
       refresh.dataset.bound = '1';
       refresh.addEventListener('click', function () { load(false); });
     }
-    const permissions = window.PMS && window.PMS.Router && Array.isArray(window.PMS.Router.permissions)
-      ? window.PMS.Router.permissions : [];
-    const canManage = !!(window.PMS && window.PMS.Router && typeof window.PMS.Router.isAdmin === 'function' && window.PMS.Router.isAdmin()) || permissions.indexOf('PROCUREMENT_MANAGE') !== -1;
+    const canManage = canManageProcurement();
     ['procurement-create-project-order', 'procurement-create-general-order', 'procurement-create-receipt'].forEach(function (id) {
       const button = $(id);
       if (button) button.hidden = !canManage;
