@@ -477,13 +477,12 @@
 
             <div class="filter-group" style="margin-bottom:16px;">
               <label for="new-project-quantity">
-                تعداد کل پروژه <span style="color:var(--color-danger);">*</span>
+                تعداد کل پروژه <span style="color:var(--color-text-secondary);font-size:12px;">(اختیاری)</span>
               </label>
               <input
                 type="number"
                 id="new-project-quantity"
                 name="Quantity"
-                required
                 min="1"
                 step="1"
                 inputmode="numeric"
@@ -716,7 +715,7 @@
       const project = {
         ProjectCode: codeInput.value.trim(),
         Title: titleInput.value.trim(),
-        Quantity: Number(quantityInput.value),
+        Quantity: quantityInput.value.trim() === '' ? '' : Number(quantityInput.value),
         WorkflowID: workflowSelect.value,
         Description: descriptionInput.value.trim()
       };
