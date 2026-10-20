@@ -650,6 +650,9 @@
               event.EventTypeID
           ],
           ['شرح', event.Description],
+          ...(event.Color ? [['رنگ', event.Color]] : []),
+          ...(event.Size ? [['سایز', event.Size]] : []),
+          ...(event.VariantQuantity !== undefined && event.VariantQuantity !== null && String(event.VariantQuantity) !== '' ? [['مقدار رنگ/سایز', event.VariantQuantity]] : []),
           ['ثبت‌کننده', this.creatorValue(event)],
           ['انجام‌دهنده', event.PerformedByName || event.PerformedBy],
           ['واحد', this.departmentValue(event)],
@@ -830,6 +833,8 @@
         '<div class="event-field event-field-wide"><label for="event-form-description">شرح رویداد</label>' +
         '<textarea id="event-form-description" name="Description" rows="3" placeholder="توضیحات تکمیلی، در صورت نیاز"></textarea></div>' +
         '</div></section>' +
+        '<section class="event-form-section" id="event-variant-section" hidden><h4 class="event-section-title">رنگ‌بندی، سایزبندی و مقدار</h4>' +
+        '<div id="event-variant-fields" class="event-dynamic-grid"></div></section>' +
         '<section class="event-form-section"><h4 class="event-section-title">اطلاعات اختصاصی رویداد</h4>' +
         '<div id="event-dynamic-fields" class="event-dynamic-grid" aria-live="polite">' +
         '<p class="event-muted">ابتدا نوع رویداد را انتخاب کنید.</p></div></section>' +
@@ -912,11 +917,13 @@
         projectSelect.required = !isIndependent;
         if (isIndependent) projectSelect.value = '';
         this.updateSubmitAvailability();
+        this.renderVariantFields();
         this.loadDynamicFields(typeSelect.value);
       });
 
       projectSelect.addEventListener('change', () => {
         this.updateSubmitAvailability();
+        this.renderVariantFields();
       });
 
       dateInput.addEventListener('input', () => {
@@ -943,6 +950,91 @@
 
       const firstInput = document.getElementById('event-form-project');
       if (firstInput) firstInput.focus();
+    },
+
+    renderVariantFields: function () {
+      const section = document.getElementById('event-variant-section');
+      const container = document.getElementById('event-variant-fields');
+      const typeInput = document.getElementById('event-form-type');
+      const projectInput = document.getElementById('event-form-project');
+      if (!section || !container || !typeInput || !projectInput) return;
+      const type = this.findById(this.eventTypes, typeInput.value);
+      const project = this.findById(this.projects, projectInput.value);
+      const isProjectEvent = !!type && String(type.ConnectionType || 'PROJECT').toUpperCase() !== 'INDEPENDENT';
+      const flag = (value) => value === true || String(value).toLowerCase() === 'true';
+      const useColors = isProjectEvent && flag(type.UseProjectColors);
+      const useSizes = isProjectEvent && flag(type.UseProjectSizes);
+      const trackQuantity = isProjectEvent && flag(type.TrackVariantQuantity);
+      if (!useColors && !useSizes && !trackQuantity) {
+        section.hidden = true;
+        container.replaceChildren();
+        return;
+      }
+      let variants = { colors: [], sizes: [] };
+      try {
+        const parsed = JSON.parse(String(project && project.ColorSizeJSON || '{"colors":[],"sizes":[]}'));
+        if (parsed && typeof parsed === 'object') variants = {
+          colors: Array.isArray(parsed.colors) ? parsed.colors : [],
+          sizes: Array.isArray(parsed.sizes) ? parsed.sizes : []
+        };
+      } catch (error) {}
+      section.hidden = false;
+      container.replaceChildren();
+      const addSelect = (name, label, options) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'event-field';
+        const labelEl = document.createElement('label');
+        labelEl.textContent = label + ' *';
+        const select = document.createElement('select');
+        select.name = name;
+        select.id = 'event-variant-' + name;
+        select.required = true;
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = 'انتخاب کنید';
+        select.appendChild(placeholder);
+        options.forEach((value) => {
+          const option = document.createElement('option');
+          option.value = String(value);
+          option.textContent = String(value);
+          select.appendChild(option);
+        });
+        labelEl.htmlFor = select.id;
+        wrapper.appendChild(labelEl);
+        wrapper.appendChild(select);
+        container.appendChild(wrapper);
+      };
+      if (useColors) addSelect('Color', 'رنگ', variants.colors);
+      if (useSizes) addSelect('Size', 'سایز', variants.sizes);
+      if (trackQuantity) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'event-field';
+        const label = document.createElement('label');
+        label.htmlFor = 'event-variant-quantity';
+        label.textContent = 'مقدار این رنگ/سایز *';
+        const input = document.createElement('input');
+        input.id = 'event-variant-quantity';
+        input.name = 'VariantQuantity';
+        input.type = 'number';
+        input.min = '1';
+        input.step = '1';
+        input.required = true;
+        input.inputMode = 'numeric';
+        wrapper.appendChild(label);
+        wrapper.appendChild(input);
+        container.appendChild(wrapper);
+      }
+      if (!project && isProjectEvent) {
+        const note = document.createElement('p');
+        note.className = 'event-muted';
+        note.textContent = 'ابتدا پروژه را انتخاب کنید تا رنگ‌ها و سایزهای آن نمایش داده شوند.';
+        container.prepend(note);
+      } else if ((useColors && variants.colors.length === 0) || (useSizes && variants.sizes.length === 0)) {
+        const note = document.createElement('p');
+        note.className = 'event-muted';
+        note.textContent = 'برای این پروژه هنوز فهرست رنگ یا سایز تعریف نشده است. مشخصات پروژه را کامل کنید.';
+        container.prepend(note);
+      }
     },
 
     loadDynamicFields: async function (eventTypeId) {
@@ -1284,6 +1376,9 @@
 
       const projectId = projectInput.value;
       const typeId = typeInput.value;
+      const variantColorInput = document.getElementById('event-variant-Color');
+      const variantSizeInput = document.getElementById('event-variant-Size');
+      const variantQuantityInput = document.getElementById('event-variant-quantity');
       const occurredAt = dateInput.value;
       const description = descriptionInput.value.trim();
       const dynamicData = {};
@@ -1327,7 +1422,10 @@
         EventTypeVersion: type ? Number(type.Version || 1) : 1,
         OccurredAt: date.toISOString(),
         Description: description,
-        DynamicData: dynamicData
+        DynamicData: dynamicData,
+        Color: variantColorInput ? variantColorInput.value : '',
+        Size: variantSizeInput ? variantSizeInput.value : '',
+        VariantQuantity: variantQuantityInput ? variantQuantityInput.value : ''
       };
 
       this.submitting = true;
