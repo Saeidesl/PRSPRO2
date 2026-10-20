@@ -679,49 +679,133 @@
     openColorSizeForm: function (projectModal) {
       const existing = document.getElementById('project-color-size-modal');
       if (existing) existing.remove();
+
       let saved = { colors: [], sizes: [] };
-      try { saved = JSON.parse(projectModal.dataset.colorSizeJson || '{"colors":[],"sizes":[]}'); } catch (error) {}
+      try {
+        saved = JSON.parse(projectModal.dataset.colorSizeJson || '{"colors":[],"sizes":[]}');
+      } catch (error) {}
 
       const modal = document.createElement('div');
       modal.id = 'project-color-size-modal';
-      modal.style.cssText = 'position:fixed;inset:0;z-index:10020;background:rgba(0,0,0,.48);display:flex;align-items:center;justify-content:center;padding:16px;direction:rtl;';
-      modal.innerHTML = '<div role="dialog" aria-modal="true" aria-labelledby="project-color-size-title" style="background:var(--color-surface,#fff);color:var(--color-text,#222);width:100%;max-width:620px;max-height:90vh;overflow:auto;border-radius:14px;padding:20px;box-sizing:border-box;">' +
-        '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px"><h3 id="project-color-size-title" style="margin:0">رنگ‌بندی و سایزبندی پروژه</h3><button type="button" class="btn btn-light" data-color-size-close>بستن</button></div>' +
-        '<p style="font-size:12px;color:var(--color-text-secondary);line-height:1.9;margin:0 0 14px">هر رنگ یا سایز را در یک خط وارد کنید. این مشخصات همراه پروژه ذخیره می‌شود؛ مقدار تولید هر ترکیب از طریق رویدادها ثبت می‌شود.</p>' +
-        '<form id="project-color-size-form"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">' +
-        '<label style="display:block;font-weight:700">رنگ‌ها<textarea name="colors" rows="7" placeholder="مشکی&#10;سفید&#10;سرمه‌ای" style="display:block;width:100%;box-sizing:border-box;margin-top:7px;padding:10px;border:1px solid var(--color-border,#ddd);border-radius:9px;background:var(--color-surface,#fff);color:inherit;font:inherit"></textarea></label>' +
-        '<label style="display:block;font-weight:700">سایزها<textarea name="sizes" rows="7" placeholder="S&#10;M&#10;L&#10;XL" style="display:block;width:100%;box-sizing:border-box;margin-top:7px;padding:10px;border:1px solid var(--color-border,#ddd);border-radius:9px;background:var(--color-surface,#fff);color:inherit;font:inherit"></textarea></label>' +
-        '</div><div id="project-color-size-error" class="alert alert-danger" hidden style="margin-top:12px"></div><div style="display:flex;gap:8px;justify-content:flex-start;margin-top:16px;flex-wrap:wrap"><button type="submit" class="btn btn-primary">ذخیره مشخصات</button><button type="button" class="btn btn-light" data-color-size-clear>پاک کردن</button></div></form></div>';
+      modal.style.cssText = 'position:fixed;inset:0;z-index:10020;background:rgba(0,0,0,.48);display:flex;align-items:center;justify-content:center;padding:16px;direction:rtl;overflow:auto;';
+      modal.innerHTML =
+        '<div role="dialog" aria-modal="true" aria-labelledby="project-color-size-title" style="background:var(--color-surface,#fff);color:var(--color-text,#222);width:100%;max-width:760px;max-height:90vh;overflow:auto;border-radius:14px;padding:20px;box-sizing:border-box;">' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px"><h3 id="project-color-size-title" style="margin:0">رنگ‌بندی و سایزبندی پروژه</h3><button type="button" class="btn btn-light" data-color-size-close>بستن</button></div>' +
+          '<p style="font-size:12px;color:var(--color-text-secondary);line-height:1.9;margin:0 0 16px">هر رنگ و هر سایز را در یک ردیف وارد کنید. با دکمه افزودن می‌توانید ردیف جدید بسازید و ردیف‌های اضافی را حذف کنید. مقدار تولید هر ترکیب بعداً در رویدادهای تولید ثبت می‌شود.</p>' +
+          '<form id="project-color-size-form">' +
+            '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px">' +
+              '<section><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px"><strong>رنگ‌ها</strong><button type="button" class="btn btn-secondary" data-color-size-add="colors">+ افزودن رنگ</button></div><div data-color-size-list="colors"></div></section>' +
+              '<section><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px"><strong>سایزها</strong><button type="button" class="btn btn-secondary" data-color-size-add="sizes">+ افزودن سایز</button></div><div data-color-size-list="sizes"></div></section>' +
+            '</div>' +
+            '<div id="project-color-size-error" class="alert alert-danger" hidden style="margin-top:12px"></div>' +
+            '<div style="display:flex;gap:8px;justify-content:flex-start;margin-top:16px;flex-wrap:wrap"><button type="submit" class="btn btn-primary">ذخیره مشخصات</button><button type="button" class="btn btn-light" data-color-size-clear>پاک کردن همه</button></div>' +
+          '</form>' +
+        '</div>';
       document.body.appendChild(modal);
+
       const form = modal.querySelector('#project-color-size-form');
-      const colorsInput = form.elements.namedItem('colors');
-      const sizesInput = form.elements.namedItem('sizes');
       const errorBox = modal.querySelector('#project-color-size-error');
-      colorsInput.value = (saved.colors || []).join('\n');
-      sizesInput.value = (saved.sizes || []).join('\n');
+      const limits = { colors: { max: 80, label: 'رنگ' }, sizes: { max: 40, label: 'سایز' } };
+
+      const getList = (kind) => modal.querySelector('[data-color-size-list="' + kind + '"]');
+
+      const addRow = (kind, value) => {
+        const list = getList(kind);
+        if (!list || list.querySelectorAll('[data-variant-row]').length >= 100) {
+          errorBox.textContent = 'حداکثر ۱۰۰ ' + limits[kind].label + ' می‌توانید تعریف کنید.';
+          errorBox.hidden = false;
+          return;
+        }
+        const row = document.createElement('div');
+        row.setAttribute('data-variant-row', '1');
+        row.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px;';
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.maxLength = limits[kind].max;
+        input.value = value || '';
+        input.placeholder = kind === 'colors' ? 'مثلاً مشکی' : 'مثلاً XL';
+        input.setAttribute('aria-label', limits[kind].label);
+        input.style.cssText = 'min-width:0;flex:1;width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid var(--color-border,#ddd);border-radius:8px;background:var(--color-surface,#fff);color:inherit;font:inherit;';
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'btn btn-light';
+        remove.textContent = 'حذف';
+        remove.setAttribute('aria-label', 'حذف ' + limits[kind].label);
+        remove.addEventListener('click', () => {
+          row.remove();
+          if (!list.querySelector('[data-variant-row]')) addRow(kind, '');
+          errorBox.hidden = true;
+        });
+        row.appendChild(input);
+        row.appendChild(remove);
+        list.appendChild(row);
+      };
+
+      const renderList = (kind, values) => {
+        const list = getList(kind);
+        list.replaceChildren();
+        (Array.isArray(values) ? values : []).forEach((value) => addRow(kind, value));
+        if (!list.querySelector('[data-variant-row]')) addRow(kind, '');
+      };
+
+      renderList('colors', saved.colors);
+      renderList('sizes', saved.sizes);
+
+      modal.querySelectorAll('[data-color-size-add]').forEach((button) => {
+        button.addEventListener('click', () => {
+          addRow(button.getAttribute('data-color-size-add'), '');
+          errorBox.hidden = true;
+        });
+      });
+
       const close = () => modal.remove();
       modal.querySelector('[data-color-size-close]').addEventListener('click', close);
       modal.addEventListener('click', (event) => { if (event.target === modal) close(); });
-      modal.querySelector('[data-color-size-clear]').addEventListener('click', () => { colorsInput.value = ''; sizesInput.value = ''; errorBox.hidden = true; });
+      modal.querySelector('[data-color-size-clear]').addEventListener('click', () => {
+        renderList('colors', []);
+        renderList('sizes', []);
+        errorBox.hidden = true;
+      });
+
       form.addEventListener('submit', (event) => {
         event.preventDefault();
-        const normalize = (value) => Array.from(new Set(String(value || '').split(/\r?\n|,/).map((item) => item.trim()).filter(Boolean)));
-        const colors = normalize(colorsInput.value);
-        const sizes = normalize(sizesInput.value);
-        if (colors.length > 100 || sizes.length > 100) {
-          errorBox.textContent = 'حداکثر ۱۰۰ رنگ و ۱۰۰ سایز می‌توانید ثبت کنید.';
+        const normalize = (kind) => {
+          const seen = new Set();
+          const values = Array.from(getList(kind).querySelectorAll('input'))
+            .map((input) => input.value.trim())
+            .filter(Boolean);
+          const result = [];
+          for (const value of values) {
+            if (value.length > limits[kind].max) {
+              throw new Error('نام هر ' + limits[kind].label + ' حداکثر ' + limits[kind].max + ' نویسه باشد.');
+            }
+            const key = value.toLocaleLowerCase();
+            if (!seen.has(key)) {
+              seen.add(key);
+              result.push(value);
+            }
+          }
+          if (result.length > 100) {
+            throw new Error('حداکثر ۱۰۰ ' + limits[kind].label + ' می‌توانید تعریف کنید.');
+          }
+          return result;
+        };
+
+        try {
+          const colors = normalize('colors');
+          const sizes = normalize('sizes');
+          projectModal.dataset.colorSizeJson = JSON.stringify({ colors: colors, sizes: sizes });
+          const summary = projectModal.querySelector('#new-project-color-size-summary');
+          if (summary) {
+            summary.textContent = (colors.length || sizes.length)
+              ? colors.length + ' رنگ و ' + sizes.length + ' سایز تعریف شده'
+              : 'هنوز رنگ یا سایزی تعریف نشده است.';
+          }
+          close();
+        } catch (error) {
+          errorBox.textContent = error && error.message ? error.message : 'بررسی رنگ‌بندی و سایزبندی ناموفق بود.';
           errorBox.hidden = false;
-          return;
         }
-        if (colors.some((item) => item.length > 80) || sizes.some((item) => item.length > 40)) {
-          errorBox.textContent = 'نام هر رنگ حداکثر ۸۰ و نام هر سایز حداکثر ۴۰ نویسه باشد.';
-          errorBox.hidden = false;
-          return;
-        }
-        projectModal.dataset.colorSizeJson = JSON.stringify({ colors: colors, sizes: sizes });
-        const summary = projectModal.querySelector('#new-project-color-size-summary');
-        if (summary) summary.textContent = (colors.length || sizes.length) ? colors.length + ' رنگ و ' + sizes.length + ' سایز انتخاب شده' : 'هنوز رنگ یا سایزی تعریف نشده است.';
-        close();
       });
     },
 
