@@ -126,9 +126,9 @@
     statusMatches: function (status, filter) {
       if (filter === 'all') return true;
       if (filter === 'cancelled') return status === 'cancelled';
-      if (filter === 'complete') return status === 'complete';
+      if (filter === 'complete') return status === 'complete' || status === 'received';
       if (filter === 'partial') return status === 'partial' || status === 'partially_ordered' || status === 'partially_received';
-      return status === 'open' || status === 'waiting' || status === 'needs_purchase' || status === 'ordered' || status === 'partially_ordered' || status === 'partially_received';
+      return status !== 'complete' && status !== 'received' && status !== 'cancelled';
     },
     filtered: function (data, filters) {
       const needs = data.needs.filter(need => this.inDateRange(need.CreatedAt, filters) &&
@@ -188,7 +188,7 @@
       const needs = filtered.needs;
       const orders = filtered.orders;
       const orderItems = this.flattenOrderItems(orders).filter(row => !filters.material || (row.item + ' ' + row.code).toLocaleLowerCase().includes(filters.material));
-      const receipts = this.flattenReceipts(orders, filters);
+      const receipts = this.flattenReceipts(data.orders, filters);
       const total = (rows, key) => rows.reduce((sum, row) => sum + this.raw(row[key]), 0);
       const requested = total(needs, 'RequestedQuantity');
       const neededOrdered = total(needs, 'OrderedQuantity');
@@ -217,7 +217,7 @@
         needs.forEach(n => {
           const key = [n.ItemCode || n.ItemName, n.Unit].join('|');
           const row = map.get(key) || { name: n.ItemName || '', code: n.ItemCode || '', unit: n.Unit || '', requested: 0, ordered: 0, received: 0, orderCount: 0, value: 0 };
-          row.requested += this.raw(n.RequestedQuantity); row.ordered += this.raw(n.OrderedQuantity); row.received += this.raw(n.ReceivedQuantity); map.set(key, row);
+          row.requested += this.raw(n.RequestedQuantity); map.set(key, row);
         });
         orderItems.forEach(item => {
           const key = [item.code || item.item, item.unit].join('|');
@@ -230,10 +230,24 @@
         headers = ['پروژه', 'تعداد نیازها', 'مقدار موردنیاز', 'مقدار سفارش', 'مقدار دریافت', 'مانده دریافت', 'تعداد سفارش‌ها', 'ارزش سفارش'];
         const map = new Map();
         const add = (key, label) => { const row = map.get(key) || { label, needCount: 0, requested: 0, ordered: 0, received: 0, orders: new Set(), value: 0 }; map.set(key, row); return row; };
-        needs.forEach(n => { const key = String(n.ProjectID || 'GENERAL'); const row = add(key, [n.ProjectCode,n.ProjectTitle].filter(Boolean).join(' — ') || (n.ProjectID || 'عمومی')); row.needCount++; row.requested += this.raw(n.RequestedQuantity); row.ordered += this.raw(n.OrderedQuantity); row.received += this.raw(n.ReceivedQuantity); });
+        needs.forEach(n => { const key = String(n.ProjectID || 'GENERAL'); const row = add(key, [n.ProjectCode,n.ProjectTitle].filter(Boolean).join(' — ') || (n.ProjectID || 'عمومی')); row.needCount++; row.requested += this.raw(n.RequestedQuantity); });
         orders.forEach(o => (Array.isArray(o.Items) ? o.Items : []).forEach(i => {
-          const ids = Array.isArray(i.ProjectIDs) && i.ProjectIDs.length ? i.ProjectIDs : [i.ProjectID || o.ProjectID || 'GENERAL'];
-          ids.forEach(id => { const key = String(id || 'GENERAL'); const row = add(key, (i.ProjectLabels || o.ProjectLabels || []).join('، ') || (id || 'عمومی')); row.orders.add(String(o.ID)); row.ordered += this.raw(i.OrderedQuantity); row.received += this.raw(i.ReceivedQuantity); row.value += i.UnitPrice === '' || i.UnitPrice === null || i.UnitPrice === undefined ? 0 : this.raw(i.UnitPrice) * this.raw(i.OrderedQuantity); });
+          const allocations = Array.isArray(i.Allocations) ? i.Allocations.filter(a => a.ProjectID) : [];
+          if (allocations.length) {
+            allocations.forEach(a => {
+              const id = String(a.ProjectID);
+              const row = add(id, (i.ProjectLabels || o.ProjectLabels || []).join('، ') || id);
+              const allocated = this.raw(a.AllocatedQuantity);
+              const projectReceived = (Array.isArray(i.Receipts) ? i.Receipts : []).filter(rec => String(rec.ProjectID || '') === id).reduce((sum, rec) => sum + this.raw(rec.QuantityReceived), 0);
+              row.orders.add(String(o.ID)); row.ordered += allocated; row.received += Math.min(allocated, projectReceived);
+              row.value += i.UnitPrice === '' || i.UnitPrice === null || i.UnitPrice === undefined ? 0 : this.raw(i.UnitPrice) * allocated;
+            });
+          } else {
+            const id = String(i.ProjectID || o.ProjectID || 'GENERAL');
+            const row = add(id, (i.ProjectLabels || o.ProjectLabels || []).join('، ') || (id === 'GENERAL' ? 'عمومی' : id));
+            row.orders.add(String(o.ID)); row.ordered += this.raw(i.OrderedQuantity); row.received += this.raw(i.ReceivedQuantity);
+            row.value += i.UnitPrice === '' || i.UnitPrice === null || i.UnitPrice === undefined ? 0 : this.raw(i.UnitPrice) * this.raw(i.OrderedQuantity);
+          }
         }));
         rows = Array.from(map.values()).sort((a,b) => a.label.localeCompare(b.label)).map(r => [r.label, r.needCount, r.requested, r.ordered, r.received, Math.max(0,r.ordered-r.received), r.orders.size, r.value]);
       } else if (type === 'suppliers') {
