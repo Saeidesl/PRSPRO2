@@ -524,8 +524,34 @@
               ></textarea>
             </div>
 
+            <div class="filter-group" style="margin-bottom:16px;">
+              <label for="new-project-departments">واحدهای مجاز <span style="color:var(--color-danger);">*</span></label>
+              <select id="new-project-departments" name="AvailableDepartmentIDs" multiple required size="4" style="width:100%;box-sizing:border-box;min-height:110px;"></select>
+              <small style="display:block;margin-top:5px;color:var(--color-text-secondary);">حداقل یک واحد را انتخاب کنید. واحد طراحی به‌صورت پیش‌فرض انتخاب می‌شود؛ برای انتخاب چند واحد از لمس چندگانه یا Ctrl استفاده کنید.</small>
+            </div>
+
+            <div class="filter-group" style="margin-bottom:16px;">
+              <label for="new-project-users">کاربران مجاز <span style="color:var(--color-text-secondary);font-size:12px;">(اختیاری)</span></label>
+              <select id="new-project-users" name="AllowedUserIDs" multiple size="4" style="width:100%;box-sizing:border-box;min-height:100px;"></select>
+              <small style="display:block;margin-top:5px;color:var(--color-text-secondary);">اگر انتخاب نشود، محدودیت اختصاصی کاربر برای پروژه ثبت نمی‌شود.</small>
+            </div>
+
+            <div class="filter-group" style="margin-bottom:16px;">
+              <label for="new-project-file">فایل یا تصویر پروژه <span style="color:var(--color-text-secondary);font-size:12px;">(اختیاری)</span></label>
+              <input type="file" id="new-project-file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" style="width:100%;box-sizing:border-box;">
+              <small id="new-project-file-help" style="display:block;margin-top:5px;color:var(--color-text-secondary);">فایل پس از ایجاد پروژه به پیوست‌های همان پروژه اضافه می‌شود. برای بارگذاری به دسترسی افزودن فایل نیاز است.</small>
+            </div>
+
+            <div class="filter-group" style="margin-bottom:16px;">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                <input type="checkbox" id="new-project-notify" checked>
+                <span>فعال بودن اطلاع‌رسانی</span>
+              </label>
+              <small style="display:block;margin-top:5px;color:var(--color-text-secondary);">این گزینه به‌صورت پیش‌فرض فعال است.</small>
+            </div>
+
             <div style="margin:0 0 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-              <button type="button" id="new-project-color-size-button" class="btn btn-secondary">تعریف رنگ‌بندی و سایزبندی</button>
+              <button type="button" id="new-project-color-size-button" class="btn btn-secondary">
               <span id="new-project-color-size-summary" style="font-size:12px;color:var(--color-text-secondary);">اختیاری؛ رنگ‌ها و سایزهای این پروژه را تعریف کنید.</span>
             </div>
 
@@ -571,6 +597,19 @@
       const cancelButton = modal.querySelector('#project-create-cancel');
       const form = modal.querySelector('#project-create-form');
       const workflowSelect = modal.querySelector('#new-project-workflow');
+      const departmentsSelect = modal.querySelector('#new-project-departments');
+      const usersSelect = modal.querySelector('#new-project-users');
+      const fileInput = modal.querySelector('#new-project-file');
+      const fileHelp = modal.querySelector('#new-project-file-help');
+      const routerForAttachments = window.PMS.Router;
+      const canUploadProjectAttachment = !!(routerForAttachments &&
+        (routerForAttachments.isAdmin() ||
+          (Array.isArray(routerForAttachments.permissions) &&
+            routerForAttachments.permissions.indexOf('ATTACHMENT_UPLOAD') !== -1)));
+      if (!canUploadProjectAttachment && fileInput) {
+        fileInput.disabled = true;
+        if (fileHelp) fileHelp.textContent = 'برای افزودن فایل، مدیر باید دسترسی ATTACHMENT_UPLOAD را به نقش شما بدهد.';
+      }
 
       const closeModal = () => {
         if (this.isSaving) {
@@ -667,6 +706,40 @@
           'دریافت گردش کارها ناموفق بود. فرم را ببند و دوباره تلاش کن. ' +
           this.getErrorMessage(error)
         );
+      }
+
+      try {
+        const lookupResponse = await window.PMS.Api.get('/project-form/lookups');
+        let lookupData = lookupResponse;
+        if (lookupData && lookupData.data !== undefined) lookupData = lookupData.data;
+        if (lookupData && lookupData.data !== undefined) lookupData = lookupData.data;
+        const departments = lookupData && Array.isArray(lookupData.departments) ? lookupData.departments : [];
+        const users = lookupData && Array.isArray(lookupData.users) ? lookupData.users : [];
+        if (this.modal !== modal) return;
+
+        departmentsSelect.innerHTML = departments.map((department) => {
+          const id = department.ID || department.Id || department.id;
+          const name = department.Name || department.Title || department.Code || id;
+          return '<option value="' + this.escape(id) + '">' + this.escape(name) + '</option>';
+        }).join('');
+        usersSelect.innerHTML = users.map((user) => {
+          const id = user.ID || user.Id || user.id;
+          const name = user.Name || user.FullName || user.Username || id;
+          return '<option value="' + this.escape(id) + '">' + this.escape(name) + '</option>';
+        }).join('');
+
+        const designDepartment = departments.find((department) =>
+          String(department.Code || '').toUpperCase() === 'DESIGN' ||
+          String(department.Name || '').includes('طراحی')
+        );
+        if (designDepartment) {
+          departmentsSelect.value = String(designDepartment.ID || designDepartment.Id || designDepartment.id);
+        }
+        if (!departments.length) {
+          this.showFormError(modal, 'واحد فعالی برای انتخاب پیدا نشد. ابتدا واحدها را بررسی کنید.');
+        }
+      } catch (error) {
+        this.showFormError(modal, 'دریافت فهرست واحدها و کاربران ناموفق بود. ' + this.getErrorMessage(error));
       }
 
       const codeInput = modal.querySelector('#new-project-code');
@@ -853,6 +926,13 @@
       const descriptionInput = modal.querySelector('#new-project-description');
       const addNeedsInput = modal.querySelector('#new-project-add-needs');
       const shouldAddNeeds = !!(addNeedsInput && addNeedsInput.checked);
+      const departmentsSelect = modal.querySelector('#new-project-departments');
+      const usersSelect = modal.querySelector('#new-project-users');
+      const fileInput = modal.querySelector('#new-project-file');
+      const notifyInput = modal.querySelector('#new-project-notify');
+      const selectedDepartments = Array.from(departmentsSelect.selectedOptions).map((option) => option.value).filter(Boolean);
+      const selectedUsers = Array.from(usersSelect.selectedOptions).map((option) => option.value).filter(Boolean);
+      const selectedFile = fileInput && fileInput.files ? fileInput.files[0] : null;
       const submitButton = modal.querySelector('#project-create-submit');
 
       let colorSize = { colors: [], sizes: [] };
@@ -866,7 +946,10 @@
         ColorSizeJSON: JSON.stringify({
           colors: Array.isArray(colorSize.colors) ? colorSize.colors : [],
           sizes: Array.isArray(colorSize.sizes) ? colorSize.sizes : []
-        })
+        }),
+        AvailableDepartmentIDs: selectedDepartments,
+        AllowedUserIDs: selectedUsers,
+        NotifyEnabled: !!(notifyInput && notifyInput.checked)
       };
 
       if (!project.ProjectCode) {
@@ -894,6 +977,23 @@
         return;
       }
 
+      if (!project.AvailableDepartmentIDs.length) {
+        this.showFormError(modal, 'حداقل یک واحد مجاز برای پروژه انتخاب کن.');
+        departmentsSelect.focus();
+        return;
+      }
+
+      if (selectedFile && !canUploadProjectAttachment) {
+        this.showFormError(modal, 'برای بارگذاری فایل، دسترسی افزودن پیوست لازم است.');
+        fileInput.focus();
+        return;
+      }
+      if (selectedFile && selectedFile.size > 5 * 1024 * 1024) {
+        this.showFormError(modal, 'حجم فایل حداکثر ۵ مگابایت باشد.');
+        fileInput.focus();
+        return;
+      }
+
       this.isSaving = true;
       submitButton.disabled = true;
       submitButton.textContent = 'در حال ثبت...';
@@ -914,6 +1014,30 @@
 
         const createdId = String(created.ID || created.Id || created.id);
 
+        let attachmentWarning = '';
+        if (selectedFile) {
+          try {
+            const base64 = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onerror = () => reject(new Error('خواندن فایل ناموفق بود.'));
+              reader.onload = () => {
+                const result = String(reader.result || '');
+                const comma = result.indexOf(',');
+                if (comma < 0) reject(new Error('ساختار فایل نامعتبر است.'));
+                else resolve(result.slice(comma + 1));
+              };
+              reader.readAsDataURL(selectedFile);
+            });
+            await window.PMS.Api.post('/projects/' + encodeURIComponent(createdId) + '/attachments', {
+              FileName: selectedFile.name,
+              MimeType: selectedFile.type || 'application/octet-stream',
+              Base64: base64
+            });
+          } catch (attachmentError) {
+            attachmentWarning = ' پروژه ایجاد شد، اما بارگذاری فایل ناموفق بود: ' + this.getErrorMessage(attachmentError);
+          }
+        }
+
         const exists = this.projects.some((item) => {
           return String(item.ID || item.Id || item.id) === createdId;
         });
@@ -931,7 +1055,7 @@
           this.modal = null;
         }
 
-        alert('پروژه با موفقیت ثبت شد.');
+        alert('پروژه با موفقیت ثبت شد.' + attachmentWarning);
 
         if (shouldAddNeeds) {
           this.openProjectNeedsForm(createdId);
