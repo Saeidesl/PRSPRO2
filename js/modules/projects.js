@@ -30,6 +30,7 @@
   const Projects = {
     projects: [],
     workflows: [],
+    projectStatuses: [],
     workflowStepsByWorkflow: {},
     stageLookupsLoaded: false,
     modal: null,
@@ -48,6 +49,7 @@
 
       if (canViewProjects) {
         this.loadProjects();
+        this.loadProjectStatuses();
       } else {
         // Create-only users should not trigger a forbidden project-list request.
         const card = document.querySelector('.page-section > .card');
@@ -228,6 +230,34 @@
           submit.textContent = 'ثبت نیازها';
         }
       });
+    },
+
+    loadProjectStatuses: async function () {
+      try {
+        const result = await window.PMS.Api.getCached(
+          '/project-dashboard/lookups',
+          'dashboard_project_lookups_v1'
+        );
+        let data = result && result.data !== undefined ? result.data : result;
+        for (let i = 0; i < 4 && data && !Array.isArray(data); i++) {
+          if (data.data !== undefined) { data = data.data; continue; }
+          break;
+        }
+        this.projectStatuses = data && Array.isArray(data.projectStatuses) ? data.projectStatuses : [];
+        const select = document.getElementById('project-status-filter');
+        if (select && this.projectStatuses.length) {
+          const current = select.value;
+          select.innerHTML = '<option value="">همه وضعیت‌ها</option>' + this.projectStatuses.map((item) => {
+            const code = item.Code || item.ID || '';
+            const name = item.Name || item.Code || code;
+            return '<option value="' + this.escape(code) + '">' + this.escape(name) + '</option>';
+          }).join('');
+          if (Array.from(select.options).some((option) => option.value === current)) select.value = current;
+          this.applyFilters();
+        }
+      } catch (error) {
+        // در صورت در دسترس نبودن فهرست وضعیت‌های سفارشی، گزینه‌های قبلی حفظ می‌شوند.
+      }
     },
 
     loadStageLookups: async function () {
@@ -1307,7 +1337,10 @@
         DELETED: 'حذف‌شده'
       };
 
-      return map[status] || status || '-';
+      const custom = this.projectStatuses.find((item) =>
+        String(item.Code || item.ID || '').toLowerCase() === String(status || '').toLowerCase()
+      );
+      return (custom && (custom.Name || custom.Code)) || map[String(status || '').toUpperCase()] || status || '-';
     },
 
     // ========================================================
