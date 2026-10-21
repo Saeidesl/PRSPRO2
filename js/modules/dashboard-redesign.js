@@ -10,6 +10,7 @@
     users: [],
     departments: [],
     eventTypes: [],
+    projectStatuses: [],
     workflowStepsByWorkflow: {},
     workflowLookupPromise: null,
     lookupsPromise: null,
@@ -107,6 +108,11 @@
       }
 
       root.innerHTML =
+        '<div id="dash-awaiting-action-notice" class="dash-awaiting-action-notice" hidden>' +
+          '<button type="button" id="dash-awaiting-action-button" class="dash-awaiting-action-button">' +
+            '<span>پروژه‌های در انتظار اقدام</span><span id="dash-awaiting-action-count" class="dash-awaiting-action-count">۰</span>' +
+          '</button>' +
+        '</div>' +
         '<div class="dash-toolbar">' +
           '<div class="dash-search-wrap">' +
             '<span class="dash-search-icon" aria-hidden="true">⌕</span>' +
@@ -308,6 +314,16 @@
       root.addEventListener('click', function (event) {
         var button = event.target.closest('button');
         if (!button) return;
+        if (button.id === 'dash-awaiting-action-button') {
+          var pendingStatus = self.getAwaitingActionStatus();
+          if (pendingStatus) {
+            self.filters.status = pendingStatus;
+            self.visibleCount = PAGE_SIZE;
+            self.syncFilterControls();
+            self.applyFilters(false);
+          }
+          return;
+        }
         if (button.id === 'dash-filter-toggle') {
           var filters = document.getElementById('dash-advanced-filters');
           var open = filters && filters.hidden;
@@ -410,6 +426,7 @@
           self.users = self.normalizeArray(data.users, ['users', 'items', 'Users', 'Items']);
           self.departments = self.normalizeArray(data.departments, ['departments', 'items', 'Departments', 'Items']);
           self.eventTypes = self.normalizeArray(data.eventTypes, ['eventTypes', 'items', 'EventTypes', 'Items']);
+          self.projectStatuses = self.normalizeArray(data.projectStatuses, ['projectStatuses', 'statuses', 'items', 'ProjectStatuses']);
           var steps = self.normalizeArray(data.workflowSteps, ['workflowSteps', 'steps', 'items', 'WorkflowSteps', 'Steps', 'Items']);
           self.workflowStepsByWorkflow = {};
           steps.forEach(function (step) {
@@ -756,7 +773,38 @@
     },
 
     projectStatus: function (project) {
-      return String(project.Status || 'ACTIVE').toUpperCase();
+      return String(project.Status || 'ACTIVE');
+    },
+
+    projectStatusLabel: function (status) {
+      var value = String(status || 'ACTIVE');
+      var match = this.projectStatuses.find(function (item) {
+        return String(item.Code || item.ID || '').toLowerCase() === value.toLowerCase() ||
+          String(item.ID || '').toLowerCase() === value.toLowerCase();
+      });
+      if (match) return String(match.Name || match.Code || value);
+      return this.statusText(value);
+    },
+
+    getAwaitingActionStatus: function () {
+      var match = this.projectStatuses.find(function (item) {
+        var name = String(item.Name || '').replace(/[\u200c\s]+/g, ' ').trim();
+        return name === 'در انتظار اقدام' || name === 'درانتظار اقدام';
+      });
+      return match ? String(match.Code || match.ID || '') : '';
+    },
+
+    renderAwaitingActionNotice: function () {
+      var notice = document.getElementById('dash-awaiting-action-notice');
+      var countElement = document.getElementById('dash-awaiting-action-count');
+      if (!notice || !countElement) return;
+      var statusCode = this.getAwaitingActionStatus();
+      if (!statusCode) { notice.hidden = true; return; }
+      var count = this.projects.filter(function (project) {
+        return String(project.Status || '').toLowerCase() === statusCode.toLowerCase();
+      }).length;
+      countElement.textContent = this.toPersianDigits(count);
+      notice.hidden = count === 0;
     },
 
     projectLastActivity: function (project) {
@@ -959,6 +1007,7 @@
 
       var loading = document.getElementById('dash-list-loading');
       if (loading) loading.hidden = this.visibleCount >= all.length;
+      this.renderAwaitingActionNotice();
       this.scheduleTimelineContinuation();
       if (oldScroll > 0) window.requestAnimationFrame(function () { window.scrollTo(0, oldScroll); });
       this.saveState();
@@ -1068,7 +1117,7 @@
       var statusClass = status === 'ACTIVE' ? 'dash-status-active' :
         (status === 'ON_HOLD' || status === 'INACTIVE' || status === 'STOPPED' || status === 'PAUSED' ? 'dash-status-hold' :
         (status === 'COMPLETED' ? 'dash-status-completed' : (status === 'CANCELLED' || status === 'VOID' ? 'dash-status-cancelled' : '')));
-      var statusLabel = status === 'INACTIVE' || status === 'STOPPED' || status === 'PAUSED' ? 'متوقف' : this.statusText(status);
+      var statusLabel = status === 'INACTIVE' || status === 'STOPPED' || status === 'PAUSED' ? 'متوقف' : this.projectStatusLabel(status);
       var history = this.getHistory(id);
       var last = this.projectLastActivity(project);
       var matching = this.matchingEventIds(history);
@@ -1082,6 +1131,7 @@
             '<div class="dash-project-code">' + this.escape(project.ProjectCode || 'بدون کد') + '</div>' +
             '<div class="dash-project-title">' + this.escape(project.Title || project.Name || 'بدون عنوان') + '</div>' +
             '<div class="dash-project-badges"><span class="dash-badge dash-badge-stage">' + this.escape(stage) + '</span>' +
+            (project.CurrentStepStatus ? '<span class="dash-badge">' + this.escape(project.CurrentStepStatus) + '</span>' : '') +
               '<span class="dash-badge dash-badge-status ' + statusClass + '"><span aria-hidden="true">●</span> ' + this.escape(statusLabel) + '</span>' +
               ((project.Quantity || project.TotalQuantity || project.ProjectQuantity) ? '<span class="dash-badge">تعداد: ' + this.escape(project.Quantity || project.TotalQuantity || project.ProjectQuantity) + '</span>' : '') + '</div>' +
             '<div class="dash-project-activity">آخرین فعالیت: ' + this.escape(this.formatExactDate(last)) + ' — ' + this.escape(this.relativeTime(last)) + '</div>' +
@@ -1471,6 +1521,10 @@
       this.fillSelect('dash-filter-type', this.eventTypes.map(function (type) {
         return { value: self.getId(type), label: type.Name || type.Title || type.Code || self.getId(type) };
       }), this.filters.type, 'همه رویدادها');
+      this.fillSelect('dash-filter-status', this.projectStatuses.map(function (status) {
+        return { value: status.Code || status.ID, label: status.Name || status.Code || status.ID };
+      }), this.filters.status, 'همه وضعیت‌ها');
+      this.renderAwaitingActionNotice();
     },
 
     fillSelect: function (id, values, selected, placeholder) {
