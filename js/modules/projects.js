@@ -532,8 +532,8 @@
 
             <div class="filter-group" style="margin-bottom:18px;">
               <label>واحدهای مجاز برای مشاهده پروژه و ثبت رویداد <span style="color:var(--color-danger);">*</span></label>
-              <div id="new-project-departments" role="group" aria-label="انتخاب واحدهای مجاز" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;border:1px solid var(--color-border);border-radius:10px;padding:12px;min-height:48px;"></div>
-              <small style="display:block;margin-top:6px;color:var(--color-text-secondary);">حداقل یک واحد را انتخاب کنید. واحد طراحی به‌صورت پیش‌فرض فعال است.</small>
+              <div id="new-project-departments" class="project-access-grid" role="group" aria-label="انتخاب واحدهای مجاز" aria-describedby="new-project-departments-help"><div class="project-lookup-loading">در حال دریافت واحدها…</div></div>
+              <small id="new-project-departments-help" style="display:block;margin-top:6px;color:var(--color-text-secondary);">حداقل یک واحد را انتخاب کنید. واحد طراحی به‌صورت پیش‌فرض فعال است.</small>
             </div>
 
             <div class="filter-group" style="margin-bottom:16px;">
@@ -656,72 +656,39 @@
         this.createProject(modal);
       });
 
-      try {
-        const response = await window.PMS.Api.get('/workflows');
-        const workflows = this.normalizeWorkflows(response);
-
-        if (this.modal !== modal) {
-          return;
+      const renderProjectLookups = (rawData) => {
+        let lookupData = rawData;
+        for (let depth = 0; depth < 3 && lookupData && lookupData.data !== undefined &&
+          !Array.isArray(lookupData.departments); depth += 1) {
+          lookupData = lookupData.data;
         }
+        if (!lookupData || typeof lookupData !== 'object') lookupData = {};
 
+        const workflows = this.normalizeWorkflows({
+          workflows: Array.isArray(lookupData.workflows) ? lookupData.workflows : []
+        });
+        const departments = Array.isArray(lookupData.departments) ? lookupData.departments : [];
+        const users = Array.isArray(lookupData.users) ? lookupData.users : [];
+
+        if (this.modal !== modal) return;
         this.workflows = workflows;
 
-        if (workflows.length === 0) {
-          workflowSelect.innerHTML =
-            '<option value="">گردش کار فعالی پیدا نشد</option>';
-
-          this.showFormError(
-            modal,
-            'برای ایجاد پروژه، ابتدا باید یک گردش کار دارای مرحله ایجاد کنید.'
-          );
-
-          return;
-        }
-
-        workflowSelect.innerHTML =
-          '<option value="">انتخاب گردش کار</option>' +
-          workflows.map((workflow) => {
-            const id = workflow.ID || workflow.Id || workflow.id;
-            const name =
-              workflow.Name ||
-              workflow.Title ||
-              workflow.WorkflowName ||
-              workflow.Code ||
-              id;
-
-            return `
-              <option value="${this.escape(id)}">
-                ${this.escape(name)}
-              </option>
-            `;
-          }).join('');
+        workflowSelect.innerHTML = workflows.length
+          ? '<option value="">انتخاب گردش کار</option>' + workflows.map((workflow) => {
+              const id = workflow.ID || workflow.Id || workflow.id;
+              const name = workflow.Name || workflow.Title || workflow.WorkflowName || workflow.Code || id;
+              return '<option value="' + this.escape(id) + '">' + this.escape(name) + '</option>';
+            }).join('')
+          : '<option value="">گردش کار فعالی پیدا نشد</option>';
         workflowSelect.value = '';
-
-      } catch (error) {
-        workflowSelect.innerHTML =
-          '<option value="">خطا در دریافت گردش کارها</option>';
-
-        this.showFormError(
-          modal,
-          'دریافت گردش کارها ناموفق بود. فرم را ببند و دوباره تلاش کن. ' +
-          this.getErrorMessage(error)
-        );
-      }
-
-      try {
-        const lookupResponse = await window.PMS.Api.get('/project-form/lookups');
-        let lookupData = lookupResponse;
-        if (lookupData && lookupData.data !== undefined) lookupData = lookupData.data;
-        if (lookupData && lookupData.data !== undefined) lookupData = lookupData.data;
-        const departments = lookupData && Array.isArray(lookupData.departments) ? lookupData.departments : [];
-        const users = lookupData && Array.isArray(lookupData.users) ? lookupData.users : [];
-        if (this.modal !== modal) return;
 
         departmentsSelect.innerHTML = departments.map((department) => {
           const id = department.ID || department.Id || department.id;
           const name = department.Name || department.Title || department.Code || id;
-          return '<label style="display:flex;align-items:center;gap:8px;padding:9px 10px;border:1px solid var(--color-border);border-radius:8px;cursor:pointer;min-width:0;"><input type="checkbox" name="AvailableDepartmentIDs" value="' + this.escape(id) + '"><span>' + this.escape(name) + '</span></label>';
+          return '<label class="project-access-option"><input type="checkbox" name="AvailableDepartmentIDs" value="' +
+            this.escape(id) + '"><span>' + this.escape(name) + '</span></label>';
         }).join('');
+
         usersSelect.innerHTML = users.map((user) => {
           const id = user.ID || user.Id || user.id;
           const name = user.Name || user.FullName || user.Username || id;
@@ -734,14 +701,47 @@
         );
         if (designDepartment) {
           const designId = String(designDepartment.ID || designDepartment.Id || designDepartment.id);
-          const designCheckbox = Array.from(departmentsSelect.querySelectorAll('input[name="AvailableDepartmentIDs"]')).find((input) => input.value === designId);
+          const designCheckbox = Array.from(
+            departmentsSelect.querySelectorAll('input[name="AvailableDepartmentIDs"]')
+          ).find((input) => input.value === designId);
           if (designCheckbox) designCheckbox.checked = true;
         }
-        if (!departments.length) {
+
+        if (!workflows.length) {
+          this.showFormError(modal, 'برای ایجاد پروژه، ابتدا باید یک گردش کار فعال و دارای مرحله ایجاد کنید.');
+        } else if (!departments.length) {
           this.showFormError(modal, 'واحد فعالی برای انتخاب پیدا نشد. ابتدا واحدها را بررسی کنید.');
+        } else {
+          this.clearFormError(modal);
         }
+      };
+
+      try {
+        // Cached data is shown immediately on repeat visits while the same
+        // request refreshes in the background; no separate /workflows call.
+        const lookupResult = await window.PMS.Api.getCached(
+          '/project-form/lookups',
+          'project-form-lookups-v1',
+          {
+            onRefresh: (freshData) => {
+              if (this.modal === modal) renderProjectLookups(freshData);
+            }
+          }
+        );
+
+        if (this.modal !== modal) return;
+        renderProjectLookups(lookupResult && lookupResult.data !== undefined
+          ? lookupResult.data
+          : lookupResult);
       } catch (error) {
-        this.showFormError(modal, 'دریافت فهرست واحدها و کاربران ناموفق بود. ' + this.getErrorMessage(error));
+        if (this.modal !== modal) return;
+        workflowSelect.innerHTML = '<option value="">خطا در دریافت اطلاعات فرم</option>';
+        departmentsSelect.innerHTML = '<div class="project-lookup-error">دریافت واحدها ناموفق بود.</div>';
+        this.showFormError(
+          modal,
+          'دریافت اطلاعات فرم ایجاد پروژه ناموفق بود. دوباره تلاش کنید. ' +
+          this.getErrorMessage(error)
+        );
       }
 
       // کد پروژه را اپراتور وارد می‌کند؛ پس از ثبت، بک‌اند آن را ثابت نگه می‌دارد.
