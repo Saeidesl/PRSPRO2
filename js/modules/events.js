@@ -634,6 +634,20 @@
         const dynamicData = this.extractDataObject(responses[1]);
         const project = this.findById(this.projects, event.ProjectID);
         const type = this.findById(this.eventTypes, event.EventTypeID);
+        let variantDetails = [];
+        try {
+          const parsedVariants = JSON.parse(String(event.VariantDetailsJSON || '[]'));
+          if (Array.isArray(parsedVariants)) variantDetails = parsedVariants;
+        } catch (error) {}
+        const variantSummary = variantDetails.map(function (variant) {
+          const parts = [];
+          if (variant.Color) parts.push('رنگ ' + variant.Color);
+          if (variant.Size) parts.push('سایز ' + variant.Size);
+          if (variant.VariantQuantity !== '' && variant.VariantQuantity !== undefined && variant.VariantQuantity !== null) {
+            parts.push('تعداد ' + variant.VariantQuantity);
+          }
+          return parts.join('، ');
+        }).filter(Boolean).join(' | ');
 
         const rows = [
           ['شناسه رویداد', event.ID],
@@ -650,9 +664,10 @@
               event.EventTypeID
           ],
           ['شرح', event.Description],
-          ...(event.Color ? [['رنگ', event.Color]] : []),
-          ...(event.Size ? [['سایز', event.Size]] : []),
-          ...(event.VariantQuantity !== undefined && event.VariantQuantity !== null && String(event.VariantQuantity) !== '' ? [['مقدار رنگ/سایز', event.VariantQuantity]] : []),
+          ...(variantDetails.length > 1 && variantSummary ? [['ترکیب‌های رنگ/سایز', variantSummary]] : []),
+          ...(variantDetails.length <= 1 && event.Color ? [['رنگ', event.Color]] : []),
+          ...(variantDetails.length <= 1 && event.Size ? [['سایز', event.Size]] : []),
+          ...(variantDetails.length <= 1 && event.VariantQuantity !== undefined && event.VariantQuantity !== null && String(event.VariantQuantity) !== '' ? [['مقدار رنگ/سایز', event.VariantQuantity]] : []),
           ['ثبت‌کننده', this.creatorValue(event)],
           ['انجام‌دهنده', event.PerformedByName || event.PerformedBy],
           ['واحد', this.departmentValue(event)],
