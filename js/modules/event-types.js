@@ -582,13 +582,19 @@
             '</div>' +
 
             '<div class="form-group">' +
-              '<label for="et-target-status">وضعیت پروژه پس از رویداد</label>' +
+              '<label for="et-target-status">وضعیت کلی پروژه پس از رویداد</label>' +
               '<select id="et-target-status" name="TargetProjectStatus">' +
                 projectStatusOptions +
               '</select>' +
             '</div>' +
 
-            '<div class="form-group et-full">' +
+            '<div class="form-group">' +
+  '<label for="et-target-step-status">وضعیت کار در مرحله پس از رویداد</label>' +
+  '<input id="et-target-step-status" name="TargetStepStatus" maxlength="100" placeholder="مثلاً فعال در الگوسازی">' +
+  '<small class="et-muted">این وضعیت مستقل از وضعیت کلی پروژه ذخیره می‌شود.</small>' +
+'</div>' +
+
+'<div class="form-group et-full">' +
               '<label>' +
                 '<input id="et-moves" name="MovesProjectToStep" type="checkbox">' +
                 ' این رویداد پروژه را به مرحله دیگری منتقل می‌کند' +
@@ -721,6 +727,7 @@
       setFieldValue(form, 'Status', status);
       setFieldValue(form, 'TargetDepartmentID', item.TargetDepartmentID);
       setFieldValue(form, 'TargetProjectStatus', item.TargetProjectStatus);
+      setFieldValue(form, 'TargetStepStatus', item.TargetStepStatus);
 
       setFieldChecked(form, 'AllowAttachments', item.AllowAttachments);
       setFieldChecked(form, 'MovesProjectToStep', item.MovesProjectToStep);
@@ -795,6 +802,7 @@
         Status: fieldValue(form, 'Status'),
         TargetDepartmentID: fieldValue(form, 'TargetDepartmentID'),
         TargetProjectStatus: fieldValue(form, 'TargetProjectStatus'),
+        TargetStepStatus: fieldValue(form, 'TargetStepStatus').trim(),
         AllowedDepartmentIDs: selectedValues(form, 'AllowedDepartmentIDs'),
         AllowedUserIDs: selectedValues(form, 'AllowedUserIDs'),
         AvailableDepartmentIDs: selectedValues(form, 'AvailableDepartmentIDs'),
