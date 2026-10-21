@@ -863,6 +863,14 @@
                 entries.push({ order: order, item: item, ordered: ordered, received: received,
                   remaining: Math.max(0, ordered - received), projectId: id });
               });
+              const allocatedTotal = Object.keys(allocatedByProject).reduce(function (sum, id) { return sum + allocatedByProject[id]; }, 0);
+              const unallocatedOrdered = Math.max(0, Number(item.OrderedQuantity || 0) - allocatedTotal);
+              if (unallocatedOrdered > 0) {
+                const unallocatedReceived = receiptRecords.filter(function (receipt) { return !String(receipt.ProjectID || '').trim(); })
+                  .reduce(function (sum, receipt) { return sum + Math.max(0, Number(receipt.QuantityReceived) || 0); }, 0);
+                entries.push({ order: order, item: item, ordered: unallocatedOrdered, received: unallocatedReceived,
+                  remaining: Math.max(0, unallocatedOrdered - unallocatedReceived), projectId: '' });
+              }
             } else {
               const ordered = Math.max(0, Number(item.OrderedQuantity || 0));
               const received = Math.max(0, Number(item.ReceivedQuantity || 0));
