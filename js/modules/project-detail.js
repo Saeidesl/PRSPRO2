@@ -486,12 +486,32 @@
         updated.textContent = this.formatDate(project.UpdatedAt);
       }
 
+      let colorSize = { colors: [], sizes: [] };
+      const rawColorSize = project.ColorSizeJSON || project.colorSizeJSON || project.color_size_json;
+      if (rawColorSize) {
+        try {
+          const parsed = typeof rawColorSize === 'string' ? JSON.parse(rawColorSize) : rawColorSize;
+          if (parsed && typeof parsed === 'object') {
+            colorSize.colors = Array.isArray(parsed.colors) ? parsed.colors : [];
+            colorSize.sizes = Array.isArray(parsed.sizes) ? parsed.sizes : [];
+          }
+        } catch (error) {
+          console.warn('خواندن رنگ‌بندی و سایزبندی پروژه انجام نشد.', error);
+        }
+      }
+
+      const colorNames = colorSize.colors.map(function (value) { return String(value || '').trim(); }).filter(Boolean);
+      const sizeNames = colorSize.sizes.map(function (value) { return String(value || '').trim(); }).filter(Boolean);
+
       if (info) {
         info.innerHTML =
           '<div class="detail-list">' +
             this.detailRow('شناسه پروژه', project.ID) +
             this.detailRow('کد پروژه', project.ProjectCode) +
             this.detailRow('عنوان پروژه', project.Title) +
+            this.detailRow('تعداد اولیه', project.Quantity) +
+            this.detailRow('رنگ‌بندی', colorNames.length ? colorNames.join('، ') : 'تعریف نشده') +
+            this.detailRow('سایزبندی', sizeNames.length ? sizeNames.join('، ') : 'تعریف نشده') +
             this.detailRow('توضیحات', project.Description) +
             this.detailRow('شناسه فرایند', project.WorkflowID) +
             this.detailRow(
