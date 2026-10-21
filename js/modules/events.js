@@ -980,50 +980,101 @@
       } catch (error) {}
       section.hidden = false;
       container.replaceChildren();
-      const addSelect = (name, label, options) => {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'event-field';
-        const labelEl = document.createElement('label');
-        labelEl.textContent = label + ' *';
-        const select = document.createElement('select');
-        select.name = name;
-        select.id = 'event-variant-' + name;
-        select.required = true;
-        const placeholder = document.createElement('option');
-        placeholder.value = '';
-        placeholder.textContent = 'انتخاب کنید';
-        select.appendChild(placeholder);
-        options.forEach((value) => {
-          const option = document.createElement('option');
-          option.value = String(value);
-          option.textContent = String(value);
-          select.appendChild(option);
+
+      const addRow = () => {
+        const row = document.createElement('div');
+        row.className = 'event-variant-row';
+        row.style.display = 'grid';
+        row.style.gridTemplateColumns = 'repeat(auto-fit, minmax(150px, 1fr))';
+        row.style.gap = '10px';
+        row.style.alignItems = 'end';
+        row.style.marginBottom = '10px';
+        row.dataset.variantRow = '1';
+
+        const addSelect = (name, label, options) => {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'event-field';
+          const inputId = 'event-variant-' + name + '-' + container.querySelectorAll('[data-variant-row]').length;
+          const labelEl = document.createElement('label');
+          labelEl.textContent = label + ' *';
+          labelEl.htmlFor = inputId;
+          const select = document.createElement('select');
+          select.name = name;
+          select.id = inputId;
+          select.dataset.variantField = name;
+          select.required = true;
+          const placeholder = document.createElement('option');
+          placeholder.value = '';
+          placeholder.textContent = 'انتخاب کنید';
+          select.appendChild(placeholder);
+          options.forEach((value) => {
+            const option = document.createElement('option');
+            option.value = String(value);
+            option.textContent = String(value);
+            select.appendChild(option);
+          });
+          wrapper.appendChild(labelEl);
+          wrapper.appendChild(select);
+          row.appendChild(wrapper);
+        };
+
+        if (useColors) addSelect('Color', 'رنگ', variants.colors);
+        if (useSizes) addSelect('Size', 'سایز', variants.sizes);
+        if (trackQuantity) {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'event-field';
+          const label = document.createElement('label');
+          label.textContent = 'مقدار این ترکیب *';
+          const input = document.createElement('input');
+          input.type = 'number';
+          input.min = '1';
+          input.step = '1';
+          input.required = true;
+          input.inputMode = 'numeric';
+          input.dataset.variantField = 'VariantQuantity';
+          wrapper.appendChild(label);
+          wrapper.appendChild(input);
+          row.appendChild(wrapper);
+        }
+
+        const removeWrap = document.createElement('div');
+        removeWrap.className = 'event-field';
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'btn btn-secondary';
+        remove.textContent = 'حذف ردیف';
+        remove.addEventListener('click', () => {
+          row.remove();
+          updateRemoveButtons();
         });
-        labelEl.htmlFor = select.id;
-        wrapper.appendChild(labelEl);
-        wrapper.appendChild(select);
-        container.appendChild(wrapper);
+        removeWrap.appendChild(remove);
+        row.appendChild(removeWrap);
+        container.appendChild(row);
+        updateRemoveButtons();
       };
-      if (useColors) addSelect('Color', 'رنگ', variants.colors);
-      if (useSizes) addSelect('Size', 'سایز', variants.sizes);
-      if (trackQuantity) {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'event-field';
-        const label = document.createElement('label');
-        label.htmlFor = 'event-variant-quantity';
-        label.textContent = 'مقدار این رنگ/سایز *';
-        const input = document.createElement('input');
-        input.id = 'event-variant-quantity';
-        input.name = 'VariantQuantity';
-        input.type = 'number';
-        input.min = '1';
-        input.step = '1';
-        input.required = true;
-        input.inputMode = 'numeric';
-        wrapper.appendChild(label);
-        wrapper.appendChild(input);
-        container.appendChild(wrapper);
-      }
+
+      const updateRemoveButtons = () => {
+        const rows = Array.from(container.querySelectorAll('[data-variant-row]'));
+        rows.forEach((row) => {
+          const button = row.querySelector('button');
+          if (button) button.disabled = rows.length <= 1;
+        });
+      };
+
+      addRow();
+      const addButton = document.createElement('button');
+      addButton.type = 'button';
+      addButton.className = 'btn btn-secondary';
+      addButton.textContent = 'افزودن ترکیب رنگ/سایز';
+      addButton.addEventListener('click', () => {
+        if (container.querySelectorAll('[data-variant-row]').length >= 500) {
+          this.showFormError('در هر رویداد حداکثر ۵۰۰ ردیف رنگ و سایز قابل ثبت است.');
+          return;
+        }
+        addRow();
+      });
+      container.appendChild(addButton);
+
       if (!project && isProjectEvent) {
         const note = document.createElement('p');
         note.className = 'event-muted';
@@ -1376,9 +1427,6 @@
 
       const projectId = projectInput.value;
       const typeId = typeInput.value;
-      const variantColorInput = document.getElementById('event-variant-Color');
-      const variantSizeInput = document.getElementById('event-variant-Size');
-      const variantQuantityInput = document.getElementById('event-variant-quantity');
       const occurredAt = dateInput.value;
       const description = descriptionInput.value.trim();
       const dynamicData = {};
@@ -1423,9 +1471,17 @@
         OccurredAt: date.toISOString(),
         Description: description,
         DynamicData: dynamicData,
-        Color: variantColorInput ? variantColorInput.value : '',
-        Size: variantSizeInput ? variantSizeInput.value : '',
-        VariantQuantity: variantQuantityInput ? variantQuantityInput.value : ''
+        VariantDetails: Array.from(form.querySelectorAll('[data-variant-row]')).map((row) => {
+          const value = (name) => {
+            const input = row.querySelector('[data-variant-field="' + name + '"]');
+            return input ? input.value : '';
+          };
+          return {
+            Color: value('Color'),
+            Size: value('Size'),
+            VariantQuantity: value('VariantQuantity')
+          };
+        }).filter((row) => row.Color || row.Size || row.VariantQuantity !== '')
       };
 
       this.submitting = true;
