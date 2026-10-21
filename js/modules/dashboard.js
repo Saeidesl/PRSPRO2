@@ -1351,6 +1351,7 @@
             this.baseItem('کد پروژه', project.ProjectCode) +
             this.baseItem('وضعیت', this.statusText(project.Status)) +
             this.baseItem('مرحله فعلی', stepName) +
+            this.baseItem('وضعیت کار در مرحله', project.CurrentStepStatus || '-') +
             this.baseItem('تاریخ ایجاد', this.formatDate(project.CreatedAt)) +
             this.baseItem('آخرین فعالیت', this.formatDate(project.UpdatedAt)) +
             this.baseItem('شناسه پروژه', id) +
