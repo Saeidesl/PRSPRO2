@@ -717,11 +717,21 @@
       };
 
       try {
+        // Scope cached names and IDs to the current authenticated session so
+        // another user on the same device never sees a previous user's lookup cache.
+        const sessionToken = String(window.PMS.Api.getToken() || '');
+        let lookupHash = 2166136261;
+        for (let i = 0; i < sessionToken.length; i += 1) {
+          lookupHash ^= sessionToken.charCodeAt(i);
+          lookupHash = Math.imul(lookupHash, 16777619);
+        }
+        const lookupCacheKey = 'project-form-lookups-v1-' + (lookupHash >>> 0).toString(36);
+
         // Cached data is shown immediately on repeat visits while the same
         // request refreshes in the background; no separate /workflows call.
         const lookupResult = await window.PMS.Api.getCached(
           '/project-form/lookups',
-          'project-form-lookups-v1',
+          lookupCacheKey,
           {
             onRefresh: (freshData) => {
               if (this.modal === modal) renderProjectLookups(freshData);
