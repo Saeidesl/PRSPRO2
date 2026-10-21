@@ -10,6 +10,7 @@
     users: [],
     departments: [],
     eventTypes: [],
+    projectStatuses: [],
     workflowSteps: [],
     eventData: {},
     eventFields: {},
@@ -568,6 +569,17 @@
             ProjectDetail.eventTypes = ProjectDetail.normalizeArray(
               data,
               ['eventTypes', 'items', 'EventTypes', 'Items']
+            );
+          }
+        },
+        {
+          path: '/project-dashboard/lookups',
+          key: 'dashboard_project_lookups_v1',
+          assign: function (data) {
+            const lookups = ProjectDetail.unwrap(data) || {};
+            ProjectDetail.projectStatuses = ProjectDetail.normalizeArray(
+              lookups.projectStatuses,
+              ['projectStatuses', 'statuses', 'items', 'ProjectStatuses']
             );
           }
         }
@@ -1394,7 +1406,10 @@
         REJECTED: 'ردشده'
       };
 
-      return map[status] || status || '-';
+      const custom = this.projectStatuses.find(function (item) {
+        return String(item.Code || item.ID || '').toLowerCase() === String(status || '').toLowerCase();
+      });
+      return (custom && (custom.Name || custom.Code)) || map[String(status || '').toUpperCase()] || status || '-';
     },
 
     formatDate: function (value) {
