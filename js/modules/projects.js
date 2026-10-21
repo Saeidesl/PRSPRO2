@@ -1265,6 +1265,7 @@
                 <div class="project-list-card-meta">
                   <span class="project-list-badge ${stateClass}"><span aria-hidden="true">●</span> ${this.escape(this.statusText(project.Status))}</span>
                   <span class="project-list-badge">مرحله: ${this.escape(step)}</span>
+                  ${project.CurrentStepStatus ? '<span class="project-list-badge">وضعیت مرحله: ' + this.escape(project.CurrentStepStatus) + '</span>' : ''}
                   ${quantity ? '<span class="project-list-badge">' + quantity + '</span>' : ''}
                 </div>
                 <div class="project-list-card-activity">آخرین بروزرسانی: ${this.escape(this.formatDate(project.UpdatedAt))}</div>
