@@ -822,6 +822,12 @@
 
     const form = root.querySelector('#procurement-receipt-form');
     const projectSelect = form.elements.ProjectID;
+    if (options.orderId) {
+      const orderOption = document.createElement('option');
+      orderOption.value = '__ORDER__';
+      orderOption.textContent = 'تمام اقلام باقی‌مانده این سفارش';
+      projectSelect.insertBefore(orderOption, projectSelect.options[1] || null);
+    }
     const itemsContainer = root.querySelector('#procurement-receipt-items');
     const summary = root.querySelector('#procurement-receipt-summary');
     const receiveDate = form.elements.ReceivedAt;
@@ -834,36 +840,55 @@
       });
       state.orders.forEach(function (order) {
         if (String(order.Status || '').toUpperCase() === 'CANCELLED') return;
+        if (options.orderId && String(order.ID || order.PurchaseOrderID || '') !== String(options.orderId)) return;
         (Array.isArray(order.Items) ? order.Items : []).forEach(function (item) {
-          const need = needsById[String(item.MaterialNeedID || '')];
-          const projectIds = Array.isArray(item.ProjectIDs) ? item.ProjectIDs.map(String) : [];
-          const legacyProjectId = item.ProjectID || order.ProjectID || (need && need.ProjectID) || '';
-          const general = projectIds.length === 0 && !legacyProjectId;
-          if (projectId === '__GENERAL__' ? !general : !(projectIds.includes(String(projectId)) || String(legacyProjectId) === String(projectId))) return;
-          if (options.orderId && String(order.ID || order.PurchaseOrderID || '') !== String(options.orderId)) return;
           if (options.itemId && String(item.ID || item.PurchaseOrderItemID || '') !== String(options.itemId)) return;
-
+          const need = needsById[String(item.MaterialNeedID || '')];
           const allocations = Array.isArray(item.Allocations) ? item.Allocations : [];
+          const receiptRecords = Array.isArray(item.Receipts) ? item.Receipts : [];
+          const fallbackProjectId = String(item.ProjectID || order.ProjectID || (need && need.ProjectID) || '');
+
+          if (projectId === '__ORDER__') {
+            if (allocations.length) {
+              const allocatedByProject = {};
+              allocations.forEach(function (allocation) {
+                const id = String(allocation.ProjectID || '');
+                if (!id) return;
+                allocatedByProject[id] = (allocatedByProject[id] || 0) + Math.max(0, Number(allocation.AllocatedQuantity) || 0);
+              });
+              Object.keys(allocatedByProject).forEach(function (id) {
+                const ordered = allocatedByProject[id];
+                const received = receiptRecords.filter(function (receipt) { return String(receipt.ProjectID || '') === id; })
+                  .reduce(function (sum, receipt) { return sum + Math.max(0, Number(receipt.QuantityReceived) || 0); }, 0);
+                entries.push({ order: order, item: item, ordered: ordered, received: received,
+                  remaining: Math.max(0, ordered - received), projectId: id });
+              });
+            } else {
+              const ordered = Math.max(0, Number(item.OrderedQuantity || 0));
+              const received = Math.max(0, Number(item.ReceivedQuantity || 0));
+              entries.push({ order: order, item: item, ordered: ordered, received: received,
+                remaining: Math.max(0, ordered - received), projectId: fallbackProjectId });
+            }
+            return;
+          }
+
+          const projectIds = Array.isArray(item.ProjectIDs) ? item.ProjectIDs.map(String) : [];
+          const general = projectIds.length === 0 && !fallbackProjectId;
+          if (projectId === '__GENERAL__' ? !general : !(projectIds.includes(String(projectId)) || fallbackProjectId === String(projectId))) return;
+
           const hasProjectAllocations = allocations.length > 0;
           const allocated = hasProjectAllocations
             ? allocations.filter(function (allocation) { return String(allocation.ProjectID || '') === String(projectId); })
                 .reduce(function (sum, allocation) { return sum + Math.max(0, Number(allocation.AllocatedQuantity) || 0); }, 0)
             : Math.max(0, Number(item.OrderedQuantity || 0));
-          const receiptRecords = Array.isArray(item.Receipts) ? item.Receipts : [];
           const receivedForSelection = hasProjectAllocations
             ? receiptRecords.filter(function (receipt) { return String(receipt.ProjectID || '') === String(projectId); })
                 .reduce(function (sum, receipt) { return sum + Math.max(0, Number(receipt.QuantityReceived) || 0); }, 0)
             : Math.max(0, Number(item.ReceivedQuantity || 0));
           const ordered = projectId === '__GENERAL__' ? Math.max(0, Number(item.OrderedQuantity || 0)) : allocated;
           const received = projectId === '__GENERAL__' ? Math.max(0, Number(item.ReceivedQuantity || 0)) : receivedForSelection;
-          entries.push({
-            order: order,
-            item: item,
-            ordered: ordered,
-            received: received,
-            remaining: Math.max(0, ordered - received),
-            projectId: projectId === '__GENERAL__' ? '' : String(projectId)
-          });
+          entries.push({ order: order, item: item, ordered: ordered, received: received,
+            remaining: Math.max(0, ordered - received), projectId: projectId === '__GENERAL__' ? '' : String(projectId) });
         });
       });
       return entries;
@@ -878,7 +903,7 @@
       }
       const entries = projectOrderItems(projectId);
       if (!entries.length) {
-        itemsContainer.innerHTML = '<div class="table-empty">برای این پروژه سفارشی ثبت نشده است.</div>';
+        itemsContainer.innerHTML = '<div class="table-empty">برای انتخاب فعلی، قلمی با مقدار باقی‌مانده پیدا نشد.</div>';
         summary.hidden = true;
         return;
       }
@@ -917,7 +942,8 @@
     }
 
     projectSelect.addEventListener('change', renderReceiptItems);
-    if (options.projectId) { projectSelect.value = options.projectId; renderReceiptItems(); }
+    if (options.orderId) { projectSelect.value = '__ORDER__'; renderReceiptItems(); }
+    else if (options.projectId) { projectSelect.value = options.projectId; renderReceiptItems(); }
     itemsContainer.addEventListener('change', function (event) {
       if (event.target.matches('[name="SelectedItem"]')) {
         const row = event.target.closest('[data-receipt-row]');
@@ -939,9 +965,8 @@
       }).map(function (row) {
         const checkbox = row.querySelector('[name="SelectedItem"]');
         const quantity = row.querySelector('[name="ReceiptQuantity"]');
-        const entry = availableEntries.find(function (x) {
-          return String(x.item.ID) === String(checkbox.value);
-        });
+        const rowIndex = Number(row.getAttribute('data-receipt-row'));
+        const entry = Number.isInteger(rowIndex) ? availableEntries[rowIndex] : null;
         return { itemId: checkbox.value, quantity: Number(quantity && quantity.value), entry: entry };
       });
 
@@ -965,7 +990,7 @@
         const receipts = selected.map(function (receipt) {
           const body = {
             PurchaseOrderItemID: receipt.itemId,
-            ProjectID: projectSelect.value === '__GENERAL__' ? '' : projectSelect.value,
+            ProjectID: receipt.entry ? String(receipt.entry.projectId || '') : (projectSelect.value === '__GENERAL__' || projectSelect.value === '__ORDER__' ? '' : projectSelect.value),
             QuantityReceived: receipt.quantity,
             Notes: form.elements.Notes.value || ''
           };
