@@ -460,7 +460,7 @@
 
             <div class="filter-group" style="margin-bottom:16px;">
               <label for="new-project-code">
-                کد پروژه <span style="color:var(--color-danger);">*</span>
+                کد پروژه <span style="color:var(--color-danger);">*</span> <small style="color:var(--color-text-secondary);">(تولید خودکار، غیرقابل‌ویرایش)</small>
               </label>
 
               <input
@@ -506,7 +506,7 @@
               </select>
 
               <small style="display:block;margin-top:6px;color:var(--color-text-secondary);">
-                پروژه از اولین مرحله گردش کار انتخاب‌شده شروع می‌شود.
+                گردش کار اصلی فعال به‌صورت خودکار انتخاب می‌شود و پس از ایجاد پروژه قابل تغییر نیست.
               </small>
             </div>
 
@@ -696,6 +696,11 @@
               </option>
             `;
           }).join('');
+        const defaultWorkflow = workflows.find((workflow) =>
+          String(workflow.Code || '').toUpperCase() === 'MAIN_PRODUCTION'
+        ) || workflows[0];
+        workflowSelect.value = String(defaultWorkflow.ID || defaultWorkflow.Id || defaultWorkflow.id || '');
+        workflowSelect.disabled = true;
 
       } catch (error) {
         workflowSelect.innerHTML =
@@ -743,9 +748,19 @@
       }
 
       const codeInput = modal.querySelector('#new-project-code');
-
       if (codeInput) {
-        codeInput.focus();
+        const now = new Date();
+        const stamp = [
+          now.getFullYear(),
+          String(now.getMonth() + 1).padStart(2, '0'),
+          String(now.getDate()).padStart(2, '0'),
+          String(now.getHours()).padStart(2, '0'),
+          String(now.getMinutes()).padStart(2, '0'),
+          String(now.getSeconds()).padStart(2, '0')
+        ].join('');
+        codeInput.value = 'PRJ-' + stamp + '-' + Math.floor(1000 + Math.random() * 9000);
+        codeInput.readOnly = true;
+        codeInput.setAttribute('aria-readonly', 'true');
       }
     },
 
@@ -934,6 +949,11 @@
       const selectedUsers = Array.from(usersSelect.selectedOptions).map((option) => option.value).filter(Boolean);
       const selectedFile = fileInput && fileInput.files ? fileInput.files[0] : null;
       const submitButton = modal.querySelector('#project-create-submit');
+      const routerForAttachments = window.PMS.Router;
+      const canUploadProjectAttachment = !!(routerForAttachments &&
+        (routerForAttachments.isAdmin() ||
+          (Array.isArray(routerForAttachments.permissions) &&
+            routerForAttachments.permissions.indexOf('ATTACHMENT_UPLOAD') !== -1)));
 
       let colorSize = { colors: [], sizes: [] };
       try { colorSize = JSON.parse(modal.dataset.colorSizeJson || '{"colors":[],"sizes":[]}'); } catch (error) {}
