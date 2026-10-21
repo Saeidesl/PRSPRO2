@@ -109,7 +109,7 @@
 
       root.innerHTML =
         '<div id="dash-awaiting-action-notice" class="dash-awaiting-action-notice" hidden>' +
-          '<button type="button" id="dash-awaiting-action-button" class="dash-awaiting-action-button">' +
+          '<button type="button" id="dash-awaiting-action-button" class="dash-awaiting-action-button" style="display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:12px 16px;border:1px solid #fecaca;border-radius:10px;background:#fef2f2;color:#991b1b;font-weight:700;cursor:pointer">' +
             '<span>پروژه‌های در انتظار اقدام</span><span id="dash-awaiting-action-count" class="dash-awaiting-action-count">۰</span>' +
           '</button>' +
         '</div>' +
