@@ -434,7 +434,7 @@
           style="
             background:var(--color-surface);
             width:100%;
-            max-width:560px;
+            max-width:760px;
             max-height:90vh;
             overflow-y:auto;
             border-radius:10px;
@@ -472,42 +472,18 @@
 
           <form id="project-create-form">
             <div class="filter-group" style="margin-bottom:16px;">
-              <label for="new-project-title">
-                نام پروژه <span style="color:var(--color-danger);">*</span>
-              </label>
-
-              <input
-                type="text"
-                id="new-project-title"
-                name="Title"
-                required
-                maxlength="200"
-                autocomplete="off"
-                placeholder="نام پروژه تولید"
-                style="width:100%;box-sizing:border-box;"
-              >
+              <label for="new-project-code">کد پروژه <span style="color:var(--color-danger);">*</span></label>
+              <input type="text" id="new-project-code" name="ProjectCode" required maxlength="100" autocomplete="off" placeholder="کد پروژه را وارد کنید" style="width:100%;box-sizing:border-box;">
+              <small style="display:block;margin-top:5px;color:var(--color-text-secondary);">کد را اپراتور وارد می‌کند و پس از ایجاد پروژه قابل تغییر نیست.</small>
             </div>
-
             <div class="filter-group" style="margin-bottom:16px;">
-              <label for="new-project-code">
-                کد پروژه <span style="color:var(--color-danger);">*</span> <small style="color:var(--color-text-secondary);">(تولید خودکار، غیرقابل‌ویرایش)</small>
-              </label>
-
-              <input
-                type="text"
-                id="new-project-code"
-                name="ProjectCode"
-                required
-                maxlength="100"
-                autocomplete="off"
-                placeholder="مثلاً PRJ-001"
-                style="width:100%;box-sizing:border-box;"
-              >
+              <label for="new-project-title">نام پروژه <span style="color:var(--color-danger);">*</span></label>
+              <input type="text" id="new-project-title" name="Title" required maxlength="200" autocomplete="off" placeholder="نام پروژه تولید" style="width:100%;box-sizing:border-box;">
             </div>
 
             <div class="filter-group" style="margin-bottom:16px;">
               <label for="new-project-quantity">
-                تعداد کل پروژه <span style="color:var(--color-text-secondary);font-size:12px;">(اختیاری)</span>
+                تعداد پیشنهادی <span style="color:var(--color-text-secondary);font-size:12px;">(اختیاری)</span>
               </label>
               <input
                 type="number"
@@ -516,7 +492,7 @@
                 min="1"
                 step="1"
                 inputmode="numeric"
-                placeholder="تعداد کل قطعات"
+                placeholder="تعداد پیشنهادی قطعات"
                 style="width:100%;box-sizing:border-box;"
               >
             </div>
@@ -536,7 +512,7 @@
               </select>
 
               <small style="display:block;margin-top:6px;color:var(--color-text-secondary);">
-                گردش کار اصلی فعال به‌صورت خودکار انتخاب می‌شود و پس از ایجاد پروژه قابل تغییر نیست.
+                یک گردش کار را انتخاب کنید. پس از ایجاد پروژه، مسیر گردش کار قابل تغییر نیست.
               </small>
             </div>
 
@@ -554,10 +530,10 @@
               ></textarea>
             </div>
 
-            <div class="filter-group" style="margin-bottom:16px;">
-              <label for="new-project-departments">واحدهای مجاز <span style="color:var(--color-danger);">*</span></label>
-              <select id="new-project-departments" name="AvailableDepartmentIDs" multiple required size="4" style="width:100%;box-sizing:border-box;min-height:110px;"></select>
-              <small style="display:block;margin-top:5px;color:var(--color-text-secondary);">حداقل یک واحد را انتخاب کنید. واحد طراحی به‌صورت پیش‌فرض انتخاب می‌شود؛ برای انتخاب چند واحد از لمس چندگانه یا Ctrl استفاده کنید.</small>
+            <div class="filter-group" style="margin-bottom:18px;">
+              <label>واحدهای مجاز برای مشاهده پروژه و ثبت رویداد <span style="color:var(--color-danger);">*</span></label>
+              <div id="new-project-departments" role="group" aria-label="انتخاب واحدهای مجاز" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;border:1px solid var(--color-border);border-radius:10px;padding:12px;min-height:48px;"></div>
+              <small style="display:block;margin-top:6px;color:var(--color-text-secondary);">حداقل یک واحد را انتخاب کنید. واحد طراحی به‌صورت پیش‌فرض فعال است.</small>
             </div>
 
             <div class="filter-group" style="margin-bottom:16px;">
@@ -567,7 +543,7 @@
             </div>
 
             <div class="filter-group" style="margin-bottom:16px;">
-              <label for="new-project-file">فایل یا تصویر پروژه <span style="color:var(--color-text-secondary);font-size:12px;">(اختیاری)</span></label>
+              <label for="new-project-file">افزودن فایل <span style="color:var(--color-text-secondary);font-size:12px;">(اختیاری)</span></label>
               <input type="file" id="new-project-file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" style="width:100%;box-sizing:border-box;">
               <small id="new-project-file-help" style="display:block;margin-top:5px;color:var(--color-text-secondary);">فایل پس از ایجاد پروژه به پیوست‌های همان پروژه اضافه می‌شود. برای بارگذاری به دسترسی افزودن فایل نیاز است.</small>
             </div>
@@ -580,19 +556,12 @@
               <small style="display:block;margin-top:5px;color:var(--color-text-secondary);">این گزینه به‌صورت پیش‌فرض فعال است.</small>
             </div>
 
-            <div style="margin:0 0 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-              <button type="button" id="new-project-color-size-button" class="btn btn-secondary">
-              <span id="new-project-color-size-summary" style="font-size:12px;color:var(--color-text-secondary);">اختیاری؛ رنگ‌ها و سایزهای این پروژه را تعریف کنید.</span>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin:4px 0 16px;">
+              ${this.canManageProcurement() ? '<button type="button" id="new-project-needs-button" class="btn btn-secondary">ملزومات موردنیاز</button>' : ''}
+              <button type="button" id="new-project-color-size-button" class="btn btn-secondary">تعریف رنگ‌بندی و سایزبندی</button>
             </div>
-
-            ${this.canManageProcurement() ? `
-              <div class="alert alert-info" style="margin-bottom:16px;">
-                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                  <input type="checkbox" id="new-project-add-needs">
-                  <span>پس از ثبت پروژه، ثبت نیازهای ملزومات این پروژه را هم انجام بدهم</span>
-                </label>
-              </div>
-            ` : ''}
+            <div id="new-project-needs-summary" style="font-size:12px;color:var(--color-text-secondary);margin:-8px 0 14px;">ملزومات اختیاری است و هنوز موردی تعریف نشده است.</div>
+            <div id="new-project-color-size-summary" style="font-size:12px;color:var(--color-text-secondary);margin:-8px 0 16px;">رنگ‌بندی و سایزبندی اختیاری است و هنوز تعریف نشده است.</div>
 
             <div style="
               display:flex;
@@ -654,9 +623,9 @@
       };
 
       const colorSizeButton = modal.querySelector('#new-project-color-size-button');
-      if (colorSizeButton) {
-        colorSizeButton.addEventListener('click', () => this.openColorSizeForm(modal));
-      }
+      if (colorSizeButton) colorSizeButton.addEventListener('click', () => this.openColorSizeForm(modal));
+      const needsButton = modal.querySelector('#new-project-needs-button');
+      if (needsButton) needsButton.addEventListener('click', () => this.openDraftNeedsForm(modal));
 
       closeButton.addEventListener('click', closeModal);
       cancelButton.addEventListener('click', closeModal);
@@ -726,11 +695,7 @@
               </option>
             `;
           }).join('');
-        const defaultWorkflow = workflows.find((workflow) =>
-          String(workflow.Code || '').toUpperCase() === 'MAIN_PRODUCTION'
-        ) || workflows[0];
-        workflowSelect.value = String(defaultWorkflow.ID || defaultWorkflow.Id || defaultWorkflow.id || '');
-        workflowSelect.disabled = true;
+        workflowSelect.value = '';
 
       } catch (error) {
         workflowSelect.innerHTML =
@@ -755,7 +720,7 @@
         departmentsSelect.innerHTML = departments.map((department) => {
           const id = department.ID || department.Id || department.id;
           const name = department.Name || department.Title || department.Code || id;
-          return '<option value="' + this.escape(id) + '">' + this.escape(name) + '</option>';
+          return '<label style="display:flex;align-items:center;gap:8px;padding:9px 10px;border:1px solid var(--color-border);border-radius:8px;cursor:pointer;min-width:0;"><input type="checkbox" name="AvailableDepartmentIDs" value="' + this.escape(id) + '"><span>' + this.escape(name) + '</span></label>';
         }).join('');
         usersSelect.innerHTML = users.map((user) => {
           const id = user.ID || user.Id || user.id;
@@ -768,7 +733,9 @@
           String(department.Name || '').includes('طراحی')
         );
         if (designDepartment) {
-          departmentsSelect.value = String(designDepartment.ID || designDepartment.Id || designDepartment.id);
+          const designId = String(designDepartment.ID || designDepartment.Id || designDepartment.id);
+          const designCheckbox = Array.from(departmentsSelect.querySelectorAll('input[name="AvailableDepartmentIDs"]')).find((input) => input.value === designId);
+          if (designCheckbox) designCheckbox.checked = true;
         }
         if (!departments.length) {
           this.showFormError(modal, 'واحد فعالی برای انتخاب پیدا نشد. ابتدا واحدها را بررسی کنید.');
@@ -777,21 +744,52 @@
         this.showFormError(modal, 'دریافت فهرست واحدها و کاربران ناموفق بود. ' + this.getErrorMessage(error));
       }
 
-      const codeInput = modal.querySelector('#new-project-code');
-      if (codeInput) {
-        const now = new Date();
-        const stamp = [
-          now.getFullYear(),
-          String(now.getMonth() + 1).padStart(2, '0'),
-          String(now.getDate()).padStart(2, '0'),
-          String(now.getHours()).padStart(2, '0'),
-          String(now.getMinutes()).padStart(2, '0'),
-          String(now.getSeconds()).padStart(2, '0')
-        ].join('');
-        codeInput.value = 'PRJ-' + stamp + '-' + Math.floor(1000 + Math.random() * 9000);
-        codeInput.readOnly = true;
-        codeInput.setAttribute('aria-readonly', 'true');
-      }
+      // کد پروژه را اپراتور وارد می‌کند؛ پس از ثبت، بک‌اند آن را ثابت نگه می‌دارد.
+    },
+
+    openDraftNeedsForm: function (projectModal) {
+      const existing = document.getElementById('project-draft-needs-modal');
+      if (existing) existing.remove();
+      let saved = [];
+      try { saved = JSON.parse(projectModal.dataset.projectNeeds || '[]'); } catch (error) {}
+      const modal = document.createElement('div');
+      modal.id = 'project-draft-needs-modal';
+      modal.style.cssText = 'position:fixed;inset:0;z-index:10030;background:var(--color-overlay,rgba(0,0,0,.48));display:flex;align-items:center;justify-content:center;padding:16px;direction:rtl;overflow:auto;';
+      modal.innerHTML = '<div role="dialog" aria-modal="true" aria-labelledby="project-draft-needs-title" style="background:var(--color-surface);color:var(--color-text);width:100%;max-width:760px;max-height:90vh;overflow:auto;border-radius:12px;padding:20px;box-sizing:border-box"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><h3 id="project-draft-needs-title">ملزومات موردنیاز پروژه</h3><button type="button" class="btn btn-light" data-draft-needs-close>بستن</button></div><p style="color:var(--color-text-secondary);font-size:12px;line-height:1.8">نیازها را تعریف کنید؛ پس از ثبت پروژه، این موارد به همان پروژه متصل می‌شوند. این فرم سفارش خرید ثبت نمی‌کند.</p><form id="project-draft-needs-form"><div id="project-draft-needs-rows"></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button type="button" class="btn btn-secondary" id="project-draft-needs-add">+ افزودن ردیف</button><button type="submit" class="btn btn-primary">ذخیره نیازها</button></div><div id="project-draft-needs-error" class="alert alert-danger" hidden style="margin-top:12px"></div></form></div>';
+      document.body.appendChild(modal);
+      const rows = modal.querySelector('#project-draft-needs-rows');
+      const error = modal.querySelector('#project-draft-needs-error');
+      const addRow = (item) => {
+        const row = document.createElement('div');
+        row.setAttribute('data-draft-need-row','1');
+        row.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;border:1px solid var(--color-border);border-radius:8px;padding:12px;margin-top:10px';
+        row.innerHTML = '<label>نام ملزوم *<input name="ItemName" required maxlength="200" style="display:block;width:100%;box-sizing:border-box;margin-top:5px"></label><label>واحد اندازه‌گیری *<input name="Unit" required maxlength="100" style="display:block;width:100%;box-sizing:border-box;margin-top:5px"></label><label>مقدار موردنیاز *<input name="RequestedQuantity" type="number" min="0.001" step="any" required style="display:block;width:100%;box-sizing:border-box;margin-top:5px"></label><label>توضیحات<input name="Notes" maxlength="500" style="display:block;width:100%;box-sizing:border-box;margin-top:5px"></label><button type="button" class="btn btn-light" data-draft-need-remove>حذف ردیف</button>';
+        ['ItemName','Unit','RequestedQuantity','Notes'].forEach((name) => { if (item && item[name] !== undefined) row.querySelector('[name="'+name+'"]').value = item[name]; });
+        row.querySelector('[data-draft-need-remove]').addEventListener('click', () => row.remove());
+        rows.appendChild(row);
+      };
+      (saved.length ? saved : [{}]).forEach(addRow);
+      modal.querySelector('#project-draft-needs-add').addEventListener('click', () => addRow({}));
+      const close = () => modal.remove();
+      modal.querySelector('[data-draft-needs-close]').addEventListener('click', close);
+      modal.addEventListener('click', (event) => { if (event.target === modal) close(); });
+      modal.querySelector('#project-draft-needs-form').addEventListener('submit', (event) => {
+        event.preventDefault();
+        const items = Array.from(rows.querySelectorAll('[data-draft-need-row]')).map((row) => {
+          const get = (name) => row.querySelector('[name="'+name+'"]').value.trim();
+          return { ItemName:get('ItemName'), Unit:get('Unit'), RequestedQuantity:Number(get('RequestedQuantity')), Notes:get('Notes') };
+        });
+        if (!items.length) { projectModal.dataset.projectNeeds = '[]'; close(); return; }
+        if (items.some((item) => !item.ItemName || !item.Unit || !Number.isFinite(item.RequestedQuantity) || item.RequestedQuantity <= 0)) {
+          error.textContent = 'نام ملزوم، واحد اندازه‌گیری و مقدار مثبت برای هر ردیف الزامی است.';
+          error.hidden = false;
+          return;
+        }
+        projectModal.dataset.projectNeeds = JSON.stringify(items);
+        const summary = projectModal.querySelector('#new-project-needs-summary');
+        if (summary) summary.textContent = items.length + ' ردیف ملزومات برای ثبت همراه پروژه آماده است.';
+        close();
+      });
     },
 
     openColorSizeForm: function (projectModal) {
@@ -969,13 +967,12 @@
       const quantityInput = modal.querySelector('#new-project-quantity');
       const workflowSelect = modal.querySelector('#new-project-workflow');
       const descriptionInput = modal.querySelector('#new-project-description');
-      const addNeedsInput = modal.querySelector('#new-project-add-needs');
-      const shouldAddNeeds = !!(addNeedsInput && addNeedsInput.checked);
+      const shouldAddNeeds = false;
       const departmentsSelect = modal.querySelector('#new-project-departments');
       const usersSelect = modal.querySelector('#new-project-users');
       const fileInput = modal.querySelector('#new-project-file');
       const notifyInput = modal.querySelector('#new-project-notify');
-      const selectedDepartments = Array.from(departmentsSelect.selectedOptions).map((option) => option.value).filter(Boolean);
+      const selectedDepartments = Array.from(modal.querySelectorAll('input[name="AvailableDepartmentIDs"]:checked')).map((input) => input.value).filter(Boolean);
       const selectedUsers = Array.from(usersSelect.selectedOptions).map((option) => option.value).filter(Boolean);
       const selectedFile = fileInput && fileInput.files ? fileInput.files[0] : null;
       const submitButton = modal.querySelector('#project-create-submit');
@@ -1065,6 +1062,16 @@
         const createdId = String(created.ID || created.Id || created.id);
 
         let attachmentWarning = '';
+        let needsWarning = '';
+        let draftNeeds = [];
+        try { draftNeeds = JSON.parse(modal.dataset.projectNeeds || '[]'); } catch (error) {}
+        if (draftNeeds.length) {
+          try {
+            for (const item of draftNeeds) await window.PMS.Api.post('/procurement/needs', Object.assign({}, item, { ProjectID: createdId }));
+          } catch (needsError) {
+            needsWarning = ' پروژه ایجاد شد، اما ثبت همه ملزومات ناموفق بود: ' + this.getErrorMessage(needsError);
+          }
+        }
         if (selectedFile) {
           try {
             const base64 = await new Promise((resolve, reject) => {
@@ -1105,7 +1112,7 @@
           this.modal = null;
         }
 
-        alert('پروژه با موفقیت ثبت شد.' + attachmentWarning);
+        alert('پروژه با موفقیت ثبت شد.' + attachmentWarning + needsWarning);
 
         if (shouldAddNeeds) {
           this.openProjectNeedsForm(createdId);
