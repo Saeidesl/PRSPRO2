@@ -518,6 +518,7 @@
               'مرحله فعلی',
               this.getStepName(project.CurrentStepID)
             ) +
+            this.detailRow('وضعیت کار در مرحله', project.CurrentStepStatus) +
           '</div>';
       }
     },
