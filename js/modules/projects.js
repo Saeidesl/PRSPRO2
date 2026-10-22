@@ -54,6 +54,10 @@
     projectStatuses: [],
     workflowStepsByWorkflow: {},
     stageLookupsLoaded: false,
+    stageLookupsSignature: '',
+    stageLookupsPromise: null,
+    stageLookupsPromiseSignature: '',
+    searchTimer: null,
     modal: null,
     isSaving: false,
     projectCardImages: {},
@@ -194,7 +198,11 @@
 
       if (searchInput) {
         searchInput.addEventListener('input', () => {
-          this.applyFilters();
+          if (this.searchTimer) clearTimeout(this.searchTimer);
+          this.searchTimer = setTimeout(() => {
+            this.searchTimer = null;
+            this.applyFilters();
+          }, 180);
         });
       }
 
@@ -410,38 +418,59 @@
     loadStageLookups: async function () {
       const workflowIds = Array.from(new Set((this.projects || [])
         .map((project) => String(project.WorkflowID || project.WorkflowId || ''))
-        .filter(Boolean)));
+        .filter(Boolean))).sort();
       if (!workflowIds.length) return;
 
-      try {
-        const entries = await Promise.all(workflowIds.map(async (workflowId) => {
-          const result = await window.PMS.Api.getCached(
-            '/workflows/' + encodeURIComponent(workflowId) + '/steps',
-            'workflow_steps_' + workflowId
-          );
-          let data = result && result.data !== undefined ? result.data : result;
-          for (let i = 0; i < 5 && data && !Array.isArray(data); i++) {
-            if (Array.isArray(data.items)) { data = data.items; break; }
-            if (Array.isArray(data.steps)) { data = data.steps; break; }
-            if (Array.isArray(data.data)) { data = data.data; break; }
-            if (data.data !== undefined) { data = data.data; continue; }
-            break;
-          }
-          return [workflowId, Array.isArray(data) ? data : []];
-        }));
-        const lookup = {};
-        entries.forEach(([workflowId, steps]) => {
-          lookup[workflowId] = steps.sort((a, b) =>
-            Number(a.StepOrder || a.Order || a.stepOrder || 0) -
-            Number(b.StepOrder || b.Order || b.stepOrder || 0)
-          );
-        });
-        this.workflowStepsByWorkflow = lookup;
-        this.stageLookupsLoaded = true;
-        this.applyFilters();
-      } catch (error) {
-        console.warn('دریافت نام مراحل پروژه‌ها انجام نشد.', error);
+      // Cached project data and its background refresh can both request stages.
+      // Share one in-flight lookup and skip repeated rendering for the same workflows.
+      const signature = workflowIds.join('|');
+      if (this.stageLookupsLoaded && this.stageLookupsSignature === signature) return;
+      if (this.stageLookupsPromise && this.stageLookupsPromiseSignature === signature) {
+        return this.stageLookupsPromise;
       }
+
+      this.stageLookupsPromiseSignature = signature;
+      const request = (async () => {
+        try {
+          const entries = await Promise.all(workflowIds.map(async (workflowId) => {
+            const result = await window.PMS.Api.getCached(
+              '/workflows/' + encodeURIComponent(workflowId) + '/steps',
+              'workflow_steps_' + workflowId
+            );
+            let data = result && result.data !== undefined ? result.data : result;
+            for (let i = 0; i < 5 && data && !Array.isArray(data); i++) {
+              if (Array.isArray(data.items)) { data = data.items; break; }
+              if (Array.isArray(data.steps)) { data = data.steps; break; }
+              if (Array.isArray(data.data)) { data = data.data; break; }
+              if (data.data !== undefined) { data = data.data; continue; }
+              break;
+            }
+            return [workflowId, Array.isArray(data) ? data : []];
+          }));
+          // Ignore stale responses if the project list changed to other workflows.
+          if (this.stageLookupsPromiseSignature !== signature) return;
+          const lookup = {};
+          entries.forEach(([workflowId, steps]) => {
+            lookup[workflowId] = steps.sort((a, b) =>
+              Number(a.StepOrder || a.Order || a.stepOrder || 0) -
+              Number(b.StepOrder || b.Order || b.stepOrder || 0)
+            );
+          });
+          this.workflowStepsByWorkflow = lookup;
+          this.stageLookupsLoaded = true;
+          this.stageLookupsSignature = signature;
+          this.applyFilters();
+        } catch (error) {
+          console.warn('دریافت نام مراحل پروژه‌ها انجام نشد.', error);
+        } finally {
+          if (this.stageLookupsPromise === request) {
+            this.stageLookupsPromise = null;
+            this.stageLookupsPromiseSignature = '';
+          }
+        }
+      })();
+      this.stageLookupsPromise = request;
+      return request;
     },
 
     getProjectStageName: function (project) {
