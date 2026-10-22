@@ -307,10 +307,43 @@
       ));
     },
 
-    openProjectNeedsForm: function (projectId) {
-      const project = this.projects.find((item) =>
-        String(item.ID || item.Id || item.id) === String(projectId)
-      ) || {};
+    openProjectNeedsForm: async function (projectId) {
+      if (!this.canManageProcurement()) {
+        alert('دسترسی مشاهده و ثبت ملزومات پروژه را ندارید.');
+        return;
+      }
+
+      const progress = document.createElement('div');
+      progress.className = 'project-create-progress';
+      progress.setAttribute('role', 'status');
+      progress.setAttribute('aria-live', 'polite');
+      progress.innerHTML = '<div class="project-create-progress-card"><div class="project-create-progress-orbit" aria-hidden="true"><span class="project-create-progress-spinner"></span><span class="project-create-progress-spark">✦</span></div><div class="project-create-progress-heading">لطفاً کمی صبر کنید</div><div class="project-create-progress-message">در حال دریافت ملزومات ثبت‌شده پروژه از سرور...</div><div class="project-create-progress-track" aria-hidden="true"><span></span></div><div class="project-create-progress-footnote">لطفاً تا پایان دریافت اطلاعات صبر کنید.</div></div>';
+      document.body.appendChild(progress);
+
+      try {
+        const project = this.projects.find((item) =>
+          String(item.ID || item.Id || item.id) === String(projectId)
+        ) || {};
+        const response = await window.PMS.Api.get('/procurement/needs');
+        let data = response;
+        for (let i = 0; i < 4 && data && !Array.isArray(data); i++) {
+          if (data.data !== undefined) { data = data.data; continue; }
+          if (data.needs !== undefined) { data = data.needs; continue; }
+          if (data.items !== undefined) { data = data.items; continue; }
+          if (data.Needs !== undefined) { data = data.Needs; continue; }
+          break;
+        }
+        if (!Array.isArray(data)) throw new Error('ساختار اطلاعات ملزومات دریافتی از سرور معتبر نیست.');
+        const needs = data.filter((need) => String(need.ProjectID || '') === String(projectId));
+        this.renderProjectNeedsForm(projectId, project, needs);
+      } catch (error) {
+        alert('دریافت ملزومات پروژه ناموفق بود: ' + this.getErrorMessage(error));
+      } finally {
+        progress.remove();
+      }
+    },
+
+    renderProjectNeedsForm: function (projectId, project, existingNeeds) {
       const existingModal = document.getElementById('project-needs-modal');
       if (existingModal) existingModal.remove();
 
@@ -318,12 +351,32 @@
       modal.id = 'project-needs-modal';
       modal.style.cssText = 'position:fixed;inset:0;z-index:10050;background:var(--color-overlay,rgba(0,0,0,.45));display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto;direction:rtl;';
       modal.innerHTML = '<div role="dialog" aria-modal="true" aria-labelledby="project-needs-title" style="background:var(--color-surface,#fff);color:var(--color-text,#222);width:100%;max-width:900px;max-height:92vh;overflow:auto;border-radius:12px;padding:20px;box-sizing:border-box;">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px"><div><h3 id="project-needs-title" style="margin:0 0 6px">ثبت نیازهای ملزومات پروژه</h3><div>' + this.escape(project.ProjectCode || '') + ' — ' + this.escape(project.Title || project.Name || '') + '</div></div><button type="button" class="btn btn-light" data-needs-close>بستن</button></div>' +
-        '<div class="alert alert-info">هر ردیف یک نیاز جداگانه است. برای سفارش‌گذاری، بعداً از دکمه «سفارش مرتبط با پروژه» استفاده کنید.</div>' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px"><div><h3 id="project-needs-title" style="margin:0 0 6px">ملزومات پروژه</h3><div>' + this.escape(project.ProjectCode || '') + ' — ' + this.escape(project.Title || project.Name || '') + '</div></div><button type="button" class="btn btn-light" data-needs-close>بستن</button></div>' +
+        '<section style="margin-bottom:20px"><h4 style="margin:0 0 10px">ملزومات ثبت‌شده</h4><div id="project-needs-existing"></div></section>' +
+        '<div class="alert alert-info">ملزومات ثبت‌شده در بالا نمایش داده می‌شوند. برای افزودن ملزومات جدید، ردیف‌های زیر را تکمیل کنید. ردیف‌های جدید پیش از ثبت قابل حذف هستند.</div>' +
         '<form id="project-needs-form"><div id="project-needs-rows"></div>' +
-        '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button type="button" class="btn btn-secondary" id="project-needs-add-row">+ افزودن ردیف</button><button type="submit" class="btn btn-primary">ثبت نیازها</button></div>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button type="button" class="btn btn-secondary" id="project-needs-add-row">+ افزودن ردیف</button><button type="submit" class="btn btn-primary">ثبت ملزومات جدید</button></div>' +
         '<div id="project-needs-error" class="alert alert-danger" hidden style="margin-top:12px"></div></form></div>';
       document.body.appendChild(modal);
+
+      const existingRoot = modal.querySelector('#project-needs-existing');
+      const existing = Array.isArray(existingNeeds) ? existingNeeds : [];
+      if (!existing.length) {
+        existingRoot.innerHTML = '<div class="table-empty">هنوز ملزوماتی برای این پروژه ثبت نشده است.</div>';
+      } else {
+        existingRoot.innerHTML = '<div style="display:grid;gap:8px">' + existing.map((need) => {
+          const status = String(need.ProcurementStatus || '');
+          const statusLabel = ({ NEEDS_PURCHASE: 'در انتظار سفارش', PARTIALLY_ORDERED: 'سفارش ناقص', ORDERED: 'سفارش داده‌شده', PARTIALLY_RECEIVED: 'دریافت ناقص', RECEIVED: 'تحویل کامل' })[status] || 'ثبت‌شده';
+          return '<div style="border:1px solid var(--color-border);border-radius:10px;padding:12px;min-width:0">' +
+            '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap"><strong style="overflow-wrap:anywhere">' + this.escape(need.ItemName || need.Name || 'ملزوم') + '</strong><span class="project-list-badge">' + this.escape(statusLabel) + '</span></div>' +
+            '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--color-text-secondary)">' +
+            '<span>مقدار موردنیاز: ' + this.escape(String(need.RequestedQuantity ?? '—')) + ' ' + this.escape(need.Unit || '') + '</span>' +
+            '<span>سفارش‌شده: ' + this.escape(String(need.OrderedQuantity ?? 0)) + '</span>' +
+            '<span>تحویل‌شده: ' + this.escape(String(need.ReceivedQuantity ?? 0)) + '</span>' +
+            '</div>' + (need.Notes ? '<div style="margin-top:7px;font-size:12px;overflow-wrap:anywhere">توضیحات: ' + this.escape(need.Notes) + '</div>' : '') +
+            '</div>';
+        }).join('') + '</div>';
+      }
 
       const rows = modal.querySelector('#project-needs-rows');
       const form = modal.querySelector('#project-needs-form');
@@ -338,7 +391,7 @@
         row.className = 'card';
         row.setAttribute('data-need-row', String(index));
         row.style.cssText = 'margin-top:12px;border:1px solid var(--color-border,#ddd);border-radius:8px;padding:14px;';
-        row.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><strong>نیاز ' + (index + 1) + '</strong><button type="button" class="btn btn-light" data-need-remove>حذف ردیف</button></div>' +
+        row.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px"><strong>ملزوم جدید ' + (index + 1) + '</strong><button type="button" class="btn btn-light" data-need-remove>حذف ردیف</button></div>' +
           '<div class="form-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">' +
           '<label class="form-group"><span>نام ملزوم *</span><input name="ItemName" required maxlength="200" style="width:100%;box-sizing:border-box"></label>' +
           '<label class="form-group"><span>واحد اندازه‌گیری *</span><input name="Unit" required maxlength="100" style="width:100%;box-sizing:border-box"></label>' +
@@ -351,13 +404,7 @@
       modal.querySelector('#project-needs-add-row').addEventListener('click', addRow);
       rows.addEventListener('click', (event) => {
         const remove = event.target.closest('[data-need-remove]');
-        if (!remove) return;
-        if (rows.querySelectorAll('[data-need-row]').length <= 1) {
-          errorBox.textContent = 'حداقل یک ردیف باید باقی بماند.';
-          errorBox.hidden = false;
-          return;
-        }
-        remove.closest('[data-need-row]').remove();
+        if (remove) remove.closest('[data-need-row]').remove();
       });
       addRow();
 
@@ -379,29 +426,39 @@
             }
           };
         });
+        if (!dataRows.length) {
+          errorBox.textContent = 'حداقل یک ملزوم جدید وارد کنید.';
+          errorBox.hidden = false;
+          return;
+        }
         const submit = form.querySelector('[type="submit"]');
         modal.dataset.saving = '1';
         submit.disabled = true;
         submit.textContent = 'در حال ثبت...';
+        const progress = document.createElement('div');
+        progress.className = 'project-create-progress';
+        progress.setAttribute('role', 'status');
+        progress.setAttribute('aria-live', 'polite');
+        progress.innerHTML = '<div class="project-create-progress-card"><div class="project-create-progress-orbit" aria-hidden="true"><span class="project-create-progress-spinner"></span><span class="project-create-progress-spark">✦</span></div><div class="project-create-progress-heading">لطفاً کمی صبر کنید</div><div class="project-create-progress-message">در حال ذخیره ملزومات پروژه...</div><div class="project-create-progress-track" aria-hidden="true"><span></span></div><div class="project-create-progress-footnote">لطفاً تا پایان ذخیره‌سازی صبر کنید.</div></div>';
+        document.body.appendChild(progress);
         let saved = 0;
         try {
-          dataRows.forEach((entry) => {
-            entry.payload.NeededBy = projectJalaliDateToIso(entry.payload.NeededBy);
-          });
+          dataRows.forEach((entry) => { entry.payload.NeededBy = projectJalaliDateToIso(entry.payload.NeededBy); });
           for (let i = 0; i < dataRows.length; i++) {
             await window.PMS.Api.post('/procurement/needs', dataRows[i].payload);
-            dataRows[i].row.remove();
             saved++;
           }
           modal.remove();
-          window.alert('تعداد ' + saved + ' نیاز برای پروژه ثبت شد.');
+          window.alert('تعداد ' + saved + ' ملزوم جدید برای پروژه ثبت شد.');
         } catch (error) {
           delete modal.dataset.saving;
-          errorBox.textContent = (error && error.message ? error.message : 'ثبت نیازها ناموفق بود.') +
+          errorBox.textContent = (error && error.message ? error.message : 'ثبت ملزومات ناموفق بود.') +
             (saved ? ' تا پیش از خطا، ' + saved + ' ردیف ثبت شده است؛ فقط ردیف‌های باقی‌مانده را دوباره ثبت کنید.' : '');
           errorBox.hidden = false;
           submit.disabled = false;
-          submit.textContent = 'ثبت نیازها';
+          submit.textContent = 'ثبت ملزومات جدید';
+        } finally {
+          progress.remove();
         }
       });
     },
