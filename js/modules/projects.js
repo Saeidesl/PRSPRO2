@@ -135,13 +135,28 @@
         '.project-list-card-actions .btn{min-height:36px;padding-inline:14px;border-radius:9px;font-weight:650}',
         '@media(max-width:900px){#projects-table-container.projects-card-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}}',
         '@media(max-width:620px){#projects-table-container.projects-card-list{grid-template-columns:minmax(0,1fr);gap:11px}.project-list-card{min-height:0;border-radius:14px}.project-list-card-main{padding:14px 13px 11px}.project-list-card-main.has-thumbnail .project-list-card-content{padding-right:84px}.project-list-card-media{right:12px;top:14px;width:62px;height:72px;border-radius:9px}.project-list-card-indicator{left:14px;top:17px}.project-list-card-code{font-size:14px;padding-left:14px}.project-list-card-title{font-size:12px}.project-list-card-meta{gap:5px;margin-top:10px}.project-list-badge{font-size:10px;padding:4px 7px}.project-list-card-activity{font-size:10px;margin-top:8px;padding-top:7px}.project-list-card-actions{padding:10px 12px 12px;gap:7px}.project-list-card-actions .btn{flex:1;min-width:0;min-height:40px;padding-inline:8px;font-size:12px}}',
-        '.project-create-progress{display:flex;align-items:center;gap:10px;margin:0 0 16px;padding:12px 14px;border:1px solid color-mix(in srgb,var(--color-primary) 30%,var(--color-border));border-radius:10px;background:color-mix(in srgb,var(--color-primary) 7%,var(--color-surface));color:var(--color-text);font-size:13px;line-height:1.8}',
+        '.project-create-progress{position:fixed;inset:0;z-index:10050;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;background:rgba(8,15,30,.58);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);direction:rtl;animation:project-progress-backdrop-in .22s ease-out both}',
         '.project-create-progress[hidden]{display:none}',
-        '.project-create-progress.is-success{border-color:#16a34a;background:color-mix(in srgb,#16a34a 9%,var(--color-surface))}',
-        '.project-create-progress.is-error{border-color:#dc2626;background:color-mix(in srgb,#dc2626 8%,var(--color-surface))}',
-        '.project-create-progress-spinner{width:17px;height:17px;flex:0 0 17px;border:2px solid color-mix(in srgb,var(--color-primary) 25%,transparent);border-top-color:var(--color-primary);border-radius:50%;animation:project-create-spin .8s linear infinite}',
-        '.project-create-progress.is-success .project-create-progress-spinner,.project-create-progress.is-error .project-create-progress-spinner{display:none}',
+        '.project-create-progress-card{position:relative;width:min(100%,390px);overflow:hidden;box-sizing:border-box;padding:30px 25px 24px;border:1px solid color-mix(in srgb,var(--color-primary) 28%,var(--color-border));border-radius:24px;background:var(--color-surface);color:var(--color-text);text-align:center;box-shadow:0 28px 90px rgba(0,0,0,.28);animation:project-progress-card-in .42s cubic-bezier(.2,.85,.25,1.15) both}',
+        '.project-create-progress-card:before{content:"";position:absolute;top:-90px;left:-65px;width:210px;height:210px;border-radius:50%;background:color-mix(in srgb,var(--color-primary) 13%,transparent);filter:blur(2px);pointer-events:none}',
+        '.project-create-progress-orbit{position:relative;display:grid;place-items:center;width:94px;height:94px;margin:0 auto 20px;border:1px solid color-mix(in srgb,var(--color-primary) 22%,var(--color-border));border-radius:50%;background:color-mix(in srgb,var(--color-primary) 7%,var(--color-surface));animation:project-progress-float 2.2s ease-in-out infinite}',
+        '.project-create-progress-orbit:before,.project-create-progress-orbit:after{content:"";position:absolute;inset:7px;border:1px solid color-mix(in srgb,var(--color-primary) 28%,transparent);border-radius:50%;animation:project-progress-ring 2.4s ease-out infinite}',
+        '.project-create-progress-orbit:after{animation-delay:1.2s}',
+        '.project-create-progress-spinner{display:block;width:39px;height:39px;border:4px solid color-mix(in srgb,var(--color-primary) 16%,var(--color-border));border-top-color:var(--color-primary);border-right-color:var(--color-primary);border-radius:50%;animation:project-create-spin .78s linear infinite;box-shadow:0 0 22px color-mix(in srgb,var(--color-primary) 18%,transparent)}',
+        '.project-create-progress-spark{position:absolute;top:5px;right:7px;color:var(--color-primary);font-size:20px;animation:project-progress-spark 1.8s ease-in-out infinite}',
+        '.project-create-progress-heading{position:relative;font-size:19px;font-weight:800;line-height:1.8;margin-bottom:7px}',
+        '.project-create-progress-message{position:relative;min-height:48px;color:var(--color-text-secondary);font-size:13px;line-height:2}',
+        '.project-create-progress-track{height:5px;overflow:hidden;margin:18px 0 13px;border-radius:99px;background:var(--color-surface-hover,var(--color-border))}',
+        '.project-create-progress-track span{display:block;width:38%;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--color-primary),color-mix(in srgb,var(--color-primary) 42%,#a78bfa));animation:project-progress-track 1.45s ease-in-out infinite}',
+        '.project-create-progress-footnote{font-size:11px;line-height:1.9;color:var(--color-text-secondary);opacity:.85}',
         '@keyframes project-create-spin{to{transform:rotate(360deg)}}',
+        '@keyframes project-progress-backdrop-in{from{opacity:0}to{opacity:1}}',
+        '@keyframes project-progress-card-in{from{opacity:0;transform:translateY(18px) scale(.94)}to{opacity:1;transform:translateY(0) scale(1)}}',
+        '@keyframes project-progress-ring{0%{transform:scale(.8);opacity:.75}100%{transform:scale(1.35);opacity:0}}',
+        '@keyframes project-progress-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}',
+        '@keyframes project-progress-spark{0%,100%{transform:scale(.8) rotate(0);opacity:.65}50%{transform:scale(1.15) rotate(18deg);opacity:1}}',
+        '@keyframes project-progress-track{0%{transform:translateX(280%)}100%{transform:translateX(-280%)}}',
+        '@media(prefers-reduced-motion:reduce){.project-create-progress,.project-create-progress-card,.project-create-progress-orbit,.project-create-progress-orbit:before,.project-create-progress-orbit:after,.project-create-progress-spinner,.project-create-progress-spark,.project-create-progress-track span{animation:none!important}}',
         '#project-create-settings-modal{padding:clamp(8px,3vw,20px)!important;align-items:center;overscroll-behavior:contain}',
         '#project-create-settings-modal [role="dialog"]{width:min(100%,680px);max-height:min(88dvh,760px);overflow:auto;overscroll-behavior:contain;padding:clamp(14px,3.5vw,24px)!important;scrollbar-gutter:stable}',
         '#project-create-settings-title{font-size:clamp(16px,2.4vw,20px);line-height:1.7}',
@@ -837,8 +852,16 @@
             aria-atomic="true"
             hidden
           >
-            <span class="project-create-progress-spinner" aria-hidden="true"></span>
-            <span id="project-create-progress-text"></span>
+            <div class="project-create-progress-card">
+              <div class="project-create-progress-orbit" aria-hidden="true">
+                <span class="project-create-progress-spinner"></span>
+                <span class="project-create-progress-spark">✦</span>
+              </div>
+              <div class="project-create-progress-heading">لطفاً کمی صبر کنید</div>
+              <div id="project-create-progress-text" class="project-create-progress-message"></div>
+              <div class="project-create-progress-track" aria-hidden="true"><span></span></div>
+              <div class="project-create-progress-footnote">اطلاعات شما در حال پردازش است؛ این پنجره را نبندید.</div>
+            </div>
           </div>
 
           <form id="project-create-form">
@@ -1689,11 +1712,12 @@
       const progressText = modal.querySelector('#project-create-progress-text');
       const updateProgress = (message, state) => {
         if (!progressBox || !progressText) return;
-        progressBox.hidden = false;
-        progressBox.classList.remove('is-success', 'is-error');
-        if (state === 'success') progressBox.classList.add('is-success');
-        if (state === 'error') progressBox.classList.add('is-error');
         progressText.textContent = message;
+        if (state === 'error') {
+          progressBox.hidden = true;
+          return;
+        }
+        progressBox.hidden = false;
       };
       const routerForAttachments = window.PMS.Router;
       const canUploadProjectAttachment = !!(routerForAttachments &&
