@@ -1195,6 +1195,15 @@
       }
 
       const renderProjectLookups = (rawData, serverConfirmed) => {
+        if (serverConfirmed) modal.dataset.lookupsServerConfirmed = 'true';
+        const preserveEditInputs = isEditMode && modal.dataset.lookupUserInteracted === 'true'
+          ? {
+              title: String((modal.querySelector('#new-project-title') || {}).value || ''),
+              quantity: String((modal.querySelector('#new-project-quantity') || {}).value || ''),
+              description: String((modal.querySelector('#new-project-description') || {}).value || ''),
+              notify: !!(modal.querySelector('#new-project-notify') || {}).checked
+            }
+          : null;
         let lookupData = rawData;
         for (let depth = 0; depth < 3 && lookupData && lookupData.data !== undefined &&
           !Array.isArray(lookupData.departments); depth += 1) {
@@ -1284,6 +1293,12 @@
           }
           const notify = modal.querySelector('#new-project-notify');
           if (notify) notify.checked = editProject.NotifyEnabled === true || String(editProject.NotifyEnabled).toLowerCase() === 'true';
+          if (preserveEditInputs) {
+            if (titleInput) titleInput.value = preserveEditInputs.title;
+            if (quantityInput) quantityInput.value = preserveEditInputs.quantity;
+            if (descriptionInput) descriptionInput.value = preserveEditInputs.description;
+            if (notify) notify.checked = preserveEditInputs.notify;
+          }
           let savedColorSize = { colors: [], sizes: [] };
           try { savedColorSize = typeof editProject.ColorSizeJSON === 'string' ? JSON.parse(editProject.ColorSizeJSON || '{"colors":[],"sizes":[]}') : (editProject.ColorSizeJSON || savedColorSize); } catch (error) {}
           modal.dataset.colorSizeJson = JSON.stringify({
@@ -1364,10 +1379,12 @@
         );
 
         if (this.modal !== modal) return;
-        renderProjectLookups(
-          lookupResult && lookupResult.data !== undefined ? lookupResult.data : lookupResult,
-          !(lookupResult && lookupResult.cached === true)
-        );
+        if (!(lookupResult && lookupResult.cached === true && modal.dataset.lookupsServerConfirmed === 'true')) {
+          renderProjectLookups(
+            lookupResult && lookupResult.data !== undefined ? lookupResult.data : lookupResult,
+            !(lookupResult && lookupResult.cached === true)
+          );
+        }
       } catch (error) {
         if (this.modal !== modal) return;
         workflowSelect.innerHTML = '<option value="">خطا در دریافت اطلاعات فرم</option>';
