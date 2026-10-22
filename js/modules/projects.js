@@ -106,6 +106,13 @@
         '.project-list-card-thumbnail{display:block;width:100%;height:100%;object-fit:cover;object-position:center;cursor:pointer}',
         '.project-list-card-thumbnail[hidden]{display:none}',
         '.project-list-card-thumbnail:focus-visible{outline:2px solid var(--color-primary);outline-offset:2px}',
+        '.project-image-lightbox{position:fixed;inset:0;z-index:20000;display:flex;align-items:center;justify-content:center;padding:clamp(12px,3vw,32px);box-sizing:border-box;background:rgba(0,0,0,.88);backdrop-filter:blur(3px);direction:rtl}',
+        '.project-image-lightbox[hidden]{display:none}',
+        '.project-image-lightbox-content{position:relative;display:flex;align-items:center;justify-content:center;width:100%;height:100%;min-width:0;min-height:0}',
+        '.project-image-lightbox-image{display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;border-radius:8px;box-shadow:0 12px 48px rgba(0,0,0,.35)}',
+        '.project-image-lightbox-close{position:absolute;top:0;right:0;z-index:1;display:flex;align-items:center;justify-content:center;width:44px;height:44px;border:1px solid rgba(255,255,255,.35);border-radius:50%;background:rgba(20,20,20,.75);color:#fff;font-size:28px;line-height:1;cursor:pointer}',
+        '.project-image-lightbox-close:focus-visible{outline:2px solid #fff;outline-offset:3px}',
+        '@media(max-width:620px){.project-image-lightbox{padding:12px}.project-image-lightbox-close{width:42px;height:42px;top:4px;right:4px}}',
         '.project-list-card-image-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:5px;box-sizing:border-box;color:var(--color-text-secondary);background:linear-gradient(145deg,color-mix(in srgb,var(--color-primary) 7%,var(--color-surface)),var(--color-surface-hover));text-align:center}',
         '.project-list-card-image-placeholder[hidden]{display:none}',
         '.project-list-card-image-label{font-size:9px;line-height:1.5;overflow-wrap:anywhere}',
@@ -1769,12 +1776,12 @@
       this.loadProjectCardImages(projects);
 
       container.querySelectorAll('.project-list-card-thumbnail').forEach((image) => {
-        const openImage = function () {
+        const openImage = () => {
           if (!image.src || image.hidden) return;
-          window.open(image.src, '_blank', 'noopener');
+          this.openProjectImage(image.src, image.alt || 'تصویر پروژه');
         };
         image.addEventListener('click', openImage);
-        image.addEventListener('keydown', function (event) {
+        image.addEventListener('keydown', (event) => {
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();
             openImage();
@@ -1794,6 +1801,46 @@
           if (id) window.location.hash = '#project-detail/' + encodeURIComponent(id);
         });
       });
+    },
+
+    openProjectImage: function (src, alt) {
+      const existing = document.getElementById('project-image-lightbox');
+      if (existing) existing.remove();
+
+      const overlay = document.createElement('div');
+      overlay.id = 'project-image-lightbox';
+      overlay.className = 'project-image-lightbox';
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
+      overlay.setAttribute('aria-label', 'نمایش تصویر پروژه');
+      overlay.innerHTML = '<div class="project-image-lightbox-content">' +
+        '<button type="button" class="project-image-lightbox-close" aria-label="بستن تصویر" title="بستن">×</button>' +
+        '<img class="project-image-lightbox-image" alt="">' +
+        '</div>';
+
+      const image = overlay.querySelector('.project-image-lightbox-image');
+      const closeButton = overlay.querySelector('.project-image-lightbox-close');
+      image.src = src;
+      image.alt = alt || 'تصویر پروژه';
+
+      const close = function () {
+        document.removeEventListener('keydown', onKeyDown);
+        overlay.remove();
+      };
+      const onKeyDown = function (event) {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          close();
+        }
+      };
+
+      closeButton.addEventListener('click', close);
+      overlay.addEventListener('click', function (event) {
+        if (event.target === overlay) close();
+      });
+      document.addEventListener('keydown', onKeyDown);
+      document.body.appendChild(overlay);
+      closeButton.focus();
     },
 
     // ========================================================
