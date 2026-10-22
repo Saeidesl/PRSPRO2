@@ -234,20 +234,50 @@
       ));
     },
 
-    openProjectEditForm: function (projectId) {
-      const project = this.projects.find((item) =>
-        String(item.ID || item.Id || item.id) === String(projectId)
-      );
-      if (!project) {
-        alert('اطلاعات پروژه پیدا نشد. فهرست پروژه‌ها را تازه‌سازی کنید.');
-        return;
-      }
+    openProjectEditForm: async function (projectId) {
       if (!this.canEditProjects()) {
         alert('دسترسی ویرایش پروژه را ندارید.');
         return;
       }
-      // فرم ویرایش عمداً از همان فرم ایجاد پروژه استفاده می‌کند تا ساختار و تجربه کاربری یکسان بماند.
-      this.openCreateForm(project);
+
+      // برای جلوگیری از نمایش اطلاعات قدیمی کارت، فرم ویرایش همیشه اطلاعات تازه را از سرور می‌گیرد.
+      const progress = document.createElement('div');
+      progress.className = 'project-create-progress';
+      progress.setAttribute('role', 'status');
+      progress.setAttribute('aria-live', 'polite');
+      progress.innerHTML = '<div class="project-create-progress-card"><div class="project-create-progress-orbit" aria-hidden="true"><span class="project-create-progress-spinner"></span><span class="project-create-progress-spark">✦</span></div><div class="project-create-progress-heading">لطفاً کمی صبر کنید</div><div class="project-create-progress-message">در حال دریافت اطلاعات کامل پروژه از سرور...</div><div class="project-create-progress-track" aria-hidden="true"><span></span></div><div class="project-create-progress-footnote">پس از دریافت اطلاعات، فرم ویرایش باز می‌شود.</div></div>';
+      document.body.appendChild(progress);
+
+      try {
+        const response = await window.PMS.Api.get('/projects/' + encodeURIComponent(projectId));
+        if (response && response.success === false) {
+          throw new Error(this.getErrorMessage(response) || 'دریافت اطلاعات پروژه ناموفق بود.');
+        }
+
+        let project = response;
+        for (let i = 0; i < 3 && project && project.data !== undefined; i += 1) {
+          project = project.data;
+        }
+        if (project && project.project) project = project.project;
+        if (Array.isArray(project)) project = project[0];
+
+        if (!project || typeof project !== 'object') {
+          throw new Error('اطلاعات پروژه از سرور دریافت نشد.');
+        }
+
+        const actualId = project.ID || project.Id || project.id;
+        if (!actualId || String(actualId) !== String(projectId)) {
+          // بعضی پاسخ‌ها شناسه را در سطح دیگری قرار می‌دهند؛ در این حالت شناسه درخواستی حفظ می‌شود.
+          project = Object.assign({}, project, { ID: actualId || String(projectId) });
+        }
+
+        // فرم ویرایش از همان فرم ایجاد پروژه استفاده می‌کند تا اعتبارسنجی و فیلدها یکسان بمانند.
+        this.openCreateForm(project);
+      } catch (error) {
+        alert('دریافت اطلاعات پروژه برای ویرایش ناموفق بود: ' + (this.getErrorMessage(error) || 'خطای نامشخص'));
+      } finally {
+        progress.remove();
+      }
     },
 
     openProjectColorSizeForm: async function (projectId) {
