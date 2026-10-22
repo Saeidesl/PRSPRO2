@@ -194,11 +194,163 @@
       const tableContainer = document.getElementById('projects-table-container');
       if (tableContainer) {
         tableContainer.addEventListener('click', (event) => {
-          const button = event.target.closest('.project-material-needs-button');
-          if (!button) return;
-          const projectId = button.getAttribute('data-project-id');
-          if (projectId) this.openProjectNeedsForm(projectId);
+          const needsButton = event.target.closest('.project-material-needs-button');
+          const editButton = event.target.closest('.project-edit-button');
+          const variantsButton = event.target.closest('.project-color-size-button');
+          const projectId = (needsButton || editButton || variantsButton) &&
+            (needsButton || editButton || variantsButton).getAttribute('data-project-id');
+          if (!projectId) return;
+          if (needsButton) this.openProjectNeedsForm(projectId);
+          else if (editButton) this.openProjectEditForm(projectId);
+          else if (variantsButton) this.openProjectColorSizeForm(projectId);
         });
+      }
+    },
+
+    canEditProjects: function () {
+      const router = window.PMS && window.PMS.Router;
+      return !!(router && (
+        router.isAdmin() ||
+        (Array.isArray(router.permissions) && router.permissions.indexOf('PROJECT_EDIT') !== -1)
+      ));
+    },
+
+    openProjectEditForm: function (projectId) {
+      const project = this.projects.find((item) =>
+        String(item.ID || item.Id || item.id) === String(projectId)
+      );
+      if (!project) {
+        alert('اطلاعات پروژه پیدا نشد. فهرست پروژه‌ها را تازه‌سازی کنید.');
+        return;
+      }
+      if (!this.canEditProjects()) {
+        alert('دسترسی ویرایش پروژه را ندارید.');
+        return;
+      }
+
+      const existing = document.getElementById('project-edit-modal');
+      if (existing) existing.remove();
+      let colorSize = { colors: [], sizes: [] };
+      try {
+        const raw = project.ColorSizeJSON || project.colorSizeJSON || '';
+        colorSize = typeof raw === 'string' ? JSON.parse(raw || '{"colors":[],"sizes":[]}') : raw;
+      } catch (error) {}
+      if (!colorSize || !Array.isArray(colorSize.colors) || !Array.isArray(colorSize.sizes)) {
+        colorSize = { colors: [], sizes: [] };
+      }
+
+      const modal = document.createElement('div');
+      modal.id = 'project-edit-modal';
+      modal.dataset.projectId = String(projectId);
+      modal.dataset.colorSizeJson = JSON.stringify(colorSize);
+      modal.style.cssText = 'position:fixed;inset:0;z-index:10010;background:var(--color-overlay,rgba(0,0,0,.48));display:flex;align-items:center;justify-content:center;padding:16px;direction:rtl;overflow:auto;';
+      modal.innerHTML =
+        '<div role="dialog" aria-modal="true" aria-labelledby="project-edit-title" style="background:var(--color-surface,#fff);color:var(--color-text,#222);width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:14px;padding:20px;box-sizing:border-box;">' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px"><h3 id="project-edit-title" style="margin:0">ویرایش پروژه</h3><button type="button" class="btn btn-light" data-project-edit-close>بستن</button></div>' +
+          '<form id="project-edit-form">' +
+            '<div class="filter-group" style="margin-bottom:12px"><label for="project-edit-code">کد پروژه (غیرقابل تغییر)</label><input id="project-edit-code" class="form-control" type="text" readonly value="' + this.escape(project.ProjectCode || '') + '"></div>' +
+            '<div class="filter-group" style="margin-bottom:12px"><label for="project-edit-title-input">عنوان پروژه *</label><input id="project-edit-title-input" class="form-control" type="text" maxlength="200" required value="' + this.escape(project.Title || project.Name || '') + '"></div>' +
+            '<div class="filter-group" style="margin-bottom:12px"><label for="project-edit-quantity">تعداد پیشنهادی</label><input id="project-edit-quantity" class="form-control" type="number" min="0" step="1" value="' + this.escape(project.Quantity === undefined || project.Quantity === null ? '' : project.Quantity) + '"></div>' +
+            '<div class="filter-group" style="margin-bottom:12px"><label for="project-edit-description">توضیحات</label><textarea id="project-edit-description" class="form-control" rows="3" maxlength="5000">' + this.escape(project.Description || '') + '</textarea></div>' +
+            '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0 16px"><button type="button" class="btn btn-secondary" data-project-edit-color-size>رنگ‌بندی و سایزبندی</button><span id="new-project-color-size-summary" style="font-size:12px;color:var(--color-text-secondary)"></span></div>' +
+            '<div id="project-edit-error" class="alert alert-danger" hidden style="margin-bottom:12px"></div>' +
+            '<div style="display:flex;gap:8px;justify-content:flex-start;flex-wrap:wrap"><button type="submit" class="btn btn-primary">ذخیره تغییرات</button><button type="button" class="btn btn-light" data-project-edit-close>انصراف</button></div>' +
+          '</form>' +
+        '</div>';
+      document.body.appendChild(modal);
+
+      const updateSummary = () => {
+        const summary = modal.querySelector('#new-project-color-size-summary');
+        let value = { colors: [], sizes: [] };
+        try { value = JSON.parse(modal.dataset.colorSizeJson || '{"colors":[],"sizes":[]}'); } catch (error) {}
+        summary.textContent = (value.colors.length || value.sizes.length)
+          ? value.colors.length + ' رنگ و ' + value.sizes.length + ' سایز تعریف شده'
+          : 'رنگ‌بندی و سایزبندی تعریف نشده است.';
+      };
+      updateSummary();
+
+      const close = () => modal.remove();
+      modal.querySelectorAll('[data-project-edit-close]').forEach((button) => button.addEventListener('click', close));
+      modal.addEventListener('click', (event) => { if (event.target === modal) close(); });
+      modal.querySelector('[data-project-edit-color-size]').addEventListener('click', () => this.openColorSizeForm(modal));
+
+      modal.querySelector('#project-edit-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const submit = modal.querySelector('button[type="submit"]');
+        const errorBox = modal.querySelector('#project-edit-error');
+        const title = modal.querySelector('#project-edit-title-input').value.trim();
+        const quantityText = modal.querySelector('#project-edit-quantity').value.trim();
+        if (!title) {
+          errorBox.textContent = 'عنوان پروژه را وارد کنید.';
+          errorBox.hidden = false;
+          return;
+        }
+        if (quantityText && (!Number.isFinite(Number(quantityText)) || Number(quantityText) < 0)) {
+          errorBox.textContent = 'تعداد پیشنهادی باید عددی نامنفی باشد.';
+          errorBox.hidden = false;
+          return;
+        }
+        let colorSizeJson = '{"colors":[],"sizes":[]}';
+        try {
+          const parsed = JSON.parse(modal.dataset.colorSizeJson || colorSizeJson);
+          colorSizeJson = JSON.stringify({
+            colors: Array.isArray(parsed.colors) ? parsed.colors : [],
+            sizes: Array.isArray(parsed.sizes) ? parsed.sizes : []
+          });
+        } catch (error) {
+          errorBox.textContent = 'رنگ‌بندی و سایزبندی معتبر نیست.';
+          errorBox.hidden = false;
+          return;
+        }
+
+        submit.disabled = true;
+        submit.textContent = 'در حال ذخیره...';
+        errorBox.hidden = true;
+        try {
+          const payload = {
+            Title: title,
+            Quantity: quantityText === '' ? '' : Number(quantityText),
+            Description: modal.querySelector('#project-edit-description').value.trim(),
+            ColorSizeJSON: colorSizeJson
+          };
+          const response = await window.PMS.Api.put('/projects/' + encodeURIComponent(String(projectId)), payload);
+          if (response && response.success === false) throw new Error(this.getErrorMessage(response) || 'ذخیره تغییرات ناموفق بود.');
+          const updated = response && response.data && response.data.data !== undefined
+            ? response.data.data
+            : (response && response.data !== undefined ? response.data : response);
+          Object.assign(project, payload, updated && typeof updated === 'object' ? updated : {});
+          this.applyFilters();
+          close();
+          alert('تغییرات پروژه با موفقیت ذخیره شد.');
+        } catch (error) {
+          errorBox.textContent = this.getErrorMessage(error) || 'ذخیره تغییرات ناموفق بود.';
+          errorBox.hidden = false;
+        } finally {
+          if (submit.isConnected) {
+            submit.disabled = false;
+            submit.textContent = 'ذخیره تغییرات';
+          }
+        }
+      });
+    },
+
+    openProjectColorSizeForm: function (projectId) {
+      const project = this.projects.find((item) =>
+        String(item.ID || item.Id || item.id) === String(projectId)
+      );
+      if (!project) {
+        alert('اطلاعات پروژه پیدا نشد. فهرست پروژه‌ها را تازه‌سازی کنید.');
+        return;
+      }
+      if (!this.canEditProjects()) {
+        alert('دسترسی ویرایش پروژه را ندارید.');
+        return;
+      }
+      this.openProjectEditForm(projectId);
+      const modal = document.getElementById('project-edit-modal');
+      if (modal) {
+        const button = modal.querySelector('[data-project-edit-color-size]');
+        if (button) button.click();
       }
     },
 
@@ -1762,8 +1914,14 @@
             </div>
             <div class="project-list-card-actions">
               <button type="button" class="btn btn-sm btn-light project-view-button" data-project-id="${this.escape(id)}">مشاهده پروژه</button>
+              ${this.canEditProjects() ? `
+                <button type="button" class="btn btn-sm btn-secondary project-edit-button" data-project-id="${this.escape(id)}">ویرایش</button>
+              ` : ''}
               ${this.canManageProcurement() ? `
                 <button type="button" class="btn btn-sm btn-secondary project-material-needs-button" data-project-id="${this.escape(id)}">ملزومات</button>
+              ` : ''}
+              ${this.canEditProjects() ? `
+                <button type="button" class="btn btn-sm btn-secondary project-color-size-button" data-project-id="${this.escape(id)}">رنگ‌بندی و سایز</button>
               ` : ''}
             </div>
           </article>
