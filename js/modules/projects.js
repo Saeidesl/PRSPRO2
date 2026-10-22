@@ -57,8 +57,10 @@
     modal: null,
     isSaving: false,
     projectCardImages: {},
+    projectCardImageStates: {},
     projectCardImagesLoading: false,
     projectCardImagesLoaded: false,
+    projectCardAttachmentsPromise: null,
 
     init: function () {
       this.ensureProjectStyles();
@@ -96,9 +98,16 @@
         '.project-list-card:hover{border-color:color-mix(in srgb,var(--color-primary) 45%,var(--color-border));box-shadow:0 8px 24px rgba(15,23,42,.09);transform:translateY(-1px)}',
         '.project-list-card-main{display:block;flex:1;min-width:0;position:relative;padding:17px 17px 13px}',
         '.project-list-card-main.has-thumbnail .project-list-card-content{padding-right:112px}',
-        '.project-list-card-thumbnail{position:absolute;right:16px;top:17px;display:block;width:84px;height:96px;object-fit:cover;object-position:center;border-radius:11px;border:1px solid var(--color-border);background:var(--color-surface-hover);cursor:pointer;box-shadow:0 2px 7px rgba(15,23,42,.08)}',
+        '.project-list-card-media{position:absolute;right:16px;top:17px;width:84px;height:96px;overflow:hidden;border-radius:11px;border:1px solid var(--color-border);background:var(--color-surface-hover);box-shadow:0 2px 7px rgba(15,23,42,.08)}',
+        '.project-list-card-thumbnail{display:block;width:100%;height:100%;object-fit:cover;object-position:center;cursor:pointer}',
         '.project-list-card-thumbnail[hidden]{display:none}',
         '.project-list-card-thumbnail:focus-visible{outline:2px solid var(--color-primary);outline-offset:2px}',
+        '.project-list-card-image-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:5px;box-sizing:border-box;color:var(--color-text-secondary);background:linear-gradient(145deg,color-mix(in srgb,var(--color-primary) 7%,var(--color-surface)),var(--color-surface-hover));text-align:center}',
+        '.project-list-card-image-placeholder[hidden]{display:none}',
+        '.project-list-card-image-label{font-size:9px;line-height:1.5;overflow-wrap:anywhere}',
+        '.project-list-card-image-empty-icon{font-size:25px;line-height:1;opacity:.55}',
+        '.project-list-image-spinner{width:22px;height:22px;border:2px solid color-mix(in srgb,var(--color-primary) 20%,var(--color-border));border-top-color:var(--color-primary);border-radius:50%;animation:project-image-spin .8s linear infinite}',
+        '@keyframes project-image-spin{to{transform:rotate(360deg)}}',
         '.project-list-card-indicator{position:absolute;left:18px;top:20px;width:9px;height:9px;border-radius:50%;background:var(--color-text-secondary)}',
         '.project-list-card-indicator.is-active{background:#16a34a}.project-list-card-indicator.is-hold{background:#eab308}.project-list-card-indicator.is-completed{background:#3b82f6}.project-list-card-indicator.is-cancelled{background:#ef4444}',
         '.project-list-card-content{flex:1;min-width:0}',
@@ -114,7 +123,7 @@
         '.project-list-card-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 17px 15px;border-top:1px solid color-mix(in srgb,var(--color-border) 72%,transparent);background:color-mix(in srgb,var(--color-surface-hover) 45%,var(--color-surface))}',
         '.project-list-card-actions .btn{min-height:36px;padding-inline:14px;border-radius:9px;font-weight:650}',
         '@media(max-width:900px){#projects-table-container.projects-card-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}}',
-        '@media(max-width:620px){#projects-table-container.projects-card-list{grid-template-columns:minmax(0,1fr);gap:11px}.project-list-card{min-height:0;border-radius:14px}.project-list-card-main{padding:14px 13px 11px}.project-list-card-main.has-thumbnail .project-list-card-content{padding-right:84px}.project-list-card-thumbnail{right:12px;top:14px;width:62px;height:72px;border-radius:9px}.project-list-card-indicator{left:14px;top:17px}.project-list-card-code{font-size:14px;padding-left:14px}.project-list-card-title{font-size:12px}.project-list-card-meta{gap:5px;margin-top:10px}.project-list-badge{font-size:10px;padding:4px 7px}.project-list-card-activity{font-size:10px;margin-top:8px;padding-top:7px}.project-list-card-actions{padding:10px 12px 12px;gap:7px}.project-list-card-actions .btn{flex:1;min-width:0;min-height:40px;padding-inline:8px;font-size:12px}}',
+        '@media(max-width:620px){#projects-table-container.projects-card-list{grid-template-columns:minmax(0,1fr);gap:11px}.project-list-card{min-height:0;border-radius:14px}.project-list-card-main{padding:14px 13px 11px}.project-list-card-main.has-thumbnail .project-list-card-content{padding-right:84px}.project-list-card-media{right:12px;top:14px;width:62px;height:72px;border-radius:9px}.project-list-card-indicator{left:14px;top:17px}.project-list-card-code{font-size:14px;padding-left:14px}.project-list-card-title{font-size:12px}.project-list-card-meta{gap:5px;margin-top:10px}.project-list-badge{font-size:10px;padding:4px 7px}.project-list-card-activity{font-size:10px;margin-top:8px;padding-top:7px}.project-list-card-actions{padding:10px 12px 12px;gap:7px}.project-list-card-actions .btn{flex:1;min-width:0;min-height:40px;padding-inline:8px;font-size:12px}}',
         '.project-create-progress{display:flex;align-items:center;gap:10px;margin:0 0 16px;padding:12px 14px;border:1px solid color-mix(in srgb,var(--color-primary) 30%,var(--color-border));border-radius:10px;background:color-mix(in srgb,var(--color-primary) 7%,var(--color-surface));color:var(--color-text);font-size:13px;line-height:1.8}',
         '.project-create-progress[hidden]{display:none}',
         '.project-create-progress.is-success{border-color:#16a34a;background:color-mix(in srgb,#16a34a 9%,var(--color-surface))}',
@@ -440,10 +449,13 @@
     },
 
     loadProjectCardImages: async function (projects) {
-      if (this.projectCardImagesLoaded || this.projectCardImagesLoading) {
-        this.applyProjectCardImagesToCards();
-        return;
-      }
+      const projectIds = (projects || []).map(function (project) {
+        return String(project.ID || project.Id || project.id || '');
+      }).filter(Boolean);
+      projectIds.forEach((id) => {
+        if (!this.projectCardImageStates[id]) this.projectCardImageStates[id] = 'loading';
+      });
+      this.applyProjectCardImagesToCards();
 
       const router = window.PMS && window.PMS.Router;
       const canViewAttachments = !!(router && (
@@ -451,80 +463,80 @@
         (Array.isArray(router.permissions) && router.permissions.indexOf('ATTACHMENT_VIEW') !== -1)
       ));
       if (!canViewAttachments) {
-        this.projectCardImagesLoaded = true;
+        projectIds.forEach((id) => { this.projectCardImageStates[id] = 'empty'; });
+        this.applyProjectCardImagesToCards();
         return;
       }
-
+      if (this.projectCardImagesLoading) return;
       this.projectCardImagesLoading = true;
       try {
-        const response = await window.PMS.Api.get('/attachments');
-        let attachments = response;
-        if (window.PMS.Api && typeof window.PMS.Api.extractData === 'function') {
-          attachments = window.PMS.Api.extractData(response);
-        } else if (response && response.data !== undefined) {
-          attachments = response.data;
+        if (!this.projectCardAttachmentsPromise) {
+          this.projectCardAttachmentsPromise = window.PMS.Api.get('/attachments').then((response) => {
+            let items = response;
+            if (window.PMS.Api && typeof window.PMS.Api.extractData === 'function') items = window.PMS.Api.extractData(response);
+            else if (response && response.data !== undefined) items = response.data;
+            if (items && !Array.isArray(items)) items = items.items || items.attachments || items.data || [];
+            return Array.isArray(items) ? items : [];
+          }).catch((error) => { this.projectCardAttachmentsPromise = null; throw error; });
         }
-        if (attachments && !Array.isArray(attachments)) {
-          attachments = attachments.items || attachments.attachments || attachments.data || [];
-        }
-        if (!Array.isArray(attachments)) attachments = [];
-
-        const visibleProjectIds = new Set((projects || []).map(function (project) {
-          return String(project.ID || project.Id || project.id || '');
-        }).filter(Boolean));
-
+        const attachments = await this.projectCardAttachmentsPromise;
+        const visibleProjectIds = new Set(projectIds);
         const latestImageByProject = {};
-        attachments
-          .filter(function (item) {
-            const entityType = String(item.EntityType || item.entityType || '').toUpperCase();
-            const entityId = String(item.EntityID || item.entityID || item.EntityId || '');
-            const mimeType = String(item.MimeType || item.mimeType || '').toLowerCase();
-            const status = String(item.Status || item.status || 'ACTIVE').toUpperCase();
-            return entityType === 'PROJECT' &&
-              visibleProjectIds.has(entityId) &&
-              mimeType.indexOf('image/') === 0 &&
-              status !== 'DELETED' && status !== 'VOID';
-          })
-          .sort(function (a, b) {
-            return new Date(b.UploadedAt || b.uploadedAt || b.CreatedAt || 0).getTime() -
-              new Date(a.UploadedAt || a.uploadedAt || a.CreatedAt || 0).getTime();
-          })
-          .forEach(function (item) {
-            const projectId = String(item.EntityID || item.entityID || item.EntityId || '');
-            if (projectId && !latestImageByProject[projectId]) latestImageByProject[projectId] = item;
-          });
+        attachments.filter(function (item) {
+          const type = String(item.EntityType || item.entityType || '').toUpperCase();
+          const id = String(item.EntityID || item.entityID || item.EntityId || '');
+          const mime = String(item.MimeType || item.mimeType || '').toLowerCase();
+          const status = String(item.Status || item.status || 'ACTIVE').toUpperCase();
+          return type === 'PROJECT' && visibleProjectIds.has(id) && mime.indexOf('image/') === 0 &&
+            status !== 'DELETED' && status !== 'VOID';
+        }).sort(function (a, b) {
+          return new Date(b.UploadedAt || b.uploadedAt || b.CreatedAt || 0).getTime() -
+            new Date(a.UploadedAt || a.uploadedAt || a.CreatedAt || 0).getTime();
+        }).forEach(function (item) {
+          const id = String(item.EntityID || item.entityID || item.EntityId || '');
+          if (id && !latestImageByProject[id]) latestImageByProject[id] = item;
+        });
+        projectIds.forEach((id) => {
+          if (!latestImageByProject[id] && !this.projectCardImages[id]) this.projectCardImageStates[id] = 'empty';
+        });
+        this.applyProjectCardImagesToCards();
 
-        const jobs = Object.keys(latestImageByProject).filter((projectId) => !this.projectCardImages[projectId]);
-        for (let offset = 0; offset < jobs.length; offset += 4) {
-          await Promise.all(jobs.slice(offset, offset + 4).map(async (projectId) => {
+        const jobs = Object.keys(latestImageByProject).filter((id) => !this.projectCardImages[id]);
+        const concurrency = 6;
+        for (let offset = 0; offset < jobs.length; offset += concurrency) {
+          await Promise.all(jobs.slice(offset, offset + concurrency).map(async (projectId) => {
             const attachment = latestImageByProject[projectId];
             const attachmentId = attachment.ID || attachment.Id || attachment.id;
-            if (!attachmentId) return;
+            if (!attachmentId) { this.projectCardImageStates[projectId] = 'empty'; return; }
+            this.projectCardImageStates[projectId] = 'loading-image';
+            this.applyProjectCardImagesToCards();
             try {
-              const downloadResponse = await window.PMS.Api.get(
-                '/attachments/' + encodeURIComponent(attachmentId) + '/download'
-              );
+              const response = await window.PMS.Api.get('/attachments/' + encodeURIComponent(attachmentId) + '/download');
               const data = window.PMS.Api.extractData
-                ? (window.PMS.Api.extractData(downloadResponse) || {})
-                : ((downloadResponse && downloadResponse.data) || downloadResponse || {});
+                ? (window.PMS.Api.extractData(response) || {})
+                : ((response && response.data) || response || {});
               const base64 = data.Base64 || data.base64;
-              const mimeType = data.MimeType || data.mimeType ||
-                attachment.MimeType || attachment.mimeType || 'image/jpeg';
+              const mime = data.MimeType || data.mimeType || attachment.MimeType || attachment.mimeType || 'image/jpeg';
               if (base64) {
-                this.projectCardImages[projectId] = 'data:' + mimeType + ';base64,' +
-                  String(base64).replace(/^data:[^,]*;base64,/, '');
+                this.projectCardImages[projectId] = 'data:' + mime + ';base64,' + String(base64).replace(/^data:[^,]*;base64,/, '');
+                this.projectCardImageStates[projectId] = 'ready';
               } else {
                 const url = data.url || data.downloadUrl || data.DownloadUrl;
-                if (url && (String(url).startsWith('https://') || String(url).startsWith('http://'))) this.projectCardImages[projectId] = url;
+                if (url && /^https?:\/\//i.test(String(url))) {
+                  this.projectCardImages[projectId] = String(url);
+                  this.projectCardImageStates[projectId] = 'ready';
+                } else this.projectCardImageStates[projectId] = 'empty';
               }
-            } catch (downloadError) {
-              console.warn('Project thumbnail could not be loaded:', projectId, downloadError);
+            } catch (error) {
+              console.warn('Project thumbnail could not be loaded:', projectId, error);
+              this.projectCardImageStates[projectId] = 'error';
             }
+            this.applyProjectCardImagesToCards();
           }));
         }
       } catch (error) {
-        // Keep project listing usable when attachment access is unavailable.
         console.warn('Project thumbnails are unavailable:', error);
+        projectIds.forEach((id) => { if (this.projectCardImageStates[id] === 'loading') this.projectCardImageStates[id] = 'error'; });
       } finally {
         this.projectCardImagesLoaded = true;
         this.projectCardImagesLoading = false;
@@ -535,15 +547,29 @@
     applyProjectCardImagesToCards: function () {
       const container = document.getElementById('projects-table-container');
       if (!container) return;
-      container.querySelectorAll('img[data-project-thumbnail]').forEach((image) => {
-        const projectId = image.getAttribute('data-project-thumbnail');
-        const src = this.projectCardImages[String(projectId || '')];
-        if (!src) return;
-        image.src = src;
-        image.hidden = false;
-        image.alt = 'تصویر پروژه';
-        const main = image.closest('.project-list-card-main');
-        if (main) main.classList.add('has-thumbnail');
+      container.querySelectorAll('[data-project-media]').forEach((media) => {
+        const id = String(media.getAttribute('data-project-media') || '');
+        const image = media.querySelector('img[data-project-thumbnail]');
+        const placeholder = media.querySelector('.project-list-card-image-placeholder');
+        const state = this.projectCardImageStates[id] || 'loading';
+        const src = this.projectCardImages[id];
+        media.dataset.imageState = src ? 'ready' : state;
+        if (src && image) {
+          if (image.src !== src) image.src = src;
+          image.hidden = false;
+          image.alt = 'تصویر پروژه';
+          if (placeholder) placeholder.hidden = true;
+        } else {
+          if (image) { image.removeAttribute('src'); image.hidden = true; }
+          if (placeholder) {
+            placeholder.hidden = false;
+            placeholder.innerHTML = state === 'loading' || state === 'loading-image'
+              ? '<span class="project-list-image-spinner" aria-hidden="true"></span><span class="project-list-card-image-label">در حال بارگذاری تصویر</span>'
+              : state === 'error'
+                ? '<span class="project-list-card-image-empty-icon" aria-hidden="true">!</span><span class="project-list-card-image-label">تصویر در دسترس نیست</span>'
+                : '<span class="project-list-card-image-empty-icon" aria-hidden="true">▧</span><span class="project-list-card-image-label">بدون تصویر</span>';
+          }
+        }
       });
     },
 
@@ -1618,7 +1644,7 @@
                 </div>
                 <div class="project-list-card-activity">آخرین بروزرسانی: ${this.escape(this.formatDate(project.UpdatedAt))}</div>
               </div>
-              <img class="project-list-card-thumbnail" data-project-thumbnail="${this.escape(id)}" alt="" hidden loading="lazy" decoding="async" tabindex="0" role="button" aria-label="نمایش تصویر پروژه">
+              <div class="project-list-card-media" data-project-media="${this.escape(id)}" data-image-state="loading" aria-label="تصویر پروژه"><div class="project-list-card-image-placeholder"><span class="project-list-image-spinner" aria-hidden="true"></span><span class="project-list-card-image-label">در حال بارگذاری تصویر</span></div><img class="project-list-card-thumbnail" data-project-thumbnail="${this.escape(id)}" alt="" hidden loading="lazy" decoding="async" tabindex="0" role="button" aria-label="نمایش تصویر پروژه"></div>
             </div>
             <div class="project-list-card-actions">
               <button type="button" class="btn btn-sm btn-light project-view-button" data-project-id="${this.escape(id)}">مشاهده پروژه</button>
