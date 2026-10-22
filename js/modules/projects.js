@@ -984,8 +984,10 @@
                 type="submit"
                 id="project-create-submit"
                 class="btn btn-primary"
+                ${isEditMode ? "disabled" : ""}
+                ${isEditMode ? 'title="در انتظار دریافت تنظیمات و فایل‌های پروژه"' : ""}
               >
-                ثبت پروژه
+                ${isEditMode ? "در حال دریافت اطلاعات…" : "ثبت پروژه"}
               </button>
 
               <button
@@ -1013,11 +1015,26 @@
         '<div id="project-settings-error" class="alert alert-danger" hidden style="margin-top:12px"></div>' +
         '<div style="display:flex;justify-content:flex-start;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--color-border)"><button type="button" class="btn btn-primary" data-settings-save>ذخیره تنظیمات</button><button type="button" class="btn btn-light" data-settings-cancel>بستن</button></div></div>';
       modal.appendChild(settingsModal);
+      const editReadiness = { lookupsLoaded: !isEditMode, attachmentsLoaded: !isEditMode };
+      const editSubmitButton = modal.querySelector('#project-create-submit');
+      const updateEditSubmitReadiness = () => {
+        if (!isEditMode || !editSubmitButton || !editSubmitButton.isConnected) return;
+        const ready = editReadiness.lookupsLoaded && editReadiness.attachmentsLoaded;
+        editSubmitButton.disabled = !ready;
+        editSubmitButton.textContent = ready ? 'ذخیره تغییرات' : 'در حال دریافت اطلاعات…';
+        editSubmitButton.title = ready ? '' : 'تا دریافت تنظیمات و فهرست فایل‌های پروژه، ذخیره تغییرات غیرفعال است.';
+        editSubmitButton.setAttribute('aria-busy', ready ? 'false' : 'true');
+      };
       const settingsContent = settingsModal.querySelector('#project-create-settings-content');
       ['new-project-departments-setting','new-project-users-setting','new-project-status-setting','new-project-notify-setting'].forEach((id) => {
         const setting = modal.querySelector('#' + id);
         if (setting && settingsContent) settingsContent.appendChild(setting);
       });
+      if (isEditMode) {
+        modal._projectEditReadiness = editReadiness;
+        modal._updateProjectEditReadiness = updateEditSubmitReadiness;
+        updateEditSubmitReadiness();
+      }
       const projectSettingsKey = projectSettingsStorageKey();
       const getSelectedDepartmentIds = () => Array.from(modal.querySelectorAll('input[name="AvailableDepartmentIDs"]:checked')).map((input) => input.value).filter(Boolean);
       const getSelectedUserIds = () => Array.from(modal.querySelector('#new-project-users').selectedOptions).map((option) => option.value).filter(Boolean);
@@ -1290,6 +1307,11 @@
           applySavedProjectSettings();
         }
 
+        if (isEditMode) {
+          editReadiness.lookupsLoaded = true;
+          updateEditSubmitReadiness();
+        }
+
         if (!workflows.length) {
           this.showFormError(modal, 'برای ایجاد پروژه، ابتدا باید یک گردش کار فعال و دارای مرحله ایجاد کنید.');
         } else if (!departments.length) {
@@ -1558,6 +1580,12 @@
       const canDelete = isAdmin || permissions.includes('ATTACHMENT_DELETE');
       if (!canView) {
         list.textContent = 'برای مشاهده فایل‌های قبلی، دسترسی مشاهده پیوست لازم است.';
+        // نبود مجوز مشاهده پیوست نباید فرم ویرایش را برای همیشه قفل کند؛
+        // وضعیت دسترسی به‌عنوان پایان بررسی فایل‌ها در نظر گرفته می‌شود.
+        if (modal._projectEditReadiness) {
+          modal._projectEditReadiness.attachmentsLoaded = true;
+          modal._updateProjectEditReadiness && modal._updateProjectEditReadiness();
+        }
         return;
       }
 
@@ -1574,6 +1602,10 @@
         if (!list.isConnected || modal.dataset.projectId !== String(projectId)) return;
         if (!attachments.length) {
           list.textContent = 'هنوز فایلی برای این پروژه ثبت نشده است.';
+          if (modal._projectEditReadiness) {
+            modal._projectEditReadiness.attachmentsLoaded = true;
+            modal._updateProjectEditReadiness && modal._updateProjectEditReadiness();
+          }
           return;
         }
 
@@ -1591,9 +1623,14 @@
             (canDelete ? '<button type="button" class="btn btn-light" data-project-attachment-action="delete" data-attachment-id="' + this.escape(id) + '" style="min-height:34px;color:var(--color-danger);">حذف</button>' : '') +
             '</div></div>';
         }).join('');
+        if (modal._projectEditReadiness) {
+          modal._projectEditReadiness.attachmentsLoaded = true;
+          modal._updateProjectEditReadiness && modal._updateProjectEditReadiness();
+        }
       } catch (error) {
         console.error('Project attachments load failed:', error);
         if (list.isConnected) list.textContent = 'دریافت فهرست فایل‌ها ناموفق بود: ' + (error.message || 'خطای نامشخص');
+        // اگر دریافت فایل‌ها خطا بدهد، دکمه ذخیره فعال نمی‌شود تا اطلاعات ناقص بازنویسی نشود.
       }
     },
 
