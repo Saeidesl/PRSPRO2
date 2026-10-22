@@ -1800,7 +1800,6 @@
       const quantityInput = modal.querySelector('#new-project-quantity');
       const workflowSelect = modal.querySelector('#new-project-workflow');
       const descriptionInput = modal.querySelector('#new-project-description');
-      const shouldAddNeeds = false;
       const departmentsSelect = modal.querySelector('#new-project-departments');
       const usersSelect = modal.querySelector('#new-project-users');
       const fileInput = modal.querySelector('#new-project-file');
@@ -2043,10 +2042,6 @@
         modal.remove();
 
         alert('پروژه با موفقیت ثبت شد.' + attachmentWarning + needsWarning);
-
-        if (shouldAddNeeds) {
-          this.openProjectNeedsForm(createdId);
-        }
 
         // Refresh the list only when the user is allowed to view projects.
         const router = window.PMS.Router;
