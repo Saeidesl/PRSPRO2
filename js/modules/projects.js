@@ -715,6 +715,17 @@
       });
     },
 
+    deleteProjectImageCache: async function (key) {
+      const db = await this.openProjectImageCache();
+      if (!db) return;
+      await new Promise(function (resolve) {
+        try {
+          const request = db.transaction('images', 'readwrite').objectStore('images').delete(String(key));
+          request.onsuccess = request.onerror = function () { resolve(); };
+        } catch (error) { resolve(); }
+      });
+    },
+
     normalizeProjectAttachments: function (response) {
       let items = window.PMS.Api && typeof window.PMS.Api.extractData === 'function'
         ? window.PMS.Api.extractData(response)
@@ -746,7 +757,7 @@
       // search/filter render. Uploads and deletions explicitly invalidate it.
       if (cached !== null && Array.isArray(cached)) return Promise.resolve(cached);
       if (!this.projectCardAttachmentsPromise) {
-        this.projectCardAttachmentsPromise = window.PMS.Api.get('/project-card-images')
+        this.projectCardAttachmentsPromise = window.PMS.Api.get('/project-card-images', { trackSync: false })
           .then((response) => {
             const items = this.normalizeProjectAttachments(response);
             if (cache) cache.set(cacheKey, items, { ttl: 5 * 60 * 1000 });
@@ -847,7 +858,7 @@
         // IndexedDB persists image data between page refreshes without filling localStorage.
         let src = await this.readProjectImageCache(cacheKey);
         if (!src) {
-          const response = await window.PMS.Api.get('/attachments/' + encodeURIComponent(attachmentId) + '/download');
+          const response = await window.PMS.Api.get('/attachments/' + encodeURIComponent(attachmentId) + '/download', { trackSync: false });
           const data = window.PMS.Api.extractData
             ? (window.PMS.Api.extractData(response) || {})
             : ((response && response.data) || response || {});
@@ -884,6 +895,30 @@
         const src = this.projectCardImages[id];
         media.dataset.imageState = src ? 'ready' : state;
         if (src && image) {
+          if (!image.dataset.pmsRecoveryBound) {
+            image.dataset.pmsRecoveryBound = '1';
+            image.addEventListener('load', () => {
+              media.dataset.imageRetryCount = '0';
+            });
+            image.addEventListener('error', () => {
+              const attachment = this.projectCardImageAttachments[id];
+              const attachmentId = attachment && (attachment.ID || attachment.Id || attachment.id);
+              const attempts = Number(media.dataset.imageRetryCount || 0);
+              delete this.projectCardImages[id];
+
+              if (attempts < 1 && attachmentId) {
+                media.dataset.imageRetryCount = String(attempts + 1);
+                this.projectCardImageStates[id] = 'loading-image';
+                this.deleteProjectImageCache('attachment:' + String(attachmentId))
+                  .finally(() => {
+                    this.loadOneProjectCardImage(id, attachment);
+                  });
+              } else {
+                this.projectCardImageStates[id] = 'error';
+                this.applyProjectCardImagesToCards();
+              }
+            });
+          }
           if (image.src !== src) image.src = src;
           image.hidden = false;
           image.alt = 'تصویر پروژه';
