@@ -61,6 +61,10 @@
     projectCardImagesLoading: false,
     projectCardImagesLoaded: false,
     projectCardAttachmentsPromise: null,
+    projectCardImageObserver: null,
+    projectCardImageAttachments: {},
+    projectCardImageInflight: {},
+    projectCardImageDbPromise: null,
 
     init: function () {
       this.ensureProjectStyles();
@@ -448,6 +452,89 @@
       }
     },
 
+    openProjectImageCache: function () {
+      if (this.projectCardImageDbPromise) return this.projectCardImageDbPromise;
+      this.projectCardImageDbPromise = new Promise(function (resolve) {
+        if (!window.indexedDB) { resolve(null); return; }
+        let request;
+        try { request = window.indexedDB.open('pms-project-image-cache', 1); }
+        catch (error) { resolve(null); return; }
+        request.onupgradeneeded = function () {
+          const db = request.result;
+          if (!db.objectStoreNames.contains('images')) db.createObjectStore('images', { keyPath: 'key' });
+        };
+        request.onsuccess = function () { resolve(request.result || null); };
+        request.onerror = function () { resolve(null); };
+      });
+      return this.projectCardImageDbPromise;
+    },
+
+    readProjectImageCache: async function (key) {
+      const db = await this.openProjectImageCache();
+      if (!db) return null;
+      return new Promise(function (resolve) {
+        try {
+          const request = db.transaction('images', 'readonly').objectStore('images').get(String(key));
+          request.onsuccess = function () {
+            const record = request.result;
+            resolve(record && record.src ? record.src : null);
+          };
+          request.onerror = function () { resolve(null); };
+        } catch (error) { resolve(null); }
+      });
+    },
+
+    writeProjectImageCache: async function (key, src) {
+      const db = await this.openProjectImageCache();
+      if (!db || !src) return;
+      await new Promise(function (resolve) {
+        try {
+          const request = db.transaction('images', 'readwrite').objectStore('images').put({
+            key: String(key), src: String(src), savedAt: Date.now()
+          });
+          request.onsuccess = request.onerror = function () { resolve(); };
+        } catch (error) { resolve(); }
+      });
+    },
+
+    normalizeProjectAttachments: function (response) {
+      let items = window.PMS.Api && typeof window.PMS.Api.extractData === 'function'
+        ? window.PMS.Api.extractData(response)
+        : response;
+      if (items && !Array.isArray(items)) items = items.items || items.attachments || items.data || [];
+      return Array.isArray(items) ? items : [];
+    },
+
+    getProjectCardAttachments: function () {
+      const cache = window.PMS && window.PMS.Cache;
+      const cacheKey = 'project_card_attachments_v2';
+      const cached = cache ? cache.get(cacheKey) : null;
+      if (cached !== null && Array.isArray(cached)) {
+        // Use metadata immediately; refresh it in the background for newly uploaded files.
+        if (!this.projectCardAttachmentsPromise) {
+          this.projectCardAttachmentsPromise = window.PMS.Api.get('/attachments')
+            .then((response) => {
+              const items = this.normalizeProjectAttachments(response);
+              if (cache) cache.set(cacheKey, items, { ttl: 5 * 60 * 1000 });
+              return items;
+            })
+            .catch((error) => { console.warn('Project attachment metadata refresh failed:', error); return cached; })
+            .finally(() => { this.projectCardAttachmentsPromise = null; });
+        }
+        return Promise.resolve(cached);
+      }
+      if (!this.projectCardAttachmentsPromise) {
+        this.projectCardAttachmentsPromise = window.PMS.Api.get('/attachments')
+          .then((response) => {
+            const items = this.normalizeProjectAttachments(response);
+            if (cache) cache.set(cacheKey, items, { ttl: 5 * 60 * 1000 });
+            return items;
+          })
+          .finally(() => { this.projectCardAttachmentsPromise = null; });
+      }
+      return this.projectCardAttachmentsPromise;
+    },
+
     loadProjectCardImages: async function (projects) {
       const projectIds = (projects || []).map(function (project) {
         return String(project.ID || project.Id || project.id || '');
@@ -467,19 +554,9 @@
         this.applyProjectCardImagesToCards();
         return;
       }
-      if (this.projectCardImagesLoading) return;
-      this.projectCardImagesLoading = true;
+
       try {
-        if (!this.projectCardAttachmentsPromise) {
-          this.projectCardAttachmentsPromise = window.PMS.Api.get('/attachments').then((response) => {
-            let items = response;
-            if (window.PMS.Api && typeof window.PMS.Api.extractData === 'function') items = window.PMS.Api.extractData(response);
-            else if (response && response.data !== undefined) items = response.data;
-            if (items && !Array.isArray(items)) items = items.items || items.attachments || items.data || [];
-            return Array.isArray(items) ? items : [];
-          }).catch((error) => { this.projectCardAttachmentsPromise = null; throw error; });
-        }
-        const attachments = await this.projectCardAttachmentsPromise;
+        const attachments = await this.getProjectCardAttachments();
         const visibleProjectIds = new Set(projectIds);
         const latestImageByProject = {};
         attachments.filter(function (item) {
@@ -492,54 +569,84 @@
         }).sort(function (a, b) {
           return new Date(b.UploadedAt || b.uploadedAt || b.CreatedAt || 0).getTime() -
             new Date(a.UploadedAt || a.uploadedAt || a.CreatedAt || 0).getTime();
-        }).forEach(function (item) {
+        }).forEach((item) => {
           const id = String(item.EntityID || item.entityID || item.EntityId || '');
           if (id && !latestImageByProject[id]) latestImageByProject[id] = item;
         });
+
+        this.projectCardImageAttachments = latestImageByProject;
         projectIds.forEach((id) => {
           if (!latestImageByProject[id] && !this.projectCardImages[id]) this.projectCardImageStates[id] = 'empty';
+          else if (latestImageByProject[id] && !this.projectCardImages[id]) this.projectCardImageStates[id] = 'loading';
         });
         this.applyProjectCardImagesToCards();
 
-        const jobs = Object.keys(latestImageByProject).filter((id) => !this.projectCardImages[id]);
-        const concurrency = 6;
-        for (let offset = 0; offset < jobs.length; offset += concurrency) {
-          await Promise.all(jobs.slice(offset, offset + concurrency).map(async (projectId) => {
-            const attachment = latestImageByProject[projectId];
-            const attachmentId = attachment.ID || attachment.Id || attachment.id;
-            if (!attachmentId) { this.projectCardImageStates[projectId] = 'empty'; return; }
-            this.projectCardImageStates[projectId] = 'loading-image';
-            this.applyProjectCardImagesToCards();
-            try {
-              const response = await window.PMS.Api.get('/attachments/' + encodeURIComponent(attachmentId) + '/download');
-              const data = window.PMS.Api.extractData
-                ? (window.PMS.Api.extractData(response) || {})
-                : ((response && response.data) || response || {});
-              const base64 = data.Base64 || data.base64;
-              const mime = data.MimeType || data.mimeType || attachment.MimeType || attachment.mimeType || 'image/jpeg';
-              if (base64) {
-                this.projectCardImages[projectId] = 'data:' + mime + ';base64,' + String(base64).replace(/^data:[^,]*;base64,/, '');
-                this.projectCardImageStates[projectId] = 'ready';
-              } else {
-                const url = data.url || data.downloadUrl || data.DownloadUrl;
-                if (url && /^https?:\/\//i.test(String(url))) {
-                  this.projectCardImages[projectId] = String(url);
-                  this.projectCardImageStates[projectId] = 'ready';
-                } else this.projectCardImageStates[projectId] = 'empty';
-              }
-            } catch (error) {
-              console.warn('Project thumbnail could not be loaded:', projectId, error);
-              this.projectCardImageStates[projectId] = 'error';
-            }
-            this.applyProjectCardImagesToCards();
-          }));
+        const container = document.getElementById('projects-table-container');
+        if (!container) return;
+        if (this.projectCardImageObserver) this.projectCardImageObserver.disconnect();
+
+        if ('IntersectionObserver' in window) {
+          this.projectCardImageObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+              if (!entry.isIntersecting) return;
+              const media = entry.target;
+              this.projectCardImageObserver.unobserve(media);
+              const projectId = String(media.getAttribute('data-project-media') || '');
+              const attachment = this.projectCardImageAttachments[projectId];
+              if (attachment) this.loadOneProjectCardImage(projectId, attachment);
+            });
+          }, { rootMargin: '320px 0px', threshold: 0.01 });
+
+          container.querySelectorAll('[data-project-media]').forEach((media) => {
+            const id = String(media.getAttribute('data-project-media') || '');
+            if (this.projectCardImages[id]) return;
+            if (this.projectCardImageAttachments[id]) this.projectCardImageObserver.observe(media);
+          });
+        } else {
+          // Older browsers: load a small first batch, then continue as images finish.
+          Object.keys(latestImageByProject).slice(0, 4).forEach((id) => this.loadOneProjectCardImage(id, latestImageByProject[id]));
         }
       } catch (error) {
         console.warn('Project thumbnails are unavailable:', error);
         projectIds.forEach((id) => { if (this.projectCardImageStates[id] === 'loading') this.projectCardImageStates[id] = 'error'; });
+        this.applyProjectCardImagesToCards();
+      }
+    },
+
+    loadOneProjectCardImage: async function (projectId, attachment) {
+      if (this.projectCardImages[projectId] || this.projectCardImageInflight[projectId]) return;
+      const attachmentId = attachment && (attachment.ID || attachment.Id || attachment.id);
+      if (!attachmentId) { this.projectCardImageStates[projectId] = 'empty'; this.applyProjectCardImagesToCards(); return; }
+      const cacheKey = 'attachment:' + String(attachmentId);
+      this.projectCardImageInflight[projectId] = true;
+      this.projectCardImageStates[projectId] = 'loading-image';
+      this.applyProjectCardImagesToCards();
+      try {
+        // IndexedDB persists image data between page refreshes without filling localStorage.
+        let src = await this.readProjectImageCache(cacheKey);
+        if (!src) {
+          const response = await window.PMS.Api.get('/attachments/' + encodeURIComponent(attachmentId) + '/download');
+          const data = window.PMS.Api.extractData
+            ? (window.PMS.Api.extractData(response) || {})
+            : ((response && response.data) || response || {});
+          const base64 = data.Base64 || data.base64;
+          const mime = data.MimeType || data.mimeType || attachment.MimeType || attachment.mimeType || 'image/jpeg';
+          if (base64) src = 'data:' + mime + ';base64,' + String(base64).replace(/^data:[^,]*;base64,/, '');
+          else {
+            const url = data.url || data.downloadUrl || data.DownloadUrl;
+            if (url && /^https?:\/\//i.test(String(url))) src = String(url);
+          }
+          if (src && src.indexOf('data:') === 0) this.writeProjectImageCache(cacheKey, src);
+        }
+        if (src) {
+          this.projectCardImages[projectId] = src;
+          this.projectCardImageStates[projectId] = 'ready';
+        } else this.projectCardImageStates[projectId] = 'empty';
+      } catch (error) {
+        console.warn('Project thumbnail could not be loaded:', projectId, error);
+        this.projectCardImageStates[projectId] = 'error';
       } finally {
-        this.projectCardImagesLoaded = true;
-        this.projectCardImagesLoading = false;
+        delete this.projectCardImageInflight[projectId];
         this.applyProjectCardImagesToCards();
       }
     },
