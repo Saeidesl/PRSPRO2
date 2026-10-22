@@ -878,6 +878,7 @@
                 name="WorkflowID"
                 required
                 style="width:100%;box-sizing:border-box;"
+                ${isEditMode ? "disabled aria-disabled=\"true\"" : ""}
               >
                 <option value="">در حال دریافت گردش کارها...</option>
               </select>
@@ -971,8 +972,8 @@
       settingsModal.id = 'project-create-settings-modal';
       settingsModal.style.cssText = 'position:fixed;inset:0;z-index:10020;background:var(--color-overlay,rgba(0,0,0,.5));display:none;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;direction:rtl;';
       settingsModal.innerHTML = '<div role="dialog" aria-modal="true" aria-labelledby="project-create-settings-title" style="background:var(--color-surface);color:var(--color-text);width:100%;max-width:680px;max-height:88vh;overflow:auto;border:1px solid var(--color-border);border-radius:14px;padding:20px;box-sizing:border-box;box-shadow:var(--shadow-lg,0 18px 50px rgba(0,0,0,.2))">' +
-        '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px"><h3 id="project-create-settings-title" style="margin:0">${isEditMode ? 'تنظیمات پروژه' : 'تنظیمات پیش‌فرض ایجاد پروژه'}</h3><button type="button" class="btn btn-light" data-settings-close aria-label="بستن تنظیمات">✕</button></div>' +
-        '<p style="font-size:12px;line-height:1.9;color:var(--color-text-secondary);margin:0 0 16px">${isEditMode ? 'تنظیمات دسترسی، وضعیت و اطلاع‌رسانی همین پروژه را تغییر دهید.' : 'این انتخاب‌ها برای دفعات بعد ذخیره می‌شوند و هنگام ساخت پروژه جدید به‌صورت پیش‌فرض اعمال خواهند شد.'}</p>' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px"><h3 id="project-create-settings-title" style="margin:0">' + (isEditMode ? 'تنظیمات پروژه' : 'تنظیمات پیش‌فرض ایجاد پروژه') + '</h3><button type="button" class="btn btn-light" data-settings-close aria-label="بستن تنظیمات">✕</button></div>' +
+        '<p style="font-size:12px;line-height:1.9;color:var(--color-text-secondary);margin:0 0 16px">' + (isEditMode ? 'تنظیمات دسترسی، وضعیت و اطلاع‌رسانی همین پروژه را تغییر دهید.' : 'این انتخاب‌ها برای دفعات بعد ذخیره می‌شوند و هنگام ساخت پروژه جدید به‌صورت پیش‌فرض اعمال خواهند شد.') + '</p>' +
         '<div id="project-create-settings-content"></div>' +
         '<div id="project-settings-error" class="alert alert-danger" hidden style="margin-top:12px"></div>' +
         '<div style="display:flex;justify-content:flex-start;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--color-border)"><button type="button" class="btn btn-primary" data-settings-save>ذخیره تنظیمات</button><button type="button" class="btn btn-light" data-settings-cancel>بستن</button></div></div>';
@@ -987,7 +988,9 @@
       const getSelectedUserIds = () => Array.from(modal.querySelector('#new-project-users').selectedOptions).map((option) => option.value).filter(Boolean);
       const saveProjectSettings = () => {
         const settings = { departmentIds:getSelectedDepartmentIds(), userIds:getSelectedUserIds(), notifyEnabled:!!modal.querySelector('#new-project-notify').checked, status:String((modal.querySelector('#new-project-status') || {}).value || '') };
-        try { localStorage.setItem(projectSettingsKey, JSON.stringify(settings)); } catch (error) {}
+        if (!isEditMode) {
+          try { localStorage.setItem(projectSettingsKey, JSON.stringify(settings)); } catch (error) {}
+        }
         return settings;
       };
       const applySavedProjectSettings = () => {
