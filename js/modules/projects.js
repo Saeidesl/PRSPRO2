@@ -1631,7 +1631,7 @@
           : '';
         html += `
           <article class="project-list-card">
-            <div class="project-list-card-main">
+            <div class="project-list-card-main has-thumbnail">
               <span class="project-list-card-indicator ${stateClass}" aria-hidden="true"></span>
               <div class="project-list-card-content">
                 <div class="project-list-card-code">${this.escape(project.ProjectCode || 'بدون کد')}</div>
@@ -1673,10 +1673,11 @@
             openImage();
           }
         });
-        image.addEventListener('error', function () {
-          image.hidden = true;
-          const main = image.closest('.project-list-card-main');
-          if (main) main.classList.remove('has-thumbnail');
+        image.addEventListener('error', () => {
+          const projectId = String(image.getAttribute('data-project-thumbnail') || '');
+          delete this.projectCardImages[projectId];
+          this.projectCardImageStates[projectId] = 'error';
+          this.applyProjectCardImagesToCards();
         });
       });
 
