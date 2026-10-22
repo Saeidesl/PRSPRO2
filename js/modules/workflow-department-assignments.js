@@ -734,9 +734,9 @@
       state.saving = false;
       const currentButton = document.getElementById('wsd-bulk-save');
       if (currentButton) {
-        currentButton.disabled = false;
-        currentButton.textContent = 'ثبت همه اتصال‌ها';
+        currentButton.textContent = 'ثبت اتصال‌های انتخاب‌شده';
       }
+      updatePendingCount();
     }
   }
 
@@ -803,8 +803,10 @@
         '/workflows/' + encodeURIComponent(workflowId) +
         '/department-steps',
         {
-          WorkflowStepID: stepId,
-          DepartmentID: departmentId
+          assignments: [{
+            WorkflowStepID: stepId,
+            DepartmentID: departmentId
+          }]
         }
       );
 
