@@ -52,6 +52,14 @@
     loadEventTypes();
   }
 
+  function canManageEventTypes() {
+    const router = window.PMS && window.PMS.Router;
+    if (!router) return false;
+    if (typeof router.isAdmin === 'function' && router.isAdmin()) return true;
+    return Array.isArray(router.permissions) &&
+      router.permissions.indexOf('EVENT_TYPE_MANAGE') !== -1;
+  }
+
   function bindEvents() {
     const searchInput = document.getElementById('event-type-search');
 
@@ -66,12 +74,15 @@
 
     const createButton = document.getElementById('event-type-create-button');
 
-    if (createButton && !createButton.dataset.bound) {
-      createButton.dataset.bound = 'true';
+    if (createButton) {
+      createButton.hidden = !canManageEventTypes();
+      if (canManageEventTypes() && !createButton.dataset.bound) {
+        createButton.dataset.bound = 'true';
 
-      createButton.addEventListener('click', function () {
-        openEventTypeForm(null);
-      });
+        createButton.addEventListener('click', function () {
+          openEventTypeForm(null);
+        });
+      }
     }
   }
 
@@ -329,16 +340,20 @@
       html += '<td>' + (isChecked(item.AllowAttachments) ? 'مجاز' : 'غیرمجاز') + '</td>';
       html += '<td class="event-type-actions">';
 
-      html += '<button type="button" class="btn btn-sm btn-secondary event-type-edit" data-id="' +
-        escapeAttribute(id) + '">ویرایش</button> ';
+      if (canManageEventTypes()) {
+        html += '<button type="button" class="btn btn-sm btn-secondary event-type-edit" data-id="' +
+          escapeAttribute(id) + '">ویرایش</button> ';
 
-      html += '<button type="button" class="btn btn-sm btn-secondary event-type-fields" data-id="' +
-        escapeAttribute(id) + '" data-name="' + escapeAttribute(name) +
-        '">فیلدهای پویا</button> ';
+        html += '<button type="button" class="btn btn-sm btn-secondary event-type-fields" data-id="' +
+          escapeAttribute(id) + '" data-name="' + escapeAttribute(name) +
+          '">فیلدهای پویا</button> ';
 
-      html += '<button type="button" class="btn btn-sm btn-secondary event-type-procurement" data-id="' +
-        escapeAttribute(id) + '" data-name="' + escapeAttribute(name) +
-        '">تنظیمات تأمین</button>';
+        html += '<button type="button" class="btn btn-sm btn-secondary event-type-procurement" data-id="' +
+          escapeAttribute(id) + '" data-name="' + escapeAttribute(name) +
+          '">تنظیمات تأمین</button>';
+      } else {
+        html += '<span class="et-muted">فقط مشاهده</span>';
+      }
 
       html += '</td></tr>';
     });
