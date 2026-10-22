@@ -706,6 +706,102 @@
       return data;
     },
 
+    isCuttingEventType: function (eventType) {
+      if (!eventType) return false;
+      const typeName = String(eventType.Name || eventType.Title || '').toLocaleLowerCase('fa');
+      const typeCode = String(eventType.Code || '').toUpperCase();
+      const department = this.findById(this.departments, eventType.DepartmentID);
+      const departmentName = String(department && (department.Name || department.Title || department.Code) || '').toLocaleLowerCase('fa');
+      const departmentCode = String(department && department.Code || '').toUpperCase();
+      return /برش|cutting/.test(typeName) ||
+        /CUTTING|CUT/.test(typeCode) ||
+        /برش|cutting/.test(departmentName) ||
+        /CUTTING|CUT/.test(departmentCode);
+    },
+
+    renderCuttingSummary: function (events) {
+      const eventTypes = Array.isArray(this.eventTypes) ? this.eventTypes : [];
+      const cuttingTypes = eventTypes.filter(function (type) {
+        const track = type.TrackVariantQuantity === true ||
+          String(type.TrackVariantQuantity).toLowerCase() === 'true';
+        return ProjectDetail.isCuttingEventType(type) && (track || /برش|cutting/i.test(String(type.Name || type.Code || '')));
+      });
+      const cuttingTypeIds = new Set(cuttingTypes.map(function (type) {
+        return String(type.ID || type.Id || type.id || '');
+      }).filter(Boolean));
+      const totals = new Map();
+      let batches = 0;
+      let totalQuantity = 0;
+      let finalized = false;
+
+      (Array.isArray(events) ? events : []).forEach(function (event) {
+        const status = String(event.Status || '').toUpperCase();
+        if (status === 'VOID' || status === 'CANCELLED' || status === 'CANCELED') return;
+        const typeId = String(event.EventTypeID || event.EventTypeId || '');
+        const type = ProjectDetail.findById(eventTypes, typeId);
+        if (!type || !ProjectDetail.isCuttingEventType(type)) return;
+
+        const typeName = String(type.Name || type.Title || type.Code || event.EventTypeName || '').toLocaleLowerCase('fa');
+        if (/پایان برش|اتمام برش|تکمیل برش|برش نهایی|final cutting|cutting complete/.test(typeName)) {
+          finalized = true;
+        }
+
+        const tracksQuantity = type.TrackVariantQuantity === true ||
+          String(type.TrackVariantQuantity).toLowerCase() === 'true';
+        if (!tracksQuantity || !cuttingTypeIds.has(typeId)) return;
+
+        let variants = [];
+        try {
+          const raw = event.VariantDetailsJSON || event.variantDetailsJSON || '[]';
+          variants = Array.isArray(raw) ? raw : JSON.parse(String(raw));
+        } catch (error) {
+          variants = [];
+        }
+        if (!Array.isArray(variants) || !variants.length) return;
+
+        let eventHasQuantity = false;
+        variants.forEach(function (variant) {
+          variant = variant || {};
+          const quantity = Number(variant.VariantQuantity);
+          if (!isFinite(quantity) || quantity <= 0 || Math.floor(quantity) !== quantity) return;
+          const color = String(variant.Color || '').trim();
+          const size = String(variant.Size || '').trim();
+          const key = JSON.stringify([color, size]);
+          const previous = totals.get(key) || { color: color, size: size, quantity: 0 };
+          previous.quantity += quantity;
+          totals.set(key, previous);
+          totalQuantity += quantity;
+          eventHasQuantity = true;
+        });
+        if (eventHasQuantity) batches += 1;
+      });
+
+      if (!cuttingTypes.length && !batches) return '';
+      const rows = Array.from(totals.values()).sort(function (a, b) {
+        return a.color.localeCompare(b.color, 'fa') || a.size.localeCompare(b.size, 'fa');
+      });
+      const rowsHtml = rows.length ? rows.map(function (row) {
+        const label = [row.color, row.size].filter(Boolean).join(' / ') || 'بدون تفکیک رنگ و سایز';
+        return '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 11px;border:1px solid var(--color-border);border-radius:9px;min-width:0">' +
+          '<span style="overflow-wrap:anywhere">' + ProjectDetail.escape(label) + '</span>' +
+          '<strong style="white-space:nowrap">' + ProjectDetail.escape(row.quantity.toLocaleString('fa-IR')) + ' عدد</strong></div>';
+      }).join('') : '<div class="table-empty">هنوز مرحله برشی با تعداد ثبت‌شده برای این پروژه وجود ندارد.</div>';
+
+      return '<section class="cutting-summary-panel" aria-label="خلاصه تجمعی برش" style="margin:0 0 18px;padding:15px;border:1px solid var(--color-border);border-radius:14px;background:var(--color-surface)">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px">' +
+          '<div><h3 style="margin:0 0 4px;font-size:15px">خلاصه تجمعی برش</h3><p style="margin:0;color:var(--color-text-secondary);font-size:12px">مجموع مراحل برش ثبت‌شده؛ رویدادهای باطل‌شده محاسبه نمی‌شوند.</p></div>' +
+          '<span style="display:inline-flex;align-items:center;padding:5px 10px;border-radius:999px;background:' + (finalized ? 'color-mix(in srgb,#16a34a 13%,var(--color-surface))' : 'var(--color-surface-hover)') + ';color:' + (finalized ? '#16824a' : 'var(--color-text-secondary)') + ';font-size:12px;font-weight:700">' +
+            (finalized ? 'برش تکمیل‌شده' : 'در حال برش') + '</span>' +
+        '</div>' +
+        '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">' +
+          '<div style="flex:1;min-width:120px;padding:12px;border-radius:10px;background:var(--color-surface-hover)"><div style="font-size:12px;color:var(--color-text-secondary)">تعداد تجمعی برش</div><strong style="display:block;font-size:24px;margin-top:3px">' + ProjectDetail.escape(totalQuantity.toLocaleString('fa-IR')) + '</strong></div>' +
+          '<div style="flex:1;min-width:120px;padding:12px;border-radius:10px;background:var(--color-surface-hover)"><div style="font-size:12px;color:var(--color-text-secondary)">مراحل دارای تعداد</div><strong style="display:block;font-size:24px;margin-top:3px">' + ProjectDetail.escape(batches.toLocaleString('fa-IR')) + '</strong></div>' +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px">' + rowsHtml + '</div>' +
+        '<p style="margin:10px 0 0;color:var(--color-text-secondary);font-size:11px">برای محاسبه، نوع رویداد باید به واحد برش مرتبط باشد و گزینه «مقدار تولید/تحویل برای ترکیب انتخاب‌شده ثبت شود» فعال باشد. تکمیل نهایی از نام رویداد پایان/اتمام برش تشخیص داده می‌شود.</p>' +
+      '</section>';
+    },
+
     renderEvents: function (events) {
       const container = document.getElementById(
         'project-detail-events'
@@ -743,7 +839,7 @@
         return bDate - aDate;
       });
 
-      let html = '<div class="pms-timeline">';
+      let html = this.renderCuttingSummary(events) + '<div class="pms-timeline">';
 
       sortedEvents.forEach(function (event) {
         const eventTypeId = event.EventTypeID || event.EventTypeId;
