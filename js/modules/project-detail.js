@@ -14,8 +14,6 @@
     workflowSteps: [],
     eventData: {},
     eventFields: {},
-    pendingDetails: {},
-    pendingFieldRequests: {},
     loadVersion: 0,
 
     init: function () {
@@ -694,76 +692,6 @@
       });
     },
 
-    loadEventDetails: async function (version) {
-      await this.loadSharedData(version);
-
-      if (version !== this.loadVersion) return;
-
-      const events = this.events.slice();
-
-      await Promise.all(events.map(async function (event) {
-        if (!event || !event.ID) return;
-
-        const eventId = String(event.ID);
-
-        if (ProjectDetail.pendingDetails[eventId]) {
-          return ProjectDetail.pendingDetails[eventId];
-        }
-
-        const request = (async function () {
-          try {
-            await Promise.all([
-              ProjectDetail.loadOneEventData(event, version),
-              ProjectDetail.loadOneEventFields(event, version)
-            ]);
-          } finally {
-            delete ProjectDetail.pendingDetails[eventId];
-          }
-        })();
-
-        ProjectDetail.pendingDetails[eventId] = request;
-
-        return request;
-      }));
-
-      if (version === this.loadVersion) {
-        this.renderEvents(this.events);
-      }
-    },
-
-    loadOneEventData: async function (event, version) {
-      const eventId = String(event.ID);
-      const cacheKey = 'eventData_' + eventId;
-
-      try {
-        const result = await window.PMS.Api.getCached(
-          '/events/' + encodeURIComponent(eventId) + '/data',
-          cacheKey,
-          {
-            onRefresh: function (data) {
-              if (version !== ProjectDetail.loadVersion) return;
-
-              ProjectDetail.eventData[eventId] =
-                ProjectDetail.normalizeEventData(data);
-
-              ProjectDetail.renderEvents(ProjectDetail.events);
-            }
-          }
-        );
-
-        if (version !== this.loadVersion) return;
-
-        this.eventData[eventId] =
-          this.normalizeEventData(result.data);
-      } catch (error) {
-        console.warn(
-          'دریافت اطلاعات تکمیلی رویداد انجام نشد.',
-          eventId,
-          error
-        );
-      }
-    },
-
     normalizeEventData: function (data) {
       data = this.unwrap(data);
 
@@ -814,82 +742,6 @@
       }
 
       return data;
-    },
-
-    loadOneEventFields: async function (event, version) {
-      const typeId = event.EventTypeID || event.EventTypeId;
-
-      if (!typeId) return;
-
-      const normalizedTypeId = String(typeId);
-
-      if (
-        Object.prototype.hasOwnProperty.call(
-          this.eventFields,
-          normalizedTypeId
-        )
-      ) {
-        return;
-      }
-
-      if (this.pendingFieldRequests[normalizedTypeId]) {
-        return this.pendingFieldRequests[normalizedTypeId];
-      }
-
-      const cacheKey = this.getCacheKey(
-        window.PMS.Cache.keys.EVENT_FIELDS,
-        normalizedTypeId
-      );
-
-      const request = (async function () {
-        try {
-          const result = await window.PMS.Api.getCached(
-            '/event-types/' +
-              encodeURIComponent(normalizedTypeId) +
-              '/fields',
-            cacheKey,
-            {
-              onRefresh: function (data) {
-                if (version !== ProjectDetail.loadVersion) return;
-
-                ProjectDetail.eventFields[normalizedTypeId] =
-                  ProjectDetail.normalizeArray(
-                    data,
-                    ['fields', 'items', 'Fields', 'Items']
-                  ).filter(function (field) {
-                    return !field.Status ||
-                      String(field.Status).toUpperCase() === 'ACTIVE';
-                  });
-
-                ProjectDetail.renderEvents(ProjectDetail.events);
-              }
-            }
-          );
-
-          if (version !== ProjectDetail.loadVersion) return;
-
-          ProjectDetail.eventFields[normalizedTypeId] =
-            ProjectDetail.normalizeArray(
-              result.data,
-              ['fields', 'items', 'Fields', 'Items']
-            ).filter(function (field) {
-              return !field.Status ||
-                String(field.Status).toUpperCase() === 'ACTIVE';
-            });
-        } catch (error) {
-          console.warn(
-            'دریافت فیلدهای نوع رویداد انجام نشد.',
-            normalizedTypeId,
-            error
-          );
-        } finally {
-          delete ProjectDetail.pendingFieldRequests[normalizedTypeId];
-        }
-      })();
-
-      this.pendingFieldRequests[normalizedTypeId] = request;
-
-      return request;
     },
 
     renderEvents: function (events) {
