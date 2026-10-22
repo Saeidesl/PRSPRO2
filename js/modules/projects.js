@@ -652,7 +652,6 @@
         if (setting && settingsContent) settingsContent.appendChild(setting);
       });
       const projectSettingsKey = projectSettingsStorageKey();
-      let projectSettingsRestored = false;
       const getSelectedDepartmentIds = () => Array.from(modal.querySelectorAll('input[name="AvailableDepartmentIDs"]:checked')).map((input) => input.value).filter(Boolean);
       const getSelectedUserIds = () => Array.from(modal.querySelector('#new-project-users').selectedOptions).map((option) => option.value).filter(Boolean);
       const saveProjectSettings = () => {
@@ -661,8 +660,6 @@
         return settings;
       };
       const applySavedProjectSettings = () => {
-        if (projectSettingsRestored) return;
-        projectSettingsRestored = true;
         let saved = null;
         try { saved = JSON.parse(localStorage.getItem(projectSettingsKey) || 'null'); } catch (error) {}
         const checks = Array.from(modal.querySelectorAll('input[name="AvailableDepartmentIDs"]'));
