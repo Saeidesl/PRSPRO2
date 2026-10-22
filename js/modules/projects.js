@@ -514,7 +514,7 @@
                   String(base64).replace(/^data:[^,]*;base64,/, '');
               } else {
                 const url = data.url || data.downloadUrl || data.DownloadUrl;
-                if (url && /^https?:\\/\\//i.test(url)) this.projectCardImages[projectId] = url;
+                if (url && (String(url).startsWith('https://') || String(url).startsWith('http://'))) this.projectCardImages[projectId] = url;
               }
             } catch (downloadError) {
               console.warn('Project thumbnail could not be loaded:', projectId, downloadError);
