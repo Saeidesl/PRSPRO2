@@ -132,7 +132,16 @@
   }
 
   .data-table {
-    min-width: 650px;
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+    table-layout: fixed;
+  }
+
+  .data-table th,
+  .data-table td {
+    overflow-wrap: anywhere;
+    word-break: normal;
   }
 
   .data-table th,
