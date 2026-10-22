@@ -300,21 +300,10 @@
 
     load: async function () {
       const version = ++this.loadVersion;
-
-      const loading = document.getElementById(
-        'project-detail-loading'
-      );
-
-      const cachedProject = window.PMS.Cache.get(
-        this.getProjectCacheKey()
-      );
-
-      const cachedEvents = window.PMS.Cache.get(
-        this.getEventsCacheKey()
-      );
-      const cachedDetails = window.PMS.Cache.get(
-        this.getEventDetailsCacheKey()
-      );
+      const loading = document.getElementById('project-detail-loading');
+      const cachedProject = window.PMS.Cache.get(this.getProjectCacheKey());
+      const cachedEvents = window.PMS.Cache.get(this.getEventsCacheKey());
+      const cachedDetails = window.PMS.Cache.get(this.getEventDetailsCacheKey());
 
       if (cachedProject !== null) {
         this.project = cachedProject;
@@ -339,11 +328,8 @@
         {
           onRefresh: function (data) {
             if (version !== ProjectDetail.loadVersion) return;
-
             const project = ProjectDetail.unwrap(data);
-
             if (!project || typeof project !== 'object') return;
-
             ProjectDetail.project = project;
             ProjectDetail.renderProject(project);
             ProjectDetail.loadWorkflowSteps(project, version);
@@ -353,64 +339,63 @@
       );
 
       const eventsPromise = window.PMS.Api.getCached(
-        '/projects/' +
-          encodeURIComponent(this.projectId) +
-          '/details',
+        '/projects/' + encodeURIComponent(this.projectId) + '/details',
         this.getEventDetailsCacheKey(),
         {
           onRefresh: function (data) {
             if (version !== ProjectDetail.loadVersion) return;
-
             ProjectDetail.applyEventDetailsBundle(data, version);
             ProjectDetail.showContent();
           }
         }
       );
 
-      try {
-        const results = await Promise.all([
-          projectPromise,
-          eventsPromise
-        ]);
+      const results = await Promise.allSettled([projectPromise, eventsPromise]);
+      if (version !== this.loadVersion) return;
 
-        if (version !== this.loadVersion) return;
+      let projectLoaded = cachedProject !== null;
+      let projectError = null;
+      const projectResult = results[0];
+      if (projectResult.status === 'fulfilled') {
+        const project = this.unwrap(projectResult.value && projectResult.value.data);
+        if (project && typeof project === 'object') {
+          this.project = project;
+          this.renderProject(project);
+          this.loadWorkflowSteps(project, version);
+          projectLoaded = true;
+        } else if (!projectLoaded) {
+          projectError = new Error('اطلاعات پروژه از سرور دریافت نشد.');
+        }
+      } else {
+        projectError = projectResult.reason;
+      }
 
-        const projectResult = results[0];
-        const eventsResult = results[1];
-
-        if (projectResult && projectResult.data) {
-          const project = this.unwrap(projectResult.data);
-
-          if (project && typeof project === 'object') {
-            this.project = project;
-            this.renderProject(project);
-            this.loadWorkflowSteps(project, version);
+      let eventsLoaded = cachedDetails !== null || cachedEvents !== null;
+      const eventsResult = results[1];
+      if (eventsResult.status === 'fulfilled') {
+        const result = eventsResult.value;
+        if (result && result.data !== undefined) {
+          this.applyEventDetailsBundle(result.data, version);
+          this.loadVoidedEventAuditHistory();
+          eventsLoaded = true;
+        }
+      } else {
+        console.warn('دریافت رویدادهای پروژه ناموفق بود:', eventsResult.reason);
+        if (!eventsLoaded) {
+          const eventsContainer = document.getElementById('project-detail-events');
+          if (eventsContainer) {
+            eventsContainer.textContent = 'رویدادهای پروژه دریافت نشدند؛ ممکن است دسترسی مشاهده رویدادها را نداشته باشید.';
           }
         }
-
-        if (eventsResult) {
-          this.applyEventDetailsBundle(eventsResult.data, version);
-          this.loadVoidedEventAuditHistory();
-        }
-
-        this.showContent();
-
-        if (loading) loading.hidden = true;
-      } catch (error) {
-        if (version !== this.loadVersion) return;
-
-        if (loading) loading.hidden = true;
-
-        if (cachedProject === null && cachedEvents === null && cachedDetails === null) {
-          this.showError(error);
-        } else {
-          this.showContent();
-          console.warn(
-            'به‌روزرسانی اطلاعات پروژه انجام نشد.',
-            error
-          );
-        }
       }
+
+      if (projectLoaded) {
+        this.showContent();
+      } else {
+        this.showError(projectError || new Error('خطا در دریافت اطلاعات پروژه.'));
+      }
+
+      if (loading) loading.hidden = true;
     },
 
     unwrap: function (data) {
