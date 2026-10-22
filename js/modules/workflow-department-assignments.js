@@ -38,20 +38,20 @@
 
   function init() {
     const page = document.querySelector('.page-section');
+    let section = document.getElementById('workflow-department-assignments');
 
-    if (
-      !page ||
-      document.getElementById('workflow-department-assignments')
-    ) {
+    if (!section && !page) {
+      console.warn('صفحه گردش کار برای اتصال واحدها پیدا نشد.');
       return;
     }
 
-    const section = document.createElement('section');
-    section.id = 'workflow-department-assignments';
-    section.className = 'card';
-    section.style.marginBottom = '20px';
+    if (!section) {
+      section = document.createElement('section');
+      section.id = 'workflow-department-assignments';
+      section.className = 'card';
+      section.style.marginBottom = '20px';
 
-    section.innerHTML = `
+      section.innerHTML = `
       <div class="card-body">
         <div class="page-header">
           <div>
@@ -118,13 +118,18 @@
       </div>
     `;
 
-    const header = page.querySelector('.page-header');
+      const header = page.querySelector('.page-header');
 
-    if (header) {
-      header.insertAdjacentElement('afterend', section);
-    } else {
-      page.prepend(section);
+      if (header) {
+        header.insertAdjacentElement('afterend', section);
+      } else {
+        page.prepend(section);
+      }
     }
+
+    // Make initialization safe if the section was rendered by the page itself.
+    if (section.dataset.wsdInitialized === 'true') return;
+    section.dataset.wsdInitialized = 'true';
 
     bindEvents();
     loadInitialData();
