@@ -140,101 +140,62 @@
 
   async function loadInitialData() {
     const requestId = ++state.initialRequestId;
-
     setMessage('', '');
     setLoading(true);
 
     try {
-      const results = await Promise.all([
-        PMS.Api.getCached(
-          '/workflows',
-          WORKFLOWS_CACHE_KEY,
-          {
-            onRefresh: function (data) {
-              if (requestId !== state.initialRequestId) return;
-
-              state.workflows = normalizeList(
-                data,
-                ['items', 'workflows']
-              ).filter(isActive);
-
-              renderWorkflowOptions();
-            },
-            onError: function (error) {
-              console.warn('Workflow refresh failed:', error);
+      const result = await PMS.Api.getCached(
+        '/workflow-management/bootstrap',
+        'workflowManagementBootstrap',
+        {
+          onRefresh: function (data) {
+            if (requestId !== state.initialRequestId) return;
+            state.workflows = normalizeList(data && data.workflows, ['items', 'workflows']).filter(isActive);
+            state.departments = normalizeList(data && data.departments, ['items', 'departments']).filter(isActive);
+            if (PMS.Cache) {
+              PMS.Cache.set(WORKFLOWS_CACHE_KEY, state.workflows);
+              PMS.Cache.set(DEPARTMENTS_CACHE_KEY, state.departments);
             }
+            renderWorkflowOptions();
+            renderDepartmentOptions();
+          },
+          onError: function (error) {
+            console.warn('Workflow management bootstrap refresh failed:', error);
           }
-        ),
-
-        PMS.Api.getCached(
-          '/departments',
-          DEPARTMENTS_CACHE_KEY,
-          {
-            onRefresh: function (data) {
-              if (requestId !== state.initialRequestId) return;
-
-              state.departments = normalizeList(
-                data,
-                ['items', 'departments']
-              ).filter(isActive);
-
-              renderDepartmentOptions();
-            },
-            onError: function (error) {
-              console.warn('Departments refresh failed:', error);
-            }
-          }
-        )
-      ]);
+        }
+      );
 
       if (requestId !== state.initialRequestId) return;
+      const data = result.data || {};
+      state.workflows = normalizeList(data.workflows, ['items', 'workflows']).filter(isActive);
+      state.departments = normalizeList(data.departments, ['items', 'departments']).filter(isActive);
 
-      state.workflows = normalizeList(
-        results[0].data,
-        ['items', 'workflows']
-      ).filter(isActive);
-
-      state.departments = normalizeList(
-        results[1].data,
-        ['items', 'departments']
-      ).filter(isActive);
-
+      if (PMS.Cache) {
+        PMS.Cache.set(WORKFLOWS_CACHE_KEY, state.workflows);
+        PMS.Cache.set(DEPARTMENTS_CACHE_KEY, state.departments);
+      }
       renderWorkflowOptions();
       renderDepartmentOptions();
 
-      if (state.workflows.length === 0) {
-        setMessage(
-          'هیچ Workflowای برای انتخاب وجود ندارد.',
-          'info'
-        );
+      if (!state.workflows.length) {
+        setMessage('هیچ Workflowای برای انتخاب وجود ندارد.', 'info');
         return;
       }
 
       state.workflowId = String(getId(state.workflows[0]));
-
-      document.getElementById('wsd-workflow').value =
-        state.workflowId;
-
+      document.getElementById('wsd-workflow').value = state.workflowId;
       await loadWorkflowData();
-
     } catch (error) {
-      console.error(
-        'Workflow assignment initialization failed:',
-        error
-      );
-
+      if (requestId !== state.initialRequestId) return;
+      console.error('Workflow assignment initialization failed:', error);
       setMessage(getErrorMessage(error), 'danger');
-
     } finally {
-      if (requestId === state.initialRequestId) {
-        setLoading(false);
-      }
+      if (requestId === state.initialRequestId) setLoading(false);
     }
   }
 
   async function loadWorkflowData() {
     const requestId = ++state.workflowDataRequestId;
-
     const content = document.getElementById('wsd-content');
 
     if (!state.workflowId) {
@@ -247,148 +208,60 @@
     }
 
     const workflowId = state.workflowId;
-
     state.loading = true;
     setLoading(true);
     setMessage('', '');
 
     try {
-      const stepUrl =
-        '/workflows/' + encodeURIComponent(workflowId) + '/steps';
-
-      const assignmentUrl =
-        '/workflows/' + encodeURIComponent(workflowId) +
-        '/department-steps';
-
-      const results = await Promise.all([
-        PMS.Api.getCached(
-          stepUrl,
-          getStepCacheKey(workflowId),
-          {
-            onRefresh: function (data) {
-              if (
-                requestId !== state.workflowDataRequestId ||
-                workflowId !== state.workflowId
-              ) {
-                return;
-              }
-
-              state.steps = normalizeList(
-                data,
-                ['items', 'steps']
-              ).filter(function (step) {
-                const status = getValue(
-                  step,
-                  'Status',
-                  'status'
-                );
-
-                return (
-                  !status ||
-                  String(status).toUpperCase() === 'ACTIVE'
-                );
-              });
-
-              sortSteps();
-              renderStepOptions();
-            },
-            onError: function (error) {
-              if (requestId === state.workflowDataRequestId) {
-                console.warn(
-                  'Workflow steps refresh failed:',
-                  error
-                );
-              }
+      const result = await PMS.Api.getCached(
+        '/workflows/' + encodeURIComponent(workflowId) + '/management-data',
+        getManagementDataCacheKey(workflowId),
+        {
+          onRefresh: function (data) {
+            if (requestId !== state.workflowDataRequestId || workflowId !== state.workflowId) return;
+            applyWorkflowManagementData(data);
+            content.hidden = false;
+            renderBulkEditor();
+          },
+          onError: function (error) {
+            if (requestId === state.workflowDataRequestId) {
+              console.warn('Workflow management data refresh failed:', error);
             }
           }
-        ),
+        }
+      );
 
-        PMS.Api.getCached(
-          assignmentUrl,
-          getAssignmentCacheKey(workflowId),
-          {
-            onRefresh: function (data) {
-              if (
-                requestId !== state.workflowDataRequestId ||
-                workflowId !== state.workflowId
-              ) {
-                return;
-              }
-
-              state.assignments = normalizeList(
-                data,
-                ['items', 'assignments']
-              ).filter(isActive);
-
-              renderAssignments();
-            },
-            onError: function (error) {
-              if (requestId === state.workflowDataRequestId) {
-                console.warn(
-                  'Department-step assignments refresh failed:',
-                  error
-                );
-              }
-            }
-          }
-        )
-      ]);
-
-      if (
-        requestId !== state.workflowDataRequestId ||
-        workflowId !== state.workflowId
-      ) {
-        return;
-      }
-
-      state.steps = normalizeList(
-        results[0].data,
-        ['items', 'steps']
-      ).filter(function (step) {
-        const status = getValue(step, 'Status', 'status');
-
-        return (
-          !status ||
-          String(status).toUpperCase() === 'ACTIVE'
-        );
-      });
-
-      state.assignments = normalizeList(
-        results[1].data,
-        ['items', 'assignments']
-      ).filter(isActive);
-
-      sortSteps();
-      renderStepOptions();
-      renderAssignments();
-
+      if (requestId !== state.workflowDataRequestId || workflowId !== state.workflowId) return;
+      applyWorkflowManagementData(result.data);
       content.hidden = false;
       renderBulkEditor();
 
       if (state.steps.length === 0) {
-        setMessage(
-          'برای این Workflow هنوز مرحله فعالی ثبت نشده است.',
-          'info'
-        );
+        setMessage('برای این Workflow هنوز مرحله فعالی ثبت نشده است.', 'info');
       }
-
     } catch (error) {
       if (requestId !== state.workflowDataRequestId) return;
-
-      console.error(
-        'Loading workflow assignments failed:',
-        error
-      );
-
+      console.error('Loading workflow management data failed:', error);
       content.hidden = true;
       setMessage(getErrorMessage(error), 'danger');
-
     } finally {
       if (requestId === state.workflowDataRequestId) {
         state.loading = false;
         setLoading(false);
       }
     }
+  }
+
+  function applyWorkflowManagementData(data) {
+    data = data || {};
+    state.steps = normalizeList(data.steps, ['items', 'steps']).filter(function (step) {
+      const status = getValue(step, 'Status', 'status');
+      return !status || String(status).toUpperCase() === 'ACTIVE';
+    });
+    state.assignments = normalizeList(data.assignments, ['items', 'assignments']).filter(isActive);
+    sortSteps();
+    renderStepOptions();
+    renderAssignments();
   }
 
   function isActive(item) {
@@ -412,6 +285,10 @@
 
   function getStepCacheKey(workflowId) {
     return STEP_CACHE_PREFIX + '_' + workflowId;
+  }
+
+  function getManagementDataCacheKey(workflowId) {
+    return 'workflowManagementData_' + workflowId;
   }
 
   function getAssignmentCacheKey(workflowId) {
@@ -457,8 +334,10 @@
   function invalidateWorkflowAssignmentCaches(workflowId) {
     if (!workflowId) return;
 
+    invalidateCache(getManagementDataCacheKey(workflowId));
     invalidateCache(getAssignmentCacheKey(workflowId));
     invalidateCache(getStepCacheKey(workflowId));
+    invalidateCache('workflowManagementBootstrap');
     invalidateCache(WORKFLOWS_CACHE_KEY);
     invalidateCache(DEPARTMENTS_CACHE_KEY);
   }

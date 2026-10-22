@@ -9,6 +9,8 @@
       ? PMS.Cache.keys.WORKFLOWS
       : 'workflows';
 
+  const BOOTSTRAP_CACHE_KEY = 'workflowManagementBootstrap';
+
   const STEP_CACHE_PREFIX =
     PMS.Cache && PMS.Cache.keys
       ? PMS.Cache.keys.WORKFLOW_STEPS
@@ -63,52 +65,41 @@
 
   async function loadWorkflows() {
     const requestId = ++state.loadRequestId;
-
     state.loading = true;
     setVisible('workflows-loading', true);
     setVisible('workflows-error', false);
 
     try {
       const result = await PMS.Api.getCached(
-        '/workflows',
-        CACHE_KEY,
+        '/workflow-management/bootstrap',
+        BOOTSTRAP_CACHE_KEY,
         {
           onRefresh: function (data) {
             if (requestId !== state.loadRequestId) return;
-
-            state.workflows = normalizeWorkflows(data);
+            state.workflows = normalizeWorkflows(data && data.workflows);
+            if (PMS.Cache) PMS.Cache.set(CACHE_KEY, state.workflows);
             render();
             setVisible('workflows-loading', false);
           },
-
           onError: function (error) {
             if (requestId !== state.loadRequestId) return;
-
-            showError(
-              error.message || 'به‌روزرسانی فهرست فرآیندها ناموفق بود.'
-            );
+            showError(error.message || 'به‌روزرسانی فهرست فرآیندها ناموفق بود.');
             setVisible('workflows-loading', false);
           }
         }
       );
 
       if (requestId !== state.loadRequestId) return;
-
-      state.workflows = normalizeWorkflows(result.data);
+      state.workflows = normalizeWorkflows(result.data && result.data.workflows);
+      if (PMS.Cache) PMS.Cache.set(CACHE_KEY, state.workflows);
       render();
-
-      if (!result.refreshing) {
-        setVisible('workflows-loading', false);
-      }
+      if (!result.refreshing) setVisible('workflows-loading', false);
     } catch (error) {
       if (requestId !== state.loadRequestId) return;
-
       showError(error.message || 'دریافت فرآیندها ناموفق بود.');
       setVisible('workflows-loading', false);
     } finally {
-      if (requestId === state.loadRequestId) {
-        state.loading = false;
-      }
+      if (requestId === state.loadRequestId) state.loading = false;
     }
   }
 
