@@ -1679,6 +1679,7 @@
       const departmentsSelect = modal.querySelector('#new-project-departments');
       const usersSelect = modal.querySelector('#new-project-users');
       const fileInput = modal.querySelector('#new-project-file');
+      const fileNameInput = modal.querySelector('#new-project-filename');
       const notifyInput = modal.querySelector('#new-project-notify');
       const selectedDepartments = Array.from(modal.querySelectorAll('input[name="AvailableDepartmentIDs"]:checked')).map((input) => input.value).filter(Boolean);
       const selectedUsers = Array.from(usersSelect.selectedOptions).map((option) => option.value).filter(Boolean);
