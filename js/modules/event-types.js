@@ -606,7 +606,7 @@
               '<label style="display:block;margin-top:8px"><input name="UseProjectColors" type="checkbox"> هنگام ثبت این رویداد، رنگ پروژه انتخاب شود</label>' +
               '<label style="display:block;margin-top:8px"><input name="UseProjectSizes" type="checkbox"> هنگام ثبت این رویداد، سایز پروژه انتخاب شود</label>' +
               '<label style="display:block;margin-top:8px"><input name="TrackVariantQuantity" type="checkbox"> مقدار تولید/تحویل برای ترکیب انتخاب‌شده ثبت شود</label>' +
-              '<small class="et-muted">فهرست رنگ و سایز از مشخصات همان پروژه خوانده می‌شود. برای مثال، رویداد برش می‌تواند رنگ، سایز و مقدار برش را ثبت کند.</small>' +
+              '<small class="et-muted">فهرست رنگ و سایز از مشخصات همان پروژه خوانده می‌شود. برای ثبت چندمرحله‌ای برش، نوع رویداد را به واحد برش مرتبط کن و گزینه مقدار تولید/تحویل را فعال کن؛ برای نمایش مجموع تجمعی، نام رویدادهای تکمیل را شامل «پایان برش» یا «اتمام برش» بگذار.</small>' +
             '</div>' +
 
           '</div>' +
