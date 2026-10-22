@@ -1,6 +1,27 @@
 (function () {
   'use strict';
 
+  function projectSettingsStorageKey() {
+    const router = window.PMS && window.PMS.Router;
+    const user = router && typeof router.getUser === 'function'
+      ? router.getUser()
+      : (window.PMS && window.PMS.Session && window.PMS.Session.getUser
+        ? window.PMS.Session.getUser()
+        : {});
+    const userId = user && (user.ID || user.Id || user.id || user.Username || user.Email);
+    if (userId) return 'pms_project_create_settings_v1_user_' + String(userId).replace(/[^a-zA-Z0-9_-]/g, '_');
+
+    const token = String(window.PMS && window.PMS.Api && window.PMS.Api.getToken
+      ? window.PMS.Api.getToken() || ''
+      : '');
+    let hash = 2166136261;
+    for (let i = 0; i < token.length; i += 1) {
+      hash ^= token.charCodeAt(i);
+      hash = Math.imul(hash, 16777619);
+    }
+    return 'pms_project_create_settings_v1_' + (hash >>> 0).toString(36);
+  }
+
   function projectJalaliDateToIso(value) {
     const raw = String(value || '').trim();
     if (!raw) return '';
@@ -622,17 +643,15 @@
         '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px"><h3 id="project-create-settings-title" style="margin:0">تنظیمات پیش‌فرض ایجاد پروژه</h3><button type="button" class="btn btn-light" data-settings-close aria-label="بستن تنظیمات">✕</button></div>' +
         '<p style="font-size:12px;line-height:1.9;color:var(--color-text-secondary);margin:0 0 16px">این انتخاب‌ها برای دفعات بعد ذخیره می‌شوند و هنگام ساخت پروژه جدید به‌صورت پیش‌فرض اعمال خواهند شد.</p>' +
         '<div id="project-create-settings-content"></div>' +
-        '<div style="display:flex;justify-content:flex-start;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--color-border)"><button type="button" class="btn btn-primary" data-settings-save>ذخیره تنظیمات</button><button type="button" class="btn btn-light" data-settings-cancel>بستن بدون ذخیره</button></div></div>';
+        '<div id="project-settings-error" class="alert alert-danger" hidden style="margin-top:12px"></div>' +
+        '<div style="display:flex;justify-content:flex-start;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--color-border)"><button type="button" class="btn btn-primary" data-settings-save>ذخیره تنظیمات</button><button type="button" class="btn btn-light" data-settings-cancel>بستن</button></div></div>';
       modal.appendChild(settingsModal);
       const settingsContent = settingsModal.querySelector('#project-create-settings-content');
       ['new-project-departments-setting','new-project-users-setting','new-project-status-setting','new-project-notify-setting'].forEach((id) => {
         const setting = modal.querySelector('#' + id);
         if (setting && settingsContent) settingsContent.appendChild(setting);
       });
-      const sessionToken = String(window.PMS.Api.getToken() || '');
-      let settingsHash = 2166136261;
-      for (let i = 0; i < sessionToken.length; i += 1) { settingsHash ^= sessionToken.charCodeAt(i); settingsHash = Math.imul(settingsHash, 16777619); }
-      const projectSettingsKey = 'pms_project_create_settings_v1_' + (settingsHash >>> 0).toString(36);
+      const projectSettingsKey = projectSettingsStorageKey();
       let projectSettingsRestored = false;
       const getSelectedDepartmentIds = () => Array.from(modal.querySelectorAll('input[name="AvailableDepartmentIDs"]:checked')).map((input) => input.value).filter(Boolean);
       const getSelectedUserIds = () => Array.from(modal.querySelector('#new-project-users').selectedOptions).map((option) => option.value).filter(Boolean);
@@ -666,15 +685,20 @@
       settingsModal.querySelector('[data-settings-cancel]').addEventListener('click', closeSettings);
       settingsModal.addEventListener('click', (event) => { if (event.target === settingsModal) closeSettings(); });
       settingsModal.querySelector('[data-settings-save]').addEventListener('click', () => {
+        const error = settingsModal.querySelector('#project-settings-error');
         if (!getSelectedDepartmentIds().length) {
-          const error = modal.querySelector('#project-create-error');
           error.textContent = 'حداقل یک واحد مجاز انتخاب کنید.';
           error.hidden = false;
           return;
         }
+        const statusSelect = modal.querySelector('#new-project-status');
+        if (statusSelect && statusSelect.options.length > 1 && !statusSelect.value) {
+          error.textContent = 'وضعیت پروژه پس از ایجاد را انتخاب کنید.';
+          error.hidden = false;
+          return;
+        }
         saveProjectSettings();
-        const error = modal.querySelector('#project-create-error');
-        if (error) error.hidden = true;
+        error.hidden = true;
         closeSettings();
       });
       settingsContent.addEventListener('change', saveProjectSettings);
@@ -1122,10 +1146,7 @@
         Status: String((modal.querySelector('#new-project-status') || {}).value || '')
       };
       try {
-        let settingsHash = 2166136261;
-        const token = String(window.PMS.Api.getToken() || '');
-        for (let i = 0; i < token.length; i += 1) { settingsHash ^= token.charCodeAt(i); settingsHash = Math.imul(settingsHash, 16777619); }
-        localStorage.setItem('pms_project_create_settings_v1_' + (settingsHash >>> 0).toString(36), JSON.stringify({
+        localStorage.setItem(projectSettingsStorageKey(), JSON.stringify({
           departmentIds: selectedDepartments, userIds: selectedUsers, notifyEnabled: project.NotifyEnabled, status: project.Status
         }));
       } catch (settingsSaveError) {}
@@ -1158,14 +1179,22 @@
       if (!project.AvailableDepartmentIDs.length) {
         this.showFormError(modal, 'حداقل یک واحد مجاز برای پروژه انتخاب کن.');
         const settingsOverlay = modal.querySelector('#project-create-settings-modal');
-        if (settingsOverlay) settingsOverlay.style.display = 'flex';
+        if (settingsOverlay) {
+          settingsOverlay.style.display = 'flex';
+          const settingsError = settingsOverlay.querySelector('#project-settings-error');
+          if (settingsError) { settingsError.textContent = 'حداقل یک واحد مجاز انتخاب کنید.'; settingsError.hidden = false; }
+        }
         departmentsSelect.focus();
         return;
       }
       if (project.Status === '') {
         this.showFormError(modal, 'وضعیت پروژه پس از ایجاد را در تنظیمات انتخاب کن.');
         const settingsOverlay = modal.querySelector('#project-create-settings-modal');
-        if (settingsOverlay) settingsOverlay.style.display = 'flex';
+        if (settingsOverlay) {
+          settingsOverlay.style.display = 'flex';
+          const settingsError = settingsOverlay.querySelector('#project-settings-error');
+          if (settingsError) { settingsError.textContent = 'وضعیت پروژه پس از ایجاد را انتخاب کنید.'; settingsError.hidden = false; }
+        }
         return;
       }
 
