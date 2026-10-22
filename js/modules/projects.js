@@ -1,6 +1,27 @@
 (function () {
   'use strict';
 
+  function projectSettingsStorageKey() {
+    const router = window.PMS && window.PMS.Router;
+    const user = router && typeof router.getUser === 'function'
+      ? router.getUser()
+      : (window.PMS && window.PMS.Session && window.PMS.Session.getUser
+        ? window.PMS.Session.getUser()
+        : {});
+    const userId = user && (user.ID || user.Id || user.id || user.Username || user.Email);
+    if (userId) return 'pms_project_create_settings_v1_user_' + String(userId).replace(/[^a-zA-Z0-9_-]/g, '_');
+
+    const token = String(window.PMS && window.PMS.Api && window.PMS.Api.getToken
+      ? window.PMS.Api.getToken() || ''
+      : '');
+    let hash = 2166136261;
+    for (let i = 0; i < token.length; i += 1) {
+      hash ^= token.charCodeAt(i);
+      hash = Math.imul(hash, 16777619);
+    }
+    return 'pms_project_create_settings_v1_' + (hash >>> 0).toString(36);
+  }
+
   function projectJalaliDateToIso(value) {
     const raw = String(value || '').trim();
     if (!raw) return '';
@@ -462,12 +483,13 @@
               ایجاد پروژه جدید
             </h3>
 
-            <button
-              type="button"
-              id="project-create-close"
-              class="btn btn-light"
-              aria-label="بستن"
-            >✕</button>
+            <div style="display:flex;align-items:center;gap:8px">
+              <button type="button" id="project-settings-open" class="btn btn-light" aria-label="تنظیمات فرم ایجاد پروژه" title="تنظیمات فرم" style="display:inline-flex;align-items:center;gap:7px">
+                <span aria-hidden="true" style="font-size:18px;line-height:1">⚙</span>
+                <span>تنظیمات</span>
+              </button>
+              <button type="button" id="project-create-close" class="btn btn-light" aria-label="بستن">✕</button>
+            </div>
           </div>
 
           <div
@@ -548,16 +570,20 @@
               ></textarea>
             </div>
 
-            <div class="filter-group" style="margin-bottom:18px;">
+            <div id="new-project-departments-setting" class="filter-group" style="margin-bottom:18px;">
               <label>واحدهای مجاز برای مشاهده پروژه و ثبت رویداد <span style="color:var(--color-danger);">*</span></label>
               <div id="new-project-departments" class="project-access-grid" role="group" aria-label="انتخاب واحدهای مجاز" aria-describedby="new-project-departments-help"><div class="project-lookup-loading">در حال دریافت واحدها…</div></div>
-              <small id="new-project-departments-help" style="display:block;margin-top:6px;color:var(--color-text-secondary);">حداقل یک واحد را انتخاب کنید. واحد طراحی به‌صورت پیش‌فرض فعال است.</small>
+              <small id="new-project-departments-help" style="display:block;margin-top:6px;color:var(--color-text-secondary);">حداقل یک واحد را انتخاب کنید.</small>
             </div>
-
-            <div class="filter-group" style="margin-bottom:16px;">
+            <div id="new-project-users-setting" class="filter-group" style="margin-bottom:16px;">
               <label for="new-project-users">کاربران مجاز <span style="color:var(--color-text-secondary);font-size:12px;">(اختیاری)</span></label>
-              <select id="new-project-users" name="AllowedUserIDs" multiple size="4" style="width:100%;box-sizing:border-box;min-height:100px;"></select>
+              <select id="new-project-users" name="AllowedUserIDs" multiple size="5" style="width:100%;box-sizing:border-box;min-height:120px;"></select>
               <small style="display:block;margin-top:5px;color:var(--color-text-secondary);">اگر انتخاب نشود، محدودیت اختصاصی کاربر برای پروژه ثبت نمی‌شود.</small>
+            </div>
+            <div id="new-project-status-setting" class="filter-group" style="margin-bottom:16px;">
+              <label for="new-project-status">وضعیت پروژه پس از ایجاد</label>
+              <select id="new-project-status" name="Status" style="width:100%;box-sizing:border-box;"><option value="">در حال دریافت وضعیت‌ها...</option></select>
+              <small style="display:block;margin-top:5px;color:var(--color-text-secondary);">وضعیتی که انتخاب می‌کنید هنگام ثبت پروژه اعمال می‌شود.</small>
             </div>
 
             <div class="filter-group" style="margin-bottom:16px;">
@@ -566,7 +592,7 @@
               <small id="new-project-file-help" style="display:block;margin-top:5px;color:var(--color-text-secondary);">فایل پس از ایجاد پروژه به پیوست‌های همان پروژه اضافه می‌شود. برای بارگذاری به دسترسی افزودن فایل نیاز است.</small>
             </div>
 
-            <div class="filter-group" style="margin-bottom:16px;">
+            <div id="new-project-notify-setting" class="filter-group" style="margin-bottom:16px;">
               <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
                 <input type="checkbox" id="new-project-notify" checked>
                 <span>فعال بودن اطلاع‌رسانی</span>
@@ -609,6 +635,73 @@
 
       document.body.appendChild(modal);
       this.modal = modal;
+
+      const settingsModal = document.createElement('div');
+      settingsModal.id = 'project-create-settings-modal';
+      settingsModal.style.cssText = 'position:fixed;inset:0;z-index:10020;background:var(--color-overlay,rgba(0,0,0,.5));display:none;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;direction:rtl;';
+      settingsModal.innerHTML = '<div role="dialog" aria-modal="true" aria-labelledby="project-create-settings-title" style="background:var(--color-surface);color:var(--color-text);width:100%;max-width:680px;max-height:88vh;overflow:auto;border:1px solid var(--color-border);border-radius:14px;padding:20px;box-sizing:border-box;box-shadow:var(--shadow-lg,0 18px 50px rgba(0,0,0,.2))">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px"><h3 id="project-create-settings-title" style="margin:0">تنظیمات پیش‌فرض ایجاد پروژه</h3><button type="button" class="btn btn-light" data-settings-close aria-label="بستن تنظیمات">✕</button></div>' +
+        '<p style="font-size:12px;line-height:1.9;color:var(--color-text-secondary);margin:0 0 16px">این انتخاب‌ها برای دفعات بعد ذخیره می‌شوند و هنگام ساخت پروژه جدید به‌صورت پیش‌فرض اعمال خواهند شد.</p>' +
+        '<div id="project-create-settings-content"></div>' +
+        '<div id="project-settings-error" class="alert alert-danger" hidden style="margin-top:12px"></div>' +
+        '<div style="display:flex;justify-content:flex-start;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--color-border)"><button type="button" class="btn btn-primary" data-settings-save>ذخیره تنظیمات</button><button type="button" class="btn btn-light" data-settings-cancel>بستن</button></div></div>';
+      modal.appendChild(settingsModal);
+      const settingsContent = settingsModal.querySelector('#project-create-settings-content');
+      ['new-project-departments-setting','new-project-users-setting','new-project-status-setting','new-project-notify-setting'].forEach((id) => {
+        const setting = modal.querySelector('#' + id);
+        if (setting && settingsContent) settingsContent.appendChild(setting);
+      });
+      const projectSettingsKey = projectSettingsStorageKey();
+      const getSelectedDepartmentIds = () => Array.from(modal.querySelectorAll('input[name="AvailableDepartmentIDs"]:checked')).map((input) => input.value).filter(Boolean);
+      const getSelectedUserIds = () => Array.from(modal.querySelector('#new-project-users').selectedOptions).map((option) => option.value).filter(Boolean);
+      const saveProjectSettings = () => {
+        const settings = { departmentIds:getSelectedDepartmentIds(), userIds:getSelectedUserIds(), notifyEnabled:!!modal.querySelector('#new-project-notify').checked, status:String((modal.querySelector('#new-project-status') || {}).value || '') };
+        try { localStorage.setItem(projectSettingsKey, JSON.stringify(settings)); } catch (error) {}
+        return settings;
+      };
+      const applySavedProjectSettings = () => {
+        let saved = null;
+        try { saved = JSON.parse(localStorage.getItem(projectSettingsKey) || 'null'); } catch (error) {}
+        const checks = Array.from(modal.querySelectorAll('input[name="AvailableDepartmentIDs"]'));
+        if (saved && Array.isArray(saved.departmentIds)) checks.forEach((input) => { input.checked = saved.departmentIds.map(String).includes(String(input.value)); });
+        const userSelect = modal.querySelector('#new-project-users');
+        if (saved && Array.isArray(saved.userIds)) Array.from(userSelect.options).forEach((option) => { option.selected = saved.userIds.map(String).includes(String(option.value)); });
+        const notify = modal.querySelector('#new-project-notify');
+        if (saved && typeof saved.notifyEnabled === 'boolean') notify.checked = saved.notifyEnabled;
+        const statusSelect = modal.querySelector('#new-project-status');
+        if (statusSelect && saved && saved.status && Array.from(statusSelect.options).some((option) => option.value === saved.status)) statusSelect.value = saved.status;
+        else if (statusSelect && statusSelect.options.length > 1) {
+          const awaiting = Array.from(statusSelect.options).find((option) => /در\s*انتظار\s*اقدام/.test(option.textContent));
+          statusSelect.value = awaiting ? awaiting.value : statusSelect.options[1].value;
+        }
+      };
+      const openSettings = () => { settingsModal.style.display = 'flex'; const first = settingsModal.querySelector('input,select,button'); if (first) first.focus(); };
+      const closeSettings = () => { settingsModal.style.display = 'none'; };
+      modal.querySelector('#project-settings-open').addEventListener('click', openSettings);
+      settingsModal.querySelector('[data-settings-close]').addEventListener('click', closeSettings);
+      settingsModal.querySelector('[data-settings-cancel]').addEventListener('click', closeSettings);
+      settingsModal.addEventListener('click', (event) => { if (event.target === settingsModal) closeSettings(); });
+      settingsModal.querySelector('[data-settings-save]').addEventListener('click', () => {
+        const error = settingsModal.querySelector('#project-settings-error');
+        if (!getSelectedDepartmentIds().length) {
+          error.textContent = 'حداقل یک واحد مجاز انتخاب کنید.';
+          error.hidden = false;
+          return;
+        }
+        const statusSelect = modal.querySelector('#new-project-status');
+        if (statusSelect && statusSelect.options.length > 1 && !statusSelect.value) {
+          error.textContent = 'وضعیت پروژه پس از ایجاد را انتخاب کنید.';
+          error.hidden = false;
+          return;
+        }
+        saveProjectSettings();
+        error.hidden = true;
+        closeSettings();
+      });
+      settingsContent.addEventListener('change', saveProjectSettings);
+      settingsContent.addEventListener('click', (event) => {
+        if (event.target && event.target.matches('input[name="AvailableDepartmentIDs"]')) saveProjectSettings();
+      });
 
       const closeButton = modal.querySelector('#project-create-close');
       const cancelButton = modal.querySelector('#project-create-cancel');
@@ -687,6 +780,7 @@
         });
         const departments = Array.isArray(lookupData.departments) ? lookupData.departments : [];
         const users = Array.isArray(lookupData.users) ? lookupData.users : [];
+        const projectStatuses = Array.isArray(lookupData.projectStatuses) ? lookupData.projectStatuses : [];
 
         if (this.modal !== modal) return;
         this.workflows = workflows;
@@ -713,6 +807,15 @@
           return '<option value="' + this.escape(id) + '">' + this.escape(name) + '</option>';
         }).join('');
 
+        const statusSelect = modal.querySelector('#new-project-status');
+        if (statusSelect) statusSelect.innerHTML = projectStatuses.length
+          ? '<option value="">انتخاب وضعیت</option>' + projectStatuses.map((status) => {
+              const value = status.Code || status.ID || status.Id || status.id;
+              const name = status.Name || status.Code || value;
+              return '<option value="' + this.escape(value) + '">' + this.escape(name) + '</option>';
+            }).join('')
+          : '<option value="">وضعیت فعالی تعریف نشده است</option>';
+
         const designDepartment = departments.find((department) =>
           String(department.Code || '').toUpperCase() === 'DESIGN' ||
           String(department.Name || '').includes('طراحی')
@@ -724,6 +827,8 @@
           ).find((input) => input.value === designId);
           if (designCheckbox) designCheckbox.checked = true;
         }
+
+        applySavedProjectSettings();
 
         if (!workflows.length) {
           this.showFormError(modal, 'برای ایجاد پروژه، ابتدا باید یک گردش کار فعال و دارای مرحله ایجاد کنید.');
@@ -1034,8 +1139,14 @@
         }),
         AvailableDepartmentIDs: selectedDepartments,
         AllowedUserIDs: selectedUsers,
-        NotifyEnabled: !!(notifyInput && notifyInput.checked)
+        NotifyEnabled: !!(notifyInput && notifyInput.checked),
+        Status: String((modal.querySelector('#new-project-status') || {}).value || '')
       };
+      try {
+        localStorage.setItem(projectSettingsStorageKey(), JSON.stringify({
+          departmentIds: selectedDepartments, userIds: selectedUsers, notifyEnabled: project.NotifyEnabled, status: project.Status
+        }));
+      } catch (settingsSaveError) {}
 
       if (!project.ProjectCode) {
         this.showFormError(modal, 'کد پروژه را وارد کن.');
@@ -1064,7 +1175,23 @@
 
       if (!project.AvailableDepartmentIDs.length) {
         this.showFormError(modal, 'حداقل یک واحد مجاز برای پروژه انتخاب کن.');
+        const settingsOverlay = modal.querySelector('#project-create-settings-modal');
+        if (settingsOverlay) {
+          settingsOverlay.style.display = 'flex';
+          const settingsError = settingsOverlay.querySelector('#project-settings-error');
+          if (settingsError) { settingsError.textContent = 'حداقل یک واحد مجاز انتخاب کنید.'; settingsError.hidden = false; }
+        }
         departmentsSelect.focus();
+        return;
+      }
+      if (project.Status === '') {
+        this.showFormError(modal, 'وضعیت پروژه پس از ایجاد را در تنظیمات انتخاب کن.');
+        const settingsOverlay = modal.querySelector('#project-create-settings-modal');
+        if (settingsOverlay) {
+          settingsOverlay.style.display = 'flex';
+          const settingsError = settingsOverlay.querySelector('#project-settings-error');
+          if (settingsError) { settingsError.textContent = 'وضعیت پروژه پس از ایجاد را انتخاب کنید.'; settingsError.hidden = false; }
+        }
         return;
       }
 
