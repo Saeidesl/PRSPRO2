@@ -612,7 +612,10 @@
 
     invalidateProjectCardAttachmentMetadata: function (projectId) {
       const cache = window.PMS && window.PMS.Cache;
-      if (cache) cache.remove('project_card_attachments_v2');
+      if (cache) {
+        cache.remove('project_card_images_v1');
+        cache.remove('project_card_attachments_v2');
+      }
       this.projectCardAttachmentsPromise = null;
       if (projectId !== undefined && projectId !== null && String(projectId)) {
         const id = String(projectId);
@@ -624,13 +627,13 @@
 
     getProjectCardAttachments: function () {
       const cache = window.PMS && window.PMS.Cache;
-      const cacheKey = 'project_card_attachments_v2';
+      const cacheKey = 'project_card_images_v1';
       const cached = cache ? cache.get(cacheKey) : null;
       // A valid five-minute cache avoids a new /attachments request on every
       // search/filter render. Uploads and deletions explicitly invalidate it.
       if (cached !== null && Array.isArray(cached)) return Promise.resolve(cached);
       if (!this.projectCardAttachmentsPromise) {
-        this.projectCardAttachmentsPromise = window.PMS.Api.get('/attachments')
+        this.projectCardAttachmentsPromise = window.PMS.Api.get('/project-card-images')
           .then((response) => {
             const items = this.normalizeProjectAttachments(response);
             if (cache) cache.set(cacheKey, items, { ttl: 5 * 60 * 1000 });
