@@ -149,7 +149,7 @@
               state.workflows = normalizeList(
                 data,
                 ['items', 'workflows']
-              );
+              ).filter(isActive);
 
               renderWorkflowOptions();
             },
@@ -185,7 +185,7 @@
       state.workflows = normalizeList(
         results[0].data,
         ['items', 'workflows']
-      );
+      ).filter(isActive);
 
       state.departments = normalizeList(
         results[1].data,
