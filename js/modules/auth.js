@@ -88,6 +88,11 @@
         throw new Error('نشست کاربر ایجاد نشد.');
       }
 
+      // Do not let cached data from a previous account appear in this session.
+      if (PMS.Cache && typeof PMS.Cache.clear === 'function') {
+        PMS.Cache.clear();
+      }
+
       PMS.Session.save({
         token: data.token,
         user: data.user || null
