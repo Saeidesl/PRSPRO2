@@ -106,28 +106,40 @@
     },
 
     logout: async function () {
-      try {
-        if (PMS.Permissions && typeof PMS.Permissions.clear === 'function') {
-          PMS.Permissions.clear();
-        }
-      } catch (error) {
-        console.warn('پاک‌سازی مجوزهای محلی انجام نشد:', error);
-      }
-
-      try {
-        if (PMS.Session && typeof PMS.Session.clear === 'function') {
-          PMS.Session.clear();
-        }
-      } catch (error) {
-        console.error('پاک‌سازی نشست محلی انجام نشد:', error);
-      }
-
+      // Keep the token available until the server has had a chance to revoke
+      // the current session. Always clear local state afterwards.
       try {
         if (PMS.Api && typeof PMS.Api.post === 'function') {
           await PMS.Api.post('/auth/logout', {});
         }
       } catch (error) {
-        console.warn('بستن نشست سرور انجام نشد؛ نشست محلی پاک شده است.', error);
+        console.warn('بستن نشست سرور انجام نشد؛ پاک‌سازی محلی ادامه پیدا می‌کند.', error);
+      } finally {
+        try {
+          if (PMS.Permissions && typeof PMS.Permissions.clear === 'function') {
+            PMS.Permissions.clear();
+          }
+        } catch (error) {
+          console.warn('پاک‌سازی مجوزهای محلی انجام نشد:', error);
+        }
+
+        try {
+          if (PMS.Cache && typeof PMS.Cache.clear === 'function') {
+            PMS.Cache.clear();
+          }
+        } catch (error) {
+          console.warn('پاک‌سازی کش محلی انجام نشد:', error);
+        }
+
+        try {
+          if (PMS.Session && typeof PMS.Session.clear === 'function') {
+            PMS.Session.clear();
+          } else if (PMS.Api && typeof PMS.Api.clearToken === 'function') {
+            PMS.Api.clearToken();
+          }
+        } catch (error) {
+          console.error('پاک‌سازی نشست محلی انجام نشد:', error);
+        }
       }
 
       if (PMS.Router && typeof PMS.Router.navigate === 'function') {
