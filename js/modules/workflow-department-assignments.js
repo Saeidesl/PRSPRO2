@@ -106,6 +106,7 @@
     if (section.dataset.wsdInitialized === 'true') return;
     section.dataset.wsdInitialized = 'true';
 
+    injectStyles();
     bindEvents();
     loadInitialData();
   }
@@ -123,6 +124,12 @@
     editor.addEventListener('click', function (event) {
       const button = event.target.closest('#wsd-bulk-save');
       if (button) saveAllAssignments();
+    });
+
+    editor.addEventListener('input', function (event) {
+      if (event.target && event.target.id === 'wsd-department-search') {
+        filterAssignmentRows(event.target.value);
+      }
     });
 
     table.addEventListener('click', function (event) {
@@ -532,12 +539,67 @@
     select.innerHTML = html;
   }
 
+  function injectStyles() {
+    if (document.getElementById('wsd-professional-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'wsd-professional-styles';
+    style.textContent = `
+      #workflow-department-assignments .wsd-shell{display:grid;gap:18px}
+      #workflow-department-assignments .wsd-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:18px;border:1px solid var(--border-color,#e5e7eb);border-radius:14px;background:var(--card-bg,#fff)}
+      #workflow-department-assignments .wsd-heading{display:flex;align-items:flex-start;gap:12px}
+      #workflow-department-assignments .wsd-heading-icon{display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;border-radius:12px;background:var(--primary-soft,#eef2ff);color:var(--primary-color,#4f46e5);font-size:20px}
+      #workflow-department-assignments .wsd-heading h4{margin:0 0 5px;font-size:16px;font-weight:750}
+      #workflow-department-assignments .wsd-muted{color:var(--text-muted,#6b7280);font-size:13px;line-height:1.8;margin:0}
+      #workflow-department-assignments .wsd-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+      #workflow-department-assignments .wsd-metric{padding:15px 16px;border:1px solid var(--border-color,#e5e7eb);border-radius:12px;background:var(--card-bg,#fff);min-width:0}
+      #workflow-department-assignments .wsd-metric-label{font-size:12px;color:var(--text-muted,#6b7280);margin-bottom:6px}
+      #workflow-department-assignments .wsd-metric-value{font-size:24px;font-weight:800;line-height:1.2}
+      #workflow-department-assignments .wsd-search{position:relative;min-width:min(100%,260px);flex:1}
+      #workflow-department-assignments .wsd-search input{width:100%;min-height:42px;border:1px solid var(--border-color,#d1d5db);border-radius:10px;padding:9px 38px 9px 12px;background:var(--input-bg,var(--card-bg,#fff));color:inherit}
+      #workflow-department-assignments .wsd-search-icon{position:absolute;right:13px;top:10px;color:var(--text-muted,#6b7280)}
+      #workflow-department-assignments .wsd-table-wrap{border:1px solid var(--border-color,#e5e7eb);border-radius:12px;overflow:hidden;background:var(--card-bg,#fff)}
+      #workflow-department-assignments .wsd-table{width:100%;border-collapse:collapse}
+      #workflow-department-assignments .wsd-table th{font-size:12px;font-weight:700;text-align:right;color:var(--text-muted,#6b7280);background:var(--surface-muted,#f8fafc);padding:13px 16px;white-space:nowrap}
+      #workflow-department-assignments .wsd-table td{padding:13px 16px;border-top:1px solid var(--border-color,#edf0f3);vertical-align:middle}
+      #workflow-department-assignments .wsd-table tbody tr:hover{background:var(--hover-bg,rgba(148,163,184,.07))}
+      #workflow-department-assignments .wsd-dept-name{font-weight:700}
+      #workflow-department-assignments .wsd-dept-code{display:block;color:var(--text-muted,#6b7280);font-size:11px;margin-top:3px}
+      #workflow-department-assignments .wsd-select{width:100%;min-height:40px;border:1px solid var(--border-color,#d1d5db);border-radius:9px;padding:7px 10px;background:var(--input-bg,var(--card-bg,#fff));color:inherit}
+      #workflow-department-assignments .wsd-status{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:700;white-space:nowrap}
+      #workflow-department-assignments .wsd-status.is-linked{color:#047857;background:rgba(16,185,129,.12)}
+      #workflow-department-assignments .wsd-status.is-new{color:var(--text-muted,#6b7280);background:rgba(148,163,184,.14)}
+      #workflow-department-assignments .wsd-row-hidden{display:none!important}
+      #workflow-department-assignments .wsd-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 16px;border-top:1px solid var(--border-color,#e5e7eb);background:var(--surface-muted,#f8fafc)}
+      #workflow-department-assignments .wsd-count{font-size:12px;color:var(--text-muted,#6b7280)}
+      #workflow-department-assignments .wsd-save{min-height:42px;border-radius:10px;padding:10px 18px;font-weight:750}
+      #workflow-department-assignments .wsd-tip{display:flex;gap:9px;align-items:flex-start;padding:12px 14px;border-radius:10px;background:var(--surface-muted,#f8fafc);color:var(--text-muted,#6b7280);font-size:12px;line-height:1.9}
+      @media(max-width:700px){
+        #workflow-department-assignments .wsd-metrics{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+        #workflow-department-assignments .wsd-metric{padding:11px 9px}
+        #workflow-department-assignments .wsd-metric-value{font-size:20px}
+        #workflow-department-assignments .wsd-toolbar{padding:14px}
+        #workflow-department-assignments .wsd-table-wrap{border:0;background:transparent;overflow:visible}
+        #workflow-department-assignments .wsd-table,#workflow-department-assignments .wsd-table tbody{display:block;width:100%}
+        #workflow-department-assignments .wsd-table thead{display:none}
+        #workflow-department-assignments .wsd-table tbody{display:grid;gap:10px}
+        #workflow-department-assignments .wsd-table tr{display:grid;grid-template-columns:1fr;gap:9px;padding:13px;border:1px solid var(--border-color,#e5e7eb);border-radius:12px;background:var(--card-bg,#fff)}
+        #workflow-department-assignments .wsd-table td{display:block;border:0;padding:0}
+        #workflow-department-assignments .wsd-table td:nth-child(2):before{content:'مرحله مقصد';display:block;font-size:11px;color:var(--text-muted,#6b7280);margin-bottom:5px}
+        #workflow-department-assignments .wsd-table td:nth-child(3){display:flex;justify-content:flex-start}
+        #workflow-department-assignments .wsd-footer{align-items:stretch}
+        #workflow-department-assignments .wsd-save{width:100%}
+        #workflow-department-assignments .wsd-search{min-width:100%}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
   function renderBulkEditor() {
     const container = document.getElementById('wsd-bulk-editor');
     if (!container) return;
 
     if (!state.departments.length || !state.steps.length) {
-      container.innerHTML = '<div class="alert alert-info">برای ثبت اتصال، باید بخش و مرحله فعال وجود داشته باشد.</div>';
+      container.innerHTML = '<div class="alert alert-info">برای ثبت اتصال، باید حداقل یک بخش و یک مرحله فعال وجود داشته باشد.</div>';
       return;
     }
 
@@ -546,12 +608,20 @@
       currentByDepartment[String(getValue(item, 'DepartmentID', 'departmentId'))] = item;
     });
 
+    const linkedCount = Object.keys(currentByDepartment).length;
+    const availableCount = Math.max(0, state.departments.length - linkedCount);
     const rows = state.departments.map(function(department) {
       const departmentId = String(getId(department));
       const current = currentByDepartment[departmentId];
       const currentStepId = current ? String(getValue(current, 'WorkflowStepID', 'workflowStepId')) : '';
       const name = getValue(department, 'Name', 'name') || 'بدون نام';
       const code = getValue(department, 'Code', 'code') || '';
+      const currentStep = current && state.steps.find(function(step) {
+        return String(getId(step)) === currentStepId;
+      });
+      const currentStepName = currentStep
+        ? ((getValue(currentStep, 'StepOrder', 'stepOrder') || '') + '. ' + (getValue(currentStep, 'Name', 'name') || ''))
+        : '';
       const options = ['<option value="">انتخاب مرحله</option>'].concat(
         state.steps.map(function(step) {
           const stepId = String(getId(step));
@@ -563,19 +633,57 @@
         })
       ).join('');
 
-      return '<tr><td>' + escapeHtml(name) + (code ? ' (' + escapeHtml(code) + ')' : '') +
-        '</td><td><select class="form-control wsd-bulk-step" data-department-id="' + escapeAttribute(departmentId) + '"' +
-        (current ? ' data-existing="true" disabled' : '') + '>' + options + '</select></td><td>' +
-        (current ? '<span class="badge badge-success">متصل</span>' : '<span class="badge">ثبت‌نشده</span>') +
-        '</td></tr>';
+      return '<tr class="wsd-assignment-row" data-search="' + escapeAttribute((name + ' ' + code + ' ' + currentStepName).toLowerCase()) + '">' +
+        '<td><span class="wsd-dept-name">' + escapeHtml(name) + '</span>' +
+        (code ? '<span class="wsd-dept-code">' + escapeHtml(code) + '</span>' : '') + '</td>' +
+        '<td>' + (current
+          ? '<div class="wsd-muted" style="font-weight:650;color:inherit">' + escapeHtml(currentStepName.replace(/^\\.\\s*/, '')) + '</div><div class="wsd-muted">برای تغییر مرحله، ابتدا اتصال فعلی را از فهرست پایین حذف کنید.</div>'
+          : '<select aria-label="انتخاب مرحله برای ' + escapeAttribute(name) + '" class="wsd-select wsd-bulk-step" data-department-id="' + escapeAttribute(departmentId) + '"><option value="">انتخاب مرحله</option>' + options + '</select>') +
+        '</td><td>' + (current
+          ? '<span class="wsd-status is-linked">● متصل</span>'
+          : '<span class="wsd-status is-new">○ آماده اتصال</span>') + '</td></tr>';
     }).join('');
 
     container.innerHTML =
-      '<div class="filter-bar" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">' +
-      '<div><h4 style="margin:0 0 5px">اتصال یکجای بخش‌ها به مراحل</h4>' +
-      '<p style="margin:0">مرحله هر بخش را مشخص کن و همه اتصال‌های جدید را با یک بار ارسال ثبت کن.</p></div>' +
-      '<button type="button" id="wsd-bulk-save" class="btn btn-primary">ثبت همه اتصال‌ها</button></div>' +
-      '<div class="table-wrapper"><table class="data-table"><thead><tr><th>بخش کارخانه</th><th>مرحله فرایند</th><th>وضعیت</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+      '<div class="wsd-shell">' +
+        '<div class="wsd-toolbar">' +
+          '<div class="wsd-heading"><div class="wsd-heading-icon" aria-hidden="true">⇄</div><div><h4>تخصیص واحدها به مراحل تولید</h4><p class="wsd-muted">برای هر واحد یک مرحله تعیین کنید؛ همه انتخاب‌های جدید با یک درخواست ثبت می‌شوند.</p></div></div>' +
+          '<div class="wsd-search"><span class="wsd-search-icon" aria-hidden="true">⌕</span><input id="wsd-department-search" type="search" placeholder="جست‌وجوی نام یا کد واحد..." aria-label="جست‌وجوی واحدها"></div>' +
+        '</div>' +
+        '<div class="wsd-metrics">' +
+          '<div class="wsd-metric"><div class="wsd-metric-label">تعداد مراحل فعال</div><div class="wsd-metric-value">' + state.steps.length + '</div></div>' +
+          '<div class="wsd-metric"><div class="wsd-metric-label">واحدهای متصل</div><div class="wsd-metric-value">' + linkedCount + '</div></div>' +
+          '<div class="wsd-metric"><div class="wsd-metric-label">واحدهای باقی‌مانده</div><div class="wsd-metric-value">' + availableCount + '</div></div>' +
+        '</div>' +
+        '<div class="wsd-table-wrap"><table class="wsd-table"><thead><tr><th style="width:32%">واحد / دپارتمان</th><th>مرحله گردش‌کار</th><th style="width:145px">وضعیت اتصال</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+          '<div class="wsd-footer"><span id="wsd-pending-count" class="wsd-count">اتصال جدیدی انتخاب نشده است.</span><button type="button" id="wsd-bulk-save" class="btn btn-primary wsd-save">ثبت اتصال‌های انتخاب‌شده</button></div>' +
+        '</div>' +
+        '<div class="wsd-tip"><span aria-hidden="true">ⓘ</span><span>در هر گردش‌کار، هر واحد فقط به یک مرحله متصل می‌شود. اتصال‌های ثبت‌شده برای جلوگیری از تغییر ناخواسته قفل هستند؛ برای جابه‌جایی، اتصال فعلی را از فهرست پایین حذف کنید و سپس اتصال جدید را ثبت کنید.</span></div>' +
+      '</div>';
+
+    container.querySelectorAll('.wsd-bulk-step').forEach(function(select) {
+      select.addEventListener('change', updatePendingCount);
+    });
+    updatePendingCount();
+  }
+
+  function updatePendingCount() {
+    const selects = Array.from(document.querySelectorAll('#wsd-bulk-editor .wsd-bulk-step'));
+    const count = selects.filter(function(select) { return !!select.value; }).length;
+    const label = document.getElementById('wsd-pending-count');
+    const button = document.getElementById('wsd-bulk-save');
+    if (label) label.textContent = count
+      ? count + ' اتصال جدید برای ثبت آماده است.'
+      : 'اتصال جدیدی انتخاب نشده است.';
+    if (button && !state.saving) button.disabled = count === 0 || state.loading;
+  }
+
+  function filterAssignmentRows(query) {
+    const normalized = String(query || '').trim().toLowerCase();
+    document.querySelectorAll('#wsd-bulk-editor .wsd-assignment-row').forEach(function(row) {
+      const haystack = String(row.getAttribute('data-search') || '');
+      row.classList.toggle('wsd-row-hidden', !!normalized && haystack.indexOf(normalized) === -1);
+    });
   }
 
   async function saveAllAssignments() {
@@ -607,7 +715,7 @@
 
     try {
       const response = await PMS.Api.post(
-        '/workflows/' + encodeURIComponent(state.workflowId) + '/department-steps/bulk',
+        '/workflows/' + encodeURIComponent(state.workflowId) + '/department-steps',
         { assignments: assignments }
       );
       const result = PMS.Api.extractData(response) || {};
