@@ -606,10 +606,11 @@
     setMessage('', '');
 
     try {
-      const result = await PMS.Api.post(
+      const response = await PMS.Api.post(
         '/workflows/' + encodeURIComponent(state.workflowId) + '/department-steps/bulk',
         { assignments: assignments }
       );
+      const result = PMS.Api.extractData(response) || {};
 
       invalidateWorkflowAssignmentCaches(state.workflowId);
       setMessage(
