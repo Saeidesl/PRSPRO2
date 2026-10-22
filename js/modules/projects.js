@@ -1628,7 +1628,7 @@
 
       list.textContent = 'در حال دریافت فایل‌ها…';
       try {
-        const response = await window.PMS.Api.get('/attachments');
+        const response = await window.PMS.Api.get('/projects/' + encodeURIComponent(projectId) + '/attachments');
         const items = this.normalizeProjectAttachments(response);
         const attachments = items.filter((item) => {
           const entityType = String(item.EntityType || item.entityType || '').toUpperCase();
