@@ -1,17 +1,82 @@
-<section class="page-section">
+<section class="page-section project-reports-page">
   <div class="page-header">
     <div>
-      <h2>گزارش‌ها</h2>
-      <p>بخش گزارش‌گیری برای طراحی از ابتدا آماده شده است.</p>
+      <h2>گزارش از پروژه‌ها</h2>
+      <p>پروژه را انتخاب کنید، رویدادهای مهم را مشخص کنید و گزارش قابل چاپ تهیه کنید.</p>
     </div>
   </div>
 
-  <div class="card">
+  <div class="card no-print">
     <div class="card-body">
-      <p>در این بخش هنوز گزارشی تعریف نشده است.</p>
-      <p>گزارش‌ساز جدید را مرحله‌به‌مرحله و بر اساس نیازهای واقعی تولید طراحی می‌کنیم.</p>
+      <div class="project-report-controls">
+        <div class="form-group">
+          <label for="project-report-project">پروژه</label>
+          <select id="project-report-project" class="form-control">
+            <option value="">در حال دریافت فهرست پروژه‌ها…</option>
+          </select>
+        </div>
+        <div class="project-report-control-buttons">
+          <button type="button" class="btn btn-primary" id="project-report-load" disabled>ساخت گزارش</button>
+          <button type="button" class="btn btn-secondary" id="project-report-print" disabled>چاپ / ذخیره PDF</button>
+        </div>
+      </div>
+      <div id="project-report-status" class="alert alert-info" role="status" hidden></div>
     </div>
   </div>
+
+  <div id="project-report-content" aria-live="polite"></div>
 </section>
+
+<style>
+.project-report-controls{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
+.project-report-controls .form-group{flex:1 1 280px;min-width:0;margin:0}
+.project-report-controls select{width:100%;max-width:100%;box-sizing:border-box}
+.project-report-control-buttons,.project-report-selection-actions{display:flex;gap:8px;flex-wrap:wrap}
+.project-report-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:18px 0}
+.project-report-toolbar p{margin:5px 0 0;color:var(--color-text-secondary);font-size:.9rem}
+.project-report-paper{background:var(--color-surface);color:var(--color-text);border:1px solid var(--color-border);border-radius:12px;padding:24px;min-width:0}
+.project-report-title{text-align:center;border-bottom:2px solid var(--color-border);padding-bottom:16px;margin-bottom:20px}
+.project-report-title h2{margin:0 0 8px}.project-report-title p{margin:0;color:var(--color-text-secondary);font-size:.85rem}
+.project-report-section{margin:22px 0;break-inside:avoid}
+.project-report-section h3{font-size:1rem;margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid var(--color-border)}
+.project-report-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.project-report-facts>div{min-width:0;border:1px solid var(--color-border);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:5px}
+.project-report-facts span{font-size:.8rem;color:var(--color-text-secondary)}
+.project-report-facts strong{overflow-wrap:anywhere}
+.project-report-description{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.8}
+.project-report-events{display:flex;flex-direction:column;gap:8px}
+.project-report-event-row{display:flex;align-items:flex-start;gap:10px;padding:10px;border:1px solid var(--color-border);border-radius:8px;min-width:0;cursor:pointer}
+.project-report-event-row input{flex:0 0 auto;margin-top:4px}
+.project-report-event-main{display:flex;flex-direction:column;gap:4px;min-width:0;overflow-wrap:anywhere}
+.project-report-event-main small{color:var(--color-text-secondary);line-height:1.6}
+.project-report-event-row.is-excluded{opacity:.58}
+.project-report-muted{color:var(--color-text-secondary)}
+.project-report-paper .table-wrapper{max-width:100%;overflow-x:auto}
+.project-report-paper .data-table{width:100%;min-width:0;table-layout:fixed}
+.project-report-paper .data-table th,.project-report-paper .data-table td{white-space:normal;overflow-wrap:anywhere}
+@media(max-width:700px){
+ .project-report-paper{padding:14px}
+ .project-report-toolbar{align-items:stretch;flex-direction:column}
+ .project-report-facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .project-report-control-buttons>*{flex:1 1 140px}
+ .project-report-selection-actions>*{flex:1 1 130px}
+}
+@media print{
+ @page{size:A4;margin:12mm}
+ body{background:#fff!important}
+ .no-print,.page-header,.sidebar,.app-sidebar,.topbar,.navbar,header.app-header{display:none!important}
+ #main-content,#page-content,.page-content,.project-reports-page{display:block!important;width:100%!important;max-width:none!important;margin:0!important;padding:0!important}
+ #project-report-content{display:block!important}
+ .project-report-paper{border:0!important;border-radius:0!important;box-shadow:none!important;padding:0!important;background:#fff!important;color:#000!important}
+ .project-report-title,.project-report-section,.project-report-facts>div,.project-report-event-row{break-inside:avoid}
+ .project-report-facts>div,.project-report-event-row{border-color:#bbb!important}
+ .project-report-event-row.is-excluded{display:none!important}
+ .project-report-event-row input{display:none!important}
+ .project-report-muted,.project-report-title p,.project-report-event-main small,.project-report-facts span{color:#333!important}
+ .project-report-paper .table-wrapper{overflow:visible!important}
+ .project-report-paper .data-table{min-width:0!important;width:100%!important}
+ .project-report-paper .data-table th,.project-report-paper .data-table td{font-size:9pt!important;padding:5px!important;color:#000!important}
+}
+</style>
 
 <script src="js/modules/reports.js"></script>
