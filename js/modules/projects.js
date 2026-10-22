@@ -70,12 +70,12 @@
       this.ensureProjectStyles();
       this.bindEvents();
       const router = window.PMS.Router;
-      const canViewProjects = !!(
-        router &&
-        (router.isAdmin() ||
-          (Array.isArray(router.permissions) &&
-            router.permissions.indexOf('PROJECT_VIEW') !== -1))
-      );
+      const permissions = router && Array.isArray(router.permissions) ? router.permissions : [];
+      const isAdmin = !!(router && typeof router.isAdmin === 'function' && router.isAdmin());
+      const canViewProjects = isAdmin || permissions.indexOf('PROJECT_VIEW') !== -1;
+      const canCreateProjects = isAdmin || permissions.indexOf('PROJECT_CREATE') !== -1;
+      const createButton = document.getElementById('project-create-button');
+      if (createButton) createButton.hidden = !canCreateProjects;
 
       if (canViewProjects) {
         this.loadProjects();
@@ -2213,11 +2213,15 @@
             </div>
             <div class="project-list-card-actions">
               <button type="button" class="btn btn-sm btn-light project-view-button" data-project-id="${this.escape(id)}">مشاهده پروژه</button>
-              <button type="button" class="btn btn-sm btn-secondary project-edit-button" data-project-id="${this.escape(id)}" title="ویرایش اطلاعات پروژه">ویرایش</button>
+              ${this.canEditProjects() ? `
+                <button type="button" class="btn btn-sm btn-secondary project-edit-button" data-project-id="${this.escape(id)}" title="ویرایش اطلاعات پروژه">ویرایش</button>
+              ` : ''}
               ${this.canManageProcurement() ? `
                 <button type="button" class="btn btn-sm btn-secondary project-material-needs-button" data-project-id="${this.escape(id)}">ملزومات</button>
               ` : ''}
-              <button type="button" class="btn btn-sm btn-secondary project-color-size-button" data-project-id="${this.escape(id)}" title="تعریف یا ویرایش رنگ‌بندی و سایزبندی">رنگ‌بندی و سایز</button>
+              ${this.canEditProjects() ? `
+                <button type="button" class="btn btn-sm btn-secondary project-color-size-button" data-project-id="${this.escape(id)}" title="تعریف یا ویرایش رنگ‌بندی و سایزبندی">رنگ‌بندی و سایز</button>
+              ` : ''}
             </div>
           </article>
         `;
