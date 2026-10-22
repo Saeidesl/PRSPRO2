@@ -256,7 +256,17 @@
 
     get: function (path, options) {
       const token = this.getToken() || '';
-      const requestKey = token + '\n' + String(path || '/');
+      const query = options && options.query && typeof options.query === 'object'
+        ? options.query
+        : {};
+      const queryKey = Object.keys(query).filter(function (key) {
+        return query[key] !== undefined && query[key] !== null;
+      }).sort().map(function (key) {
+        return [key, String(query[key])];
+      });
+      // Query parameters affect the response; requests with different filters
+      // must never share the same in-flight GET promise.
+      const requestKey = token + '\n' + String(path || '/') + '\n' + JSON.stringify(queryKey);
 
       if (inFlightGetRequests.has(requestKey)) {
         return inFlightGetRequests.get(requestKey);
