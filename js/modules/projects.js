@@ -1170,6 +1170,8 @@
         originalRemove();
       };
 
+      form.addEventListener('input', () => { modal.dataset.lookupUserInteracted = 'true'; });
+      form.addEventListener('change', () => { modal.dataset.lookupUserInteracted = 'true'; });
       form.addEventListener('submit', (event) => {
         event.preventDefault();
         this.createProject(modal);
@@ -1192,7 +1194,7 @@
         });
       }
 
-      const renderProjectLookups = (rawData) => {
+      const renderProjectLookups = (rawData, serverConfirmed) => {
         let lookupData = rawData;
         for (let depth = 0; depth < 3 && lookupData && lookupData.data !== undefined &&
           !Array.isArray(lookupData.departments); depth += 1) {
@@ -1307,7 +1309,7 @@
           applySavedProjectSettings();
         }
 
-        if (isEditMode) {
+        if (isEditMode && serverConfirmed) {
           editReadiness.lookupsLoaded = true;
           updateEditSubmitReadiness();
         }
@@ -1339,15 +1341,33 @@
           lookupCacheKey,
           {
             onRefresh: (freshData) => {
-              if (this.modal === modal) renderProjectLookups(freshData);
+              if (this.modal !== modal) return;
+              if (modal.dataset.lookupUserInteracted === 'true') {
+                // Never overwrite edits made while the cached lookups were refreshing.
+                if (isEditMode) {
+                  editReadiness.lookupsLoaded = true;
+                  updateEditSubmitReadiness();
+                }
+                return;
+              }
+              renderProjectLookups(freshData, true);
+            },
+            onError: (error, isBackground) => {
+              if (this.modal !== modal || !isEditMode || !isBackground) return;
+              this.showFormError(
+                modal,
+                'تأیید دریافت آخرین تنظیمات فرم ناموفق بود. فرم را ببندید و دوباره باز کنید تا اطلاعات مجدداً دریافت شود. ' +
+                this.getErrorMessage(error)
+              );
             }
           }
         );
 
         if (this.modal !== modal) return;
-        renderProjectLookups(lookupResult && lookupResult.data !== undefined
-          ? lookupResult.data
-          : lookupResult);
+        renderProjectLookups(
+          lookupResult && lookupResult.data !== undefined ? lookupResult.data : lookupResult,
+          !(lookupResult && lookupResult.cached === true)
+        );
       } catch (error) {
         if (this.modal !== modal) return;
         workflowSelect.innerHTML = '<option value="">خطا در دریافت اطلاعات فرم</option>';
