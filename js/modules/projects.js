@@ -58,8 +58,6 @@
     isSaving: false,
     projectCardImages: {},
     projectCardImageStates: {},
-    projectCardImagesLoading: false,
-    projectCardImagesLoaded: false,
     projectCardAttachmentsPromise: null,
     projectCardImageObserver: null,
     projectCardImageAttachments: {},
@@ -583,24 +581,25 @@
       return Array.isArray(items) ? items : [];
     },
 
+    invalidateProjectCardAttachmentMetadata: function (projectId) {
+      const cache = window.PMS && window.PMS.Cache;
+      if (cache) cache.remove('project_card_attachments_v2');
+      this.projectCardAttachmentsPromise = null;
+      if (projectId !== undefined && projectId !== null && String(projectId)) {
+        const id = String(projectId);
+        delete this.projectCardImages[id];
+        delete this.projectCardImageAttachments[id];
+        this.projectCardImageStates[id] = 'loading';
+      }
+    },
+
     getProjectCardAttachments: function () {
       const cache = window.PMS && window.PMS.Cache;
       const cacheKey = 'project_card_attachments_v2';
       const cached = cache ? cache.get(cacheKey) : null;
-      if (cached !== null && Array.isArray(cached)) {
-        // Use metadata immediately; refresh it in the background for newly uploaded files.
-        if (!this.projectCardAttachmentsPromise) {
-          this.projectCardAttachmentsPromise = window.PMS.Api.get('/attachments')
-            .then((response) => {
-              const items = this.normalizeProjectAttachments(response);
-              if (cache) cache.set(cacheKey, items, { ttl: 5 * 60 * 1000 });
-              return items;
-            })
-            .catch((error) => { console.warn('Project attachment metadata refresh failed:', error); return cached; })
-            .finally(() => { this.projectCardAttachmentsPromise = null; });
-        }
-        return Promise.resolve(cached);
-      }
+      // A valid five-minute cache avoids a new /attachments request on every
+      // search/filter render. Uploads and deletions explicitly invalidate it.
+      if (cached !== null && Array.isArray(cached)) return Promise.resolve(cached);
       if (!this.projectCardAttachmentsPromise) {
         this.projectCardAttachmentsPromise = window.PMS.Api.get('/attachments')
           .then((response) => {
@@ -1773,14 +1772,10 @@
       button.textContent = 'در حال حذف…';
       try {
         await window.PMS.Api.delete('/attachments/' + encodeURIComponent(attachmentId), { query: { reason: reason } });
-        const cache = window.PMS && window.PMS.Cache;
-        if (cache) cache.remove('project_card_attachments_v2');
-        this.projectCardAttachmentsPromise = null;
-        this.projectCardImagesLoaded = false;
-        Object.keys(this.projectCardImageAttachments).forEach((id) => {
-          if (String(id) === String(modal.dataset.projectId)) delete this.projectCardImageAttachments[id];
-        });
-        await this.loadProjectEditAttachments(modal, String(modal.dataset.projectId || ''));
+        const projectId = String(modal.dataset.projectId || '');
+        this.invalidateProjectCardAttachmentMetadata(projectId);
+        await this.loadProjectEditAttachments(modal, projectId);
+        await this.loadProjectCardImages(this.projects);
       } catch (error) {
         console.error('Project attachment delete failed:', error);
         alert('حذف فایل ناموفق بود: ' + (error.message || 'خطای نامشخص'));
@@ -1965,7 +1960,7 @@
               MimeType: selectedFile.type || 'application/octet-stream',
               Base64: base64
             });
-            this.projectCardImagesLoaded = false;
+            this.invalidateProjectCardAttachmentMetadata(projectId);
           }
           this.applyFilters();
           updateProgress('تغییرات پروژه ذخیره شد.', 'success');
@@ -2023,12 +2018,11 @@
               MimeType: selectedFile.type || 'application/octet-stream',
               Base64: base64
             });
+            this.invalidateProjectCardAttachmentMetadata(createdId);
           } catch (attachmentError) {
             attachmentWarning = ' پروژه ایجاد شد، اما بارگذاری فایل ناموفق بود: ' + this.getErrorMessage(attachmentError);
           }
         }
-
-        if (selectedFile) this.projectCardImagesLoaded = false;
 
         const exists = this.projects.some((item) => {
           return String(item.ID || item.Id || item.id) === createdId;
