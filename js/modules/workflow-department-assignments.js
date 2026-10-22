@@ -76,32 +76,7 @@
         </div>
 
         <div id="wsd-content" hidden>
-          <div class="filter-bar">
-            <div class="filter-group">
-              <label for="wsd-department">بخش کارخانه</label>
-              <select id="wsd-department" class="form-control">
-                <option value="">انتخاب بخش</option>
-              </select>
-            </div>
-
-            <div class="filter-group">
-              <label for="wsd-step">مرحله فرایند</label>
-              <select id="wsd-step" class="form-control">
-                <option value="">انتخاب مرحله</option>
-              </select>
-            </div>
-
-            <div class="filter-group">
-              <label>&nbsp;</label>
-              <button
-                type="button"
-                id="wsd-assign-button"
-                class="btn btn-primary"
-              >
-                اتصال بخش به مرحله
-              </button>
-            </div>
-          </div>
+          <div id="wsd-bulk-editor"></div>
 
           <h4>اتصال‌های ثبت‌شده</h4>
 
@@ -137,22 +112,22 @@
 
   function bindEvents() {
     const workflowSelect = document.getElementById('wsd-workflow');
-    const assignButton = document.getElementById('wsd-assign-button');
     const table = document.getElementById('wsd-table-container');
+    const editor = document.getElementById('wsd-bulk-editor');
 
     workflowSelect.addEventListener('change', async function () {
       state.workflowId = this.value;
       await loadWorkflowData();
     });
 
-    assignButton.addEventListener('click', assignDepartment);
+    editor.addEventListener('click', function (event) {
+      const button = event.target.closest('#wsd-bulk-save');
+      if (button) saveAllAssignments();
+    });
 
     table.addEventListener('click', function (event) {
       const button = event.target.closest('.wsd-remove-button');
-
-      if (button) {
-        removeAssignment(button.getAttribute('data-id'));
-      }
+      if (button) removeAssignment(button.getAttribute('data-id'));
     });
   }
 
@@ -381,6 +356,7 @@
       renderAssignments();
 
       content.hidden = false;
+      renderBulkEditor();
 
       if (state.steps.length === 0) {
         setMessage(
@@ -554,6 +530,105 @@
     });
 
     select.innerHTML = html;
+  }
+
+  function renderBulkEditor() {
+    const container = document.getElementById('wsd-bulk-editor');
+    if (!container) return;
+
+    if (!state.departments.length || !state.steps.length) {
+      container.innerHTML = '<div class="alert alert-info">برای ثبت اتصال، باید بخش و مرحله فعال وجود داشته باشد.</div>';
+      return;
+    }
+
+    const currentByDepartment = {};
+    state.assignments.forEach(function(item) {
+      currentByDepartment[String(getValue(item, 'DepartmentID', 'departmentId'))] = item;
+    });
+
+    const rows = state.departments.map(function(department) {
+      const departmentId = String(getId(department));
+      const current = currentByDepartment[departmentId];
+      const currentStepId = current ? String(getValue(current, 'WorkflowStepID', 'workflowStepId')) : '';
+      const name = getValue(department, 'Name', 'name') || 'بدون نام';
+      const code = getValue(department, 'Code', 'code') || '';
+      const options = ['<option value="">انتخاب مرحله</option>'].concat(
+        state.steps.map(function(step) {
+          const stepId = String(getId(step));
+          const stepName = getValue(step, 'Name', 'name') || 'بدون نام';
+          const order = getValue(step, 'StepOrder', 'stepOrder');
+          const label = (order !== undefined && order !== null && order !== '' ? String(order) + '. ' : '') + stepName;
+          return '<option value="' + escapeAttribute(stepId) + '"' +
+            (stepId === currentStepId ? ' selected' : '') + '>' + escapeHtml(label) + '</option>';
+        })
+      ).join('');
+
+      return '<tr><td>' + escapeHtml(name) + (code ? ' (' + escapeHtml(code) + ')' : '') +
+        '</td><td><select class="form-control wsd-bulk-step" data-department-id="' + escapeAttribute(departmentId) + '"' +
+        (current ? ' data-existing="true"' : '') + '>' + options + '</select></td><td>' +
+        (current ? '<span class="badge badge-success">متصل</span>' : '<span class="badge">ثبت‌نشده</span>') +
+        '</td></tr>';
+    }).join('');
+
+    container.innerHTML =
+      '<div class="filter-bar" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">' +
+      '<div><h4 style="margin:0 0 5px">اتصال یکجای بخش‌ها به مراحل</h4>' +
+      '<p style="margin:0">مرحله هر بخش را مشخص کن و همه اتصال‌های جدید را با یک بار ارسال ثبت کن.</p></div>' +
+      '<button type="button" id="wsd-bulk-save" class="btn btn-primary">ثبت همه اتصال‌ها</button></div>' +
+      '<div class="table-wrapper"><table class="data-table"><thead><tr><th>بخش کارخانه</th><th>مرحله فرایند</th><th>وضعیت</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+  }
+
+  async function saveAllAssignments() {
+    if (state.saving || state.loading) return;
+
+    const button = document.getElementById('wsd-bulk-save');
+    const selects = Array.from(document.querySelectorAll('#wsd-bulk-editor .wsd-bulk-step'));
+    const assignments = [];
+
+    selects.forEach(function(select) {
+      const departmentId = select.getAttribute('data-department-id');
+      const stepId = select.value;
+      const existing = select.getAttribute('data-existing') === 'true';
+      if (!stepId || existing) return;
+      assignments.push({ DepartmentID: departmentId, WorkflowStepID: stepId });
+    });
+
+    if (!assignments.length) {
+      setMessage('اتصال جدیدی برای ثبت انتخاب نشده است.', 'info');
+      return;
+    }
+
+    state.saving = true;
+    if (button) {
+      button.disabled = true;
+      button.textContent = 'در حال ثبت همه اتصال‌ها...';
+    }
+    setMessage('', '');
+
+    try {
+      const result = await PMS.Api.post(
+        '/workflows/' + encodeURIComponent(state.workflowId) + '/department-steps/bulk',
+        { assignments: assignments }
+      );
+
+      invalidateWorkflowAssignmentCaches(state.workflowId);
+      setMessage(
+        'ثبت گروهی انجام شد؛ اتصال جدید: ' + Number(result.created || 0) +
+        '، از قبل ثبت‌شده: ' + Number(result.unchanged || 0) + '.',
+        'success'
+      );
+      await loadWorkflowData();
+    } catch (error) {
+      console.error('Bulk workflow department assignment failed:', error);
+      setMessage(getErrorMessage(error), 'danger');
+    } finally {
+      state.saving = false;
+      const currentButton = document.getElementById('wsd-bulk-save');
+      if (currentButton) {
+        currentButton.disabled = false;
+        currentButton.textContent = 'ثبت همه اتصال‌ها';
+      }
+    }
   }
 
   async function assignDepartment() {
