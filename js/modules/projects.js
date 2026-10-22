@@ -1733,7 +1733,7 @@
               reader.readAsDataURL(selectedFile);
             });
             await window.PMS.Api.post('/projects/' + encodeURIComponent(projectId) + '/attachments', {
-              FileName: selectedFile.name,
+              FileName: String(project.ProjectCode || 'PROJECT').trim().replace(/[\\/:*?"<>|]/g, '_') + '_' + selectedFile.name,
               MimeType: selectedFile.type || 'application/octet-stream',
               Base64: base64
             });
@@ -1791,7 +1791,7 @@
               reader.readAsDataURL(selectedFile);
             });
             await window.PMS.Api.post('/projects/' + encodeURIComponent(createdId) + '/attachments', {
-              FileName: selectedFile.name,
+              FileName: String(project.ProjectCode || 'PROJECT').trim().replace(/[\\/:*?"<>|]/g, '_') + '_' + selectedFile.name,
               MimeType: selectedFile.type || 'application/octet-stream',
               Base64: base64
             });
