@@ -538,77 +538,46 @@
     loadSharedData: async function (version) {
       const api = window.PMS.Api;
       const cache = window.PMS.Cache;
+      const applyLookups = function (data) {
+        const lookups = ProjectDetail.unwrap(data) || {};
+        ProjectDetail.users = ProjectDetail.normalizeArray(
+          lookups.users,
+          ['users', 'items', 'Users', 'Items']
+        );
+        ProjectDetail.departments = ProjectDetail.normalizeArray(
+          lookups.departments,
+          ['departments', 'items', 'Departments', 'Items']
+        );
+        ProjectDetail.eventTypes = ProjectDetail.normalizeArray(
+          lookups.eventTypes,
+          ['eventTypes', 'items', 'EventTypes', 'Items']
+        );
+        ProjectDetail.projectStatuses = ProjectDetail.normalizeArray(
+          lookups.projectStatuses,
+          ['projectStatuses', 'statuses', 'items', 'ProjectStatuses']
+        );
+      };
 
-      const requests = [
-        {
-          path: '/users',
-          key: cache.keys.USERS,
-          assign: function (data) {
-            ProjectDetail.users = ProjectDetail.normalizeArray(
-              data,
-              ['users', 'items', 'Users', 'Items']
-            );
-          }
-        },
-        {
-          path: '/departments',
-          key: cache.keys.DEPARTMENTS,
-          assign: function (data) {
-            ProjectDetail.departments = ProjectDetail.normalizeArray(
-              data,
-              ['departments', 'items', 'Departments', 'Items']
-            );
-          }
-        },
-        {
-          path: '/event-types',
-          key: cache.keys.EVENT_TYPES,
-          assign: function (data) {
-            ProjectDetail.eventTypes = ProjectDetail.normalizeArray(
-              data,
-              ['eventTypes', 'items', 'EventTypes', 'Items']
-            );
-          }
-        },
-        {
-          path: '/project-dashboard/lookups',
-          key: 'dashboard_project_lookups_v1',
-          assign: function (data) {
-            const lookups = ProjectDetail.unwrap(data) || {};
-            ProjectDetail.projectStatuses = ProjectDetail.normalizeArray(
-              lookups.projectStatuses,
-              ['projectStatuses', 'statuses', 'items', 'ProjectStatuses']
-            );
-          }
-        }
-      ];
-
-      await Promise.all(requests.map(async function (item) {
-        try {
-          const result = await api.getCached(
-            item.path,
-            item.key,
-            {
-              onRefresh: function (data) {
-                if (version !== ProjectDetail.loadVersion) return;
-
-                item.assign(data);
-                ProjectDetail.renderEvents(ProjectDetail.events);
-              }
+      try {
+        // One PROJECT_VIEW-authorized request supplies all read-only labels.
+        // This avoids several requests that may be forbidden to ordinary project viewers.
+        const result = await api.getCached(
+          '/project-dashboard/lookups',
+          'dashboard_project_lookups_v1',
+          {
+            onRefresh: function (data) {
+              if (version !== ProjectDetail.loadVersion) return;
+              applyLookups(data);
+              ProjectDetail.renderEvents(ProjectDetail.events);
             }
-          );
+          }
+        );
 
-          if (version !== ProjectDetail.loadVersion) return;
-
-          item.assign(result.data);
-        } catch (error) {
-          console.warn(
-            'دریافت اطلاعات تکمیلی انجام نشد:',
-            item.path,
-            error
-          );
-        }
-      }));
+        if (version !== ProjectDetail.loadVersion) return;
+        applyLookups(result.data);
+      } catch (error) {
+        console.warn('دریافت اطلاعات تکمیلی پروژه انجام نشد.', error);
+      }
     },
 
     loadWorkflowSteps: async function (project, version) {
