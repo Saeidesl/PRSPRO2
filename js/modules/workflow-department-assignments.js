@@ -565,7 +565,7 @@
 
       return '<tr><td>' + escapeHtml(name) + (code ? ' (' + escapeHtml(code) + ')' : '') +
         '</td><td><select class="form-control wsd-bulk-step" data-department-id="' + escapeAttribute(departmentId) + '"' +
-        (current ? ' data-existing="true"' : '') + '>' + options + '</select></td><td>' +
+        (current ? ' data-existing="true" disabled' : '') + '>' + options + '</select></td><td>' +
         (current ? '<span class="badge badge-success">متصل</span>' : '<span class="badge">ثبت‌نشده</span>') +
         '</td></tr>';
     }).join('');
