@@ -250,23 +250,51 @@
       this.openCreateForm(project);
     },
 
-    openProjectColorSizeForm: function (projectId) {
-      const project = this.projects.find((item) =>
-        String(item.ID || item.Id || item.id) === String(projectId)
-      );
-      if (!project) {
-        alert('اطلاعات پروژه پیدا نشد. فهرست پروژه‌ها را تازه‌سازی کنید.');
-        return;
-      }
+    openProjectColorSizeForm: async function (projectId) {
       if (!this.canEditProjects()) {
         alert('دسترسی ویرایش پروژه را ندارید.');
         return;
       }
-      this.openProjectEditForm(projectId);
-      const modal = document.getElementById('project-edit-modal');
-      if (modal) {
-        const button = modal.querySelector('#new-project-color-size-button');
-        if (button) button.click();
+
+      const progress = document.createElement('div');
+      progress.className = 'project-create-progress';
+      progress.setAttribute('role', 'status');
+      progress.setAttribute('aria-live', 'polite');
+      progress.innerHTML = '<div class="project-create-progress-card"><div class="project-create-progress-orbit" aria-hidden="true"><span class="project-create-progress-spinner"></span><span class="project-create-progress-spark">✦</span></div><div class="project-create-progress-heading">لطفاً کمی صبر کنید</div><div class="project-create-progress-message">در حال دریافت رنگ‌بندی و سایزبندی پروژه از سرور...</div><div class="project-create-progress-track" aria-hidden="true"><span></span></div><div class="project-create-progress-footnote">لطفاً تا پایان دریافت اطلاعات صبر کنید.</div></div>';
+      document.body.appendChild(progress);
+
+      try {
+        const response = await window.PMS.Api.get('/projects/' + encodeURIComponent(projectId));
+        let project = response;
+        for (let i = 0; i < 3 && project && project.data !== undefined; i += 1) project = project.data;
+        if (project && project.project) project = project.project;
+        if (Array.isArray(project)) project = project[0];
+        if (!project || typeof project !== 'object') throw new Error('اطلاعات پروژه از سرور دریافت نشد.');
+
+        const actualId = project.ID || project.Id || project.id || projectId;
+        const rawColorSize = project.ColorSizeJSON || project.colorSizeJSON || project.ColorSize || project.colorSize;
+        let saved = { colors: [], sizes: [] };
+        try {
+          const parsed = typeof rawColorSize === 'string' ? JSON.parse(rawColorSize || '{}') : (rawColorSize || {});
+          saved.colors = Array.isArray(parsed.colors) ? parsed.colors : [];
+          saved.sizes = Array.isArray(parsed.sizes) ? parsed.sizes : [];
+        } catch (error) {
+          throw new Error('اطلاعات رنگ‌بندی و سایزبندی پروژه معتبر نیست.');
+        }
+
+        const projectModal = {
+          dataset: {
+            colorSizeJson: JSON.stringify(saved),
+            projectId: String(actualId),
+            projectData: JSON.stringify(project)
+          },
+          querySelector: function () { return null; }
+        };
+        this.openColorSizeForm(projectModal);
+      } catch (error) {
+        alert('دریافت رنگ‌بندی و سایزبندی ناموفق بود: ' + this.getErrorMessage(error));
+      } finally {
+        progress.remove();
       }
     },
 
@@ -1597,8 +1625,10 @@
         errorBox.hidden = true;
       });
 
-      form.addEventListener('submit', (event) => {
+      form.addEventListener('submit', async (event) => {
         event.preventDefault();
+        const submitButton = form.querySelector('button[type="submit"]');
+        if (submitButton && submitButton.disabled) return;
         const normalize = (kind) => {
           const seen = new Set();
           const values = Array.from(getList(kind).querySelectorAll('input'))
@@ -1624,7 +1654,35 @@
         try {
           const colors = normalize('colors');
           const sizes = normalize('sizes');
-          projectModal.dataset.colorSizeJson = JSON.stringify({ colors: colors, sizes: sizes });
+          const colorSizeJson = JSON.stringify({ colors: colors, sizes: sizes });
+          if (projectModal.dataset.projectId) {
+            const progress = document.createElement('div');
+            progress.className = 'project-create-progress';
+            progress.setAttribute('role', 'status');
+            progress.setAttribute('aria-live', 'polite');
+            progress.innerHTML = '<div class="project-create-progress-card"><div class="project-create-progress-orbit" aria-hidden="true"><span class="project-create-progress-spinner"></span><span class="project-create-progress-spark">✦</span></div><div class="project-create-progress-heading">لطفاً کمی صبر کنید</div><div class="project-create-progress-message">در حال ذخیره رنگ‌بندی و سایزبندی پروژه...</div><div class="project-create-progress-track" aria-hidden="true"><span></span></div><div class="project-create-progress-footnote">لطفاً تا پایان ذخیره‌سازی صبر کنید.</div></div>';
+            document.body.appendChild(progress);
+            if (submitButton) { submitButton.disabled = true; submitButton.textContent = 'در حال ذخیره...'; }
+            try {
+              const projectData = JSON.parse(projectModal.dataset.projectData || '{}');
+              const payload = Object.assign({}, projectData, { ColorSizeJSON: colorSizeJson });
+              await window.PMS.Api.put('/projects/' + encodeURIComponent(projectModal.dataset.projectId), payload);
+              projectModal.dataset.colorSizeJson = colorSizeJson;
+              const cachedProject = this.projects.find((item) => String(item.ID || item.Id || item.id) === String(projectModal.dataset.projectId));
+              if (cachedProject) cachedProject.ColorSizeJSON = colorSizeJson;
+              this.applyFilters();
+              if (window.PMS.Cache && typeof window.PMS.Cache.set === 'function') window.PMS.Cache.set(CACHE_KEY, this.projects);
+              close();
+            } catch (saveError) {
+              errorBox.textContent = 'ذخیره رنگ‌بندی و سایزبندی ناموفق بود: ' + this.getErrorMessage(saveError);
+              errorBox.hidden = false;
+              if (submitButton) { submitButton.disabled = false; submitButton.textContent = 'ذخیره مشخصات'; }
+            } finally {
+              progress.remove();
+            }
+            return;
+          }
+          projectModal.dataset.colorSizeJson = colorSizeJson;
           const summary = projectModal.querySelector('#new-project-color-size-summary');
           if (summary) {
             summary.textContent = (colors.length || sizes.length)
