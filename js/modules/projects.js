@@ -94,12 +94,10 @@
       const style = document.createElement('style');
       style.id = 'projects-card-view-styles';
       style.textContent = [
-        '#projects-page-tools{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}',
-        '#projects-page-tools .filter-bar{display:flex;align-items:end;gap:10px;flex:1;min-width:240px;flex-wrap:wrap}',
-        '#projects-page-tools .filter-group{flex:1;min-width:180px}',
-        '#projects-page-tools .filter-group label{display:block;margin-bottom:6px;color:var(--color-text-secondary);font-size:12px}',
-        '#projects-page-tools input,#projects-page-tools select{width:100%;min-height:42px;padding:9px 12px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-surface);color:var(--color-text);font:inherit}',
         '#projects-table-container.projects-card-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;gap:14px;min-width:0}',
+        '#project-search,#project-status-filter{width:100%;min-height:var(--control-height,42px);padding:9px 12px;border:1px solid var(--color-border);border-radius:var(--control-radius,8px);background:var(--color-input-bg);color:var(--color-input-text);font:inherit;box-sizing:border-box}',
+        '#project-search:focus-visible,#project-status-filter:focus-visible{outline:2px solid var(--color-primary);outline-offset:2px}',
+        '.project-list-card:focus-within{border-color:var(--color-primary);box-shadow:0 0 0 3px var(--color-focus-ring),var(--shadow-sm)}',
         '.project-list-card{position:relative;display:flex;flex-direction:column;min-width:0;min-height:176px;border:1px solid var(--color-border);border-radius:16px;background:var(--color-surface);overflow:hidden;box-shadow:0 1px 2px rgba(15,23,42,.04);transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease}',
         '.project-list-card:hover{border-color:color-mix(in srgb,var(--color-primary) 45%,var(--color-border));box-shadow:0 8px 24px rgba(15,23,42,.09);transform:translateY(-1px)}',
         '.project-list-card-main{display:block;flex:1;min-width:0;position:relative;padding:17px 17px 13px}',
