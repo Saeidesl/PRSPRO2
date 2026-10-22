@@ -858,9 +858,9 @@
     return escapeHtml(value);
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
+  // Initialize this section explicitly after the workflow page has loaded.
+  // Auto-initializing a dynamically loaded page script can run before the
+  // workflow module finishes rendering the page.
+  PMS.Modules = PMS.Modules || {};
+  PMS.Modules.WorkflowDepartmentAssignments = { init: init };
 })();
