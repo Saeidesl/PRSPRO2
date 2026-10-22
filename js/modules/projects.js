@@ -56,6 +56,9 @@
     stageLookupsLoaded: false,
     modal: null,
     isSaving: false,
+    projectCardImages: {},
+    projectCardImagesLoading: false,
+    projectCardImagesLoaded: false,
 
     init: function () {
       this.ensureProjectStyles();
@@ -91,7 +94,11 @@
         '#projects-table-container.projects-card-list{display:flex;flex-direction:column;gap:9px;min-width:0}',
         '.project-list-card{border:1px solid var(--color-border);border-radius:13px;background:var(--color-surface);overflow:hidden;transition:border-color .16s ease,box-shadow .16s ease}',
         '.project-list-card:hover{border-color:color-mix(in srgb,var(--color-primary) 35%,var(--color-border));box-shadow:var(--shadow-sm,0 3px 12px rgba(0,0,0,.06))}',
-        '.project-list-card-main{display:flex;align-items:center;gap:12px;padding:14px 15px;min-width:0}',
+        '.project-list-card-main{display:flex;align-items:center;gap:12px;padding:14px 15px;min-width:0;position:relative}',
+        '.project-list-card-main.has-thumbnail .project-list-card-content{padding-left:88px}',
+        '.project-list-card-thumbnail{position:absolute;left:14px;top:50%;transform:translateY(-50%);display:block;width:72px;height:72px;object-fit:cover;border-radius:10px;border:1px solid var(--color-border);background:var(--color-surface-hover);cursor:pointer}',
+        '.project-list-card-thumbnail[hidden]{display:none}',
+        '.project-list-card-thumbnail:focus-visible{outline:2px solid var(--color-primary);outline-offset:2px}',
         '.project-list-card-indicator{width:9px;height:9px;flex:0 0 9px;border-radius:50%;background:var(--color-text-secondary)}',
         '.project-list-card-indicator.is-active{background:#16a34a}.project-list-card-indicator.is-hold{background:#eab308}.project-list-card-indicator.is-completed{background:#3b82f6}.project-list-card-indicator.is-cancelled{background:#ef4444}',
         '.project-list-card-content{flex:1;min-width:0}',
@@ -106,7 +113,7 @@
         '.project-list-card-activity{font-size:11px;color:var(--color-text-secondary);line-height:1.8;margin-top:5px}',
         '.project-list-card-actions{display:flex;align-items:center;justify-content:flex-start;gap:7px;flex-wrap:wrap;padding:0 15px 13px 15px}',
         '.project-list-card-actions .btn{min-height:34px}',
-        '@media(max-width:520px){.project-list-card-main{padding:11px;gap:9px}.project-list-card-code{font-size:12px}.project-list-card-title{font-size:11px}.project-list-card-actions{padding:0 11px 11px}.project-list-card-actions .btn{flex:1}}',
+        '@media(max-width:520px){.project-list-card-main{padding:11px;gap:9px}.project-list-card-main.has-thumbnail .project-list-card-content{padding-left:64px}.project-list-card-thumbnail{left:10px;width:54px;height:54px;border-radius:8px}.project-list-card-code{font-size:12px}.project-list-card-title{font-size:11px}.project-list-card-actions{padding:0 11px 11px}.project-list-card-actions .btn{flex:1}}',
         '.project-create-progress{display:flex;align-items:center;gap:10px;margin:0 0 16px;padding:12px 14px;border:1px solid color-mix(in srgb,var(--color-primary) 30%,var(--color-border));border-radius:10px;background:color-mix(in srgb,var(--color-primary) 7%,var(--color-surface));color:var(--color-text);font-size:13px;line-height:1.8}',
         '.project-create-progress[hidden]{display:none}',
         '.project-create-progress.is-success{border-color:#16a34a;background:color-mix(in srgb,#16a34a 9%,var(--color-surface))}',
@@ -429,6 +436,114 @@
           this.showError(error);
         }
       }
+    },
+
+    loadProjectCardImages: async function (projects) {
+      if (this.projectCardImagesLoaded || this.projectCardImagesLoading) {
+        this.applyProjectCardImagesToCards();
+        return;
+      }
+
+      const router = window.PMS && window.PMS.Router;
+      const canViewAttachments = !!(router && (
+        (typeof router.isAdmin === 'function' && router.isAdmin()) ||
+        (Array.isArray(router.permissions) && router.permissions.indexOf('ATTACHMENT_VIEW') !== -1)
+      ));
+      if (!canViewAttachments) {
+        this.projectCardImagesLoaded = true;
+        return;
+      }
+
+      this.projectCardImagesLoading = true;
+      try {
+        const response = await window.PMS.Api.get('/attachments');
+        let attachments = response;
+        if (window.PMS.Api && typeof window.PMS.Api.extractData === 'function') {
+          attachments = window.PMS.Api.extractData(response);
+        } else if (response && response.data !== undefined) {
+          attachments = response.data;
+        }
+        if (attachments && !Array.isArray(attachments)) {
+          attachments = attachments.items || attachments.attachments || attachments.data || [];
+        }
+        if (!Array.isArray(attachments)) attachments = [];
+
+        const visibleProjectIds = new Set((projects || []).map(function (project) {
+          return String(project.ID || project.Id || project.id || '');
+        }).filter(Boolean));
+
+        const latestImageByProject = {};
+        attachments
+          .filter(function (item) {
+            const entityType = String(item.EntityType || item.entityType || '').toUpperCase();
+            const entityId = String(item.EntityID || item.entityID || item.EntityId || '');
+            const mimeType = String(item.MimeType || item.mimeType || '').toLowerCase();
+            const status = String(item.Status || item.status || 'ACTIVE').toUpperCase();
+            return entityType === 'PROJECT' &&
+              visibleProjectIds.has(entityId) &&
+              mimeType.indexOf('image/') === 0 &&
+              status !== 'DELETED' && status !== 'VOID';
+          })
+          .sort(function (a, b) {
+            return new Date(b.UploadedAt || b.uploadedAt || b.CreatedAt || 0).getTime() -
+              new Date(a.UploadedAt || a.uploadedAt || a.CreatedAt || 0).getTime();
+          })
+          .forEach(function (item) {
+            const projectId = String(item.EntityID || item.entityID || item.EntityId || '');
+            if (projectId && !latestImageByProject[projectId]) latestImageByProject[projectId] = item;
+          });
+
+        const jobs = Object.keys(latestImageByProject).filter((projectId) => !this.projectCardImages[projectId]);
+        for (let offset = 0; offset < jobs.length; offset += 4) {
+          await Promise.all(jobs.slice(offset, offset + 4).map(async (projectId) => {
+            const attachment = latestImageByProject[projectId];
+            const attachmentId = attachment.ID || attachment.Id || attachment.id;
+            if (!attachmentId) return;
+            try {
+              const downloadResponse = await window.PMS.Api.get(
+                '/attachments/' + encodeURIComponent(attachmentId) + '/download'
+              );
+              const data = window.PMS.Api.extractData
+                ? (window.PMS.Api.extractData(downloadResponse) || {})
+                : ((downloadResponse && downloadResponse.data) || downloadResponse || {});
+              const base64 = data.Base64 || data.base64;
+              const mimeType = data.MimeType || data.mimeType ||
+                attachment.MimeType || attachment.mimeType || 'image/jpeg';
+              if (base64) {
+                this.projectCardImages[projectId] = 'data:' + mimeType + ';base64,' +
+                  String(base64).replace(/^data:[^,]*;base64,/, '');
+              } else {
+                const url = data.url || data.downloadUrl || data.DownloadUrl;
+                if (url && (String(url).startsWith('https://') || String(url).startsWith('http://'))) this.projectCardImages[projectId] = url;
+              }
+            } catch (downloadError) {
+              console.warn('Project thumbnail could not be loaded:', projectId, downloadError);
+            }
+          }));
+        }
+      } catch (error) {
+        // Keep project listing usable when attachment access is unavailable.
+        console.warn('Project thumbnails are unavailable:', error);
+      } finally {
+        this.projectCardImagesLoaded = true;
+        this.projectCardImagesLoading = false;
+        this.applyProjectCardImagesToCards();
+      }
+    },
+
+    applyProjectCardImagesToCards: function () {
+      const container = document.getElementById('projects-table-container');
+      if (!container) return;
+      container.querySelectorAll('img[data-project-thumbnail]').forEach((image) => {
+        const projectId = image.getAttribute('data-project-thumbnail');
+        const src = this.projectCardImages[String(projectId || '')];
+        if (!src) return;
+        image.src = src;
+        image.hidden = false;
+        image.alt = 'تصویر پروژه';
+        const main = image.closest('.project-list-card-main');
+        if (main) main.classList.add('has-thumbnail');
+      });
     },
 
     normalizeProjects: function (data) {
@@ -1288,6 +1403,8 @@
           }
         }
 
+        if (selectedFile) this.projectCardImagesLoaded = false;
+
         const exists = this.projects.some((item) => {
           return String(item.ID || item.Id || item.id) === createdId;
         });
@@ -1500,6 +1617,7 @@
                 </div>
                 <div class="project-list-card-activity">آخرین بروزرسانی: ${this.escape(this.formatDate(project.UpdatedAt))}</div>
               </div>
+              <img class="project-list-card-thumbnail" data-project-thumbnail="${this.escape(id)}" alt="" hidden loading="lazy" decoding="async" tabindex="0" role="button" aria-label="نمایش تصویر پروژه">
             </div>
             <div class="project-list-card-actions">
               <button type="button" class="btn btn-sm btn-light project-view-button" data-project-id="${this.escape(id)}">مشاهده پروژه</button>
@@ -1513,6 +1631,27 @@
 
       container.innerHTML = html;
       container.hidden = false;
+      this.applyProjectCardImagesToCards();
+      this.loadProjectCardImages(projects);
+
+      container.querySelectorAll('.project-list-card-thumbnail').forEach((image) => {
+        const openImage = function () {
+          if (!image.src || image.hidden) return;
+          window.open(image.src, '_blank', 'noopener');
+        };
+        image.addEventListener('click', openImage);
+        image.addEventListener('keydown', function (event) {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            openImage();
+          }
+        });
+        image.addEventListener('error', function () {
+          image.hidden = true;
+          const main = image.closest('.project-list-card-main');
+          if (main) main.classList.remove('has-thumbnail');
+        });
+      });
 
       container.querySelectorAll('.project-view-button').forEach((button) => {
         button.addEventListener('click', () => {
