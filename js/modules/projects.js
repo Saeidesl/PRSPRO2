@@ -629,7 +629,7 @@
       const cache = window.PMS && window.PMS.Cache;
       const cacheKey = 'project_card_images_v1';
       const cached = cache ? cache.get(cacheKey) : null;
-      // A valid five-minute cache avoids a new /attachments request on every
+      // A valid five-minute cache avoids a new metadata request on every
       // search/filter render. Uploads and deletions explicitly invalidate it.
       if (cached !== null && Array.isArray(cached)) return Promise.resolve(cached);
       if (!this.projectCardAttachmentsPromise) {
