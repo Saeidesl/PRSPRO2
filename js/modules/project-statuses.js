@@ -137,7 +137,15 @@
         if (!item || state.saving) return;
 
         const nextStatus = status(item) === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-        await save(id(item), { Name: name(item), Status: nextStatus });
+        try {
+          await save(id(item), { Name: name(item), Status: nextStatus });
+        } catch (error) {
+          message(
+            'project-status-message',
+            error && error.message ? error.message : 'تغییر وضعیت ناموفق بود. دوباره تلاش کنید.',
+            'danger'
+          );
+        }
       });
     });
   }
@@ -231,7 +239,11 @@
         await PMS.Api.post('/project-statuses', data);
       }
 
-      if (PMS.Api.invalidate) PMS.Api.invalidate('project-statuses');
+      if (PMS.Api.invalidate) {
+        PMS.Api.invalidate('project-statuses');
+        // Shared by the project list, project details and project forms.
+        PMS.Api.invalidate('dashboard_project_lookups_v1');
+      }
       await load();
       message('project-status-message', 'وضعیت با موفقیت ذخیره شد.', 'success');
     } finally {
