@@ -922,6 +922,13 @@
               <label for="new-project-file">افزودن فایل <span style="color:var(--color-text-secondary);font-size:12px;">(اختیاری)</span></label>
               <input type="file" id="new-project-file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" style="width:100%;box-sizing:border-box;">
               <small id="new-project-file-help" style="display:block;margin-top:5px;color:var(--color-text-secondary);">فایل پس از ایجاد پروژه به پیوست‌های همان پروژه اضافه می‌شود. برای بارگذاری به دسترسی افزودن فایل نیاز است.</small>
+              <div id="project-edit-attachments" ${isEditMode ? '' : 'hidden'} style="margin-top:14px;padding:12px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-surface-hover, var(--color-surface));">
+                <div style="font-weight:700;margin-bottom:8px;">فایل‌های فعلی پروژه</div>
+                <div id="project-edit-attachments-list" aria-live="polite" style="display:flex;flex-direction:column;gap:8px;">
+                  <div style="color:var(--color-text-secondary);font-size:13px;">در حال دریافت فایل‌ها…</div>
+                </div>
+                <small style="display:block;margin-top:8px;color:var(--color-text-secondary);">برای جایگزینی فایل، فایل قبلی را حذف و فایل جدیدی انتخاب کنید. حذف فایل فقط با دسترسی حذف پیوست امکان‌پذیر است.</small>
+              </div>
             </div>
 
             <div id="new-project-notify-setting" class="filter-group" style="margin-bottom:16px;">
@@ -1101,6 +1108,23 @@
         this.createProject(modal);
       });
 
+      const existingAttachmentsList = modal.querySelector('#project-edit-attachments-list');
+      if (existingAttachmentsList) {
+        existingAttachmentsList.addEventListener('click', async (event) => {
+          const button = event.target.closest('[data-project-attachment-action]');
+          if (!button || button.disabled) return;
+          const attachmentId = button.getAttribute('data-attachment-id');
+          const action = button.getAttribute('data-project-attachment-action');
+          if (action === 'download') {
+            const attachmentsModule = window.PMS && (window.PMS.Attachments || (window.PMS.Modules && window.PMS.Modules.Attachments));
+            if (attachmentsModule && typeof attachmentsModule.download === 'function') attachmentsModule.download(attachmentId);
+            else alert('امکان دریافت فایل در حال حاضر فراهم نیست.');
+          } else if (action === 'delete') {
+            await this.deleteProjectEditAttachment(modal, attachmentId, button);
+          }
+        });
+      }
+
       const renderProjectLookups = (rawData) => {
         let lookupData = rawData;
         for (let depth = 0; depth < 3 && lookupData && lookupData.data !== undefined &&
@@ -1206,7 +1230,8 @@
           const needsSummary = modal.querySelector('#new-project-needs-summary');
           if (needsSummary) needsSummary.textContent = 'برای مدیریت ملزومات، از بخش ملزومات پروژه استفاده کنید.';
           const fileHelpForEdit = modal.querySelector('#new-project-file-help');
-          if (fileHelpForEdit) fileHelpForEdit.textContent = 'در صورت انتخاب فایل، پس از ذخیره به پیوست‌های همین پروژه اضافه می‌شود.';
+          if (fileHelpForEdit) fileHelpForEdit.textContent = 'برای افزودن فایل جدید، آن را انتخاب کنید؛ فایل‌های فعلی در همین فرم قابل مشاهده و مدیریت هستند.';
+          this.loadProjectEditAttachments(modal, editProjectId);
           const settingsTitle = settingsModal.querySelector('#project-create-settings-title');
           if (settingsTitle) settingsTitle.textContent = 'تنظیمات پروژه';
           const settingsDescription = settingsModal.querySelector('p');
@@ -1469,6 +1494,91 @@
       }
 
       return [];
+    },
+
+    loadProjectEditAttachments: async function (modal, projectId) {
+      const section = modal.querySelector('#project-edit-attachments');
+      const list = modal.querySelector('#project-edit-attachments-list');
+      if (!section || !list || !projectId) return;
+
+      const router = window.PMS && window.PMS.Router;
+      const permissions = router && Array.isArray(router.permissions) ? router.permissions : [];
+      const isAdmin = !!(router && typeof router.isAdmin === 'function' && router.isAdmin());
+      const canView = isAdmin || permissions.includes('ATTACHMENT_VIEW');
+      const canDelete = isAdmin || permissions.includes('ATTACHMENT_DELETE');
+      if (!canView) {
+        list.textContent = 'برای مشاهده فایل‌های قبلی، دسترسی مشاهده پیوست لازم است.';
+        return;
+      }
+
+      list.textContent = 'در حال دریافت فایل‌ها…';
+      try {
+        const response = await window.PMS.Api.get('/attachments');
+        const items = this.normalizeProjectAttachments(response);
+        const attachments = items.filter((item) => {
+          const entityType = String(item.EntityType || item.entityType || '').toUpperCase();
+          const entityId = String(item.EntityID || item.entityID || item.EntityId || '');
+          const status = String(item.Status || item.status || 'ACTIVE').toUpperCase();
+          return entityType === 'PROJECT' && entityId === String(projectId) && status !== 'DELETED' && status !== 'VOID';
+        });
+        if (!list.isConnected || modal.dataset.projectId !== String(projectId)) return;
+        if (!attachments.length) {
+          list.textContent = 'هنوز فایلی برای این پروژه ثبت نشده است.';
+          return;
+        }
+
+        list.innerHTML = attachments.map((item) => {
+          const id = item.ID || item.Id || item.id || '';
+          const name = item.FileName || item.fileName || 'فایل بدون نام';
+          const size = Number(item.FileSize || item.fileSize || 0);
+          const sizeLabel = size >= 1024 * 1024 ? (size / (1024 * 1024)).toFixed(1) + ' مگابایت' :
+            size >= 1024 ? (size / 1024).toFixed(1) + ' کیلوبایت' : (size ? size + ' بایت' : '');
+          return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:9px;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface);">' +
+            '<div style="min-width:0;flex:1;overflow-wrap:anywhere;"><div style="font-weight:600;font-size:13px;">' + this.escape(name) + '</div>' +
+            (sizeLabel ? '<small style="color:var(--color-text-secondary);">' + this.escape(sizeLabel) + '</small>' : '') + '</div>' +
+            '<div style="display:flex;gap:6px;flex-wrap:wrap;">' +
+            '<button type="button" class="btn btn-light" data-project-attachment-action="download" data-attachment-id="' + this.escape(id) + '" style="min-height:34px;">دریافت</button>' +
+            (canDelete ? '<button type="button" class="btn btn-light" data-project-attachment-action="delete" data-attachment-id="' + this.escape(id) + '" style="min-height:34px;color:var(--color-danger);">حذف</button>' : '') +
+            '</div></div>';
+        }).join('');
+      } catch (error) {
+        console.error('Project attachments load failed:', error);
+        if (list.isConnected) list.textContent = 'دریافت فهرست فایل‌ها ناموفق بود: ' + (error.message || 'خطای نامشخص');
+      }
+    },
+
+    deleteProjectEditAttachment: async function (modal, attachmentId, button) {
+      if (!attachmentId) return;
+      const router = window.PMS && window.PMS.Router;
+      const permissions = router && Array.isArray(router.permissions) ? router.permissions : [];
+      const isAdmin = !!(router && typeof router.isAdmin === 'function' && router.isAdmin());
+      if (!(isAdmin || permissions.includes('ATTACHMENT_DELETE'))) {
+        alert('برای حذف فایل، دسترسی حذف پیوست لازم است.');
+        return;
+      }
+      if (!window.confirm('آیا مطمئن هستید که می‌خواهید این فایل را از پروژه حذف کنید؟')) return;
+
+      const previousText = button.textContent;
+      button.disabled = true;
+      button.textContent = 'در حال حذف…';
+      try {
+        await window.PMS.Api.delete('/attachments/' + encodeURIComponent(attachmentId));
+        const cache = window.PMS && window.PMS.Cache;
+        if (cache) cache.remove('project_card_attachments_v2');
+        this.projectCardAttachmentsPromise = null;
+        this.projectCardImagesLoaded = false;
+        Object.keys(this.projectCardImageAttachments).forEach((id) => {
+          if (String(id) === String(modal.dataset.projectId)) delete this.projectCardImageAttachments[id];
+        });
+        await this.loadProjectEditAttachments(modal, String(modal.dataset.projectId || ''));
+      } catch (error) {
+        console.error('Project attachment delete failed:', error);
+        alert('حذف فایل ناموفق بود: ' + (error.message || 'خطای نامشخص'));
+        if (button.isConnected) {
+          button.disabled = false;
+          button.textContent = previousText;
+        }
+      }
     },
 
     // ========================================================
