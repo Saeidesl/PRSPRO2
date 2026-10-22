@@ -1403,6 +1403,8 @@
           }
         }
 
+        if (selectedFile) this.projectCardImagesLoaded = false;
+
         const exists = this.projects.some((item) => {
           return String(item.ID || item.Id || item.id) === createdId;
         });
