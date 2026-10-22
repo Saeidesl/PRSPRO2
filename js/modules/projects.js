@@ -259,7 +259,7 @@
       this.openProjectEditForm(projectId);
       const modal = document.getElementById('project-edit-modal');
       if (modal) {
-        const button = modal.querySelector('[data-project-edit-color-size]');
+        const button = modal.querySelector('#new-project-color-size-button');
         if (button) button.click();
       }
     },
