@@ -227,111 +227,8 @@
         alert('دسترسی ویرایش پروژه را ندارید.');
         return;
       }
-
-      const existing = document.getElementById('project-edit-modal');
-      if (existing) existing.remove();
-      let colorSize = { colors: [], sizes: [] };
-      try {
-        const raw = project.ColorSizeJSON || project.colorSizeJSON || '';
-        colorSize = typeof raw === 'string' ? JSON.parse(raw || '{"colors":[],"sizes":[]}') : raw;
-      } catch (error) {}
-      if (!colorSize || !Array.isArray(colorSize.colors) || !Array.isArray(colorSize.sizes)) {
-        colorSize = { colors: [], sizes: [] };
-      }
-
-      const modal = document.createElement('div');
-      modal.id = 'project-edit-modal';
-      modal.dataset.projectId = String(projectId);
-      modal.dataset.colorSizeJson = JSON.stringify(colorSize);
-      modal.style.cssText = 'position:fixed;inset:0;z-index:10010;background:var(--color-overlay,rgba(0,0,0,.48));display:flex;align-items:center;justify-content:center;padding:16px;direction:rtl;overflow:auto;';
-      modal.innerHTML =
-        '<div role="dialog" aria-modal="true" aria-labelledby="project-edit-title" style="background:var(--color-surface,#fff);color:var(--color-text,#222);width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:14px;padding:20px;box-sizing:border-box;">' +
-          '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px"><h3 id="project-edit-title" style="margin:0">ویرایش پروژه</h3><button type="button" class="btn btn-light" data-project-edit-close>بستن</button></div>' +
-          '<form id="project-edit-form">' +
-            '<div class="filter-group" style="margin-bottom:12px"><label for="project-edit-code">کد پروژه (غیرقابل تغییر)</label><input id="project-edit-code" class="form-control" type="text" readonly value="' + this.escape(project.ProjectCode || '') + '"></div>' +
-            '<div class="filter-group" style="margin-bottom:12px"><label for="project-edit-title-input">عنوان پروژه *</label><input id="project-edit-title-input" class="form-control" type="text" maxlength="200" required value="' + this.escape(project.Title || project.Name || '') + '"></div>' +
-            '<div class="filter-group" style="margin-bottom:12px"><label for="project-edit-quantity">تعداد پیشنهادی</label><input id="project-edit-quantity" class="form-control" type="number" min="0" step="1" value="' + this.escape(project.Quantity === undefined || project.Quantity === null ? '' : project.Quantity) + '"></div>' +
-            '<div class="filter-group" style="margin-bottom:12px"><label for="project-edit-description">توضیحات</label><textarea id="project-edit-description" class="form-control" rows="3" maxlength="5000">' + this.escape(project.Description || '') + '</textarea></div>' +
-            '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0 16px"><button type="button" class="btn btn-secondary" data-project-edit-color-size>رنگ‌بندی و سایزبندی</button><span id="new-project-color-size-summary" style="font-size:12px;color:var(--color-text-secondary)"></span></div>' +
-            '<div id="project-edit-error" class="alert alert-danger" hidden style="margin-bottom:12px"></div>' +
-            '<div style="display:flex;gap:8px;justify-content:flex-start;flex-wrap:wrap"><button type="submit" class="btn btn-primary">ذخیره تغییرات</button><button type="button" class="btn btn-light" data-project-edit-close>انصراف</button></div>' +
-          '</form>' +
-        '</div>';
-      document.body.appendChild(modal);
-
-      const updateSummary = () => {
-        const summary = modal.querySelector('#new-project-color-size-summary');
-        let value = { colors: [], sizes: [] };
-        try { value = JSON.parse(modal.dataset.colorSizeJson || '{"colors":[],"sizes":[]}'); } catch (error) {}
-        summary.textContent = (value.colors.length || value.sizes.length)
-          ? value.colors.length + ' رنگ و ' + value.sizes.length + ' سایز تعریف شده'
-          : 'رنگ‌بندی و سایزبندی تعریف نشده است.';
-      };
-      updateSummary();
-
-      const close = () => modal.remove();
-      modal.querySelectorAll('[data-project-edit-close]').forEach((button) => button.addEventListener('click', close));
-      modal.addEventListener('click', (event) => { if (event.target === modal) close(); });
-      modal.querySelector('[data-project-edit-color-size]').addEventListener('click', () => this.openColorSizeForm(modal));
-
-      modal.querySelector('#project-edit-form').addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const submit = modal.querySelector('button[type="submit"]');
-        const errorBox = modal.querySelector('#project-edit-error');
-        const title = modal.querySelector('#project-edit-title-input').value.trim();
-        const quantityText = modal.querySelector('#project-edit-quantity').value.trim();
-        if (!title) {
-          errorBox.textContent = 'عنوان پروژه را وارد کنید.';
-          errorBox.hidden = false;
-          return;
-        }
-        if (quantityText && (!Number.isFinite(Number(quantityText)) || Number(quantityText) < 0)) {
-          errorBox.textContent = 'تعداد پیشنهادی باید عددی نامنفی باشد.';
-          errorBox.hidden = false;
-          return;
-        }
-        let colorSizeJson = '{"colors":[],"sizes":[]}';
-        try {
-          const parsed = JSON.parse(modal.dataset.colorSizeJson || colorSizeJson);
-          colorSizeJson = JSON.stringify({
-            colors: Array.isArray(parsed.colors) ? parsed.colors : [],
-            sizes: Array.isArray(parsed.sizes) ? parsed.sizes : []
-          });
-        } catch (error) {
-          errorBox.textContent = 'رنگ‌بندی و سایزبندی معتبر نیست.';
-          errorBox.hidden = false;
-          return;
-        }
-
-        submit.disabled = true;
-        submit.textContent = 'در حال ذخیره...';
-        errorBox.hidden = true;
-        try {
-          const payload = {
-            Title: title,
-            Quantity: quantityText === '' ? '' : Number(quantityText),
-            Description: modal.querySelector('#project-edit-description').value.trim(),
-            ColorSizeJSON: colorSizeJson
-          };
-          const response = await window.PMS.Api.put('/projects/' + encodeURIComponent(String(projectId)), payload);
-          if (response && response.success === false) throw new Error(this.getErrorMessage(response) || 'ذخیره تغییرات ناموفق بود.');
-          const updated = response && response.data && response.data.data !== undefined
-            ? response.data.data
-            : (response && response.data !== undefined ? response.data : response);
-          Object.assign(project, payload, updated && typeof updated === 'object' ? updated : {});
-          this.applyFilters();
-          close();
-          alert('تغییرات پروژه با موفقیت ذخیره شد.');
-        } catch (error) {
-          errorBox.textContent = this.getErrorMessage(error) || 'ذخیره تغییرات ناموفق بود.';
-          errorBox.hidden = false;
-        } finally {
-          if (submit.isConnected) {
-            submit.disabled = false;
-            submit.textContent = 'ذخیره تغییرات';
-          }
-        }
-      });
+      // فرم ویرایش عمداً از همان فرم ایجاد پروژه استفاده می‌کند تا ساختار و تجربه کاربری یکسان بماند.
+      this.openCreateForm(project);
     },
 
     openProjectColorSizeForm: function (projectId) {
@@ -863,14 +760,18 @@
     // فرم ایجاد پروژه
     // ========================================================
 
-    openCreateForm: async function () {
+    openCreateForm: async function (editProject) {
       if (this.modal) {
         this.modal.remove();
       }
 
       const modal = document.createElement('div');
 
-      modal.id = 'project-create-modal';
+      const isEditMode = !!(editProject && (editProject.ID || editProject.Id || editProject.id));
+      const editProjectId = isEditMode ? String(editProject.ID || editProject.Id || editProject.id) : '';
+      modal.id = isEditMode ? 'project-edit-modal' : 'project-create-modal';
+      modal.dataset.editMode = isEditMode ? 'true' : 'false';
+      if (isEditMode) modal.dataset.projectId = editProjectId;
 
       modal.style.cssText = [
         'position:fixed',
@@ -910,11 +811,11 @@
             margin-bottom:20px;
           ">
             <h3 id="project-create-title" style="margin:0;">
-              ایجاد پروژه جدید
+              ${isEditMode ? 'ویرایش پروژه' : 'ایجاد پروژه جدید'}
             </h3>
 
             <div style="display:flex;align-items:center;gap:8px">
-              <button type="button" id="project-settings-open" class="btn btn-light" aria-label="تنظیمات فرم ایجاد پروژه" title="تنظیمات فرم" style="display:inline-flex;align-items:center;gap:7px">
+              <button type="button" id="project-settings-open" class="btn btn-light" aria-label="تنظیمات فرم پروژه" title="تنظیمات فرم" style="display:inline-flex;align-items:center;gap:7px">
                 <span aria-hidden="true" style="font-size:18px;line-height:1">⚙</span>
                 <span>تنظیمات</span>
               </button>
@@ -943,7 +844,7 @@
           <form id="project-create-form">
             <div class="filter-group" style="margin-bottom:16px;">
               <label for="new-project-code">کد پروژه <span style="color:var(--color-danger);">*</span></label>
-              <input type="text" id="new-project-code" name="ProjectCode" required maxlength="100" autocomplete="off" placeholder="کد پروژه را وارد کنید" style="width:100%;box-sizing:border-box;">
+              <input type="text" id="new-project-code" name="ProjectCode" required maxlength="100" autocomplete="off" placeholder="کد پروژه را وارد کنید" style="width:100%;box-sizing:border-box;" ${isEditMode ? "readonly aria-readonly=\"true\"" : ""}>
               <small style="display:block;margin-top:5px;color:var(--color-text-secondary);">کد را اپراتور وارد می‌کند و پس از ایجاد پروژه قابل تغییر نیست.</small>
             </div>
             <div class="filter-group" style="margin-bottom:16px;">
@@ -977,6 +878,7 @@
                 name="WorkflowID"
                 required
                 style="width:100%;box-sizing:border-box;"
+                ${isEditMode ? "disabled aria-disabled=\"true\"" : ""}
               >
                 <option value="">در حال دریافت گردش کارها...</option>
               </select>
@@ -1070,8 +972,8 @@
       settingsModal.id = 'project-create-settings-modal';
       settingsModal.style.cssText = 'position:fixed;inset:0;z-index:10020;background:var(--color-overlay,rgba(0,0,0,.5));display:none;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;direction:rtl;';
       settingsModal.innerHTML = '<div role="dialog" aria-modal="true" aria-labelledby="project-create-settings-title" style="background:var(--color-surface);color:var(--color-text);width:100%;max-width:680px;max-height:88vh;overflow:auto;border:1px solid var(--color-border);border-radius:14px;padding:20px;box-sizing:border-box;box-shadow:var(--shadow-lg,0 18px 50px rgba(0,0,0,.2))">' +
-        '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px"><h3 id="project-create-settings-title" style="margin:0">تنظیمات پیش‌فرض ایجاد پروژه</h3><button type="button" class="btn btn-light" data-settings-close aria-label="بستن تنظیمات">✕</button></div>' +
-        '<p style="font-size:12px;line-height:1.9;color:var(--color-text-secondary);margin:0 0 16px">این انتخاب‌ها برای دفعات بعد ذخیره می‌شوند و هنگام ساخت پروژه جدید به‌صورت پیش‌فرض اعمال خواهند شد.</p>' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px"><h3 id="project-create-settings-title" style="margin:0">' + (isEditMode ? 'تنظیمات پروژه' : 'تنظیمات پیش‌فرض ایجاد پروژه') + '</h3><button type="button" class="btn btn-light" data-settings-close aria-label="بستن تنظیمات">✕</button></div>' +
+        '<p style="font-size:12px;line-height:1.9;color:var(--color-text-secondary);margin:0 0 16px">' + (isEditMode ? 'تنظیمات دسترسی، وضعیت و اطلاع‌رسانی همین پروژه را تغییر دهید.' : 'این انتخاب‌ها برای دفعات بعد ذخیره می‌شوند و هنگام ساخت پروژه جدید به‌صورت پیش‌فرض اعمال خواهند شد.') + '</p>' +
         '<div id="project-create-settings-content"></div>' +
         '<div id="project-settings-error" class="alert alert-danger" hidden style="margin-top:12px"></div>' +
         '<div style="display:flex;justify-content:flex-start;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--color-border)"><button type="button" class="btn btn-primary" data-settings-save>ذخیره تنظیمات</button><button type="button" class="btn btn-light" data-settings-cancel>بستن</button></div></div>';
@@ -1086,7 +988,9 @@
       const getSelectedUserIds = () => Array.from(modal.querySelector('#new-project-users').selectedOptions).map((option) => option.value).filter(Boolean);
       const saveProjectSettings = () => {
         const settings = { departmentIds:getSelectedDepartmentIds(), userIds:getSelectedUserIds(), notifyEnabled:!!modal.querySelector('#new-project-notify').checked, status:String((modal.querySelector('#new-project-status') || {}).value || '') };
-        try { localStorage.setItem(projectSettingsKey, JSON.stringify(settings)); } catch (error) {}
+        if (!isEditMode) {
+          try { localStorage.setItem(projectSettingsKey, JSON.stringify(settings)); } catch (error) {}
+        }
         return settings;
       };
       const applySavedProjectSettings = () => {
@@ -1258,7 +1162,58 @@
           if (designCheckbox) designCheckbox.checked = true;
         }
 
-        applySavedProjectSettings();
+        if (isEditMode) {
+          // In edit mode, restore this project's saved values instead of the
+          // user's defaults. Project code and workflow remain locked.
+          const projectCode = modal.querySelector('#new-project-code');
+          const titleInput = modal.querySelector('#new-project-title');
+          const quantityInput = modal.querySelector('#new-project-quantity');
+          const descriptionInput = modal.querySelector('#new-project-description');
+          const statusSelectForEdit = modal.querySelector('#new-project-status');
+          if (projectCode) projectCode.value = String(editProject.ProjectCode || '');
+          if (titleInput) titleInput.value = String(editProject.Title || editProject.Name || '');
+          if (quantityInput) quantityInput.value = editProject.Quantity === undefined || editProject.Quantity === null ? '' : String(editProject.Quantity);
+          if (descriptionInput) descriptionInput.value = String(editProject.Description || '');
+          if (workflowSelect) workflowSelect.value = String(editProject.WorkflowID || '');
+          const parseIds = (value) => {
+            if (Array.isArray(value)) return value.map(String);
+            try { const parsed = JSON.parse(String(value || '[]')); return Array.isArray(parsed) ? parsed.map(String) : []; } catch (error) { return []; }
+          };
+          const allowedDepartments = parseIds(editProject.AvailableDepartmentIDs);
+          Array.from(modal.querySelectorAll('input[name="AvailableDepartmentIDs"]')).forEach((input) => {
+            input.checked = allowedDepartments.includes(String(input.value));
+          });
+          const allowedUsers = parseIds(editProject.AllowedUserIDs);
+          if (usersSelect) Array.from(usersSelect.options).forEach((option) => { option.selected = allowedUsers.includes(String(option.value)); });
+          if (statusSelectForEdit) {
+            const statusValue = String(editProject.Status || '');
+            if (Array.from(statusSelectForEdit.options).some((option) => option.value === statusValue)) statusSelectForEdit.value = statusValue;
+          }
+          const notify = modal.querySelector('#new-project-notify');
+          if (notify) notify.checked = editProject.NotifyEnabled === true || String(editProject.NotifyEnabled).toLowerCase() === 'true';
+          let savedColorSize = { colors: [], sizes: [] };
+          try { savedColorSize = typeof editProject.ColorSizeJSON === 'string' ? JSON.parse(editProject.ColorSizeJSON || '{"colors":[],"sizes":[]}') : (editProject.ColorSizeJSON || savedColorSize); } catch (error) {}
+          modal.dataset.colorSizeJson = JSON.stringify({
+            colors: Array.isArray(savedColorSize.colors) ? savedColorSize.colors : [],
+            sizes: Array.isArray(savedColorSize.sizes) ? savedColorSize.sizes : []
+          });
+          const colorSummary = modal.querySelector('#new-project-color-size-summary');
+          if (colorSummary) colorSummary.textContent = (savedColorSize.colors.length || savedColorSize.sizes.length)
+            ? savedColorSize.colors.length + ' رنگ و ' + savedColorSize.sizes.length + ' سایز تعریف شده'
+            : 'رنگ‌بندی و سایزبندی تعریف نشده است.';
+          const needsButtonForEdit = modal.querySelector('#new-project-needs-button');
+          if (needsButtonForEdit) needsButtonForEdit.hidden = true;
+          const needsSummary = modal.querySelector('#new-project-needs-summary');
+          if (needsSummary) needsSummary.textContent = 'برای مدیریت ملزومات، از بخش ملزومات پروژه استفاده کنید.';
+          const fileHelpForEdit = modal.querySelector('#new-project-file-help');
+          if (fileHelpForEdit) fileHelpForEdit.textContent = 'در صورت انتخاب فایل، پس از ذخیره به پیوست‌های همین پروژه اضافه می‌شود.';
+          const settingsTitle = settingsModal.querySelector('#project-create-settings-title');
+          if (settingsTitle) settingsTitle.textContent = 'تنظیمات پروژه';
+          const settingsDescription = settingsModal.querySelector('p');
+          if (settingsDescription) settingsDescription.textContent = 'واحدها، کاربران مجاز، وضعیت و اطلاع‌رسانی این پروژه را تنظیم کنید.';
+        } else {
+          applySavedProjectSettings();
+        }
 
         if (!workflows.length) {
           this.showFormError(modal, 'برای ایجاد پروژه، ابتدا باید یک گردش کار فعال و دارای مرحله ایجاد کنید.');
@@ -1307,7 +1262,7 @@
         );
       }
 
-      // کد پروژه را اپراتور وارد می‌کند؛ پس از ثبت، بک‌اند آن را ثابت نگه می‌دارد.
+      // در حالت ویرایش نیز کد پروژه و گردش کار قفل هستند و فقط سایر اطلاعات مجاز تغییر می‌کنند.
     },
 
     openDraftNeedsForm: function (projectModal) {
@@ -1572,11 +1527,13 @@
         NotifyEnabled: !!(notifyInput && notifyInput.checked),
         Status: String((modal.querySelector('#new-project-status') || {}).value || '')
       };
-      try {
-        localStorage.setItem(projectSettingsStorageKey(), JSON.stringify({
-          departmentIds: selectedDepartments, userIds: selectedUsers, notifyEnabled: project.NotifyEnabled, status: project.Status
-        }));
-      } catch (settingsSaveError) {}
+      if (modal.dataset.editMode !== 'true') {
+        try {
+          localStorage.setItem(projectSettingsStorageKey(), JSON.stringify({
+            departmentIds: selectedDepartments, userIds: selectedUsers, notifyEnabled: project.NotifyEnabled, status: project.Status
+          }));
+        } catch (settingsSaveError) {}
+      }
 
       if (!project.ProjectCode) {
         this.showFormError(modal, 'کد پروژه را وارد کن.');
@@ -1615,7 +1572,7 @@
         return;
       }
       if (project.Status === '') {
-        this.showFormError(modal, 'وضعیت پروژه پس از ایجاد را در تنظیمات انتخاب کن.');
+        this.showFormError(modal, modal.dataset.editMode === 'true' ? 'وضعیت پروژه را در تنظیمات انتخاب کن.' : 'وضعیت پروژه پس از ایجاد را در تنظیمات انتخاب کن.');
         const settingsOverlay = modal.querySelector('#project-create-settings-modal');
         if (settingsOverlay) {
           settingsOverlay.style.display = 'flex';
@@ -1638,12 +1595,49 @@
 
       this.isSaving = true;
       submitButton.disabled = true;
-      submitButton.textContent = 'در حال ثبت...';
+      submitButton.textContent = modal.dataset.editMode === 'true' ? 'در حال ذخیره...' : 'در حال ثبت...';
       // Keep the user informed even when the server request takes several seconds.
       this.clearFormError(modal);
       updateProgress('در حال ذخیره اطلاعات پروژه در سرور؛ لطفاً این پنجره را نبندید.', 'loading');
 
       try {
+        if (modal.dataset.editMode === 'true') {
+          const projectId = String(modal.dataset.projectId || '');
+          if (!projectId) throw new Error('شناسه پروژه برای ویرایش مشخص نیست.');
+          const response = await window.PMS.Api.put('/projects/' + encodeURIComponent(projectId), project);
+          if (response && response.success === false) throw new Error(this.getErrorMessage(response) || 'ذخیره تغییرات ناموفق بود.');
+          const updated = this.extractCreatedProject(response) || (response && response.data && typeof response.data === 'object' ? response.data : {});
+          const existingProject = this.projects.find((item) => String(item.ID || item.Id || item.id) === projectId);
+          if (existingProject) Object.assign(existingProject, project, updated);
+          if (selectedFile) {
+            updateProgress('تغییرات ذخیره شد؛ در حال بارگذاری فایل پیوست...', 'loading');
+            const base64 = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onerror = () => reject(new Error('خواندن فایل ناموفق بود.'));
+              reader.onload = () => {
+                const result = String(reader.result || '');
+                const comma = result.indexOf(',');
+                if (comma < 0) reject(new Error('ساختار فایل نامعتبر است.'));
+                else resolve(result.slice(comma + 1));
+              };
+              reader.readAsDataURL(selectedFile);
+            });
+            await window.PMS.Api.post('/projects/' + encodeURIComponent(projectId) + '/attachments', {
+              FileName: selectedFile.name,
+              MimeType: selectedFile.type || 'application/octet-stream',
+              Base64: base64
+            });
+            this.projectCardImagesLoaded = false;
+          }
+          this.applyFilters();
+          updateProgress('تغییرات پروژه ذخیره شد.', 'success');
+          if (this.modal === modal) this.modal = null;
+          modal.remove();
+          alert('تغییرات پروژه با موفقیت ذخیره شد.');
+          this.loadProjects();
+          return;
+        }
+
         const response = await window.PMS.Api.post('/projects', project);
 
         const created = this.extractCreatedProject(response);
@@ -1744,7 +1738,7 @@
 
         if (submitButton.isConnected) {
           submitButton.disabled = false;
-          submitButton.textContent = 'ثبت پروژه';
+          submitButton.textContent = modal.dataset.editMode === 'true' ? 'ذخیره تغییرات' : 'ثبت پروژه';
         }
       }
     },
