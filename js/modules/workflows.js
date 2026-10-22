@@ -26,6 +26,15 @@
   function init() {
     bindEvents();
     loadWorkflows();
+
+    // This module is loaded by pages/workflows.html. Initialize its section
+    // only after the workflow page has been inserted into the document.
+    if (PMS.Modules && PMS.Modules.WorkflowDepartmentAssignments &&
+        typeof PMS.Modules.WorkflowDepartmentAssignments.init === 'function') {
+      PMS.Modules.WorkflowDepartmentAssignments.init();
+    } else {
+      console.warn('بخش اتصال واحدها به مراحل گردش کار بارگذاری نشده است.');
+    }
   }
 
   function bindEvents() {
