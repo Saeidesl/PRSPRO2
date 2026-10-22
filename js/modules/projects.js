@@ -375,12 +375,8 @@
     },
 
     loadProjectStatuses: async function () {
-      try {
-        const result = await window.PMS.Api.getCached(
-          '/project-dashboard/lookups',
-          'dashboard_project_lookups_v1'
-        );
-        let data = result && result.data !== undefined ? result.data : result;
+      const applyLookups = (rawData) => {
+        let data = rawData;
         for (let i = 0; i < 4 && data && !Array.isArray(data); i++) {
           if (data.data !== undefined) { data = data.data; continue; }
           break;
@@ -397,6 +393,17 @@
           if (Array.from(select.options).some((option) => option.value === current)) select.value = current;
           this.applyFilters();
         }
+      };
+
+      try {
+        const result = await window.PMS.Api.getCached(
+          '/project-dashboard/lookups',
+          'dashboard_project_lookups_v1',
+          {
+            onRefresh: (freshData) => applyLookups(freshData)
+          }
+        );
+        applyLookups(result && result.data !== undefined ? result.data : result);
       } catch (error) {
         // در صورت در دسترس نبودن فهرست وضعیت‌های سفارشی، گزینه‌های قبلی حفظ می‌شوند.
       }
