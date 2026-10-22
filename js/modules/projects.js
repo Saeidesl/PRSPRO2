@@ -1211,9 +1211,17 @@
         }
         if (!lookupData || typeof lookupData !== 'object') lookupData = {};
 
-        const workflows = this.normalizeWorkflows({
-          workflows: Array.isArray(lookupData.workflows) ? lookupData.workflows : []
-        });
+        const lookupWorkflows = Array.isArray(lookupData.workflows) ? lookupData.workflows : [];
+        if (isEditMode && !lookupWorkflows.length && editProject.WorkflowID) {
+          // Editing does not require PROJECT_CREATE or workflow-management access;
+          // the current workflow is locked, so a single display option is sufficient.
+          lookupWorkflows.push({
+            ID: editProject.WorkflowID,
+            Name: editProject.WorkflowName || editProject.WorkflowTitle || editProject.WorkflowCode || 'گردش کار فعلی',
+            Status: 'ACTIVE'
+          });
+        }
+        const workflows = this.normalizeWorkflows({ workflows: lookupWorkflows });
         const departments = Array.isArray(lookupData.departments) ? lookupData.departments : [];
         const users = Array.isArray(lookupData.users) ? lookupData.users : [];
         const projectStatuses = Array.isArray(lookupData.projectStatuses) ? lookupData.projectStatuses : [];
@@ -1347,12 +1355,15 @@
           lookupHash ^= sessionToken.charCodeAt(i);
           lookupHash = Math.imul(lookupHash, 16777619);
         }
-        const lookupCacheKey = 'project-form-lookups-v1-' + (lookupHash >>> 0).toString(36);
+        const lookupCacheKey = isEditMode
+          ? 'dashboard_project_lookups_v1'
+          : 'project-form-lookups-v1-' + (lookupHash >>> 0).toString(36);
+        const lookupPath = isEditMode ? '/project-dashboard/lookups' : '/project-form/lookups';
 
-        // Cached data is shown immediately on repeat visits while the same
-        // request refreshes in the background; no separate /workflows call.
+        // Creation needs create-authorized lookups; editing uses the read-only
+        // project dashboard lookup so PROJECT_EDIT users do not need PROJECT_CREATE.
         const lookupResult = await window.PMS.Api.getCached(
-          '/project-form/lookups',
+          lookupPath,
           lookupCacheKey,
           {
             onRefresh: (freshData) => {
