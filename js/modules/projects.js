@@ -1914,15 +1914,11 @@
             </div>
             <div class="project-list-card-actions">
               <button type="button" class="btn btn-sm btn-light project-view-button" data-project-id="${this.escape(id)}">مشاهده پروژه</button>
-              ${this.canEditProjects() ? `
-                <button type="button" class="btn btn-sm btn-secondary project-edit-button" data-project-id="${this.escape(id)}">ویرایش</button>
-              ` : ''}
+              <button type="button" class="btn btn-sm btn-secondary project-edit-button" data-project-id="${this.escape(id)}" title="ویرایش اطلاعات پروژه">ویرایش</button>
               ${this.canManageProcurement() ? `
                 <button type="button" class="btn btn-sm btn-secondary project-material-needs-button" data-project-id="${this.escape(id)}">ملزومات</button>
               ` : ''}
-              ${this.canEditProjects() ? `
-                <button type="button" class="btn btn-sm btn-secondary project-color-size-button" data-project-id="${this.escape(id)}">رنگ‌بندی و سایز</button>
-              ` : ''}
+              <button type="button" class="btn btn-sm btn-secondary project-color-size-button" data-project-id="${this.escape(id)}" title="تعریف یا ویرایش رنگ‌بندی و سایزبندی">رنگ‌بندی و سایز</button>
             </div>
           </article>
         `;
