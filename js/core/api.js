@@ -177,8 +177,10 @@
       options = options || {};
 
       const actualMethod = String(method || 'GET').toUpperCase();
+      // Auxiliary requests can opt out of the global header status.
       const tracked =
-        actualMethod === 'GET' || actualMethod === 'HEAD';
+        (actualMethod === 'GET' || actualMethod === 'HEAD') &&
+        options.trackSync !== false;
 
       if (tracked) startTrackedRequest();
 
@@ -221,18 +223,55 @@
           fetchOptions.body = JSON.stringify(options.body || {});
         }
 
-        const response = await fetch(url, fetchOptions);
-
+        // Retry transient network errors, rate limits and server failures a
+        // small number of times. Permission/validation failures are not retried.
+        const canRetry = options.retry !== false &&
+          (actualMethod === 'GET' || actualMethod === 'HEAD');
+        const maxAttempts = canRetry ? 3 : 1;
+        let response = null;
         let data = null;
 
-        try {
-          data = await response.json();
-        } catch (error) {
+        for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+          try {
+            response = await fetch(url, fetchOptions);
+          } catch (fetchError) {
+            if (attempt + 1 >= maxAttempts) throw fetchError;
+            await new Promise(function (resolve) {
+              setTimeout(resolve, attempt === 0 ? 300 : 750);
+            });
+            continue;
+          }
+
           data = null;
+          try {
+            data = await response.json();
+          } catch (parseError) {
+            data = null;
+          }
+
+          const transientHttpError =
+            response.status === 429 || response.status >= 500;
+          if (transientHttpError && attempt + 1 < maxAttempts) {
+            await new Promise(function (resolve) {
+              setTimeout(resolve, attempt === 0 ? 300 : 750);
+            });
+            continue;
+          }
+
+          break;
         }
 
-        if (!response.ok) {
-          throw this.createApiError(response.status, data);
+        if (!response || !response.ok) {
+          throw this.createApiError(response ? response.status : 0, data);
+        }
+
+        if (data === null || typeof data !== 'object') {
+          const invalidResponse = new Error(
+            'پاسخ سرور قابل خواندن نیست. لطفاً دوباره تلاش کنید.'
+          );
+          invalidResponse.code = 'INVALID_API_RESPONSE';
+          invalidResponse.status = response.status;
+          throw invalidResponse;
         }
 
         if (data && data.success === false) {
@@ -266,7 +305,9 @@
       });
       // Query parameters affect the response; requests with different filters
       // must never share the same in-flight GET promise.
-      const requestKey = token + '\n' + String(path || '/') + '\n' + JSON.stringify(queryKey);
+      const requestKey = token + '\n' + String(path || '/') + '\n' +
+        JSON.stringify(queryKey) + '\ntrackSync=' + String(options && options.trackSync !== false) +
+        '\nretry=' + String(!(options && options.retry === false));
 
       if (inFlightGetRequests.has(requestKey)) {
         return inFlightGetRequests.get(requestKey);
