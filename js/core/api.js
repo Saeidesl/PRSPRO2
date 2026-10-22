@@ -185,6 +185,12 @@
       try {
         const params = new URLSearchParams();
         params.set('path', path || '/');
+        if (options.query && typeof options.query === 'object') {
+          Object.keys(options.query).forEach((key) => {
+            const value = options.query[key];
+            if (value !== undefined && value !== null) params.set(key, String(value));
+          });
+        }
 
         const token = this.getToken();
 
