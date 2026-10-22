@@ -1224,7 +1224,22 @@
         const workflows = this.normalizeWorkflows({ workflows: lookupWorkflows });
         const departments = Array.isArray(lookupData.departments) ? lookupData.departments : [];
         const users = Array.isArray(lookupData.users) ? lookupData.users : [];
-        const projectStatuses = Array.isArray(lookupData.projectStatuses) ? lookupData.projectStatuses : [];
+        const projectStatuses = Array.isArray(lookupData.projectStatuses) ? lookupData.projectStatuses.slice() : [];
+        if (isEditMode && editProject.Status) {
+          const currentStatus = String(editProject.Status);
+          const hasCurrentStatus = projectStatuses.some((item) =>
+            String(item.Code || item.ID || item.Id || item.id || '') === currentStatus
+          );
+          if (!hasCurrentStatus) {
+            // Preserve an existing inactive/custom status instead of forcing the user
+            // to change it merely to save an unrelated project edit.
+            projectStatuses.push({
+              Code: currentStatus,
+              Name: this.statusText(currentStatus),
+              Status: 'INACTIVE'
+            });
+          }
+        }
 
         if (this.modal !== modal) return;
         this.workflows = workflows;
