@@ -365,6 +365,7 @@
             });
 
             invalidateCache(CACHE_KEY);
+            invalidateCache(BOOTSTRAP_CACHE_KEY);
             closeModal(overlay);
             showMessage('فرآیند با موفقیت ثبت شد.', 'success');
             await loadWorkflows();
@@ -482,6 +483,7 @@
             );
 
             invalidateCache(getStepCacheKey(getId(workflow)));
+            invalidateCache('workflowManagementData_' + getId(workflow));
             closeModal(overlay);
             showMessage('مرحله با موفقیت اضافه شد.', 'success');
             await loadWorkflowSteps(workflow);
