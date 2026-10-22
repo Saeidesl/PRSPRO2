@@ -12,6 +12,11 @@
     departments: [],
     users: [],
     projectStatuses: [],
+    configurationListsAvailable: {
+      departments: true,
+      users: true,
+      projectStatuses: true
+    },
     modalBusy: false
   };
 
@@ -363,26 +368,52 @@
   }
 
   async function loadConfigurationLists() {
-    const results = await Promise.all([
+    // These lists use different permissions. One denied endpoint must not
+    // prevent the event-type form from opening for users who can manage types.
+    const results = await Promise.allSettled([
       PMS.Api.get('/departments'),
       PMS.Api.get('/users'),
       PMS.Api.get('/project-statuses')
     ]);
 
-    state.departments = normalizeList(
-      results[0] && results[0].data !== undefined ? results[0].data : results[0],
-      'departments'
-    );
+    state.configurationListsAvailable = {
+      departments: results[0].status === 'fulfilled',
+      users: results[1].status === 'fulfilled',
+      projectStatuses: results[2].status === 'fulfilled'
+    };
 
-    state.users = normalizeList(
-      results[1] && results[1].data !== undefined ? results[1].data : results[1],
-      'users'
-    );
+    if (results[0].status === 'fulfilled') {
+      const response = results[0].value;
+      state.departments = normalizeList(
+        response && response.data !== undefined ? response.data : response,
+        'departments'
+      );
+    } else {
+      console.warn('Event type form: departments list unavailable:', results[0].reason);
+      state.departments = [];
+    }
 
-    state.projectStatuses = normalizeList(
-      results[2] && results[2].data !== undefined ? results[2].data : results[2],
-      'statuses'
-    ).filter(isActive);
+    if (results[1].status === 'fulfilled') {
+      const response = results[1].value;
+      state.users = normalizeList(
+        response && response.data !== undefined ? response.data : response,
+        'users'
+      );
+    } else {
+      console.warn('Event type form: users list unavailable:', results[1].reason);
+      state.users = [];
+    }
+
+    if (results[2].status === 'fulfilled') {
+      const response = results[2].value;
+      state.projectStatuses = normalizeList(
+        response && response.data !== undefined ? response.data : response,
+        'statuses'
+      ).filter(isActive);
+    } else {
+      console.warn('Event type form: project statuses list unavailable:', results[2].reason);
+      state.projectStatuses = [];
+    }
   }
 
   function makeCheckboxGroup(name, items, selectedValuesList, labelFunction) {
@@ -457,14 +488,9 @@
     try {
       await loadConfigurationLists();
     } catch (error) {
+      // Keep this guard for unexpected client-side errors; individual endpoint
+      // failures are handled inside loadConfigurationLists.
       console.error('Configuration lists loading failed:', error);
-
-      showMessage(
-        'دریافت فهرست بخش‌ها، کاربران یا وضعیت‌های پروژه ناموفق بود. ' +
-        'مسیرهای مربوطه در بک‌اند و شیت وضعیت‌های پروژه را بررسی کن.'
-      );
-
-      return;
     }
 
     const modal = createModal(
@@ -717,6 +743,39 @@
     const form = modal.body.querySelector('#event-type-form');
 
     if (item) {
+      // Preserve saved selections even when the current user cannot read the
+      // corresponding lookup list. Otherwise a save could silently clear them.
+      [
+        ['DepartmentID', item.DepartmentID, state.departments],
+        ['TargetDepartmentID', item.TargetDepartmentID, state.departments]
+      ].forEach(function (entry) {
+        const field = form.elements.namedItem(entry[0]);
+        const value = String(entry[1] || '');
+        if (!field || !value) return;
+        if (!Array.from(field.options).some(function (option) {
+          return String(option.value) === value;
+        })) {
+          const option = document.createElement('option');
+          option.value = value;
+          const matched = entry[2].find(function (lookup) {
+            return String(getId(lookup)) === value;
+          });
+          option.textContent = getName(matched) || value + ' (ذخیره‌شده)';
+          field.appendChild(option);
+        }
+      });
+
+      const statusField = form.elements.namedItem('TargetProjectStatus');
+      const savedStatus = String(item.TargetProjectStatus || '');
+      if (statusField && savedStatus && !Array.from(statusField.options).some(function (option) {
+        return String(option.value) === savedStatus;
+      })) {
+        const option = document.createElement('option');
+        option.value = savedStatus;
+        option.textContent = savedStatus + ' (ذخیره‌شده)';
+        statusField.appendChild(option);
+      }
+
       setFieldValue(form, 'Name', item.Name);
       setFieldValue(form, 'Code', item.Code);
       setFieldValue(form, 'Description', item.Description);
@@ -803,9 +862,15 @@
         TargetDepartmentID: fieldValue(form, 'TargetDepartmentID'),
         TargetProjectStatus: fieldValue(form, 'TargetProjectStatus'),
         TargetStepStatus: fieldValue(form, 'TargetStepStatus').trim(),
-        AllowedDepartmentIDs: selectedValues(form, 'AllowedDepartmentIDs'),
-        AllowedUserIDs: selectedValues(form, 'AllowedUserIDs'),
-        AvailableDepartmentIDs: selectedValues(form, 'AvailableDepartmentIDs'),
+        AllowedDepartmentIDs: form.querySelector('[data-check-group="AllowedDepartmentIDs"]')
+          ? selectedValues(form, 'AllowedDepartmentIDs')
+          : (editing ? normalizeArray(item && item.AllowedDepartmentIDs) : []),
+        AllowedUserIDs: form.querySelector('[data-check-group="AllowedUserIDs"]')
+          ? selectedValues(form, 'AllowedUserIDs')
+          : (editing ? normalizeArray(item && item.AllowedUserIDs) : []),
+        AvailableDepartmentIDs: form.querySelector('[data-check-group="AvailableDepartmentIDs"]')
+          ? selectedValues(form, 'AvailableDepartmentIDs')
+          : (editing ? normalizeArray(item && item.AvailableDepartmentIDs) : []),
         AllowAttachments: fieldChecked(form, 'AllowAttachments'),
         MovesProjectToStep: fieldChecked(form, 'MovesProjectToStep'),
         AllowVoid: fieldChecked(form, 'AllowVoid'),
@@ -816,6 +881,18 @@
 
       if (!payload.Name || !payload.Code) {
         showMessage('نام و کد نوع رویداد الزامی است.');
+        return;
+      }
+
+      if (payload.ConnectionType === 'INDEPENDENT' &&
+          (payload.UseProjectColors || payload.UseProjectSizes || payload.TrackVariantQuantity)) {
+        showMessage('برای رویداد مستقل از پروژه، رنگ‌بندی، سایزبندی و ثبت مقدار ترکیب باید غیرفعال باشند.');
+        return;
+      }
+
+      if (payload.TrackVariantQuantity &&
+          !payload.UseProjectColors && !payload.UseProjectSizes) {
+        showMessage('برای ثبت مقدار، انتخاب رنگ یا سایز را هم فعال کن.');
         return;
       }
 
@@ -875,8 +952,10 @@
           }
         }
       } catch (error) {
-        console.error('Saving event type failed:', error);
-        showMessage(error.message || 'ذخیره نوع رویداد ناموفق بود.');
+        console.error('Saving event type failed:', error, error && error.response);
+        const details = error && error.response && error.response.error &&
+          error.response.error.message;
+        showMessage(details || error.message || 'ذخیره نوع رویداد ناموفق بود.');
       } finally {
         state.modalBusy = false;
         setButtonBusy(saveButton, false);
