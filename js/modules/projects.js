@@ -921,7 +921,12 @@
             <div class="filter-group" style="margin-bottom:16px;">
               <label for="new-project-file">افزودن فایل <span style="color:var(--color-text-secondary);font-size:12px;">(اختیاری)</span></label>
               <input type="file" id="new-project-file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" style="width:100%;box-sizing:border-box;">
-              <small id="new-project-file-help" style="display:block;margin-top:5px;color:var(--color-text-secondary);">فایل پس از ایجاد پروژه به پیوست‌های همان پروژه اضافه می‌شود. برای بارگذاری به دسترسی افزودن فایل نیاز است.</small>
+              <div id="new-project-filename-wrap" class="filter-group" style="margin-top:10px;" hidden>
+                <label for="new-project-filename">نام فایل</label>
+                <input type="text" id="new-project-filename" maxlength="180" autocomplete="off" placeholder="نام دلخواه فایل را وارد کنید" style="width:100%;box-sizing:border-box;min-height:42px;padding:9px 12px;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface);color:var(--color-text);font:inherit;">
+                <small id="new-project-filename-preview" style="display:block;margin-top:5px;color:var(--color-text-secondary);overflow-wrap:anywhere;">نام نهایی فایل با کد پروژه ترکیب می‌شود.</small>
+              </div>
+              <small id="new-project-file-help" style="display:block;margin-top:5px;color:var(--color-text-secondary);">پس از انتخاب فایل، نام آن را بررسی یا ویرایش کنید. نام نهایی با کد پروژه ترکیب می‌شود.</small>
               <div id="project-edit-attachments" ${isEditMode ? '' : 'hidden'} style="margin-top:14px;padding:12px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-surface-hover, var(--color-surface));">
                 <div style="font-weight:700;margin-bottom:8px;">فایل‌های فعلی پروژه</div>
                 <div id="project-edit-attachments-list" aria-live="polite" style="display:flex;flex-direction:column;gap:8px;">
@@ -1052,6 +1057,27 @@
       const usersSelect = modal.querySelector('#new-project-users');
       const fileInput = modal.querySelector('#new-project-file');
       const fileHelp = modal.querySelector('#new-project-file-help');
+      const fileNameInput = modal.querySelector('#new-project-filename');
+      const fileNameWrap = modal.querySelector('#new-project-filename-wrap');
+      const fileNamePreview = modal.querySelector('#new-project-filename-preview');
+      const updateFileNamePreview = () => {
+        if (!fileNamePreview) return;
+        const projectCode = String((modal.querySelector('#new-project-code') || {}).value || '').trim().replace(/[\\/:*?"<>|]/g, '_');
+        const enteredName = String(fileNameInput && fileNameInput.value || '').trim();
+        fileNamePreview.textContent = projectCode && enteredName ? 'نام نهایی: ' + projectCode + '_' + enteredName : 'نام نهایی فایل با کد پروژه ترکیب می‌شود.';
+      };
+      if (fileInput) fileInput.addEventListener('change', () => {
+        const selected = fileInput.files && fileInput.files[0];
+        if (fileNameWrap) fileNameWrap.hidden = !selected;
+        if (selected && fileNameInput) {
+          const lastDot = selected.name.lastIndexOf('.');
+          fileNameInput.value = lastDot > 0 ? selected.name.slice(0, lastDot) : selected.name;
+        } else if (fileNameInput) fileNameInput.value = '';
+        updateFileNamePreview();
+      });
+      if (fileNameInput) fileNameInput.addEventListener('input', updateFileNamePreview);
+      const codeInputForFileName = modal.querySelector('#new-project-code');
+      if (codeInputForFileName) codeInputForFileName.addEventListener('input', updateFileNamePreview);
       const routerForAttachments = window.PMS.Router;
       const canUploadProjectAttachment = !!(routerForAttachments &&
         (routerForAttachments.isAdmin() ||
@@ -1059,6 +1085,7 @@
             routerForAttachments.permissions.indexOf('ATTACHMENT_UPLOAD') !== -1)));
       if (!canUploadProjectAttachment && fileInput) {
         fileInput.disabled = true;
+        if (fileNameInput) fileNameInput.disabled = true;
         if (fileHelp) fileHelp.textContent = 'برای افزودن فایل، مدیر باید دسترسی ATTACHMENT_UPLOAD را به نقش شما بدهد.';
       }
 
@@ -1533,8 +1560,8 @@
           const size = Number(item.FileSize || item.fileSize || 0);
           const sizeLabel = size >= 1024 * 1024 ? (size / (1024 * 1024)).toFixed(1) + ' مگابایت' :
             size >= 1024 ? (size / 1024).toFixed(1) + ' کیلوبایت' : (size ? size + ' بایت' : '');
-          return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:9px;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface);">' +
-            '<div style="min-width:0;flex:1;overflow-wrap:anywhere;"><div style="font-weight:600;font-size:13px;">' + this.escape(name) + '</div>' +
+          return '<div data-project-attachment-row style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:9px;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface);">' +
+            '<div style="min-width:0;flex:1;overflow-wrap:anywhere;"><div data-project-attachment-name style="font-weight:600;font-size:13px;">' + this.escape(name) + '</div>' +
             (sizeLabel ? '<small style="color:var(--color-text-secondary);">' + this.escape(sizeLabel) + '</small>' : '') + '</div>' +
             '<div style="display:flex;gap:6px;flex-wrap:wrap;">' +
             '<button type="button" class="btn btn-light" data-project-attachment-action="download" data-attachment-id="' + this.escape(id) + '" style="min-height:34px;">دریافت</button>' +
@@ -1547,6 +1574,56 @@
       }
     },
 
+    requestProjectAttachmentDeleteReason: function (attachmentName) {
+      return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-label', 'دلیل حذف فایل');
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:30000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.55);direction:rtl;';
+        const panel = document.createElement('div');
+        panel.style.cssText = 'width:min(100%,480px);box-sizing:border-box;padding:20px;border:1px solid var(--color-border);border-radius:14px;background:var(--color-surface);color:var(--color-text);box-shadow:0 18px 60px rgba(0,0,0,.25);';
+        const title = document.createElement('h3');
+        title.textContent = 'دلیل حذف فایل';
+        title.style.cssText = 'margin:0 0 8px;font-size:18px;';
+        const description = document.createElement('p');
+        description.textContent = 'برای حذف «' + String(attachmentName || 'فایل').slice(0, 180) + '» دلیل حذف را وارد کنید. این دلیل در سابقه تغییرات ثبت می‌شود.';
+        description.style.cssText = 'margin:0 0 12px;line-height:1.8;color:var(--color-text-secondary);overflow-wrap:anywhere;';
+        const fieldLabel = document.createElement('label');
+        fieldLabel.textContent = 'دلیل حذف (الزامی)';
+        fieldLabel.style.cssText = 'display:block;margin-bottom:6px;font-weight:600;';
+        const textarea = document.createElement('textarea');
+        textarea.rows = 4;
+        textarea.maxLength = 1000;
+        textarea.placeholder = 'مثلاً فایل اشتباه بارگذاری شده است…';
+        textarea.style.cssText = 'display:block;width:100%;box-sizing:border-box;resize:vertical;min-height:100px;padding:10px;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface);color:var(--color-text);font:inherit;';
+        const error = document.createElement('div');
+        error.hidden = true;
+        error.style.cssText = 'margin-top:6px;color:var(--color-danger);font-size:13px;';
+        const actions = document.createElement('div');
+        actions.style.cssText = 'display:flex;justify-content:flex-start;gap:8px;flex-wrap:wrap;margin-top:16px;';
+        const cancel = document.createElement('button');
+        cancel.type = 'button'; cancel.className = 'btn btn-light'; cancel.textContent = 'انصراف';
+        const submit = document.createElement('button');
+        submit.type = 'button'; submit.className = 'btn btn-danger'; submit.textContent = 'تأیید حذف';
+        const finish = (value) => { overlay.remove(); resolve(value); };
+        cancel.addEventListener('click', () => finish(''));
+        overlay.addEventListener('click', (event) => { if (event.target === overlay) finish(''); });
+        submit.addEventListener('click', () => {
+          const value = textarea.value.trim();
+          if (!value) { error.textContent = 'وارد کردن دلیل حذف الزامی است.'; error.hidden = false; textarea.focus(); return; }
+          finish(value);
+        });
+        textarea.addEventListener('input', () => { error.hidden = true; });
+        textarea.addEventListener('keydown', (event) => { if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') submit.click(); });
+        actions.append(cancel, submit);
+        panel.append(title, description, fieldLabel, textarea, error, actions);
+        overlay.appendChild(panel);
+        document.body.appendChild(overlay);
+        textarea.focus();
+      });
+    },
+
     deleteProjectEditAttachment: async function (modal, attachmentId, button) {
       if (!attachmentId) return;
       const router = window.PMS && window.PMS.Router;
@@ -1556,13 +1633,16 @@
         alert('برای حذف فایل، دسترسی حذف پیوست لازم است.');
         return;
       }
-      if (!window.confirm('آیا مطمئن هستید که می‌خواهید این فایل را از پروژه حذف کنید؟')) return;
+      const row = button.closest('[data-project-attachment-row]');
+      const nameElement = row && row.querySelector('[data-project-attachment-name]');
+      const reason = await this.requestProjectAttachmentDeleteReason(nameElement ? nameElement.textContent : 'فایل');
+      if (!reason) return;
 
       const previousText = button.textContent;
       button.disabled = true;
       button.textContent = 'در حال حذف…';
       try {
-        await window.PMS.Api.delete('/attachments/' + encodeURIComponent(attachmentId));
+        await window.PMS.Api.delete('/attachments/' + encodeURIComponent(attachmentId), { query: { reason: reason } });
         const cache = window.PMS && window.PMS.Cache;
         if (cache) cache.remove('project_card_attachments_v2');
         this.projectCardAttachmentsPromise = null;
@@ -1702,6 +1782,22 @@
         fileInput.focus();
         return;
       }
+      const requestedFileName = String(fileNameInput && fileNameInput.value || '').trim();
+      if (selectedFile && !requestedFileName) {
+        this.showFormError(modal, 'لطفاً نام دلخواه فایل را وارد کنید.');
+        if (fileNameInput) fileNameInput.focus();
+        return;
+      }
+      const buildProjectAttachmentName = (projectCode, originalFile, requestedName) => {
+        const originalName = String(originalFile && originalFile.name || '');
+        const dot = originalName.lastIndexOf('.');
+        const extension = dot > 0 ? originalName.slice(dot) : '';
+        let cleanName = String(requestedName || '').trim().replace(/[\\/:*?"<>|]/g, '_');
+        if (!cleanName) cleanName = dot > 0 ? originalName.slice(0, dot) : originalName;
+        if (extension && !cleanName.toLowerCase().endsWith(extension.toLowerCase())) cleanName += extension;
+        const cleanCode = String(projectCode || 'PROJECT').trim().replace(/[\\/:*?"<>|]/g, '_');
+        return cleanCode + '_' + cleanName;
+      };
 
       this.isSaving = true;
       submitButton.disabled = true;
@@ -1733,7 +1829,7 @@
               reader.readAsDataURL(selectedFile);
             });
             await window.PMS.Api.post('/projects/' + encodeURIComponent(projectId) + '/attachments', {
-              FileName: String(project.ProjectCode || 'PROJECT').trim().replace(/[\\/:*?"<>|]/g, '_') + '_' + selectedFile.name,
+              FileName: buildProjectAttachmentName(project.ProjectCode, selectedFile, requestedFileName),
               MimeType: selectedFile.type || 'application/octet-stream',
               Base64: base64
             });
@@ -1791,7 +1887,7 @@
               reader.readAsDataURL(selectedFile);
             });
             await window.PMS.Api.post('/projects/' + encodeURIComponent(createdId) + '/attachments', {
-              FileName: String(project.ProjectCode || 'PROJECT').trim().replace(/[\\/:*?"<>|]/g, '_') + '_' + selectedFile.name,
+              FileName: buildProjectAttachmentName(project.ProjectCode, selectedFile, requestedFileName),
               MimeType: selectedFile.type || 'application/octet-stream',
               Base64: base64
             });
