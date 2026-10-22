@@ -164,6 +164,14 @@
     },
 
     loadVoidedEventAuditHistory: async function () {
+      const router = window.PMS && window.PMS.Router;
+      const permissions = router && Array.isArray(router.permissions) ? router.permissions : [];
+      const canViewAudit = !!(router && (
+        (typeof router.isAdmin === 'function' && router.isAdmin()) ||
+        permissions.indexOf('REPORT_VIEW') !== -1
+      ));
+      if (!canViewAudit) return;
+
       const self = this;
       const voided = (this.events || []).filter(function (event) {
         const status = String(event.Status || '').toUpperCase();
