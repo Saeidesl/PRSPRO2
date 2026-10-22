@@ -85,7 +85,14 @@
         '.project-list-card-activity{font-size:11px;color:var(--color-text-secondary);line-height:1.8;margin-top:5px}',
         '.project-list-card-actions{display:flex;align-items:center;justify-content:flex-start;gap:7px;flex-wrap:wrap;padding:0 15px 13px 15px}',
         '.project-list-card-actions .btn{min-height:34px}',
-        '@media(max-width:520px){.project-list-card-main{padding:11px;gap:9px}.project-list-card-code{font-size:12px}.project-list-card-title{font-size:11px}.project-list-card-actions{padding:0 11px 11px}.project-list-card-actions .btn{flex:1}}'
+        '@media(max-width:520px){.project-list-card-main{padding:11px;gap:9px}.project-list-card-code{font-size:12px}.project-list-card-title{font-size:11px}.project-list-card-actions{padding:0 11px 11px}.project-list-card-actions .btn{flex:1}}',
+        '.project-create-progress{display:flex;align-items:center;gap:10px;margin:0 0 16px;padding:12px 14px;border:1px solid color-mix(in srgb,var(--color-primary) 30%,var(--color-border));border-radius:10px;background:color-mix(in srgb,var(--color-primary) 7%,var(--color-surface));color:var(--color-text);font-size:13px;line-height:1.8}',
+        '.project-create-progress[hidden]{display:none}',
+        '.project-create-progress.is-success{border-color:#16a34a;background:color-mix(in srgb,#16a34a 9%,var(--color-surface))}',
+        '.project-create-progress.is-error{border-color:#dc2626;background:color-mix(in srgb,#dc2626 8%,var(--color-surface))}',
+        '.project-create-progress-spinner{width:17px;height:17px;flex:0 0 17px;border:2px solid color-mix(in srgb,var(--color-primary) 25%,transparent);border-top-color:var(--color-primary);border-radius:50%;animation:project-create-spin .8s linear infinite}',
+        '.project-create-progress.is-success .project-create-progress-spinner,.project-create-progress.is-error .project-create-progress-spinner{display:none}',
+        '@keyframes project-create-spin{to{transform:rotate(360deg)}}'
       ].join('');
       document.head.appendChild(style);
     },
@@ -469,6 +476,17 @@
             hidden
             style="margin-bottom:16px;"
           ></div>
+          <div
+            id="project-create-progress"
+            class="project-create-progress"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            hidden
+          >
+            <span class="project-create-progress-spinner" aria-hidden="true"></span>
+            <span id="project-create-progress-text"></span>
+          </div>
 
           <form id="project-create-form">
             <div class="filter-group" style="margin-bottom:16px;">
@@ -986,6 +1004,16 @@
       const selectedUsers = Array.from(usersSelect.selectedOptions).map((option) => option.value).filter(Boolean);
       const selectedFile = fileInput && fileInput.files ? fileInput.files[0] : null;
       const submitButton = modal.querySelector('#project-create-submit');
+      const progressBox = modal.querySelector('#project-create-progress');
+      const progressText = modal.querySelector('#project-create-progress-text');
+      const updateProgress = (message, state) => {
+        if (!progressBox || !progressText) return;
+        progressBox.hidden = false;
+        progressBox.classList.remove('is-success', 'is-error');
+        if (state === 'success') progressBox.classList.add('is-success');
+        if (state === 'error') progressBox.classList.add('is-error');
+        progressText.textContent = message;
+      };
       const routerForAttachments = window.PMS.Router;
       const canUploadProjectAttachment = !!(routerForAttachments &&
         (routerForAttachments.isAdmin() ||
@@ -1054,8 +1082,9 @@
       this.isSaving = true;
       submitButton.disabled = true;
       submitButton.textContent = 'در حال ثبت...';
-
+      // Keep the user informed even when the server request takes several seconds.
       this.clearFormError(modal);
+      updateProgress('در حال ذخیره اطلاعات پروژه در سرور؛ لطفاً این پنجره را نبندید.', 'loading');
 
       try {
         const response = await window.PMS.Api.post('/projects', project);
@@ -1070,6 +1099,7 @@
         }
 
         const createdId = String(created.ID || created.Id || created.id);
+        updateProgress('پروژه ذخیره شد. در حال تکمیل اطلاعات وابسته...', 'loading');
 
         let attachmentWarning = '';
         let needsWarning = '';
@@ -1077,12 +1107,16 @@
         try { draftNeeds = JSON.parse(modal.dataset.projectNeeds || '[]'); } catch (error) {}
         if (draftNeeds.length) {
           try {
-            for (const item of draftNeeds) await window.PMS.Api.post('/procurement/needs', Object.assign({}, item, { ProjectID: createdId }));
+            for (let i = 0; i < draftNeeds.length; i++) {
+              updateProgress('پروژه ثبت شد؛ در حال ثبت ملزومات (' + (i + 1) + ' از ' + draftNeeds.length + ')...', 'loading');
+              await window.PMS.Api.post('/procurement/needs', Object.assign({}, draftNeeds[i], { ProjectID: createdId }));
+            }
           } catch (needsError) {
             needsWarning = ' پروژه ایجاد شد، اما ثبت همه ملزومات ناموفق بود: ' + this.getErrorMessage(needsError);
           }
         }
         if (selectedFile) {
+          updateProgress('پروژه ثبت شد؛ در حال بارگذاری فایل پیوست...', 'loading');
           try {
             const base64 = await new Promise((resolve, reject) => {
               const reader = new FileReader();
@@ -1116,11 +1150,12 @@
         // فهرست فعلی را بلافاصله به‌روز می‌کنیم.
         this.applyFilters();
 
-        modal.remove();
-
+        updateProgress('ثبت پروژه تمام شد.', 'success');
+        // Let the success state be announced before closing the form.
         if (this.modal === modal) {
           this.modal = null;
         }
+        modal.remove();
 
         alert('پروژه با موفقیت ثبت شد.' + attachmentWarning + needsWarning);
 
@@ -1142,10 +1177,9 @@
         }
 
       } catch (error) {
-        this.showFormError(
-          modal,
-          this.getErrorMessage(error) || 'ثبت پروژه ناموفق بود.'
-        );
+        const message = this.getErrorMessage(error) || 'ثبت پروژه ناموفق بود.';
+        updateProgress('ثبت پروژه ناموفق بود: ' + message, 'error');
+        this.showFormError(modal, message);
       } finally {
         this.isSaving = false;
 
