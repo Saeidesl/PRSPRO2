@@ -108,6 +108,7 @@
             items = data.permissions;
           }
 
+          if (generation !== self.authGeneration) return [];
           self.permissions = items.map(function (item) {
             if (typeof item === 'string') return item;
 
