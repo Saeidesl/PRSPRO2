@@ -55,8 +55,16 @@
 
           content.hidden = !content.hidden;
           filterButton.setAttribute('aria-expanded', String(!content.hidden));
+          filterButton.classList.toggle('is-expanded', !content.hidden);
 
-          if (arrow) arrow.textContent = content.hidden ? '▼' : '▲';
+          if (arrow) arrow.textContent = content.hidden ? '⌄' : '⌃';
+          return;
+        }
+
+        const queueTab = target.closest('.event-queue-tab');
+        if (queueTab) {
+          event.preventDefault();
+          Events.activateQueue(queueTab.dataset.queue);
           return;
         }
 
@@ -497,6 +505,28 @@
       });
 
       this.render(filtered);
+    },
+
+    activateQueue: function (key) {
+      const allowed = ['pending', 'progress', 'completed'];
+      if (allowed.indexOf(key) === -1) return;
+
+      allowed.forEach(function (name) {
+        const tab = document.querySelector('.event-queue-tab[data-queue="' + name + '"]');
+        const panel = document.getElementById('event-panel-' + name);
+        const active = name === key;
+
+        if (tab) {
+          tab.classList.toggle('is-active', active);
+          tab.setAttribute('aria-selected', String(active));
+          tab.tabIndex = active ? 0 : -1;
+        }
+
+        if (panel) {
+          panel.hidden = !active;
+          panel.classList.toggle('is-active', active);
+        }
+      });
     },
 
     renderProjectQueues: function () {
