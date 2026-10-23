@@ -1598,7 +1598,9 @@
       this.setSubmitState(true);
 
       try {
-        await PMS.Api.post('/events', payload);
+        const eventResponse = await PMS.Api.post('/events', payload);
+        const eventResult = PMS.Api.extractData ? (PMS.Api.extractData(eventResponse) || {}) : ((eventResponse && eventResponse.data) || eventResponse || {});
+        const procurementIntegration = eventResult.procurementIntegration || {};
 
         PMS.Api.invalidateMany([
           CACHE_KEY,
