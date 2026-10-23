@@ -66,6 +66,14 @@
           return;
         }
 
+        const queueAction = target.closest('.event-queue-register-button');
+        if (queueAction) {
+          event.preventDefault();
+          Events.preselectedProjectId = String(queueAction.dataset.projectId || '');
+          Events.openForm();
+          return;
+        }
+
         const detailsButton = target.closest('.event-details-button');
         if (detailsButton) {
           event.preventDefault();
@@ -379,6 +387,8 @@
         createdTo: get('event-created-to')
       };
 
+      this.renderProjectQueues();
+
       const projectMap = new Map();
 
       this.projects.forEach(function (item) {
@@ -487,6 +497,61 @@
       });
 
       this.render(filtered);
+    },
+
+    renderProjectQueues: function () {
+      const user = PMS.Router && typeof PMS.Router.getUser === 'function' ? PMS.Router.getUser() || {} : {};
+      const userId = String(user.ID || user.Id || user.id || '');
+      const departmentId = String(user.DepartmentID || user.departmentId || '');
+      const activeEvents = this.events.filter(function (event) {
+        return String(event.Status || 'ACTIVE').toUpperCase() !== 'VOID' && String(event.ProjectID || '').trim() !== '';
+      });
+      const typeMap = new Map();
+      this.eventTypes.forEach(function (type) { typeMap.set(Events.idOf(type), type); });
+      const queues = { pending: [], progress: [], completed: [] };
+      this.projects.forEach(function (project) {
+        const projectId = Events.idOf(project);
+        if (!projectId) return;
+        const related = activeEvents.filter(function (event) {
+          if (String(event.ProjectID || '') !== projectId) return false;
+          if (departmentId) return String(event.DepartmentID || '') === departmentId ||
+            String(event.PerformedBy || '') === userId || String(event.CreatedBy || '') === userId;
+          return !!userId && (String(event.PerformedBy || '') === userId || String(event.CreatedBy || '') === userId);
+        });
+        const completed = related.some(function (event) {
+          const type = typeMap.get(String(event.EventTypeID || ''));
+          return event.IsWorkCompletion === true ||
+            String(event.IsWorkCompletion).toLowerCase() === 'true' || String(event.IsWorkCompletion) === '1' ||
+            (!!type && (type.IsWorkCompletion === true ||
+              String(type.IsWorkCompletion).toLowerCase() === 'true' || String(type.IsWorkCompletion) === '1'));
+        });
+        queues[completed ? 'completed' : related.length ? 'progress' : 'pending'].push(project);
+      });
+      const definitions = [
+        { key: 'pending', id: 'event-queue-pending', countId: 'event-queue-pending-count', empty: 'پروژه‌ای در انتظار اقدام نیست.' },
+        { key: 'progress', id: 'event-queue-progress', countId: 'event-queue-progress-count', empty: 'پروژه‌ای در حال انجام نیست.' },
+        { key: 'completed', id: 'event-queue-completed', countId: 'event-queue-completed-count', empty: 'هنوز پروژه‌ای با رویداد پایان کار ثبت نشده است.' }
+      ];
+      definitions.forEach(function (definition) {
+        const container = document.getElementById(definition.id);
+        const count = document.getElementById(definition.countId);
+        if (!container) return;
+        const items = queues[definition.key];
+        if (count) count.textContent = String(items.length).replace(/\d/g, function (digit) { return '۰۱۲۳۴۵۶۷۸۹'[Number(digit)]; });
+        if (!items.length) {
+          container.innerHTML = '<p class="event-queue-empty">' + Events.escape(definition.empty) + '</p>';
+          return;
+        }
+        container.innerHTML = items.map(function (project) {
+          const id = Events.idOf(project);
+          const code = project.ProjectCode || id;
+          const title = project.Title || project.Name || project.ProjectName || 'بدون عنوان';
+          const status = project.CurrentStepStatus || project.Status || '';
+          return '<article class="event-queue-project"><strong>' + Events.escape(code) + ' — ' + Events.escape(title) + '</strong>' +
+            (status ? '<p>' + Events.escape(status) + '</p>' : '') +
+            '<button type="button" class="btn btn-secondary event-queue-register-button" data-project-id="' + Events.escape(id) + '">ثبت رویداد برای این پروژه</button></article>';
+        }).join('');
+      });
     },
 
     render: function (events) {
