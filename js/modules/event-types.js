@@ -813,6 +813,7 @@
       setFieldChecked(form, 'UseProjectColors', item.UseProjectColors);
       setFieldChecked(form, 'UseProjectSizes', item.UseProjectSizes);
       setFieldChecked(form, 'TrackVariantQuantity', item.TrackVariantQuantity);
+      setFieldChecked(form, 'IsWorkCompletion', item.IsWorkCompletion);
 
       setSelectedCheckboxes(form, 'AllowedDepartmentIDs', item.AllowedDepartmentIDs);
       setSelectedCheckboxes(form, 'AllowedUserIDs', item.AllowedUserIDs);
