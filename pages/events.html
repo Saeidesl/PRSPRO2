@@ -78,6 +78,23 @@
 
 </div>
 
+            <section class="event-project-queues" aria-label="پروژه‌ها بر اساس وضعیت اقدام">
+        <div class="event-queue-heading"><h3>پروژه‌های مربوط به شما</h3><p>وضعیت کار در واحد یا محدوده دسترسی شما نمایش داده می‌شود.</p></div>
+        <div class="event-queue-grid">
+          <section class="event-project-queue queue-pending" aria-labelledby="event-queue-pending-title"><header><span class="event-queue-icon" aria-hidden="true">◷</span><div><h4 id="event-queue-pending-title">پروژه‌های در انتظار اقدام</h4><span id="event-queue-pending-count" class="event-queue-count">۰</span></div></header><div id="event-queue-pending" class="event-queue-list"><p class="event-queue-empty">در حال بارگذاری...</p></div></section>
+          <section class="event-project-queue queue-progress" aria-labelledby="event-queue-progress-title"><header><span class="event-queue-icon" aria-hidden="true">◴</span><div><h4 id="event-queue-progress-title">پروژه‌های در حال انجام</h4><span id="event-queue-progress-count" class="event-queue-count">۰</span></div></header><div id="event-queue-progress" class="event-queue-list"><p class="event-queue-empty">در حال بارگذاری...</p></div></section>
+          <section class="event-project-queue queue-completed" aria-labelledby="event-queue-completed-title"><header><span class="event-queue-icon" aria-hidden="true">✓</span><div><h4 id="event-queue-completed-title">پروژه‌های اتمام کار شده</h4><span id="event-queue-completed-count" class="event-queue-count">۰</span></div></header><div id="event-queue-completed" class="event-queue-list"><p class="event-queue-empty">در حال بارگذاری...</p></div></section>
+        </div>
+      </section>
+      <style>
+        .event-project-queues{margin:0 0 24px}.event-queue-heading{margin-bottom:14px}.event-queue-heading h3{margin:0 0 5px;font-size:1.08rem}.event-queue-heading p{margin:0;color:var(--text-muted,#656d76);font-size:.9rem}
+        .event-queue-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}.event-project-queue{min-width:0;border:1px solid var(--border-color,#d0d7de);border-radius:12px;overflow:hidden;background:var(--card-bg,#fff)}
+        .event-project-queue>header{display:flex;align-items:center;gap:10px;padding:14px;border-bottom:1px solid var(--border-color,#d0d7de)}.event-project-queue>header h4{margin:0;font-size:.96rem;line-height:1.5}.event-queue-icon{display:grid;place-items:center;flex:0 0 34px;height:34px;border-radius:9px;font-size:1.25rem;font-weight:700}
+        .queue-pending .event-queue-icon{background:#ffebe9;color:#cf222e}.queue-progress .event-queue-icon{background:#fff8c5;color:#9a6700}.queue-completed .event-queue-icon{background:#dafbe1;color:#1a7f37}.event-queue-count{display:inline-block;margin-top:3px;color:var(--text-muted,#656d76);font-size:.8rem}
+        .event-queue-list{display:grid;gap:8px;padding:10px;max-height:520px;overflow:auto}.event-queue-project{padding:11px;border:1px solid var(--border-color,#d8dee4);border-radius:9px;min-width:0}.event-queue-project strong{display:block;overflow-wrap:anywhere;font-size:.92rem}.event-queue-project p{margin:4px 0 10px;color:var(--text-muted,#656d76);font-size:.82rem;overflow-wrap:anywhere}.event-queue-project button{width:100%;white-space:normal;line-height:1.4}.event-queue-empty{margin:0;padding:14px 8px;text-align:center;color:var(--text-muted,#656d76);font-size:.88rem}
+        @media(max-width:900px){.event-queue-grid{grid-template-columns:1fr}.event-queue-list{max-height:none}.event-project-queue>header h4{font-size:.94rem}}
+      </style>
+
       <!-- وضعیت بارگذاری -->
       <div
         id="events-loading"
