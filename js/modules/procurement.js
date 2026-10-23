@@ -522,6 +522,15 @@
   }
 
 
+  function requestIdempotencyKey(prefix) {
+    let token = '';
+    try {
+      if (window.crypto && typeof window.crypto.randomUUID === 'function') token = window.crypto.randomUUID();
+    } catch (error) {}
+    if (!token) token = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12);
+    return String(prefix || 'REQ') + '-' + token;
+  }
+
   function modal(title, body) {
     clearMessage();
     const root = $('procurement-modal-root');
@@ -681,6 +690,8 @@
       '<div class="procurement-order-list" id="procurement-order-items">' + orderItemRow(0) + '</div><div class="procurement-items-actions"><button type="button" class="btn btn-secondary" id="procurement-add-order-item">+ افزودن ردیف</button></div></section>' +
       '<div class="modal-actions procurement-submit-actions"><button type="submit" class="btn btn-primary">ثبت سفارش</button></div></form>');
 
+    const orderForm = root.querySelector('#procurement-order-form');
+    orderForm.dataset.idempotencyKey = requestIdempotencyKey('PO');
     const itemsRoot = root.querySelector('#procurement-order-items');
     const projectSelect = root.querySelector('[name="ProjectID"]');
     if (projectSelect) {
@@ -773,6 +784,7 @@
         OrderDate: orderDateIso,
         ExpectedDeliveryDate: expectedDeliveryDateIso,
         Notes: header.Notes || '',
+        IdempotencyKey: form.dataset.idempotencyKey,
         Items: items
       };
       if (isProjectOrder) body.ProjectID = selectedProject;
@@ -821,6 +833,7 @@
       '</form>');
 
     const form = root.querySelector('#procurement-receipt-form');
+    form.dataset.idempotencyKey = requestIdempotencyKey('REC');
     const projectSelect = form.elements.ProjectID;
     if (options.orderId) {
       const orderOption = document.createElement('option');
@@ -1000,6 +1013,7 @@
             PurchaseOrderItemID: receipt.itemId,
             ProjectID: receipt.entry ? String(receipt.entry.projectId || '') : (projectSelect.value === '__GENERAL__' || projectSelect.value === '__ORDER__' ? '' : projectSelect.value),
             QuantityReceived: receipt.quantity,
+            IdempotencyKey: form.dataset.idempotencyKey + ':' + receipt.itemId,
             Notes: form.elements.Notes.value || ''
           };
           if (receiveDate.value) body.ReceivedAt = new Date(jalaliDateToIso(receiveDate.value) + 'T12:00:00Z').toISOString();
