@@ -219,14 +219,16 @@
       if (toOrder > 0 && toReceive > 0) { label = 'نیاز به سفارش و دریافت'; kind = 'partial'; }
       else if (toOrder > 0) { label = 'در انتظار سفارش'; kind = 'waiting'; }
       else if (toReceive > 0) { label = received > 0 ? 'دریافت ناقص' : 'در انتظار دریافت'; kind = received > 0 ? 'partial' : 'delivery'; }
-      groups.get(groupKey).items.push({ item, requested, received, toOrder, toReceive, label, kind });
+      groups.get(groupKey).items.push({ item, requested, received, toOrder, toReceive, overOrdered, label, kind });
     });
     const cards = Array.from(groups.values()).map(function (group, index) {
       const waitingOrder = group.items.filter(function (x) { return x.toOrder > 0; }).length;
       const waitingReceipt = group.items.filter(function (x) { return x.toReceive > 0; }).length;
-      const completed = group.items.filter(function (x) { return x.toOrder === 0 && x.toReceive === 0; }).length;
+      const overOrderedCount = group.items.filter(function (x) { return x.overOrdered > 0; }).length;
+      const completed = group.items.filter(function (x) { return x.toOrder === 0 && x.toReceive === 0 && x.overOrdered === 0; }).length;
       let overallLabel = 'همه اقلام تأمین شده', overallKind = 'complete';
-      if (waitingOrder > 0 && waitingReceipt > 0) { overallLabel = 'نیاز به سفارش و دریافت'; overallKind = 'partial'; }
+      if (overOrderedCount > 0) { overallLabel = 'خرید مازاد؛ نیازمند بررسی'; overallKind = 'partial'; }
+      else if (waitingOrder > 0 && waitingReceipt > 0) { overallLabel = 'نیاز به سفارش و دریافت'; overallKind = 'partial'; }
       else if (waitingOrder > 0) { overallLabel = 'در انتظار سفارش'; overallKind = 'waiting'; }
       else if (waitingReceipt > 0) { overallLabel = 'در انتظار دریافت'; overallKind = 'delivery'; }
       const detailId = 'procurement-needs-detail-' + index;
@@ -244,7 +246,7 @@
           '<div class="procurement-need-item-status">' + statusBadge(entry.label, entry.kind) + '</div>' +
           '</div></div>';
       }).join('');
-      const filterStatus = waitingOrder > 0 && waitingReceipt > 0 ? 'partial' : (waitingOrder > 0 ? 'waiting-order' : (waitingReceipt > 0 ? 'waiting-receipt' : 'complete'));
+      const filterStatus = overOrderedCount > 0 || (waitingOrder > 0 && waitingReceipt > 0) ? 'partial' : (waitingOrder > 0 ? 'waiting-order' : (waitingReceipt > 0 ? 'waiting-receipt' : 'complete'));
       return '<section class="procurement-summary-card is-' + overallKind + '" data-procurement-card data-filter-status="' + filterStatus + '">' +
         '<button type="button" class="procurement-summary-card-head" data-procurement-toggle aria-expanded="false" aria-controls="' + detailId + '">' +
         '<span class="procurement-summary-card-main"><strong class="procurement-project-code">' + escape(group.label) + '</strong>' +
@@ -252,7 +254,7 @@
         '<span class="procurement-summary-card-status">' + statusBadge(overallLabel, overallKind) +
         '<span class="procurement-card-hint">مشاهده جزئیات</span><span class="procurement-card-chevron" aria-hidden="true">⌄</span></span></button>' +
         '<div class="procurement-summary-card-stats"><span>در انتظار سفارش <b>' + number(waitingOrder) + '</b></span>' +
-        '<span>در انتظار دریافت <b>' + number(waitingReceipt) + '</b></span><span>تأمین کامل <b>' + number(completed) + '</b></span></div>' +
+        '<span>در انتظار دریافت <b>' + number(waitingReceipt) + '</b></span><span>خرید مازاد <b>' + number(overOrderedCount) + '</b></span><span>تأمین کامل <b>' + number(completed) + '</b></span></div>' +
         '<div class="procurement-summary-card-details" id="' + detailId + '" hidden><div class="procurement-needs-project-items">' + lines + '</div></div></section>';
     });
     container.innerHTML = '<div class="procurement-summary-grid">' + cards.join('') + '</div>';
