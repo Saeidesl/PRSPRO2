@@ -35,6 +35,7 @@
     permissionsLoaded: false,
     permissionsRequest: null,
     serverIsAdmin: false,
+    authExpiredListener: null,
 
     routePermissions: {
       dashboard: ['REPORT_VIEW'],
@@ -202,10 +203,36 @@ getBaseUrl: function () {
       });
     },
 
+    resetAuthState: function () {
+      Router.permissions = [];
+      Router.permissionsLoaded = false;
+      Router.permissionsRequest = null;
+      Router.serverIsAdmin = false;
+      Router.currentPage = null;
+      if (window.PMS.Permissions && typeof window.PMS.Permissions.clear === 'function') {
+        window.PMS.Permissions.clear();
+      }
+    },
+
     init: function () {
       window.addEventListener('hashchange', function () {
         Router.handle();
       });
+
+      if (Router.authExpiredListener) {
+        window.removeEventListener('pms:auth-expired', Router.authExpiredListener);
+      }
+      Router.authExpiredListener = function (event) {
+        const detail = event && event.detail ? event.detail : {};
+        if (window.PMS.Auth && typeof window.PMS.Auth.handleAuthExpired === 'function') {
+          window.PMS.Auth.handleAuthExpired(detail.message || 'نشست شما منقضی شده است. لطفاً دوباره وارد شوید.');
+        } else {
+          Router.resetAuthState();
+          if (window.PMS.Session && typeof window.PMS.Session.clear === 'function') window.PMS.Session.clear();
+          Router.navigate('login', true);
+        }
+      };
+      window.addEventListener('pms:auth-expired', Router.authExpiredListener);
 
       Router.handle();
     },
