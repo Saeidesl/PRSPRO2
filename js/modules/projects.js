@@ -2452,6 +2452,7 @@
                 <button type="button" class="btn btn-sm btn-secondary project-material-needs-button" data-project-id="${this.escape(id)}">ملزومات</button>
               ` : ''}
               ${this.canEditProjects() ? `
+                <button type="button" class="btn btn-sm btn-secondary project-material-specs-button" data-project-id="${this.escape(id)}" title="تعریف مصرف هر واحد و سیاست سفارش">مصرف ملزومات</button>
                 <button type="button" class="btn btn-sm btn-secondary project-color-size-button" data-project-id="${this.escape(id)}" title="تعریف یا ویرایش رنگ‌بندی و سایزبندی">رنگ‌بندی و سایز</button>
               ` : ''}
             </div>
