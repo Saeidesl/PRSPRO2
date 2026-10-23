@@ -29,6 +29,7 @@
     permissions: [],
     permissionsLoaded: false,
     permissionsRequest: null,
+    authGeneration: 0,
 
     isAdmin: function (user) {
       user = user || this.getCurrentUser() || {};
@@ -66,12 +67,22 @@
       });
     },
 
+    resetAuthState: function () {
+      this.authGeneration += 1;
+      this.permissions = [];
+      this.permissionsLoaded = false;
+      this.permissionsRequest = null;
+      this.userDetailsRequest = null;
+      this.renderNav();
+    },
+
     loadPermissions: async function () {
       if (this.permissionsRequest) {
         return this.permissionsRequest;
       }
 
       const self = this;
+      const generation = this.authGeneration;
 
       this.permissionsRequest = (async function () {
         self.permissions = [];
@@ -119,11 +130,13 @@
           self.permissionsLoaded = true;
         } catch (error) {
           console.warn('دریافت دسترسی‌های کاربر ناموفق بود:', error);
-          self.permissions = [];
-          self.permissionsLoaded = false;
+          if (generation === self.authGeneration) {
+            self.permissions = [];
+            self.permissionsLoaded = false;
+          }
         }
 
-        self.renderNav();
+        if (generation === self.authGeneration) self.renderNav();
         return self.permissions;
       })();
 
