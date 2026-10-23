@@ -49,7 +49,7 @@
       procurement: ['PROCUREMENT_VIEW', 'PROCUREMENT_MANAGE'],
       attachments: ['ATTACHMENT_VIEW'],
       reports: ['REPORT_VIEW'],
-      users: ['USER_VIEW', 'USER_CREATE', 'USER_EDIT'],
+      users: ['USER_VIEW', 'USER_CREATE'],
       departments: ['DEPARTMENT_MANAGE'],
       roles: ['ROLE_MANAGE'],
       permissions: ['PERMISSION_MANAGE'],
