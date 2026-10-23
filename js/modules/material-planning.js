@@ -124,7 +124,7 @@
         try {
           const response = await window.PMS.Api.post('/projects/' + encodeURIComponent(projectId) + '/material-estimates', {});
           const result = unwrap(response) || {};
-          const items = Array.isArray(result.items) ? result.items : [];
+          const items = Array.isArray(result) ? result : (result && Array.isArray(result.items) ? result.items : []);
           estimateResult.textContent = items.length
             ? 'نیاز برآوردی برای ' + items.length + ' ملزوم ثبت شد. می‌توانید مقدار سفارش را در بخش تدارکات بررسی کنید.'
             : 'محاسبه انجام شد؛ مورد جدیدی برای نمایش برنگشت.';
