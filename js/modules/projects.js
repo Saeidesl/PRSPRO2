@@ -418,6 +418,11 @@
         ['ItemName','Unit','ConsumptionPerUnit','WastagePercent','EarlyOrderPolicy','EarlyOrderQuantity','Notes'].forEach((key) => {
           editForm.elements[key].value = spec[key] === undefined || spec[key] === null ? '' : spec[key];
         });
+        const editPolicy = editForm.elements.EarlyOrderPolicy;
+        const editQuantity = editForm.elements.EarlyOrderQuantity;
+        const syncEditPolicy = () => { editQuantity.required = editPolicy.value === 'MANUAL_ALLOWED'; };
+        editPolicy.addEventListener('change', syncEditPolicy);
+        syncEditPolicy();
         dialog.querySelector('[data-mp-cancel]').addEventListener('click', () => dialog.remove());
         editForm.addEventListener('submit', async (event) => {
           event.preventDefault();
