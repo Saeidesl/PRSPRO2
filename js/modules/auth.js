@@ -5,6 +5,8 @@
   window.PMS.Modules = window.PMS.Modules || {};
 
   const Auth = {
+    pendingExpiredMessage: '',
+
     init: function () {
       const form = document.getElementById('login-form');
 
@@ -15,6 +17,16 @@
 
       if (form.dataset.authInitialized === 'true') return;
       form.dataset.authInitialized = 'true';
+
+      if (Auth.pendingExpiredMessage) {
+        const pendingMessage = document.getElementById('login-error') || document.getElementById('login-message');
+        if (pendingMessage) {
+          pendingMessage.textContent = Auth.pendingExpiredMessage;
+          pendingMessage.classList.remove('hidden');
+          pendingMessage.style.display = 'block';
+        }
+        Auth.pendingExpiredMessage = '';
+      }
 
       form.addEventListener('submit', async function (event) {
         event.preventDefault();
@@ -170,6 +182,7 @@
     },
 
     handleAuthExpired: function (message) {
+      Auth.pendingExpiredMessage = message || 'نشست شما منقضی شده است. لطفاً دوباره وارد شوید.';
       // Do not call /auth/logout: the server has already rejected this token.
       try {
         if (PMS.Permissions && typeof PMS.Permissions.clear === 'function') PMS.Permissions.clear();
@@ -182,14 +195,6 @@
         if (PMS.Router && typeof PMS.Router.navigate === 'function') PMS.Router.navigate('login', true);
         else window.location.hash = '#login';
       }
-      window.setTimeout(function () {
-        const target = document.getElementById('login-message') || document.getElementById('login-error');
-        if (target && message) {
-          target.textContent = message;
-          target.classList.remove('hidden');
-          target.style.display = 'block';
-        }
-      }, 0);
     },
 
     me: async function () {
