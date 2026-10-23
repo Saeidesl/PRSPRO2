@@ -129,6 +129,7 @@
       const procurement = data.procurement || {};
       const needs = Array.isArray(procurement.needs) ? procurement.needs : [];
       const orders = Array.isArray(procurement.orders) ? procurement.orders : [];
+      const calculations = Array.isArray(procurement.calculations) ? procurement.calculations : [];
       const selected = this.selectedEventIds;
 
       const eventRows = events.length ? events.map((event) => {
@@ -149,10 +150,21 @@
       }).join('') : '<div class="table-empty">برای این پروژه رویدادی ثبت نشده است.</div>';
 
       const needRows = needs.map((need) => '<tr><td>' + this.escape(need.ItemName || need.Name || need.SupplyName || '—') +
-        '</td><td>' + this.escape(need.MaterialCode || need.Code || '—') +
+        '</td><td>' + this.escape(need.ItemCode || need.MaterialCode || need.Code || '—') +
         '</td><td>' + this.escape(need.Unit || need.UnitOfMeasure || '—') +
-        '</td><td>' + this.escape(need.RequiredQuantity || need.Quantity || '—') +
-        '</td><td>' + this.escape(need.Status || '—') + '</td></tr>').join('');
+        '</td><td>' + this.escape(need.RequestedQuantity ?? need.RequiredQuantity ?? need.Quantity ?? '—') +
+        '</td><td>' + this.escape(need.OrderedQuantity ?? '—') +
+        '</td><td>' + this.escape(need.ReceivedQuantity ?? '—') +
+        '</td><td>' + this.escape(need.RemainingToOrderQuantity ?? '—') +
+        '</td><td>' + this.escape(need.ProcurementStatus || need.Status || '—') + '</td></tr>').join('');
+
+      const calculationRows = calculations.map((row) => '<tr><td>' + this.escape(row.MaterialSpecID || '—') +
+        '</td><td>' + this.escape(row.BasisQuantity ?? '—') +
+        '</td><td>' + this.escape(row.ConsumptionPerUnit ?? '—') +
+        '</td><td>' + this.escape(row.WastagePercent ?? 0) + '%</td><td>' +
+        this.escape(row.CalculatedQuantity ?? '—') + '</td><td>' +
+        this.escape(row.VarianceQuantity ?? '—') + '</td><td>' +
+        this.formatDate(row.CreatedAt) + '</td></tr>').join('');
 
       const orderRows = [];
       orders.forEach((order) => {
@@ -189,7 +201,9 @@
         '</div>' + (project.Description ? '<p class="project-report-description">' + this.escape(project.Description) + '</p>' : '') + '</section>' +
         '<section class="project-report-section"><h3>رویدادهای انتخاب‌شده</h3><div class="project-report-events">' + eventRows + '</div></section>' +
         '<section class="project-report-section"><h3>ملزومات ثبت‌شده برای پروژه</h3>' +
-        (needs.length ? '<div class="table-wrapper"><table class="data-table"><thead><tr><th>ملزوم</th><th>کد</th><th>واحد</th><th>مقدار</th><th>وضعیت</th></tr></thead><tbody>' + needRows + '</tbody></table></div>' : '<p class="project-report-muted">ملزومی برای این پروژه ثبت نشده است.</p>') + '</section>' +
+        (needs.length ? '<div class="table-wrapper"><table class="data-table"><thead><tr><th>ملزوم</th><th>کد</th><th>واحد</th><th>نیاز</th><th>سفارش</th><th>دریافت</th><th>کسری سفارش</th><th>وضعیت</th></tr></thead><tbody>' + needRows + '</tbody></table></div>' : '<p class="project-report-muted">ملزومی برای این پروژه ثبت نشده است.</p>') + '</section>' +
+        '<section class="project-report-section"><h3>تاریخچه محاسبه نیاز ملزومات</h3>' +
+        (calculations.length ? '<div class="table-wrapper"><table class="data-table"><thead><tr><th>شناسه مشخصات</th><th>تعداد مبنا</th><th>مصرف هر واحد</th><th>ضایعات</th><th>نیاز محاسبه‌شده</th><th>اختلاف</th><th>تاریخ</th></tr></thead><tbody>' + calculationRows + '</tbody></table></div>' : '<p class="project-report-muted">تاریخچه محاسبه‌ای برای این پروژه ثبت نشده است.</p>') + '</section>' +
         '<section class="project-report-section"><h3>سفارش‌ها و تحویل ملزومات</h3>' +
         (orderRows.length ? '<div class="table-wrapper"><table class="data-table"><thead><tr><th>شماره سفارش</th><th>ملزوم</th><th>تاریخ سفارش</th><th>تاریخ تحویل</th><th>وضعیت</th></tr></thead><tbody>' + orderRows.join('') + '</tbody></table></div>' : '<p class="project-report-muted">سفارشی برای این پروژه پیدا نشد.</p>') + '</section>' +
         '</article>';
