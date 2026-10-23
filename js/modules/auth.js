@@ -58,8 +58,45 @@
           // Resolve the landing page from the authenticated backend permissions,
           // never from a cached or client-supplied department/admin flag.
           const permissionsLoaded = await PMS.Router.loadPermissions();
-          const isAdmin = permissionsLoaded && PMS.Router.isAdmin();
 
+          if (!permissionsLoaded) {
+            // A successful login without permissions is not a usable authenticated
+            // state. Clear local credentials so the user can retry cleanly.
+            try {
+              if (PMS.Session && typeof PMS.Session.clear === 'function') {
+                PMS.Session.clear();
+              } else if (PMS.Api && typeof PMS.Api.clearToken === 'function') {
+                PMS.Api.clearToken();
+              }
+            } catch (cleanupError) {
+              console.warn('پاک‌سازی نشست پس از خطای دریافت مجوزها ناموفق بود:', cleanupError);
+            }
+
+            try {
+              if (PMS.Permissions && typeof PMS.Permissions.clear === 'function') {
+                PMS.Permissions.clear();
+              }
+              if (PMS.Cache && typeof PMS.Cache.clear === 'function') {
+                PMS.Cache.clear();
+              }
+            } catch (cleanupError) {
+              console.warn('پاک‌سازی داده‌های محلی پس از خطای دریافت مجوزها ناموفق بود:', cleanupError);
+            }
+
+            if (PMS.Router && typeof PMS.Router.resetAuthState === 'function') {
+              PMS.Router.resetAuthState();
+            }
+            if (PMS.Layout && typeof PMS.Layout.resetAuthState === 'function') {
+              PMS.Layout.resetAuthState();
+            }
+
+            throw new Error(
+              'ورود انجام شد، اما دریافت مجوزهای کاربر از سرور ناموفق بود. ' +
+              'نشست محلی پاک شد؛ اتصال را بررسی کنید و دوباره تلاش کنید.'
+            );
+          }
+
+          const isAdmin = PMS.Router.isAdmin();
           await PMS.Router.navigate(isAdmin ? 'dashboard' : 'events', true);
         } catch (error) {
           console.error('Login Error:', error);
