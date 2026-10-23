@@ -53,12 +53,12 @@
             submitButton.textContent = 'در حال ورود...';
           }
 
-          const data = await Auth.login(username, password);
-          const user = data.user || {};
-          const isAdmin =
-            user.IsAdmin === true ||
-            String(user.IsAdmin).toLowerCase() === 'true' ||
-            String(user.DepartmentCode || '').trim().toUpperCase() === 'ADMIN';
+          await Auth.login(username, password);
+
+          // Resolve the landing page from the authenticated backend permissions,
+          // never from a cached or client-supplied department/admin flag.
+          const permissionsLoaded = await PMS.Router.loadPermissions();
+          const isAdmin = permissionsLoaded && PMS.Router.isAdmin();
 
           await PMS.Router.navigate(isAdmin ? 'dashboard' : 'events', true);
         } catch (error) {
