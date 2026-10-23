@@ -1598,7 +1598,9 @@
       this.setSubmitState(true);
 
       try {
-        await PMS.Api.post('/events', payload);
+        const eventResponse = await PMS.Api.post('/events', payload);
+        const eventResult = PMS.Api.extractData(eventResponse) || {};
+        const procurementIntegration = eventResult.procurementIntegration || {};
 
         PMS.Api.invalidateMany([
           CACHE_KEY,
@@ -1632,7 +1634,11 @@
           this.showRefreshNotice();
         }
 
-        this.showSuccessNotice('رویداد با موفقیت ثبت شد.');
+        if (String(procurementIntegration.status || '').toUpperCase() === 'FAILED') {
+          this.showNotice('رویداد ثبت شد، اما اتصال تأمین با خطا مواجه شد. نیازهای ملزومات این پروژه باید از بخش تدارکات بازبینی شوند؛ جزئیات خطا: ' + String(procurementIntegration.message || 'خطای نامشخص'), 'warning');
+        } else {
+          this.showSuccessNotice('رویداد با موفقیت ثبت شد.');
+        }
       } catch (error) {
         this.showFormError(
           'ثبت رویداد ناموفق بود: ' + this.errorMessage(error)
