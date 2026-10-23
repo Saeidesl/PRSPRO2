@@ -54,8 +54,8 @@
       roles: ['ROLE_MANAGE'],
       permissions: ['PERMISSION_MANAGE'],
       audit: ['REPORT_VIEW'],
-      settings: ['SETTINGS_MANAGE'],
-      admin: ['SYSTEM_MANAGE']
+      settings: ['SYSTEM_SETTINGS'],
+      admin: ['SYSTEM_SETTINGS']
     },
 
 getBaseUrl: function () {
