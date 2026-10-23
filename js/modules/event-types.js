@@ -643,6 +643,10 @@
               '<small class="et-muted">این گزینه قدیمی حفظ شده تا تنظیمات قبلی نوع رویداد از بین نرود.</small>' +
             '</div>' +
             '<div class="form-group et-full">' +
+              '<label style="display:block;padding:12px;border:1px solid var(--border-color, #d0d7de);border-radius:8px"><input name="IsWorkCompletion" type="checkbox"> این رویداد پایان کار واحد/کاربر را مشخص می‌کند</label>' +
+              '<small class="et-muted">با ثبت این نوع رویداد، پروژه برای واحد یا کاربر مربوطه در بخش «اتمام کار شده» قرار می‌گیرد؛ وضعیت واحدهای دیگر مستقل می‌ماند.</small>' +
+            '</div>' +
+            '<div class="form-group et-full">' +
               '<strong>رنگ‌بندی و سایزبندی پروژه</strong>' +
               '<label style="display:block;margin-top:8px"><input name="UseProjectColors" type="checkbox"> هنگام ثبت این رویداد، رنگ پروژه انتخاب شود</label>' +
               '<label style="display:block;margin-top:8px"><input name="UseProjectSizes" type="checkbox"> هنگام ثبت این رویداد، سایز پروژه انتخاب شود</label>' +
@@ -891,7 +895,8 @@
         AllowVoid: fieldChecked(form, 'AllowVoid'),
         UseProjectColors: fieldChecked(form, 'UseProjectColors'),
         UseProjectSizes: fieldChecked(form, 'UseProjectSizes'),
-        TrackVariantQuantity: fieldChecked(form, 'TrackVariantQuantity')
+        TrackVariantQuantity: fieldChecked(form, 'TrackVariantQuantity'),
+        IsWorkCompletion: fieldChecked(form, 'IsWorkCompletion')
       };
 
       if (!payload.Name || !payload.Code) {
