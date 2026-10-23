@@ -215,19 +215,24 @@
       const toOrder = Math.max(0, Number(item.RemainingToOrderQuantity !== undefined ? item.RemainingToOrderQuantity : requested - ordered));
       const toReceive = Math.max(0, Number(item.RemainingDeliveryQuantity !== undefined ? item.RemainingDeliveryQuantity : ordered - received));
       const overOrdered = Math.max(0, Number(item.OverOrderedQuantity || 0));
-      let label = overOrdered > 0 ? 'خرید مازاد؛ نیازمند بررسی' : 'تأمین کامل', kind = overOrdered > 0 ? 'partial' : 'complete';
-      if (toOrder > 0 && toReceive > 0) { label = 'نیاز به سفارش و دریافت'; kind = 'partial'; }
+      const needsReview = String(item.Status || '').toUpperCase() === 'NEEDS_REVIEW';
+      let label = needsReview ? 'بازبینی نیاز پس از ابطال رویداد' : (overOrdered > 0 ? 'خرید مازاد؛ نیازمند بررسی' : 'تأمین کامل');
+      let kind = (needsReview || overOrdered > 0) ? 'partial' : 'complete';
+      if (needsReview) { /* Keep the reconciliation warning as the primary status. */ }
+      else if (toOrder > 0 && toReceive > 0) { label = 'نیاز به سفارش و دریافت'; kind = 'partial'; }
       else if (toOrder > 0) { label = 'در انتظار سفارش'; kind = 'waiting'; }
       else if (toReceive > 0) { label = received > 0 ? 'دریافت ناقص' : 'در انتظار دریافت'; kind = received > 0 ? 'partial' : 'delivery'; }
-      groups.get(groupKey).items.push({ item, requested, received, toOrder, toReceive, overOrdered, label, kind });
+      groups.get(groupKey).items.push({ item, requested, received, toOrder, toReceive, overOrdered, needsReview, label, kind });
     });
     const cards = Array.from(groups.values()).map(function (group, index) {
       const waitingOrder = group.items.filter(function (x) { return x.toOrder > 0; }).length;
       const waitingReceipt = group.items.filter(function (x) { return x.toReceive > 0; }).length;
       const overOrderedCount = group.items.filter(function (x) { return x.overOrdered > 0; }).length;
-      const completed = group.items.filter(function (x) { return x.toOrder === 0 && x.toReceive === 0 && x.overOrdered === 0; }).length;
+      const needsReviewCount = group.items.filter(function (x) { return x.needsReview; }).length;
+      const completed = group.items.filter(function (x) { return x.toOrder === 0 && x.toReceive === 0 && x.overOrdered === 0 && !x.needsReview; }).length;
       let overallLabel = 'همه اقلام تأمین شده', overallKind = 'complete';
-      if (overOrderedCount > 0) { overallLabel = 'خرید مازاد؛ نیازمند بررسی'; overallKind = 'partial'; }
+      if (needsReviewCount > 0) { overallLabel = 'نیازمند بازبینی'; overallKind = 'partial'; }
+      else if (overOrderedCount > 0) { overallLabel = 'خرید مازاد؛ نیازمند بررسی'; overallKind = 'partial'; }
       else if (waitingOrder > 0 && waitingReceipt > 0) { overallLabel = 'نیاز به سفارش و دریافت'; overallKind = 'partial'; }
       else if (waitingOrder > 0) { overallLabel = 'در انتظار سفارش'; overallKind = 'waiting'; }
       else if (waitingReceipt > 0) { overallLabel = 'در انتظار دریافت'; overallKind = 'delivery'; }
@@ -246,7 +251,7 @@
           '<div class="procurement-need-item-status">' + statusBadge(entry.label, entry.kind) + '</div>' +
           '</div></div>';
       }).join('');
-      const filterStatus = overOrderedCount > 0 || (waitingOrder > 0 && waitingReceipt > 0) ? 'partial' : (waitingOrder > 0 ? 'waiting-order' : (waitingReceipt > 0 ? 'waiting-receipt' : 'complete'));
+      const filterStatus = needsReviewCount > 0 || overOrderedCount > 0 || (waitingOrder > 0 && waitingReceipt > 0) ? 'partial' : (waitingOrder > 0 ? 'waiting-order' : (waitingReceipt > 0 ? 'waiting-receipt' : 'complete'));
       return '<section class="procurement-summary-card is-' + overallKind + '" data-procurement-card data-filter-status="' + filterStatus + '">' +
         '<button type="button" class="procurement-summary-card-head" data-procurement-toggle aria-expanded="false" aria-controls="' + detailId + '">' +
         '<span class="procurement-summary-card-main"><strong class="procurement-project-code">' + escape(group.label) + '</strong>' +
