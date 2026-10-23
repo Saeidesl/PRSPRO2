@@ -211,21 +211,29 @@
       });
       const requested = Math.max(0, Number(item.RequestedQuantity || 0));
       const ordered = Math.min(requested, Math.max(0, Number(item.OrderedQuantity || 0)));
-      const received = Math.min(ordered, Math.max(0, Number(item.ReceivedQuantity || 0)));
-      const toOrder = Math.max(0, requested - ordered);
-      const toReceive = Math.max(0, ordered - received);
-      let label = 'تأمین کامل', kind = 'complete';
-      if (toOrder > 0 && toReceive > 0) { label = 'نیاز به سفارش و دریافت'; kind = 'partial'; }
+      const received = Math.min(requested, Math.max(0, Number(item.ReceivedQuantity || 0)));
+      const toOrder = Math.max(0, Number(item.RemainingToOrderQuantity !== undefined ? item.RemainingToOrderQuantity : requested - ordered));
+      const toReceive = Math.max(0, Number(item.RemainingDeliveryQuantity !== undefined ? item.RemainingDeliveryQuantity : ordered - received));
+      const overOrdered = Math.max(0, Number(item.OverOrderedQuantity || 0));
+      const needsReview = String(item.Status || '').toUpperCase() === 'NEEDS_REVIEW';
+      let label = needsReview ? 'بازبینی نیاز پس از ابطال رویداد' : (overOrdered > 0 ? 'خرید مازاد؛ نیازمند بررسی' : 'تأمین کامل');
+      let kind = (needsReview || overOrdered > 0) ? 'partial' : 'complete';
+      if (needsReview) { /* Keep the reconciliation warning as the primary status. */ }
+      else if (toOrder > 0 && toReceive > 0) { label = 'نیاز به سفارش و دریافت'; kind = 'partial'; }
       else if (toOrder > 0) { label = 'در انتظار سفارش'; kind = 'waiting'; }
       else if (toReceive > 0) { label = received > 0 ? 'دریافت ناقص' : 'در انتظار دریافت'; kind = received > 0 ? 'partial' : 'delivery'; }
-      groups.get(groupKey).items.push({ item, requested, received, toOrder, toReceive, label, kind });
+      groups.get(groupKey).items.push({ item, requested, received, toOrder, toReceive, overOrdered, needsReview, label, kind });
     });
     const cards = Array.from(groups.values()).map(function (group, index) {
       const waitingOrder = group.items.filter(function (x) { return x.toOrder > 0; }).length;
       const waitingReceipt = group.items.filter(function (x) { return x.toReceive > 0; }).length;
-      const completed = group.items.filter(function (x) { return x.toOrder === 0 && x.toReceive === 0; }).length;
+      const overOrderedCount = group.items.filter(function (x) { return x.overOrdered > 0; }).length;
+      const needsReviewCount = group.items.filter(function (x) { return x.needsReview; }).length;
+      const completed = group.items.filter(function (x) { return x.toOrder === 0 && x.toReceive === 0 && x.overOrdered === 0 && !x.needsReview; }).length;
       let overallLabel = 'همه اقلام تأمین شده', overallKind = 'complete';
-      if (waitingOrder > 0 && waitingReceipt > 0) { overallLabel = 'نیاز به سفارش و دریافت'; overallKind = 'partial'; }
+      if (needsReviewCount > 0) { overallLabel = 'نیازمند بازبینی'; overallKind = 'partial'; }
+      else if (overOrderedCount > 0) { overallLabel = 'خرید مازاد؛ نیازمند بررسی'; overallKind = 'partial'; }
+      else if (waitingOrder > 0 && waitingReceipt > 0) { overallLabel = 'نیاز به سفارش و دریافت'; overallKind = 'partial'; }
       else if (waitingOrder > 0) { overallLabel = 'در انتظار سفارش'; overallKind = 'waiting'; }
       else if (waitingReceipt > 0) { overallLabel = 'در انتظار دریافت'; overallKind = 'delivery'; }
       const detailId = 'procurement-needs-detail-' + index;
@@ -239,10 +247,11 @@
           '<div><span>در انتظار سفارش</span><strong class="' + (entry.toOrder > 0 ? 'procurement-quantity-warn' : '') + '">' + number(entry.toOrder) + '</strong></div>' +
           '<div><span>در انتظار دریافت</span><strong class="' + (entry.toReceive > 0 ? 'procurement-quantity-pending' : '') + '">' + number(entry.toReceive) + '</strong></div>' +
           '<div><span>دریافت‌شده</span><strong class="procurement-quantity-done">' + number(entry.received) + '</strong></div>' +
+          (Number(item.OverOrderedQuantity || 0) > 0 ? '<div><span>خرید مازاد</span><strong class="procurement-quantity-warn">' + number(item.OverOrderedQuantity) + '</strong></div>' : '') +
           '<div class="procurement-need-item-status">' + statusBadge(entry.label, entry.kind) + '</div>' +
           '</div></div>';
       }).join('');
-      const filterStatus = waitingOrder > 0 && waitingReceipt > 0 ? 'partial' : (waitingOrder > 0 ? 'waiting-order' : (waitingReceipt > 0 ? 'waiting-receipt' : 'complete'));
+      const filterStatus = needsReviewCount > 0 || overOrderedCount > 0 || (waitingOrder > 0 && waitingReceipt > 0) ? 'partial' : (waitingOrder > 0 ? 'waiting-order' : (waitingReceipt > 0 ? 'waiting-receipt' : 'complete'));
       return '<section class="procurement-summary-card is-' + overallKind + '" data-procurement-card data-filter-status="' + filterStatus + '">' +
         '<button type="button" class="procurement-summary-card-head" data-procurement-toggle aria-expanded="false" aria-controls="' + detailId + '">' +
         '<span class="procurement-summary-card-main"><strong class="procurement-project-code">' + escape(group.label) + '</strong>' +
@@ -250,7 +259,7 @@
         '<span class="procurement-summary-card-status">' + statusBadge(overallLabel, overallKind) +
         '<span class="procurement-card-hint">مشاهده جزئیات</span><span class="procurement-card-chevron" aria-hidden="true">⌄</span></span></button>' +
         '<div class="procurement-summary-card-stats"><span>در انتظار سفارش <b>' + number(waitingOrder) + '</b></span>' +
-        '<span>در انتظار دریافت <b>' + number(waitingReceipt) + '</b></span><span>تأمین کامل <b>' + number(completed) + '</b></span></div>' +
+        '<span>در انتظار دریافت <b>' + number(waitingReceipt) + '</b></span><span>خرید مازاد <b>' + number(overOrderedCount) + '</b></span><span>تأمین کامل <b>' + number(completed) + '</b></span></div>' +
         '<div class="procurement-summary-card-details" id="' + detailId + '" hidden><div class="procurement-needs-project-items">' + lines + '</div></div></section>';
     });
     container.innerHTML = '<div class="procurement-summary-grid">' + cards.join('') + '</div>';
@@ -522,6 +531,15 @@
   }
 
 
+  function requestIdempotencyKey(prefix) {
+    let token = '';
+    try {
+      if (window.crypto && typeof window.crypto.randomUUID === 'function') token = window.crypto.randomUUID();
+    } catch (error) {}
+    if (!token) token = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12);
+    return String(prefix || 'REQ') + '-' + token;
+  }
+
   function modal(title, body) {
     clearMessage();
     const root = $('procurement-modal-root');
@@ -640,7 +658,10 @@
     itemsRoot.innerHTML = '';
     // Only show needs that still have an un-ordered quantity. The original need remains unchanged.
     const projectNeeds = (Array.isArray(needs) ? needs : []).filter(function (need) {
-      return Math.max(0, Number(need.RequestedQuantity || 0) - Number(need.OrderedQuantity || 0)) > 0;
+      const remaining = need.RemainingToOrderQuantity !== undefined
+        ? Number(need.RemainingToOrderQuantity || 0)
+        : Number(need.RequestedQuantity || 0) - Number(need.OrderedQuantity || 0);
+      return Math.max(0, remaining) > 0;
     });
     if (!projectNeeds.length) {
       itemsRoot.innerHTML = orderItemRow(0);
@@ -681,6 +702,8 @@
       '<div class="procurement-order-list" id="procurement-order-items">' + orderItemRow(0) + '</div><div class="procurement-items-actions"><button type="button" class="btn btn-secondary" id="procurement-add-order-item">+ افزودن ردیف</button></div></section>' +
       '<div class="modal-actions procurement-submit-actions"><button type="submit" class="btn btn-primary">ثبت سفارش</button></div></form>');
 
+    const orderForm = root.querySelector('#procurement-order-form');
+    orderForm.dataset.idempotencyKey = requestIdempotencyKey('PO');
     const itemsRoot = root.querySelector('#procurement-order-items');
     const projectSelect = root.querySelector('[name="ProjectID"]');
     if (projectSelect) {
@@ -773,6 +796,7 @@
         OrderDate: orderDateIso,
         ExpectedDeliveryDate: expectedDeliveryDateIso,
         Notes: header.Notes || '',
+        IdempotencyKey: form.dataset.idempotencyKey,
         Items: items
       };
       if (isProjectOrder) body.ProjectID = selectedProject;
@@ -821,6 +845,7 @@
       '</form>');
 
     const form = root.querySelector('#procurement-receipt-form');
+    form.dataset.idempotencyKey = requestIdempotencyKey('REC');
     const projectSelect = form.elements.ProjectID;
     if (options.orderId) {
       const orderOption = document.createElement('option');
@@ -1000,6 +1025,7 @@
             PurchaseOrderItemID: receipt.itemId,
             ProjectID: receipt.entry ? String(receipt.entry.projectId || '') : (projectSelect.value === '__GENERAL__' || projectSelect.value === '__ORDER__' ? '' : projectSelect.value),
             QuantityReceived: receipt.quantity,
+            IdempotencyKey: form.dataset.idempotencyKey + ':' + receipt.itemId,
             Notes: form.elements.Notes.value || ''
           };
           if (receiveDate.value) body.ReceivedAt = new Date(jalaliDateToIso(receiveDate.value) + 'T12:00:00Z').toISOString();
