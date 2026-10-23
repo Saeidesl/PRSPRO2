@@ -282,7 +282,7 @@
         return data;
 
       } catch (error) {
-        if (isAuthError(error)) {
+        if (isAuthError(error) && path !== '/auth/login' && path !== '/auth/logout') {
           notifyAuthExpired();
         }
 
