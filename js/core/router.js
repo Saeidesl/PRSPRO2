@@ -103,14 +103,8 @@ getBaseUrl: function () {
     },
 
     isAdmin: function () {
-      const user = Router.getUser();
-
-      return (
-        Router.serverIsAdmin === true ||
-        user.IsAdmin === true ||
-        String(user.IsAdmin).toLowerCase() === 'true' ||
-        String(user.DepartmentCode || '').trim().toUpperCase() === 'ADMIN'
-      );
+      // Only the authenticated backend response is authoritative.
+      return Router.serverIsAdmin === true;
     },
 
     getHomeRoute: function () {
@@ -118,12 +112,6 @@ getBaseUrl: function () {
     },
 
     loadPermissions: async function () {
-      if (Router.isAdmin()) {
-        Router.permissions = [];
-        Router.permissionsLoaded = true;
-        return true;
-      }
-
       if (Router.permissionsLoaded) return true;
       if (Router.permissionsRequest) return Router.permissionsRequest;
 
