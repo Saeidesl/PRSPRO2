@@ -216,12 +216,14 @@
           const needsButton = event.target.closest('.project-material-needs-button');
           const editButton = event.target.closest('.project-edit-button');
           const variantsButton = event.target.closest('.project-color-size-button');
-          const projectId = (needsButton || editButton || variantsButton) &&
-            (needsButton || editButton || variantsButton).getAttribute('data-project-id');
+          const planningButton = event.target.closest('.project-material-planning-button');
+          const projectId = (needsButton || editButton || variantsButton || planningButton) &&
+            (needsButton || editButton || variantsButton || planningButton).getAttribute('data-project-id');
           if (!projectId) return;
           if (needsButton) this.openProjectNeedsForm(projectId);
           else if (editButton) this.openProjectEditForm(projectId);
           else if (variantsButton) this.openProjectColorSizeForm(projectId);
+          else if (planningButton) this.openMaterialPlanningForm(projectId);
         });
       }
     },
@@ -326,6 +328,137 @@
       } finally {
         progress.remove();
       }
+    },
+
+
+    openMaterialPlanningForm: async function (projectId) {
+      const router = window.PMS && window.PMS.Router;
+      if (!router || !(router.isAdmin() || (Array.isArray(router.permissions) && router.permissions.indexOf('PROJECT_EDIT') !== -1))) {
+        alert('برای مدیریت مشخصات مصرف ملزومات، دسترسی ویرایش پروژه لازم است.');
+        return;
+      }
+      const project = this.projects.find((item) => String(item.ID || item.Id || item.id) === String(projectId)) || {};
+      const modalId = 'project-material-planning-modal';
+      const oldModal = document.getElementById(modalId);
+      if (oldModal) oldModal.remove();
+      const modal = document.createElement('div');
+      modal.id = modalId;
+      modal.style.cssText = 'position:fixed;inset:0;z-index:10060;background:var(--color-overlay,rgba(0,0,0,.48));display:flex;align-items:center;justify-content:center;padding:12px;overflow:auto;direction:rtl;';
+      modal.innerHTML = '<div role="dialog" aria-modal="true" style="background:var(--color-surface,#fff);color:var(--color-text,#222);width:100%;max-width:960px;max-height:94dvh;overflow:auto;border-radius:14px;padding:16px;box-sizing:border-box">' +
+        '<header style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap"><div><h3 style="margin:0 0 6px">مشخصات مصرف ملزومات</h3><div>' + this.escape(project.ProjectCode || '') + ' — ' + this.escape(project.Title || project.Name || '') + '</div></div><button type="button" class="btn btn-light" data-mp-close>بستن</button></header>' +
+        '<p style="color:var(--color-text-secondary);font-size:13px">ویرایش مشخصات، نسخه جدید می‌سازد و نسخه قبلی و تاریخچه محاسبات را حفظ می‌کند.</p>' +
+        '<div id="mp-spec-list" style="display:grid;gap:8px"></div>' +
+        '<form id="mp-spec-create" style="border:1px solid var(--color-border,#ddd);border-radius:10px;padding:12px;margin-top:14px"><h4 style="margin:0 0 10px">افزودن ملزوم</h4><div class="mp-grid">' +
+        '<label>نام ملزوم<input name="ItemName" required maxlength="160"></label><label>واحد<input name="Unit" required maxlength="40" placeholder="متر، عدد و..."></label>' +
+        '<label>مصرف برای هر واحد<input name="ConsumptionPerUnit" type="number" min="0.0000001" step="any" required></label><label>ضایعات (%)<input name="WastagePercent" type="number" min="0" max="100" step="any" value="0"></label>' +
+        '<label>سیاست سفارش زودهنگام<select name="EarlyOrderPolicy"><option value="DISABLED">غیرفعال</option><option value="ESTIMATE_ALLOWED">بر اساس تعداد پیشنهادی پروژه</option><option value="MANUAL_ALLOWED">مقدار دستی</option></select></label><label data-mp-manual hidden>مقدار دستی سفارش زودهنگام<input name="EarlyOrderQuantity" type="number" min="0.0000001" step="any"></label>' +
+        '<label style="grid-column:1/-1">توضیحات<input name="Notes" maxlength="500"></label></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button type="submit" class="btn btn-primary">ذخیره ملزوم</button><button type="button" id="mp-estimate" class="btn btn-secondary">محاسبه برآورد سفارش زودهنگام</button></div><div id="mp-message" role="status" aria-live="polite" style="margin-top:10px"></div></form>' +
+        '<details style="margin-top:14px"><summary style="cursor:pointer;padding:8px 0;font-weight:600">سابقه محاسبات نیاز</summary><div id="mp-history" style="display:grid;gap:8px;margin-top:8px"></div></details></div>';
+      const style = document.createElement('style');
+      style.id = 'mp-spec-style';
+      style.textContent = '#project-material-planning-modal .mp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}#project-material-planning-modal label{display:grid;gap:5px;font-size:13px}#project-material-planning-modal input,#project-material-planning-modal select{width:100%;min-width:0;box-sizing:border-box;padding:10px;border:1px solid var(--color-border,#ccc);border-radius:8px;background:var(--color-background,#fff);color:inherit}#project-material-planning-modal .mp-spec{border:1px solid var(--color-border,#ddd);border-radius:10px;padding:12px}#project-material-planning-modal .mp-spec-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}#project-material-planning-modal .mp-spec-grid span{display:block;font-size:12px;color:var(--color-text-secondary)}#project-material-planning-modal .mp-spec-grid strong{display:block;overflow-wrap:anywhere}#project-material-planning-modal .mp-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}@media(max-width:600px){#project-material-planning-modal{align-items:flex-end!important;padding:0!important}#project-material-planning-modal [role=dialog]{max-height:94dvh;border-radius:16px 16px 0 0!important;padding:14px!important}#project-material-planning-modal .mp-grid,#project-material-planning-modal .mp-spec-grid{grid-template-columns:minmax(0,1fr)}}';
+      document.head.appendChild(style);
+      document.body.appendChild(modal);
+      const close = () => { modal.remove(); const node = document.getElementById('mp-spec-style'); if (node) node.remove(); };
+      modal.querySelector('[data-mp-close]').addEventListener('click', close);
+      modal.addEventListener('click', (event) => { if (event.target === modal) close(); });
+      const form = modal.querySelector('#mp-spec-create');
+      const policy = form.elements.EarlyOrderPolicy;
+      const manual = form.querySelector('[data-mp-manual]');
+      const manualInput = form.elements.EarlyOrderQuantity;
+      const syncPolicy = () => { manual.hidden = policy.value !== 'MANUAL_ALLOWED'; manualInput.required = policy.value === 'MANUAL_ALLOWED'; };
+      policy.addEventListener('change', syncPolicy);
+      syncPolicy();
+      const unpack = (response) => {
+        let value = response;
+        for (let i = 0; i < 5 && value && !Array.isArray(value); i += 1) {
+          if (value.data !== undefined) { value = value.data; continue; }
+          if (value.items !== undefined) { value = value.items; continue; }
+          break;
+        }
+        return Array.isArray(value) ? value : [];
+      };
+      let specs = [];
+      let history = [];
+      const message = (text, isError) => {
+        const root = modal.querySelector('#mp-message');
+        root.textContent = text;
+        root.style.color = isError ? 'var(--color-danger,#b42318)' : 'var(--color-success,#16794b)';
+      };
+      const render = () => {
+        const root = modal.querySelector('#mp-spec-list');
+        root.innerHTML = specs.length ? specs.map((spec) => '<article class="mp-spec"><div class="mp-spec-grid">' +
+          '<div><span>ملزوم</span><strong>' + this.escape(spec.ItemName) + '</strong></div>' +
+          '<div><span>مصرف هر واحد</span><strong>' + this.escape(spec.ConsumptionPerUnit) + ' ' + this.escape(spec.Unit) + '</strong></div>' +
+          '<div><span>ضایعات</span><strong>' + this.escape(spec.WastagePercent || 0) + '%</strong></div>' +
+          '<div><span>سیاست سفارش زودهنگام</span><strong>' + this.escape(({DISABLED:'غیرفعال',ESTIMATE_ALLOWED:'برآوردی',MANUAL_ALLOWED:'مقدار دستی'})[String(spec.EarlyOrderPolicy || 'DISABLED')] || spec.EarlyOrderPolicy) + '</strong></div>' +
+          '<div><span>نسخه</span><strong>' + this.escape(spec.Revision || 1) + '</strong></div><div><span>مقدار دستی</span><strong>' + this.escape(spec.EarlyOrderQuantity || '—') + '</strong></div></div>' +
+          '<div class="mp-actions"><button type="button" class="btn btn-sm btn-secondary" data-mp-edit="' + this.escape(spec.ID) + '">ویرایش و ایجاد نسخه جدید</button></div></article>').join('') :
+          '<div class="table-empty">مشخصات مصرفی تعریف نشده است.</div>';
+        const historyRoot = modal.querySelector('#mp-history');
+        historyRoot.innerHTML = history.length ? history.map((row) => '<div class="mp-spec"><strong>' +
+          this.escape(({CONFIRMED:'نیاز قطعی',ESTIMATE:'برآوردی',EARLY_ORDER_MANUAL:'سفارش زودهنگام دستی'})[String(row.CalculationType || '')] || row.CalculationType || 'محاسبه') +
+          '</strong><div>تعداد مبنا: ' + this.escape(row.BasisQuantity) + ' · نیاز محاسبه‌شده: ' + this.escape(row.CalculatedQuantity) +
+          ' · اختلاف: ' + this.escape(row.VarianceQuantity) + '</div><small>' + this.escape(row.SourceEventID || 'بدون رویداد') + ' · ' + this.escape(row.CreatedAt || '') + '</small></div>').join('') :
+          '<div class="table-empty">هنوز سابقه محاسباتی وجود ندارد.</div>';
+      };
+      const refresh = async () => {
+        const results = await Promise.all([
+          window.PMS.Api.get('/projects/' + encodeURIComponent(projectId) + '/material-specifications'),
+          window.PMS.Api.get('/projects/' + encodeURIComponent(projectId) + '/material-calculations')
+        ]);
+        specs = unpack(results[0]); history = unpack(results[1]); render();
+      };
+      const editSpec = (spec) => {
+        const dialog = document.createElement('div');
+        dialog.style.cssText = 'position:fixed;inset:0;z-index:10070;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;padding:12px;direction:rtl';
+        dialog.innerHTML = '<div role="dialog" aria-modal="true" style="background:var(--color-surface,#fff);color:var(--color-text,#222);width:100%;max-width:560px;max-height:90dvh;overflow:auto;border-radius:12px;padding:16px"><h4>ایجاد نسخه جدید مشخصات مصرف</h4><form class="mp-edit-form"><div class="mp-grid"><label>نام ملزوم<input name="ItemName" required maxlength="160"></label><label>واحد<input name="Unit" required maxlength="40"></label><label>مصرف هر واحد<input name="ConsumptionPerUnit" type="number" min="0.0000001" step="any" required></label><label>ضایعات (%)<input name="WastagePercent" type="number" min="0" max="100" step="any"></label><label>سیاست سفارش<select name="EarlyOrderPolicy"><option value="DISABLED">غیرفعال</option><option value="ESTIMATE_ALLOWED">برآوردی</option><option value="MANUAL_ALLOWED">مقدار دستی</option></select></label><label>مقدار دستی<input name="EarlyOrderQuantity" type="number" min="0.0000001" step="any"></label><label style="grid-column:1/-1">توضیحات<input name="Notes" maxlength="500"></label></div><div class="mp-edit-error" role="status" style="margin-top:8px"></div><div class="mp-actions"><button type="submit" class="btn btn-primary">ثبت نسخه جدید</button><button type="button" class="btn btn-light" data-mp-cancel>انصراف</button></div></form></div>';
+        modal.appendChild(dialog);
+        const editForm = dialog.querySelector('form');
+        ['ItemName','Unit','ConsumptionPerUnit','WastagePercent','EarlyOrderPolicy','EarlyOrderQuantity','Notes'].forEach((key) => {
+          editForm.elements[key].value = spec[key] === undefined || spec[key] === null ? '' : spec[key];
+        });
+        dialog.querySelector('[data-mp-cancel]').addEventListener('click', () => dialog.remove());
+        editForm.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          const button = editForm.querySelector('[type=submit]'); button.disabled = true;
+          try {
+            const payload = Object.fromEntries(new FormData(editForm).entries());
+            ['ConsumptionPerUnit','WastagePercent','EarlyOrderQuantity'].forEach((key) => { if (payload[key] !== '') payload[key] = Number(payload[key]); });
+            await window.PMS.Api.put('/material-specifications/' + encodeURIComponent(spec.ID), payload);
+            dialog.remove(); await refresh(); message('نسخه جدید ثبت شد؛ سوابق قبلی حفظ شده‌اند.', false);
+          } catch (error) {
+            dialog.querySelector('.mp-edit-error').textContent = this.getErrorMessage(error);
+          } finally { button.disabled = false; }
+        });
+      };
+      modal.querySelector('#mp-spec-list').addEventListener('click', (event) => {
+        const button = event.target.closest('[data-mp-edit]');
+        if (button) { const spec = specs.find((item) => String(item.ID) === String(button.getAttribute('data-mp-edit'))); if (spec) editSpec(spec); }
+      });
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const button = form.querySelector('[type=submit]'); button.disabled = true;
+        try {
+          const payload = Object.fromEntries(new FormData(form).entries());
+          ['ConsumptionPerUnit','WastagePercent','EarlyOrderQuantity'].forEach((key) => { if (payload[key] !== '') payload[key] = Number(payload[key]); });
+          await window.PMS.Api.post('/projects/' + encodeURIComponent(projectId) + '/material-specifications', payload);
+          form.reset(); form.elements.WastagePercent.value = '0'; syncPolicy(); await refresh(); message('مشخصات مصرف ذخیره شد.', false);
+        } catch (error) { message(this.getErrorMessage(error), true); }
+        finally { button.disabled = false; }
+      });
+      modal.querySelector('#mp-estimate').addEventListener('click', async (event) => {
+        const button = event.currentTarget; button.disabled = true;
+        try {
+          const response = await window.PMS.Api.post('/projects/' + encodeURIComponent(projectId) + '/material-estimates', {});
+          const data = response && response.data ? response.data : response;
+          const items = data && Array.isArray(data.items) ? data.items : [];
+          await refresh();
+          message('برآورد اجرا شد؛ ' + items.length + ' قلم محاسبه شد. پیش از سفارش، مقادیر را در بخش تدارکات بررسی کنید.', false);
+        } catch (error) { message(this.getErrorMessage(error), true); }
+        finally { button.disabled = false; }
+      });
+      try { await refresh(); } catch (error) { message(this.getErrorMessage(error), true); }
     },
 
     canManageProcurement: function () {
@@ -2454,6 +2587,7 @@
               ${this.canEditProjects() ? `
                 <button type="button" class="btn btn-sm btn-secondary project-material-specs-button" data-project-id="${this.escape(id)}" title="تعریف مصرف هر واحد و سیاست سفارش">مصرف ملزومات</button>
                 <button type="button" class="btn btn-sm btn-secondary project-color-size-button" data-project-id="${this.escape(id)}" title="تعریف یا ویرایش رنگ‌بندی و سایزبندی">رنگ‌بندی و سایز</button>
+                <button type="button" class="btn btn-sm btn-secondary project-material-planning-button" data-project-id="${this.escape(id)}" title="تعریف مصرف استاندارد و سفارش زودهنگام">مصرف ملزومات</button>
               ` : ''}
             </div>
           </article>
