@@ -1635,7 +1635,8 @@
         }
 
         if (String(procurementIntegration.status || '').toUpperCase() === 'FAILED') {
-          this.showNotice('رویداد ثبت شد، اما اتصال تأمین با خطا مواجه شد. نیازهای ملزومات این پروژه باید از بخش تدارکات بازبینی شوند؛ جزئیات خطا: ' + String(procurementIntegration.message || 'خطای نامشخص'), 'warning');
+          const savedEventId = eventResult.event && (eventResult.event.ID || eventResult.event.Id);
+          this.showProcurementRetryNotice(savedEventId, 'رویداد ثبت شد، اما محاسبه نیاز ملزومات کامل نشد. می‌توانید اتصال را دوباره اجرا کنید. جزئیات: ' + String(procurementIntegration.message || 'خطای نامشخص'));
         } else {
           this.showSuccessNotice('رویداد با موفقیت ثبت شد.');
         }
@@ -1722,6 +1723,45 @@
         'ثبت رویداد انجام شد، اما به‌روزرسانی فهرست کامل نشد. صفحه را دوباره بارگذاری کنید.',
         'warning'
       );
+    },
+
+    showProcurementRetryNotice: function (eventId, message) {
+      const notice = document.createElement('div');
+      notice.className = 'event-toast event-toast-warning';
+      notice.setAttribute('role', 'status');
+      const text = document.createElement('div');
+      text.textContent = message;
+      notice.appendChild(text);
+      if (eventId) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'btn btn-sm btn-secondary';
+        button.textContent = 'تلاش مجدد برای محاسبه ملزومات';
+        button.style.marginTop = '8px';
+        button.addEventListener('click', async () => {
+          button.disabled = true;
+          button.textContent = 'در حال تلاش مجدد...';
+          try {
+            await PMS.Api.post('/events/' + encodeURIComponent(eventId) + '/procurement-retry', {});
+            notice.remove();
+            this.showNotice('محاسبه نیاز ملزومات با موفقیت مجدداً اجرا شد.', 'success');
+            PMS.Api.invalidateMany([CACHE_KEY, PROJECTS_CACHE_KEY, PMS.Cache.keys.DASHBOARD]);
+            if (typeof this.reloadEvents === 'function') await this.reloadEvents();
+          } catch (error) {
+            button.disabled = false;
+            button.textContent = 'تلاش مجدد';
+            text.textContent = 'تلاش مجدد ناموفق بود: ' + this.errorMessage(error);
+          }
+        });
+        notice.appendChild(button);
+      }
+      document.body.appendChild(notice);
+      requestAnimationFrame(() => notice.classList.add('is-visible'));
+      setTimeout(() => {
+        if (!notice.isConnected) return;
+        notice.classList.remove('is-visible');
+        setTimeout(() => notice.remove(), 250);
+      }, 12000);
     },
 
     showNotice: function (message, type) {
