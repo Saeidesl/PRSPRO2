@@ -369,6 +369,19 @@
       this.userDetailsRequest = true;
 
       try {
+        const embeddedDepartmentName = user.DepartmentName || user.departmentName || '';
+        const embeddedRoleNames = this.getEmbeddedRoleNames(user);
+        if (embeddedDepartmentName || embeddedRoleNames.length) {
+          const embeddedParts = [];
+          if (embeddedDepartmentName) embeddedParts.push(embeddedDepartmentName);
+          if (embeddedRoleNames.length) embeddedParts.push(embeddedRoleNames.join('، '));
+          const embeddedMeta = document.getElementById('header-user-meta');
+          const embeddedSidebarRole = document.getElementById('sidebar-user-role');
+          if (embeddedMeta) embeddedMeta.textContent = embeddedParts.join(' | ');
+          if (embeddedSidebarRole) embeddedSidebarRole.textContent = embeddedRoleNames.join('، ') || embeddedDepartmentName;
+          return;
+        }
+
         const jobs = [];
 
         if (departmentId) {
