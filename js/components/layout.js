@@ -20,8 +20,8 @@
       { route: 'roles', label: 'نقش‌ها', icon: '♟', permission: 'ROLE_MANAGE' },
       { route: 'permissions', label: 'دسترسی‌ها', icon: '✓', permission: 'PERMISSION_MANAGE' },
       { route: 'audit', label: 'گزارش فعالیت‌ها', icon: '◷', permission: 'REPORT_VIEW' },
-      { route: 'settings', label: 'تنظیمات', icon: '⚙', permission: 'SETTINGS_MANAGE' },
-      { route: 'admin', label: 'مدیریت سامانه', icon: '▦', permission: 'SYSTEM_MANAGE' }
+      { route: 'settings', label: 'تنظیمات', icon: '⚙', permission: 'SYSTEM_SETTINGS' },
+      { route: 'admin', label: 'مدیریت سامانه', icon: '▦', permission: 'SYSTEM_SETTINGS' }
     ],
 
     syncListener: null,
