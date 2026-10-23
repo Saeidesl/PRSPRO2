@@ -35,6 +35,7 @@
     permissionsLoaded: false,
     permissionsRequest: null,
     serverIsAdmin: false,
+    authGeneration: 0,
     authExpiredListener: null,
 
     routePermissions: {
@@ -115,6 +116,7 @@ getBaseUrl: function () {
       if (Router.permissionsLoaded) return true;
       if (Router.permissionsRequest) return Router.permissionsRequest;
 
+      const generation = Router.authGeneration;
       Router.permissionsRequest = (async function () {
         try {
           if (!window.PMS.Api ||
@@ -139,8 +141,7 @@ getBaseUrl: function () {
 
           if (data && data.data) data = data.data;
 
-          // Use the authoritative backend admin flag; the session user may not
-          // include DepartmentCode even when the backend recognizes the admin.
+          if (generation !== Router.authGeneration) return false;
           Router.serverIsAdmin = !!(data && data.isAdmin === true);
 
           let list = [];
@@ -164,11 +165,14 @@ getBaseUrl: function () {
           return true;
         } catch (error) {
           console.error('خطا در دریافت دسترسی‌ها:', error);
-          Router.permissions = [];
-          Router.permissionsLoaded = false;
+          if (generation === Router.authGeneration) {
+            Router.permissions = [];
+            Router.permissionsLoaded = false;
+            Router.serverIsAdmin = false;
+          }
           return false;
         } finally {
-          Router.permissionsRequest = null;
+          if (generation === Router.authGeneration) Router.permissionsRequest = null;
         }
       })();
 
@@ -192,6 +196,7 @@ getBaseUrl: function () {
     },
 
     resetAuthState: function () {
+      Router.authGeneration += 1;
       Router.permissions = [];
       Router.permissionsLoaded = false;
       Router.permissionsRequest = null;
