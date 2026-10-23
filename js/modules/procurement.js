@@ -211,10 +211,11 @@
       });
       const requested = Math.max(0, Number(item.RequestedQuantity || 0));
       const ordered = Math.min(requested, Math.max(0, Number(item.OrderedQuantity || 0)));
-      const received = Math.min(ordered, Math.max(0, Number(item.ReceivedQuantity || 0)));
-      const toOrder = Math.max(0, requested - ordered);
-      const toReceive = Math.max(0, ordered - received);
-      let label = 'تأمین کامل', kind = 'complete';
+      const received = Math.min(requested, Math.max(0, Number(item.ReceivedQuantity || 0)));
+      const toOrder = Math.max(0, Number(item.RemainingToOrderQuantity !== undefined ? item.RemainingToOrderQuantity : requested - ordered));
+      const toReceive = Math.max(0, Number(item.RemainingDeliveryQuantity !== undefined ? item.RemainingDeliveryQuantity : ordered - received));
+      const overOrdered = Math.max(0, Number(item.OverOrderedQuantity || 0));
+      let label = overOrdered > 0 ? 'خرید مازاد؛ نیازمند بررسی' : 'تأمین کامل', kind = overOrdered > 0 ? 'partial' : 'complete';
       if (toOrder > 0 && toReceive > 0) { label = 'نیاز به سفارش و دریافت'; kind = 'partial'; }
       else if (toOrder > 0) { label = 'در انتظار سفارش'; kind = 'waiting'; }
       else if (toReceive > 0) { label = received > 0 ? 'دریافت ناقص' : 'در انتظار دریافت'; kind = received > 0 ? 'partial' : 'delivery'; }
@@ -239,6 +240,7 @@
           '<div><span>در انتظار سفارش</span><strong class="' + (entry.toOrder > 0 ? 'procurement-quantity-warn' : '') + '">' + number(entry.toOrder) + '</strong></div>' +
           '<div><span>در انتظار دریافت</span><strong class="' + (entry.toReceive > 0 ? 'procurement-quantity-pending' : '') + '">' + number(entry.toReceive) + '</strong></div>' +
           '<div><span>دریافت‌شده</span><strong class="procurement-quantity-done">' + number(entry.received) + '</strong></div>' +
+          (Number(item.OverOrderedQuantity || 0) > 0 ? '<div><span>خرید مازاد</span><strong class="procurement-quantity-warn">' + number(item.OverOrderedQuantity) + '</strong></div>' : '') +
           '<div class="procurement-need-item-status">' + statusBadge(entry.label, entry.kind) + '</div>' +
           '</div></div>';
       }).join('');
@@ -649,7 +651,10 @@
     itemsRoot.innerHTML = '';
     // Only show needs that still have an un-ordered quantity. The original need remains unchanged.
     const projectNeeds = (Array.isArray(needs) ? needs : []).filter(function (need) {
-      return Math.max(0, Number(need.RequestedQuantity || 0) - Number(need.OrderedQuantity || 0)) > 0;
+      const remaining = need.RemainingToOrderQuantity !== undefined
+        ? Number(need.RemainingToOrderQuantity || 0)
+        : Number(need.RequestedQuantity || 0) - Number(need.OrderedQuantity || 0);
+      return Math.max(0, remaining) > 0;
     });
     if (!projectNeeds.length) {
       itemsRoot.innerHTML = orderItemRow(0);
