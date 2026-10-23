@@ -520,8 +520,10 @@
         });
         const completed = related.some(function (event) {
           const type = typeMap.get(String(event.EventTypeID || ''));
-          return !!type && (type.IsWorkCompletion === true ||
-            String(type.IsWorkCompletion).toLowerCase() === 'true' || String(type.IsWorkCompletion) === '1');
+          return event.IsWorkCompletion === true ||
+            String(event.IsWorkCompletion).toLowerCase() === 'true' || String(event.IsWorkCompletion) === '1' ||
+            (!!type && (type.IsWorkCompletion === true ||
+              String(type.IsWorkCompletion).toLowerCase() === 'true' || String(type.IsWorkCompletion) === '1'));
         });
         queues[completed ? 'completed' : related.length ? 'progress' : 'pending'].push(project);
       });
@@ -535,7 +537,7 @@
         const count = document.getElementById(definition.countId);
         if (!container) return;
         const items = queues[definition.key];
-        if (count) count.textContent = String(items.length).replace(/\\d/g, function (digit) { return '۰۱۲۳۴۵۶۷۸۹'[Number(digit)]; });
+        if (count) count.textContent = String(items.length).replace(/\d/g, function (digit) { return '۰۱۲۳۴۵۶۷۸۹'[Number(digit)]; });
         if (!items.length) {
           container.innerHTML = '<p class="event-queue-empty">' + Events.escape(definition.empty) + '</p>';
           return;
