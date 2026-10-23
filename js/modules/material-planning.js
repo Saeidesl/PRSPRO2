@@ -43,7 +43,7 @@
         </header>
         <div id="material-specs-loading" class="loading-state">در حال دریافت اطلاعات...</div>
         <div id="material-specs-error" class="alert alert-danger" hidden></div>
-        <section><h4>ملزومات تعریف‌شده</h4><div id="material-specs-list"></div></section>
+        <section><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h4>ملزومات تعریف‌شده</h4><button type="button" class="btn btn-secondary" id="material-specs-estimate">محاسبه نیاز برآوردی</button></div><p style="font-size:12px;color:var(--color-text-secondary)">فقط ملزوماتی که سیاست سفارش زودهنگام آن‌ها مجاز است در این محاسبه لحاظ می‌شوند.</p><div id="material-specs-list"></div><div id="material-specs-estimate-result" class="alert alert-info" hidden style="margin-top:10px"></div></section>
         <form id="material-specs-form" class="form" style="margin-top:18px;border-top:1px solid var(--color-border);padding-top:16px">
           <input type="hidden" name="specId">
           <h4 id="material-specs-form-title">افزودن ملزوم</h4>
@@ -112,9 +112,35 @@
       ).join('') + '</div>' : '<p class="table-empty">هنوز محاسبه‌ای ثبت نشده است.</p>';
     }
 
-    modal.addEventListener('click', (event) => {
+    modal.addEventListener('click', async (event) => {
       if (event.target.closest('[data-close]')) { modal.remove(); return; }
       if (event.target.closest('#ms-reset')) { resetForm(); return; }
+      if (event.target.closest('#material-specs-estimate')) {
+        const estimateButton = modal.querySelector('#material-specs-estimate');
+        const estimateResult = modal.querySelector('#material-specs-estimate-result');
+        estimateButton.disabled = true;
+        estimateButton.textContent = 'در حال محاسبه...';
+        estimateResult.hidden = true;
+        try {
+          const response = await window.PMS.Api.post('/projects/' + encodeURIComponent(projectId) + '/material-estimates', {});
+          const result = unwrap(response) || {};
+          const items = Array.isArray(result.items) ? result.items : [];
+          estimateResult.textContent = items.length
+            ? 'نیاز برآوردی برای ' + items.length + ' ملزوم ثبت شد. می‌توانید مقدار سفارش را در بخش تدارکات بررسی کنید.'
+            : 'محاسبه انجام شد؛ مورد جدیدی برای نمایش برنگشت.';
+          estimateResult.hidden = false;
+          const refreshed = await window.PMS.Api.get('/projects/' + encodeURIComponent(projectId) + '/material-calculations');
+          history = unwrap(refreshed); history = Array.isArray(history) ? history : [];
+          renderHistory();
+        } catch (estimateError) {
+          estimateResult.textContent = 'محاسبه نیاز برآوردی ناموفق بود: ' + String(estimateError && estimateError.message || estimateError);
+          estimateResult.hidden = false;
+        } finally {
+          estimateButton.disabled = false;
+          estimateButton.textContent = 'محاسبه نیاز برآوردی';
+        }
+        return;
+      }
       const edit = event.target.closest('[data-edit]');
       if (edit) {
         const spec = specs.find((item) => String(item.ID) === String(edit.getAttribute('data-edit')));
