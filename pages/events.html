@@ -1,134 +1,108 @@
-<section class="page-section">
-
-  <div class="page-header">
-    <div>
+<section class="page-section events-page">
+  <header class="page-header events-page-header">
+    <div class="events-page-intro">
       <h2>رویدادها</h2>
-      <p>مشاهده و پیگیری فعالیت‌های ثبت‌شده تولید</p>
+      <p>برای ادامهٔ کار، یک پروژه انتخاب کنید یا فعالیت انجام‌شده را ثبت کنید.</p>
     </div>
-
     <div class="page-header-actions">
-      <button
-        type="button"
-        class="btn btn-primary"
-        id="event-create-button"
-      >
-        + ثبت رویداد
+      <button type="button" class="btn btn-primary events-primary-action" id="event-create-button">
+        <span aria-hidden="true">＋</span> ثبت رویداد
       </button>
     </div>
-  </div>
+  </header>
 
-  <div class="card">
-    <div class="card-body">
+  <section class="events-quick-search" aria-label="جستجو در رویدادها">
+    <label for="event-search">جستجو در رویدادها</label>
+    <div class="events-search-control">
+      <span aria-hidden="true">⌕</span>
+      <input type="search" id="event-search" placeholder="نام پروژه، نوع رویداد یا شرح فعالیت..." autocomplete="off">
+    </div>
+    <button type="button" class="btn btn-secondary events-filter-toggle" id="events-filter-toggle"
+      aria-expanded="false" aria-controls="events-filter-content">
+      <span aria-hidden="true">☷</span> فیلترهای بیشتر <span id="events-filter-arrow" aria-hidden="true">⌄</span>
+    </button>
+  </section>
 
-      <!-- دکمه باز و بسته کردن فیلترها -->
-<div class="events-filter-section">
-
-  <button
-    type="button"
-    class="btn btn-secondary events-filter-toggle"
-    id="events-filter-toggle"
-    aria-expanded="false"
-    aria-controls="events-filter-content"
-  >
-    <span>فیلتر و جستجو</span>
-    <span id="events-filter-arrow">▼</span>
-  </button>
-
-  <div
-    id="events-filter-content"
-    class="events-filter-content"
-    hidden
-  >
-    <div class="filter-bar">
-
+  <section id="events-filter-content" class="events-filter-content" hidden aria-label="فیلترهای پیشرفته">
+    <div class="events-filter-grid">
       <div class="filter-group">
         <label for="event-project-filter">پروژه</label>
-        <select id="event-project-filter">
-          <option value="">همه پروژه‌ها</option>
-        </select>
+        <select id="event-project-filter"><option value="">همه پروژه‌ها</option></select>
       </div>
-
       <div class="filter-group">
         <label for="event-type-filter">نوع رویداد</label>
-        <select id="event-type-filter">
-          <option value="">همه انواع</option>
-        </select>
+        <select id="event-type-filter"><option value="">همه انواع</option></select>
       </div>
-
       <div class="filter-group">
-        <label for="event-status-filter">وضعیت</label>
+        <label for="event-status-filter">وضعیت رویداد</label>
         <select id="event-status-filter">
           <option value="">همه وضعیت‌ها</option>
           <option value="ACTIVE">فعال</option>
           <option value="VOID">باطل‌شده</option>
         </select>
       </div>
-
-      <div class="filter-group">
-        <label for="event-search">جستجو</label>
-        <input
-          type="text"
-          id="event-search"
-          placeholder="جستجوی رویداد..."
-        >
-      </div>
-
     </div>
-  </div>
+  </section>
 
-</div>
+  <section class="event-project-queues" aria-labelledby="event-queues-title">
+    <div class="event-queue-heading">
+      <div>
+        <span class="events-section-kicker">کارهای شما</span>
+        <h3 id="event-queues-title">از کدام پروژه باید شروع کنید؟</h3>
+        <p>پروژه‌های در انتظار اقدام را باز کنید و رویداد مرحلهٔ بعد را ثبت کنید.</p>
+      </div>
+    </div>
 
-            <section class="event-project-queues" aria-label="پروژه‌ها بر اساس وضعیت اقدام">
-        <div class="event-queue-heading"><h3>پروژه‌های مربوط به شما</h3><p>وضعیت کار در واحد یا محدوده دسترسی شما نمایش داده می‌شود.</p></div>
-        <div class="event-queue-grid">
-          <section class="event-project-queue queue-pending" aria-labelledby="event-queue-pending-title"><header><span class="event-queue-icon" aria-hidden="true">◷</span><div><h4 id="event-queue-pending-title">پروژه‌های در انتظار اقدام</h4><span id="event-queue-pending-count" class="event-queue-count">۰</span></div></header><div id="event-queue-pending" class="event-queue-list"><p class="event-queue-empty">در حال بارگذاری...</p></div></section>
-          <section class="event-project-queue queue-progress" aria-labelledby="event-queue-progress-title"><header><span class="event-queue-icon" aria-hidden="true">◴</span><div><h4 id="event-queue-progress-title">پروژه‌های در حال انجام</h4><span id="event-queue-progress-count" class="event-queue-count">۰</span></div></header><div id="event-queue-progress" class="event-queue-list"><p class="event-queue-empty">در حال بارگذاری...</p></div></section>
-          <section class="event-project-queue queue-completed" aria-labelledby="event-queue-completed-title"><header><span class="event-queue-icon" aria-hidden="true">✓</span><div><h4 id="event-queue-completed-title">پروژه‌های اتمام کار شده</h4><span id="event-queue-completed-count" class="event-queue-count">۰</span></div></header><div id="event-queue-completed" class="event-queue-list"><p class="event-queue-empty">در حال بارگذاری...</p></div></section>
-        </div>
+    <div class="event-queue-tabs" role="tablist" aria-label="وضعیت پروژه‌ها">
+      <button type="button" class="event-queue-tab is-active" id="event-tab-pending" role="tab"
+        aria-selected="true" aria-controls="event-panel-pending" data-queue="pending">
+        <span class="event-queue-tab-mark" aria-hidden="true">!</span>
+        <span class="event-queue-tab-label">در انتظار اقدام</span>
+        <span id="event-queue-pending-count" class="event-queue-count">۰</span>
+      </button>
+      <button type="button" class="event-queue-tab" id="event-tab-progress" role="tab"
+        aria-selected="false" aria-controls="event-panel-progress" data-queue="progress" tabindex="-1">
+        <span class="event-queue-tab-mark" aria-hidden="true">◷</span>
+        <span class="event-queue-tab-label">در حال انجام</span>
+        <span id="event-queue-progress-count" class="event-queue-count">۰</span>
+      </button>
+      <button type="button" class="event-queue-tab" id="event-tab-completed" role="tab"
+        aria-selected="false" aria-controls="event-panel-completed" data-queue="completed" tabindex="-1">
+        <span class="event-queue-tab-mark" aria-hidden="true">✓</span>
+        <span class="event-queue-tab-label">تکمیل‌شده</span>
+        <span id="event-queue-completed-count" class="event-queue-count">۰</span>
+      </button>
+    </div>
+
+    <div class="event-queue-panels">
+      <section id="event-panel-pending" class="event-project-queue queue-pending is-active"
+        role="tabpanel" aria-labelledby="event-tab-pending">
+        <header><span class="event-queue-panel-title">پروژه‌های در انتظار اقدام</span><span class="event-queue-hint">برای ثبت فعالیت آماده‌اند</span></header>
+        <div id="event-queue-pending" class="event-queue-list"><p class="event-queue-empty">در حال بارگذاری...</p></div>
       </section>
-      <style>
-        .event-project-queues{margin:0 0 24px}.event-queue-heading{margin-bottom:14px}.event-queue-heading h3{margin:0 0 5px;font-size:1.08rem}.event-queue-heading p{margin:0;color:var(--text-muted,#656d76);font-size:.9rem}
-        .event-queue-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}.event-project-queue{min-width:0;border:1px solid var(--border-color,#d0d7de);border-radius:12px;overflow:hidden;background:var(--card-bg,#fff)}
-        .event-project-queue>header{display:flex;align-items:center;gap:10px;padding:14px;border-bottom:1px solid var(--border-color,#d0d7de)}.event-project-queue>header h4{margin:0;font-size:.96rem;line-height:1.5}.event-queue-icon{display:grid;place-items:center;flex:0 0 34px;height:34px;border-radius:9px;font-size:1.25rem;font-weight:700}
-        .queue-pending .event-queue-icon{background:#ffebe9;color:#cf222e}.queue-progress .event-queue-icon{background:#fff8c5;color:#9a6700}.queue-completed .event-queue-icon{background:#dafbe1;color:#1a7f37}.event-queue-count{display:inline-block;margin-top:3px;color:var(--text-muted,#656d76);font-size:.8rem}
-        .event-queue-list{display:grid;gap:8px;padding:10px;max-height:520px;overflow:auto}.event-queue-project{padding:11px;border:1px solid var(--border-color,#d8dee4);border-radius:9px;min-width:0}.event-queue-project strong{display:block;overflow-wrap:anywhere;font-size:.92rem}.event-queue-project p{margin:4px 0 10px;color:var(--text-muted,#656d76);font-size:.82rem;overflow-wrap:anywhere}.event-queue-project button{width:100%;white-space:normal;line-height:1.4}.event-queue-empty{margin:0;padding:14px 8px;text-align:center;color:var(--text-muted,#656d76);font-size:.88rem}
-        @media(max-width:900px){.event-queue-grid{grid-template-columns:1fr}.event-queue-list{max-height:none}.event-project-queue>header h4{font-size:.94rem}}
-      </style>
-
-      <!-- وضعیت بارگذاری -->
-      <div
-        id="events-loading"
-        class="loading-state"
-      >
-        در حال بارگذاری رویدادها...
-      </div>
-
-      <!-- پیام خطا -->
-      <div
-        id="events-error"
-        class="alert alert-danger"
-        hidden
-      ></div>
-
-      <!-- جدول رویدادها -->
-      <div
-        id="events-table-container"
-        class="table-wrapper"
-        hidden
-      ></div>
-
-      <!-- پیام خالی بودن فهرست -->
-      <div
-        id="events-empty"
-        class="table-empty"
-        hidden
-      >
-        رویدادی برای نمایش وجود ندارد.
-      </div>
-
+      <section id="event-panel-progress" class="event-project-queue queue-progress"
+        role="tabpanel" aria-labelledby="event-tab-progress" hidden>
+        <header><span class="event-queue-panel-title">پروژه‌های در حال انجام</span><span class="event-queue-hint">فعالیت‌هایی برای پیگیری دارند</span></header>
+        <div id="event-queue-progress" class="event-queue-list"><p class="event-queue-empty">در حال بارگذاری...</p></div>
+      </section>
+      <section id="event-panel-completed" class="event-project-queue queue-completed"
+        role="tabpanel" aria-labelledby="event-tab-completed" hidden>
+        <header><span class="event-queue-panel-title">پروژه‌های تکمیل‌شده</span><span class="event-queue-hint">کار این بخش به پایان رسیده</span></header>
+        <div id="event-queue-completed" class="event-queue-list"><p class="event-queue-empty">در حال بارگذاری...</p></div>
+      </section>
     </div>
-  </div>
+  </section>
 
+  <section class="events-history-section" aria-labelledby="events-history-title">
+    <div class="events-history-heading">
+      <div><span class="events-section-kicker">سوابق</span><h3 id="events-history-title">رویدادهای ثبت‌شده</h3></div>
+      <p>برای مشاهدهٔ اطلاعات کامل هر فعالیت، جزئیات آن را باز کنید.</p>
+    </div>
+    <div id="events-loading" class="loading-state">در حال بارگذاری رویدادها...</div>
+    <div id="events-error" class="alert alert-danger" hidden></div>
+    <div id="events-table-container" class="table-wrapper" hidden></div>
+    <div id="events-empty" class="table-empty" hidden>رویدادی مطابق جستجو یا فیلترهای انتخاب‌شده پیدا نشد.</div>
+  </section>
 </section>
 
 <script src="js/modules/events.js"></script>
