@@ -34,11 +34,7 @@
     isAdmin: function (user) {
       user = user || this.getCurrentUser() || {};
 
-      return (
-        user.IsAdmin === true ||
-        String(user.IsAdmin).toLowerCase() === 'true' ||
-        String(user.DepartmentCode || '').trim().toUpperCase() === 'ADMIN'
-      );
+      return !!(PMS.Router && PMS.Router.serverIsAdmin === true);
     },
 
     getCurrentUser: function () {
@@ -99,9 +95,9 @@
         }
 
         if (self.isAdmin()) {
-          self.permissions = self.navItems.map(function (item) {
-            return item.permission;
-          });
+          self.permissions = self.navItems.reduce(function (all, item) {
+            return all.concat(item.permission);
+          }, []);
 
           self.permissionsLoaded = true;
           self.renderNav();
@@ -361,6 +357,7 @@
     },
 
     loadUserDetails: async function () {
+      const generation = this.authGeneration;
       const user = this.getCurrentUser();
       if (!user || !PMS.Api) return;
 
@@ -389,6 +386,7 @@
         );
 
         const results = await Promise.all(jobs);
+        if (generation !== this.authGeneration) return;
         const departmentName = results[0] || user.DepartmentName || '';
         const roleNames = Array.isArray(results[1]) ? results[1] : [];
         const parts = [];
@@ -407,7 +405,7 @@
       } catch (error) {
         console.warn('دریافت جزئیات کاربر انجام نشد:', error);
       } finally {
-        this.userDetailsRequest = null;
+        if (generation === this.authGeneration) this.userDetailsRequest = null;
       }
     },
 
