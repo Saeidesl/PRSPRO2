@@ -158,7 +158,7 @@
         '</td><td>' + this.escape(need.RemainingToOrderQuantity ?? '—') +
         '</td><td>' + this.escape(need.ProcurementStatus || need.Status || '—') + '</td></tr>').join('');
 
-      const calculationRows = calculations.map((row) => '<tr><td>' + this.escape(row.MaterialSpecID || '—') +
+      const calculationRows = calculations.map((row) => '<tr><td>' + this.escape(row.MaterialSpecName || row.MaterialSpecID || '—') +
         '</td><td>' + this.escape(row.BasisQuantity ?? '—') +
         '</td><td>' + this.escape(row.ConsumptionPerUnit ?? '—') +
         '</td><td>' + this.escape(row.WastagePercent ?? 0) + '%</td><td>' +
