@@ -142,7 +142,7 @@
       try {
         return await this.permissionsRequest;
       } finally {
-        this.permissionsRequest = null;
+        if (generation === this.authGeneration) this.permissionsRequest = null;
       }
     },
 
