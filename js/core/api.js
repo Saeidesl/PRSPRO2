@@ -93,7 +93,6 @@
 
     return (
       error.status === 401 ||
-      error.status === 403 ||
       code === 'UNAUTHORIZED' ||
       code === 'AUTH_REQUIRED' ||
       code === 'SESSION_EXPIRED' ||
