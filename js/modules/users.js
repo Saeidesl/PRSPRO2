@@ -13,10 +13,25 @@
     saving: false
   };
 
+  function hasPermission(code) {
+    const router = PMS.Router;
+    return !!(router && ((typeof router.isAdmin === 'function' && router.isAdmin()) ||
+      (Array.isArray(router.permissions) && router.permissions.indexOf(code) !== -1)));
+  }
+
+  function canViewUsers() { return hasPermission('USER_VIEW'); }
+  function canCreateUsers() { return hasPermission('USER_CREATE'); }
+  function canEditUsers() { return hasPermission('USER_EDIT'); }
+
   function init() {
     bindEvents();
 
-    const cachedUsers = PMS.Cache.get(CACHE_KEY);
+    const createButton = document.getElementById('user-create-button');
+    if (createButton) createButton.hidden = !canCreateUsers();
+    const listCard = document.querySelector('.page-section > .card');
+    if (listCard) listCard.hidden = !canViewUsers();
+
+    const cachedUsers = canViewUsers() ? PMS.Cache.get(CACHE_KEY) : null;
     const cachedDepartments = PMS.Cache.get(DEPARTMENTS_CACHE_KEY);
 
     if (cachedUsers !== null) {
@@ -28,8 +43,8 @@
       state.departments = normalizeList(cachedDepartments, 'departments');
     }
 
-    loadUsers();
-    loadDepartments();
+    if (canViewUsers()) loadUsers();
+    if (canViewUsers() || canCreateUsers() || canEditUsers()) loadDepartments();
   }
 
   function bindEvents() {
@@ -165,9 +180,11 @@
 
     if (empty) empty.hidden = true;
 
+    const canEdit = canEditUsers();
     let html = '<table class="data-table"><thead><tr>' +
       '<th>نام و نام خانوادگی</th><th>نام کاربری</th>' +
-      '<th>واحد</th><th>وضعیت</th><th>تاریخ ایجاد</th><th>عملیات</th>' +
+      '<th>واحد</th><th>وضعیت</th><th>تاریخ ایجاد</th>' +
+      (canEdit ? '<th>عملیات</th>' : '') +
       '</tr></thead><tbody>';
 
     users.forEach(function (user) {
@@ -180,12 +197,10 @@
         '<td>' + esc(getDepartmentName(user.DepartmentID)) + '</td>' +
         '<td>' + renderStatus(user.Status) + '</td>' +
         '<td>' + esc(formatDate(user.CreatedAt)) + '</td>' +
-        '<td style="white-space:nowrap">' +
-          '<button type="button" class="btn btn-sm btn-primary user-edit-button" ' +
-          'data-id="' + esc(id) + '">ویرایش</button> ' +
-          '<button type="button" class="btn btn-sm btn-secondary user-roles-button" ' +
-          'data-id="' + esc(id) + '" data-name="' + esc(name) + '">نقش‌ها</button>' +
-        '</td>' +
+        (canEdit ? '<td style="white-space:nowrap">' +
+          '<button type="button" class="btn btn-sm btn-primary user-edit-button" data-id="' + esc(id) + '">ویرایش</button> ' +
+          '<button type="button" class="btn btn-sm btn-secondary user-roles-button" data-id="' + esc(id) + '" data-name="' + esc(name) + '">نقش‌ها</button>' +
+        '</td>' : '') +
         '</tr>';
     });
 
@@ -207,10 +222,9 @@
 
   async function openCreateForm() {
     try {
-      await Promise.all([
-        state.roles.length ? Promise.resolve() : loadRoles(),
-        state.departments.length ? Promise.resolve() : loadDepartments()
-      ]);
+      const jobs = [state.departments.length ? Promise.resolve() : loadDepartments()];
+      if (canEditUsers()) jobs.push(state.roles.length ? Promise.resolve() : loadRoles());
+      await Promise.all(jobs);
 
       showCreateModal();
     } catch (error) {
@@ -278,7 +292,7 @@
       return '<option value="' + esc(id) + '">' + esc(name) + '</option>';
     }).join('');
 
-    const roleOptions = buildRoleCheckboxes([]);
+    const roleOptions = canEditUsers() ? buildRoleCheckboxes([]) : '';
 
     modal.innerHTML =
       '<div class="modal">' +
@@ -304,10 +318,9 @@
               '<option value="ACTIVE">فعال</option>' +
               '<option value="INACTIVE">غیرفعال</option>' +
             '</select>' +
-            '<fieldset style="margin-top:16px">' +
-              '<legend>نقش‌های کاربر</legend>' +
+            (canEditUsers() ? '<fieldset style="margin-top:16px"><legend>نقش‌های کاربر</legend>' +
               (roleOptions || '<p>نقش فعالی برای انتخاب وجود ندارد.</p>') +
-            '</fieldset>' +
+            '</fieldset>' : '<p class="text-muted">برای تخصیص نقش به کاربر، مجوز ویرایش کاربران لازم است.</p>') +
             '<div id="user-create-error" role="alert" style="color:var(--color-danger);margin-top:12px"></div>' +
             '<div style="display:flex;gap:8px;margin-top:16px">' +
               '<button class="btn btn-primary" id="user-create-save" type="submit">ثبت کاربر</button>' +
@@ -402,7 +415,7 @@
           : 'کاربر با موفقیت ایجاد شد.'
       );
 
-      await loadUsers();
+      if (canViewUsers()) await loadUsers();
     } catch (error) {
       console.error('Creating user failed:', error);
 

@@ -5,6 +5,8 @@
   window.PMS.Modules = window.PMS.Modules || {};
 
   const Auth = {
+    pendingExpiredMessage: '',
+
     init: function () {
       const form = document.getElementById('login-form');
 
@@ -15,6 +17,16 @@
 
       if (form.dataset.authInitialized === 'true') return;
       form.dataset.authInitialized = 'true';
+
+      if (Auth.pendingExpiredMessage) {
+        const pendingMessage = document.getElementById('login-error') || document.getElementById('login-message');
+        if (pendingMessage) {
+          pendingMessage.textContent = Auth.pendingExpiredMessage;
+          pendingMessage.classList.remove('hidden');
+          pendingMessage.style.display = 'block';
+        }
+        Auth.pendingExpiredMessage = '';
+      }
 
       form.addEventListener('submit', async function (event) {
         event.preventDefault();
@@ -88,6 +100,14 @@
         throw new Error('نشست کاربر ایجاد نشد.');
       }
 
+      // Reset all in-memory authorization state before switching accounts.
+      if (PMS.Router && typeof PMS.Router.resetAuthState === 'function') {
+        PMS.Router.resetAuthState();
+      }
+      if (PMS.Layout && typeof PMS.Layout.resetAuthState === 'function') {
+        PMS.Layout.resetAuthState();
+      }
+
       // Do not let cached data from a previous account appear in this session.
       if (PMS.Cache && typeof PMS.Cache.clear === 'function') {
         PMS.Cache.clear();
@@ -147,10 +167,33 @@
         }
       }
 
+      if (PMS.Router && typeof PMS.Router.resetAuthState === 'function') {
+        PMS.Router.resetAuthState();
+      }
+      if (PMS.Layout && typeof PMS.Layout.resetAuthState === 'function') {
+        PMS.Layout.resetAuthState();
+      }
+
       if (PMS.Router && typeof PMS.Router.navigate === 'function') {
         PMS.Router.navigate('login', true);
       } else {
         window.location.hash = '#login';
+      }
+    },
+
+    handleAuthExpired: function (message) {
+      Auth.pendingExpiredMessage = message || 'نشست شما منقضی شده است. لطفاً دوباره وارد شوید.';
+      // Do not call /auth/logout: the server has already rejected this token.
+      try {
+        if (PMS.Permissions && typeof PMS.Permissions.clear === 'function') PMS.Permissions.clear();
+        if (PMS.Cache && typeof PMS.Cache.clear === 'function') PMS.Cache.clear();
+        if (PMS.Session && typeof PMS.Session.clear === 'function') PMS.Session.clear();
+        else if (PMS.Api && typeof PMS.Api.clearToken === 'function') PMS.Api.clearToken();
+      } finally {
+        if (PMS.Router && typeof PMS.Router.resetAuthState === 'function') PMS.Router.resetAuthState();
+        if (PMS.Layout && typeof PMS.Layout.resetAuthState === 'function') PMS.Layout.resetAuthState();
+        if (PMS.Router && typeof PMS.Router.navigate === 'function') PMS.Router.navigate('login', true);
+        else window.location.hash = '#login';
       }
     },
 

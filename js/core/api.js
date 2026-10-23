@@ -93,7 +93,6 @@
 
     return (
       error.status === 401 ||
-      error.status === 403 ||
       code === 'UNAUTHORIZED' ||
       code === 'AUTH_REQUIRED' ||
       code === 'SESSION_EXPIRED' ||
@@ -283,7 +282,7 @@
         return data;
 
       } catch (error) {
-        if (isAuthError(error)) {
+        if (isAuthError(error) && path !== '/auth/login' && path !== '/auth/logout') {
           notifyAuthExpired();
         }
 

@@ -35,6 +35,8 @@
     permissionsLoaded: false,
     permissionsRequest: null,
     serverIsAdmin: false,
+    authGeneration: 0,
+    authExpiredListener: null,
 
     routePermissions: {
       dashboard: ['REPORT_VIEW'],
@@ -47,13 +49,13 @@
       procurement: ['PROCUREMENT_VIEW', 'PROCUREMENT_MANAGE'],
       attachments: ['ATTACHMENT_VIEW'],
       reports: ['REPORT_VIEW'],
-      users: ['USER_VIEW', 'USER_CREATE', 'USER_EDIT'],
+      users: ['USER_VIEW', 'USER_CREATE'],
       departments: ['DEPARTMENT_MANAGE'],
       roles: ['ROLE_MANAGE'],
       permissions: ['PERMISSION_MANAGE'],
       audit: ['REPORT_VIEW'],
-      settings: ['SETTINGS_MANAGE'],
-      admin: ['SYSTEM_MANAGE']
+      settings: ['SYSTEM_SETTINGS'],
+      admin: ['SYSTEM_SETTINGS']
     },
 
 getBaseUrl: function () {
@@ -102,14 +104,8 @@ getBaseUrl: function () {
     },
 
     isAdmin: function () {
-      const user = Router.getUser();
-
-      return (
-        Router.serverIsAdmin === true ||
-        user.IsAdmin === true ||
-        String(user.IsAdmin).toLowerCase() === 'true' ||
-        String(user.DepartmentCode || '').trim().toUpperCase() === 'ADMIN'
-      );
+      // Only the authenticated backend response is authoritative.
+      return Router.serverIsAdmin === true;
     },
 
     getHomeRoute: function () {
@@ -117,15 +113,10 @@ getBaseUrl: function () {
     },
 
     loadPermissions: async function () {
-      if (Router.isAdmin()) {
-        Router.permissions = [];
-        Router.permissionsLoaded = true;
-        return true;
-      }
-
       if (Router.permissionsLoaded) return true;
       if (Router.permissionsRequest) return Router.permissionsRequest;
 
+      const generation = Router.authGeneration;
       Router.permissionsRequest = (async function () {
         try {
           if (!window.PMS.Api ||
@@ -150,8 +141,7 @@ getBaseUrl: function () {
 
           if (data && data.data) data = data.data;
 
-          // Use the authoritative backend admin flag; the session user may not
-          // include DepartmentCode even when the backend recognizes the admin.
+          if (generation !== Router.authGeneration) return false;
           Router.serverIsAdmin = !!(data && data.isAdmin === true);
 
           let list = [];
@@ -175,11 +165,14 @@ getBaseUrl: function () {
           return true;
         } catch (error) {
           console.error('خطا در دریافت دسترسی‌ها:', error);
-          Router.permissions = [];
-          Router.permissionsLoaded = false;
+          if (generation === Router.authGeneration) {
+            Router.permissions = [];
+            Router.permissionsLoaded = false;
+            Router.serverIsAdmin = false;
+          }
           return false;
         } finally {
-          Router.permissionsRequest = null;
+          if (generation === Router.authGeneration) Router.permissionsRequest = null;
         }
       })();
 
@@ -202,10 +195,37 @@ getBaseUrl: function () {
       });
     },
 
+    resetAuthState: function () {
+      Router.authGeneration += 1;
+      Router.permissions = [];
+      Router.permissionsLoaded = false;
+      Router.permissionsRequest = null;
+      Router.serverIsAdmin = false;
+      Router.currentPage = null;
+      if (window.PMS.Permissions && typeof window.PMS.Permissions.clear === 'function') {
+        window.PMS.Permissions.clear();
+      }
+    },
+
     init: function () {
       window.addEventListener('hashchange', function () {
         Router.handle();
       });
+
+      if (Router.authExpiredListener) {
+        window.removeEventListener('pms:auth-expired', Router.authExpiredListener);
+      }
+      Router.authExpiredListener = function (event) {
+        const detail = event && event.detail ? event.detail : {};
+        if (window.PMS.Auth && typeof window.PMS.Auth.handleAuthExpired === 'function') {
+          window.PMS.Auth.handleAuthExpired(detail.message || 'نشست شما منقضی شده است. لطفاً دوباره وارد شوید.');
+        } else {
+          Router.resetAuthState();
+          if (window.PMS.Session && typeof window.PMS.Session.clear === 'function') window.PMS.Session.clear();
+          Router.navigate('login', true);
+        }
+      };
+      window.addEventListener('pms:auth-expired', Router.authExpiredListener);
 
       Router.handle();
     },

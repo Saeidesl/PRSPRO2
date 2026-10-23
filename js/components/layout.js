@@ -7,8 +7,8 @@
   const Layout = {
     navItems: [
       { route: 'dashboard', label: 'داشبورد', icon: '⌂', permission: 'REPORT_VIEW' },
-      { route: 'projects', label: 'پروژه‌ها', icon: '▣', permission: 'PROJECT_VIEW' },
-      { route: 'events', label: 'رویدادها', icon: '◈', permission: 'EVENT_VIEW' },
+      { route: 'projects', label: 'پروژه‌ها', icon: '▣', permission: ['PROJECT_VIEW', 'PROJECT_CREATE'] },
+      { route: 'events', label: 'رویدادها', icon: '◈', permission: ['EVENT_VIEW', 'EVENT_CREATE'] },
       { route: 'workflows', label: 'Workflowها', icon: '↔', permission: 'WORKFLOW_MANAGE' },
       { route: 'project-statuses', label: 'وضعیت‌های پروژه', icon: '⚑', permission: 'PROJECT_STATUS_MANAGE' },
       { route: 'event-types', label: 'انواع رویداد', icon: '⚙', permission: 'EVENT_TYPE_MANAGE' },
@@ -20,8 +20,8 @@
       { route: 'roles', label: 'نقش‌ها', icon: '♟', permission: 'ROLE_MANAGE' },
       { route: 'permissions', label: 'دسترسی‌ها', icon: '✓', permission: 'PERMISSION_MANAGE' },
       { route: 'audit', label: 'گزارش فعالیت‌ها', icon: '◷', permission: 'REPORT_VIEW' },
-      { route: 'settings', label: 'تنظیمات', icon: '⚙', permission: 'SETTINGS_MANAGE' },
-      { route: 'admin', label: 'مدیریت سامانه', icon: '▦', permission: 'SYSTEM_MANAGE' }
+      { route: 'settings', label: 'تنظیمات', icon: '⚙', permission: 'SYSTEM_SETTINGS' },
+      { route: 'admin', label: 'مدیریت سامانه', icon: '▦', permission: 'SYSTEM_SETTINGS' }
     ],
 
     syncListener: null,
@@ -29,15 +29,12 @@
     permissions: [],
     permissionsLoaded: false,
     permissionsRequest: null,
+    authGeneration: 0,
 
     isAdmin: function (user) {
       user = user || this.getCurrentUser() || {};
 
-      return (
-        user.IsAdmin === true ||
-        String(user.IsAdmin).toLowerCase() === 'true' ||
-        String(user.DepartmentCode || '').trim().toUpperCase() === 'ADMIN'
-      );
+      return !!(PMS.Router && PMS.Router.serverIsAdmin === true);
     },
 
     getCurrentUser: function () {
@@ -55,6 +52,9 @@
 
     hasPermission: function (permission) {
       if (this.isAdmin()) return true;
+      if (Array.isArray(permission)) {
+        return permission.some((code) => this.permissions.indexOf(code) !== -1);
+      }
       return this.permissions.indexOf(permission) !== -1;
     },
 
@@ -66,12 +66,22 @@
       });
     },
 
+    resetAuthState: function () {
+      this.authGeneration += 1;
+      this.permissions = [];
+      this.permissionsLoaded = false;
+      this.permissionsRequest = null;
+      this.userDetailsRequest = null;
+      this.renderNav();
+    },
+
     loadPermissions: async function () {
       if (this.permissionsRequest) {
         return this.permissionsRequest;
       }
 
       const self = this;
+      const generation = this.authGeneration;
 
       this.permissionsRequest = (async function () {
         self.permissions = [];
@@ -85,9 +95,9 @@
         }
 
         if (self.isAdmin()) {
-          self.permissions = self.navItems.map(function (item) {
-            return item.permission;
-          });
+          self.permissions = self.navItems.reduce(function (all, item) {
+            return all.concat(item.permission);
+          }, []);
 
           self.permissionsLoaded = true;
           self.renderNav();
@@ -108,6 +118,7 @@
             items = data.permissions;
           }
 
+          if (generation !== self.authGeneration) return [];
           self.permissions = items.map(function (item) {
             if (typeof item === 'string') return item;
 
@@ -118,18 +129,20 @@
           self.permissionsLoaded = true;
         } catch (error) {
           console.warn('دریافت دسترسی‌های کاربر ناموفق بود:', error);
-          self.permissions = [];
-          self.permissionsLoaded = false;
+          if (generation === self.authGeneration) {
+            self.permissions = [];
+            self.permissionsLoaded = false;
+          }
         }
 
-        self.renderNav();
+        if (generation === self.authGeneration) self.renderNav();
         return self.permissions;
       })();
 
       try {
         return await this.permissionsRequest;
       } finally {
-        this.permissionsRequest = null;
+        if (generation === this.authGeneration) this.permissionsRequest = null;
       }
     },
 
@@ -344,6 +357,7 @@
     },
 
     loadUserDetails: async function () {
+      const generation = this.authGeneration;
       const user = this.getCurrentUser();
       if (!user || !PMS.Api) return;
 
@@ -355,6 +369,19 @@
       this.userDetailsRequest = true;
 
       try {
+        const embeddedDepartmentName = user.DepartmentName || user.departmentName || '';
+        const embeddedRoleNames = this.getEmbeddedRoleNames(user);
+        if (embeddedDepartmentName || embeddedRoleNames.length) {
+          const embeddedParts = [];
+          if (embeddedDepartmentName) embeddedParts.push(embeddedDepartmentName);
+          if (embeddedRoleNames.length) embeddedParts.push(embeddedRoleNames.join('، '));
+          const embeddedMeta = document.getElementById('header-user-meta');
+          const embeddedSidebarRole = document.getElementById('sidebar-user-role');
+          if (embeddedMeta) embeddedMeta.textContent = embeddedParts.join(' | ');
+          if (embeddedSidebarRole) embeddedSidebarRole.textContent = embeddedRoleNames.join('، ') || embeddedDepartmentName;
+          return;
+        }
+
         const jobs = [];
 
         if (departmentId) {
@@ -372,6 +399,7 @@
         );
 
         const results = await Promise.all(jobs);
+        if (generation !== this.authGeneration) return;
         const departmentName = results[0] || user.DepartmentName || '';
         const roleNames = Array.isArray(results[1]) ? results[1] : [];
         const parts = [];
@@ -390,7 +418,7 @@
       } catch (error) {
         console.warn('دریافت جزئیات کاربر انجام نشد:', error);
       } finally {
-        this.userDetailsRequest = null;
+        if (generation === this.authGeneration) this.userDetailsRequest = null;
       }
     },
 
