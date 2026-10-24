@@ -323,7 +323,8 @@ const visible = el => {
           const locator = page.locator('#page-content').locator('[id="' + button.id.replace(/"/g, '\\"') + '"]').first();
           if (await locator.count() && await locator.isVisible() && await locator.isEnabled()) {
             const before = await page.locator('#page-content').innerText().catch(() => '');
-            await locator.click({ timeout: 1200 });
+            await locator.scrollIntoViewIfNeeded({ timeout: 3000 });
+            await locator.click({ timeout: 4000 });
             await page.waitForTimeout(100);
             const after = await page.locator('#page-content').innerText().catch(() => '');
             routeResult.safeButtonChecks = routeResult.safeButtonChecks || [];
