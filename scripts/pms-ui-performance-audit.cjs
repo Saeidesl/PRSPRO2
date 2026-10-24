@@ -255,7 +255,6 @@ async function main() {
           snapshot.dynamicFormInventory.push({ openerId, opened: false, error: String(error.message || error).slice(0, 180), forms: [] });
         }
       }
-      }
     }
     snapshot.forms.forEach(form => {
       if (form.fieldCount === 0) results.coverageGaps.push(route + ': visible form ' + (form.id || form.index) + ' has no fields; review manually.');
