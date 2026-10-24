@@ -64,14 +64,14 @@ async function main() {
   });
   page.on('requestfailed', request => {
     const url = new URL(request.url());
-    results.network.push({ path: url.pathname, method: request.method(), status: 'failed', durationMs: started.has(request) ? Date.now() - started.get(request) : null, failure: String(request.failure()?.errorText || 'request failed').slice(0, 160) });
+    results.network.push({ path: url.pathname.replace(/\/[A-Za-z][A-Za-z0-9_-]{12,}(?=\/|$)/g, '/:id'), method: request.method(), status: 'failed', durationMs: started.has(request) ? Date.now() - started.get(request) : null, failure: String(request.failure()?.errorText || 'request failed').slice(0, 160) });
   });
   page.on('response', response => {
     const request = response.request();
     const url = new URL(response.url());
     const durationMs = started.has(request) ? Date.now() - started.get(request) : null;
     if (url.origin !== new URL(baseURL).origin || /\/exec|googleusercontent|script\.google/i.test(url.hostname + url.pathname) || request.resourceType() === 'fetch' || request.resourceType() === 'xhr') {
-      results.network.push({ path: url.pathname, method: request.method(), status: response.status(), durationMs });
+      results.network.push({ path: url.pathname.replace(/\/[A-Za-z][A-Za-z0-9_-]{12,}(?=\/|$)/g, '/:id'), method: request.method(), status: response.status(), durationMs });
     }
   });
 
@@ -150,10 +150,7 @@ async function main() {
         type: el.getAttribute('type') || '', disabled: !!el.disabled,
         inForm: !!el.closest('form')
       }));
-      const links = Array.from(root.querySelectorAll('a[href]')).filter(visible).map(el => ({
-        label: (el.innerText || el.getAttribute('aria-label') || '').trim().replace(/\s+/g, ' ').slice(0, 120),
-        href: el.getAttribute('href') || ''
-      }));
+      const linkCount = Array.from(root.querySelectorAll('a[href]')).filter(visible).length;
       const controls = Array.from(root.querySelectorAll('input,select,textarea,[contenteditable="true"]')).filter(visible);
       const nav = Array.from(document.querySelectorAll('a[href^="#"],button[data-route], [data-route]')).filter(visible).map(el => ({
         label: (el.innerText || el.getAttribute('aria-label') || '').trim().replace(/\s+/g, ' ').slice(0, 100),
@@ -165,8 +162,8 @@ async function main() {
         urlChanged: location.href !== startUrl, title: document.title,
         contentVisible: !!root && visible(root), denied: /اجازه مشاهده این صفحه را ندارید|دسترسی ندارید|عدم دسترسی/.test(bodyText),
         errorVisible: /خطا در بارگذاری صفحه|سامانه به‌درستی راه‌اندازی نشد/.test(bodyText),
-        forms, buttons, links, navigation: nav, visibleControlCount: controls.length,
-        pageTextSample: bodyText
+        forms, buttons, linkCount, navigation: nav, visibleControlCount: controls.length,
+        visibleTextLength: bodyText.length
       };
     }, { routeName: route, startUrl: previousUrl });
     snapshot.navigationMs = Date.now() - start;
@@ -183,10 +180,12 @@ async function main() {
   // Never click buttons inside forms or labels that imply data changes.
   if (authenticated) {
     for (const routeResult of results.routes.filter(item => item.requestedRoute !== 'login' && item.status === 'loaded')) {
+      await page.evaluate(routeName => window.PMS.Router.navigate(routeName, false), routeResult.requestedRoute).catch(() => {});
+      try { await page.waitForTimeout(250); } catch (_) {}
       const safeButtons = routeResult.buttons.filter(button => !button.inForm && !button.disabled && !dangerousAction.test(button.label) && button.type.toLowerCase() !== 'submit' && button.id);
       for (const button of safeButtons.slice(0, 8)) {
         try {
-          const locator = page.locator('#page-content').locator('#' + CSS.escape(button.id)).first();
+          const locator = page.locator('#page-content').locator('[id="' + button.id.replace(/"/g, '\\"') + '"]').first();
           if (await locator.count() && await locator.isVisible() && await locator.isEnabled()) {
             const before = await page.locator('#page-content').innerText().catch(() => '');
             await locator.click({ timeout: 1200 });
