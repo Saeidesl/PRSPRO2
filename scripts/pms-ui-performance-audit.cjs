@@ -93,6 +93,21 @@ function classifyButton(button) {
   if (button.disabled || button.getAttribute('aria-disabled') === 'true') return 'disabled-not-invoked';
   return 'safe-candidate';
 }
+
+// GAS places the actual API route in a query parameter. Log only the route,
+// never the full query string, which may contain IDs, filters, or tokens.
+function safeRequestPath(url) {
+  const rawApiPath = url.searchParams.get('path') || url.searchParams.get('route') || '';
+  if (/\/macros\/s\/.*\/exec/i.test(url.pathname) && rawApiPath) {
+    const segments = rawApiPath.split('?')[0].split('/').filter(Boolean).map((segment, index) => {
+      if (/^[0-9]+$/.test(segment) && index > 0) return ':id';
+      if (/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(segment) || /^[0-9a-f]{20,}$/i.test(segment) || /^[A-Z]{2,}_[A-Za-z0-9]{20,}$/i.test(segment)) return ':id';
+      return segment.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 80) || ':segment';
+    });
+    return '/api/' + segments.join('/');
+  }
+  return url.pathname.replace(/\\/[A-Za-z][A-Za-z0-9_-]{12,}(?=\\/|$)/g, '/:id');
+}
 async function main() {
   fs.mkdirSync(path.join(process.cwd(), 'test-results'), { recursive: true });
   browser = await chromium.launch({ headless: true });
@@ -109,14 +124,14 @@ async function main() {
   });
   page.on('requestfailed', request => {
     const url = new URL(request.url());
-    results.network.push({ path: url.pathname.replace(/\/[A-Za-z][A-Za-z0-9_-]{12,}(?=\/|$)/g, '/:id'), method: request.method(), status: 'failed', durationMs: started.has(request) ? Date.now() - started.get(request) : null, failure: String(request.failure()?.errorText || 'request failed').slice(0, 160) });
+    results.network.push({ path: safeRequestPath(url), method: request.method(), status: 'failed', durationMs: started.has(request) ? Date.now() - started.get(request) : null, failure: String(request.failure()?.errorText || 'request failed').slice(0, 160) });
   });
   page.on('response', response => {
     const request = response.request();
     const url = new URL(response.url());
     const durationMs = started.has(request) ? Date.now() - started.get(request) : null;
     if (url.origin !== new URL(baseURL).origin || /\/exec|googleusercontent|script\.google/i.test(url.hostname + url.pathname) || request.resourceType() === 'fetch' || request.resourceType() === 'xhr') {
-      results.network.push({ path: url.pathname.replace(/\/[A-Za-z][A-Za-z0-9_-]{12,}(?=\/|$)/g, '/:id'), method: request.method(), status: response.status(), durationMs });
+      results.network.push({ path: safeRequestPath(url), method: request.method(), status: response.status(), durationMs });
     }
   });
 
