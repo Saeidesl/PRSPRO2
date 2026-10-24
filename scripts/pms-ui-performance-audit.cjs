@@ -106,7 +106,7 @@ function safeRequestPath(url) {
     });
     return '/api/' + segments.join('/');
   }
-  return url.pathname.replace(/\\/[A-Za-z][A-Za-z0-9_-]{12,}(?=\\/|$)/g, '/:id');
+  return url.pathname.split('/').map(segment => /^[A-Za-z0-9_-]{20,}$/.test(segment) ? ':id' : segment).join('/');
 }
 async function main() {
   fs.mkdirSync(path.join(process.cwd(), 'test-results'), { recursive: true });
