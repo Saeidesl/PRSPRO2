@@ -181,6 +181,8 @@ async function main() {
       }, route, { timeout: 10000 });
     } catch (_) {}
     try { await page.locator('#page-content, #login-form, .login-page').first().waitFor({ state: 'visible', timeout: 8000 }); } catch (_) {}
+    // Separate app-shell readiness from network settling; networkidle can consume its full timeout.
+    const routeReadyMs = Date.now() - start;
     try { await page.waitForLoadState('networkidle', { timeout: 2500 }); } catch (_) {}
     await page.waitForTimeout(150);
 
@@ -235,6 +237,7 @@ const visible = el => {
         visibleTextLength: bodyText.length
       };
     }, { routeName: route, startUrl: previousUrl });
+    snapshot.routeReadyMs = routeReadyMs;
     snapshot.navigationMs = Date.now() - start;
     snapshot.status = snapshot.errorVisible ? 'error' : snapshot.denied ? 'permission-denied' : snapshot.contentVisible ? 'loaded' : 'not-confirmed';
 
@@ -356,9 +359,11 @@ const visible = el => {
     consoleErrors: results.consoleErrors.length,
     pageErrors: results.pageErrors.length,
     safeButtonChecks: results.routes.reduce((n, route) => n + (route.safeButtonChecks || []).length, 0),
+    failedSafeButtonChecks: results.routes.reduce((n, route) => n + (route.safeButtonChecks || []).filter(check => check.clickCompleted === false).length, 0),
     formSubmissionsExecuted: 0
   };
-  results.overallStatus = failedRoutes || results.pageErrors.length ? 'needs-attention' : (authenticated ? 'authenticated-audit-complete' : 'limited-no-test-credentials');
+  const failedSafeButtonChecks = results.routes.reduce((n, route) => n + (route.safeButtonChecks || []).filter(check => check.clickCompleted === false).length, 0);
+  results.overallStatus = failedRoutes || results.pageErrors.length || failedSafeButtonChecks ? 'needs-attention' : (authenticated ? 'authenticated-audit-complete' : 'limited-no-test-credentials');
   results.coverageGaps = [...new Set(results.coverageGaps)];
   fs.writeFileSync(path.join(process.cwd(), 'test-results', 'latest-performance-report.json'), JSON.stringify(results, null, 2) + '\n');
   fs.writeFileSync(path.join(process.cwd(), 'test-results', 'latest-performance-report.md'), renderMarkdown(results));
@@ -383,9 +388,9 @@ function renderMarkdown(report) {
     '',
     '## Routes',
     '',
-    '| Route | Status | Navigation ms | Forms | Buttons | Controls | Mobile overflow |',
-    '|---|---|---:|---:|---:|---:|---|',
-    ...report.routes.map(route => '| ' + route.requestedRoute + ' | ' + route.status + ' | ' + route.navigationMs + ' | ' + route.forms.length + ' | ' + route.buttons.length + ' | ' + route.visibleControlCount + ' | ' + (route.mobileLayout && route.mobileLayout.horizontalOverflow ? 'YES' : 'no') + ' |'),
+    '| Route | Status | Ready ms | Settled ms | Forms | Buttons | Controls | Mobile overflow |',
+    '|---|---|---:|---:|---:|---:|---:|---|',
+    ...report.routes.map(route => '| ' + route.requestedRoute + ' | ' + route.status + ' | ' + (typeof route.routeReadyMs === 'number' ? route.routeReadyMs : 'n/a') + ' | ' + route.navigationMs + ' | ' + route.forms.length + ' | ' + route.buttons.length + ' | ' + route.visibleControlCount + ' | ' + (route.mobileLayout && route.mobileLayout.horizontalOverflow ? 'YES' : 'no') + ' |'),
     '',
     '## Coverage gaps',
     '',
