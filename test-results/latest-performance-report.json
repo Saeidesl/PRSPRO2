@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "suite": "PMS Comprehensive UI and Performance Audit",
-  "generatedAt": "2026-10-24T18:05:50.472Z",
+  "generatedAt": "2026-10-24T18:15:13.418Z",
   "baseURL": "http://127.0.0.1:4173/PRSPRO2/",
-  "mode": "public-login-and-shell-only",
+  "mode": "authenticated-read-only",
   "safety": {
     "formSubmission": "disabled",
     "destructiveActions": "never-clicked",
@@ -11,93 +11,2047 @@
     "note": "This suite inventories every reachable form/control and measures navigation/network timing. Data-changing workflows require explicit staging scenarios and are not submitted by this audit."
   },
   "summary": {
-    "requestedRoutes": 1,
-    "loadedRoutes": 1,
+    "requestedRoutes": 17,
+    "loadedRoutes": 17,
     "permissionDeniedRoutes": 0,
     "failedRoutes": 0,
     "mobileRoutesWithHorizontalOverflow": 0,
-    "visibleFormsInventoried": 1,
-    "visibleButtonsInventoried": 2,
-    "visibleInputsAndControlsInventoried": 2,
-    "networkRequestsMeasured": 4,
+    "visibleFormsInventoried": 0,
+    "visibleButtonsInventoried": 46,
+    "visibleInputsAndControlsInventoried": 19,
+    "networkRequestsMeasured": 145,
     "failedNetworkRequests": 0,
-    "consoleErrors": 0,
+    "consoleErrors": 2,
     "pageErrors": 0,
-    "safeButtonChecks": 0,
+    "safeButtonChecks": 14,
     "formSubmissionsExecuted": 0
   },
   "routes": [
     {
-      "requestedRoute": "login",
-      "currentHash": "login",
+      "requestedRoute": "dashboard",
+      "currentHash": "dashboard",
       "urlChanged": false,
       "title": "مدیریت تولید",
       "contentVisible": true,
       "denied": false,
       "errorVisible": false,
-      "forms": [
-        {
-          "index": 0,
-          "id": "login-form",
-          "name": "",
-          "action": "",
-          "method": "GET",
-          "fieldCount": 2,
-          "requiredCount": 2,
-          "submitCount": 1,
-          "nativeValidity": false,
-          "fields": [
-            {
-              "id": "login-username",
-              "name": "username",
-              "type": "text",
-              "label": "نام کاربری",
-              "required": true,
-              "disabled": false
-            },
-            {
-              "id": "login-password",
-              "name": "password",
-              "type": "password",
-              "label": "رمز عبور",
-              "required": true,
-              "disabled": false
-            }
-          ]
-        }
-      ],
+      "forms": [],
       "buttons": [
         {
           "index": 0,
-          "id": "",
-          "label": "☾ تیره",
+          "id": "dashboard-refresh-button",
+          "label": "بروزرسانی",
           "type": "button",
           "disabled": false,
           "inForm": false
         },
         {
           "index": 1,
-          "id": "login-button",
-          "label": "ورود",
-          "type": "submit",
+          "id": "dash-clear-search",
+          "label": "×",
+          "type": "button",
           "disabled": false,
-          "inForm": true
+          "inForm": false
+        },
+        {
+          "index": 2,
+          "id": "dash-filter-toggle",
+          "label": "فیلترهای پیشرفته ⌄",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 3,
+          "id": "dash-event-order",
+          "label": "رویدادها: جدید به قدیم",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 4,
+          "id": "",
+          "label": "3108 ست کامل پاراشوت STEP_16a5bc52ba1d48a7803f10ce6c8d66ff در انتظار دوخت ● فعال تعداد: 200 آخرین فعالیت: ۱۴۰۵/۰۸/۰۲, ۱۸:۰۵ — ۱۰ دقیقه پیش ⌄",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 5,
+          "id": "",
+          "label": "3092 بامبر جیر STEP_16a5bc52ba1d48a7803f10ce6c8d66ff فعال در برش ● فعال تعداد: 300 آخرین فعالیت: ۱۴۰۵/۰۸/۰۲, ۱۷:۵۸ — ۱۷ دقیقه پیش ⌄",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
         }
       ],
       "linkCount": 0,
-      "navigation": [],
+      "navigation": [
+        {
+          "label": "⌂ داشبورد",
+          "route": "dashboard"
+        },
+        {
+          "label": "▣ پروژه‌ها",
+          "route": "projects"
+        },
+        {
+          "label": "◈ رویدادها",
+          "route": "events"
+        },
+        {
+          "label": "↔ Workflowها",
+          "route": "workflows"
+        },
+        {
+          "label": "⚑ وضعیت‌های پروژه",
+          "route": "project-statuses"
+        },
+        {
+          "label": "⚙ انواع رویداد",
+          "route": "event-types"
+        },
+        {
+          "label": "▤ تأمین ملزومات",
+          "route": "procurement"
+        },
+        {
+          "label": "▤ فایل‌ها",
+          "route": "attachments"
+        },
+        {
+          "label": "▥ گزارش‌ها",
+          "route": "reports"
+        },
+        {
+          "label": "♙ کاربران",
+          "route": "users"
+        },
+        {
+          "label": "▦ واحدها",
+          "route": "departments"
+        },
+        {
+          "label": "♟ نقش‌ها",
+          "route": "roles"
+        },
+        {
+          "label": "✓ دسترسی‌ها",
+          "route": "permissions"
+        },
+        {
+          "label": "◷ گزارش فعالیت‌ها",
+          "route": "audit"
+        },
+        {
+          "label": "⚙ تنظیمات",
+          "route": "settings"
+        },
+        {
+          "label": "▦ مدیریت سامانه",
+          "route": "admin"
+        }
+      ],
       "visibleControlCount": 2,
-      "visibleTextLength": 118,
-      "navigationMs": 2114,
+      "visibleTextLength": 470,
+      "navigationMs": 2689,
       "status": "loaded",
       "mobileLayout": {
         "viewportWidth": 390,
         "documentWidth": 390,
         "bodyWidth": 390,
         "horizontalOverflow": false,
-        "visibleForms": 1,
-        "visibleButtons": 2,
+        "visibleForms": 0,
+        "visibleButtons": 6,
         "visibleControls": 2
+      },
+      "safeButtonChecks": [
+        {
+          "id": "dashboard-refresh-button",
+          "label": "بروزرسانی",
+          "clickCompleted": true,
+          "visibleContentChanged": true
+        },
+        {
+          "id": "dash-clear-search",
+          "label": "×",
+          "clickCompleted": true,
+          "visibleContentChanged": false
+        },
+        {
+          "id": "dash-filter-toggle",
+          "label": "فیلترهای پیشرفته ⌄",
+          "clickCompleted": true,
+          "visibleContentChanged": true
+        },
+        {
+          "id": "dash-event-order",
+          "label": "رویدادها: جدید به قدیم",
+          "clickCompleted": true,
+          "visibleContentChanged": true
+        }
+      ]
+    },
+    {
+      "requestedRoute": "projects",
+      "currentHash": "projects",
+      "urlChanged": true,
+      "title": "مدیریت تولید",
+      "contentVisible": true,
+      "denied": false,
+      "errorVisible": false,
+      "forms": [],
+      "buttons": [
+        {
+          "index": 0,
+          "id": "project-create-button",
+          "label": "+ پروژه جدید",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        }
+      ],
+      "linkCount": 0,
+      "navigation": [
+        {
+          "label": "⌂ داشبورد",
+          "route": "dashboard"
+        },
+        {
+          "label": "▣ پروژه‌ها",
+          "route": "projects"
+        },
+        {
+          "label": "◈ رویدادها",
+          "route": "events"
+        },
+        {
+          "label": "↔ Workflowها",
+          "route": "workflows"
+        },
+        {
+          "label": "⚑ وضعیت‌های پروژه",
+          "route": "project-statuses"
+        },
+        {
+          "label": "⚙ انواع رویداد",
+          "route": "event-types"
+        },
+        {
+          "label": "▤ تأمین ملزومات",
+          "route": "procurement"
+        },
+        {
+          "label": "▤ فایل‌ها",
+          "route": "attachments"
+        },
+        {
+          "label": "▥ گزارش‌ها",
+          "route": "reports"
+        },
+        {
+          "label": "♙ کاربران",
+          "route": "users"
+        },
+        {
+          "label": "▦ واحدها",
+          "route": "departments"
+        },
+        {
+          "label": "♟ نقش‌ها",
+          "route": "roles"
+        },
+        {
+          "label": "✓ دسترسی‌ها",
+          "route": "permissions"
+        },
+        {
+          "label": "◷ گزارش فعالیت‌ها",
+          "route": "audit"
+        },
+        {
+          "label": "⚙ تنظیمات",
+          "route": "settings"
+        },
+        {
+          "label": "▦ مدیریت سامانه",
+          "route": "admin"
+        }
+      ],
+      "visibleControlCount": 2,
+      "visibleTextLength": 166,
+      "navigationMs": 2677,
+      "status": "loaded",
+      "mobileLayout": {
+        "viewportWidth": 390,
+        "documentWidth": 390,
+        "bodyWidth": 390,
+        "horizontalOverflow": false,
+        "visibleForms": 0,
+        "visibleButtons": 1,
+        "visibleControls": 2
+      },
+      "safeButtonChecks": [
+        {
+          "id": "project-create-button",
+          "label": "+ پروژه جدید",
+          "clickCompleted": true,
+          "visibleContentChanged": false
+        }
+      ]
+    },
+    {
+      "requestedRoute": "project-detail",
+      "currentHash": "project-detail",
+      "urlChanged": true,
+      "title": "مدیریت تولید",
+      "contentVisible": true,
+      "denied": false,
+      "errorVisible": false,
+      "forms": [],
+      "buttons": [
+        {
+          "index": 0,
+          "id": "project-back-button",
+          "label": "← بازگشت به پروژه‌ها",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 1,
+          "id": "project-add-event-button",
+          "label": "+ ثبت رویداد",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        }
+      ],
+      "linkCount": 0,
+      "navigation": [
+        {
+          "label": "⌂ داشبورد",
+          "route": "dashboard"
+        },
+        {
+          "label": "▣ پروژه‌ها",
+          "route": "projects"
+        },
+        {
+          "label": "◈ رویدادها",
+          "route": "events"
+        },
+        {
+          "label": "↔ Workflowها",
+          "route": "workflows"
+        },
+        {
+          "label": "⚑ وضعیت‌های پروژه",
+          "route": "project-statuses"
+        },
+        {
+          "label": "⚙ انواع رویداد",
+          "route": "event-types"
+        },
+        {
+          "label": "▤ تأمین ملزومات",
+          "route": "procurement"
+        },
+        {
+          "label": "▤ فایل‌ها",
+          "route": "attachments"
+        },
+        {
+          "label": "▥ گزارش‌ها",
+          "route": "reports"
+        },
+        {
+          "label": "♙ کاربران",
+          "route": "users"
+        },
+        {
+          "label": "▦ واحدها",
+          "route": "departments"
+        },
+        {
+          "label": "♟ نقش‌ها",
+          "route": "roles"
+        },
+        {
+          "label": "✓ دسترسی‌ها",
+          "route": "permissions"
+        },
+        {
+          "label": "◷ گزارش فعالیت‌ها",
+          "route": "audit"
+        },
+        {
+          "label": "⚙ تنظیمات",
+          "route": "settings"
+        },
+        {
+          "label": "▦ مدیریت سامانه",
+          "route": "admin"
+        }
+      ],
+      "visibleControlCount": 0,
+      "visibleTextLength": 62,
+      "navigationMs": 2671,
+      "status": "loaded",
+      "mobileLayout": {
+        "viewportWidth": 390,
+        "documentWidth": 390,
+        "bodyWidth": 390,
+        "horizontalOverflow": false,
+        "visibleForms": 0,
+        "visibleButtons": 2,
+        "visibleControls": 0
+      },
+      "safeButtonChecks": [
+        {
+          "id": "project-back-button",
+          "label": "← بازگشت به پروژه‌ها",
+          "clickCompleted": false,
+          "error": "locator.click: Timeout 1200ms exceeded.\nCall log:\n  - waiting for locator('#page-content').locator('[id=\"project-back-button\"]').first()\n    - locator resolved to <button type=\"but"
+        }
+      ]
+    },
+    {
+      "requestedRoute": "events",
+      "currentHash": "events",
+      "urlChanged": true,
+      "title": "مدیریت تولید",
+      "contentVisible": true,
+      "denied": false,
+      "errorVisible": false,
+      "forms": [],
+      "buttons": [
+        {
+          "index": 0,
+          "id": "event-create-button",
+          "label": "＋ ثبت رویداد",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 1,
+          "id": "events-filter-toggle",
+          "label": "☷ فیلترهای بیشتر ⌄",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 2,
+          "id": "event-tab-pending",
+          "label": "! در انتظار اقدام ۲",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 3,
+          "id": "event-tab-progress",
+          "label": "◷ در حال انجام ۰",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 4,
+          "id": "event-tab-completed",
+          "label": "✓ تکمیل‌شده ۰",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 5,
+          "id": "",
+          "label": "ثبت رویداد برای این پروژه",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 6,
+          "id": "",
+          "label": "ثبت رویداد برای این پروژه",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        }
+      ],
+      "linkCount": 0,
+      "navigation": [
+        {
+          "label": "⌂ داشبورد",
+          "route": "dashboard"
+        },
+        {
+          "label": "▣ پروژه‌ها",
+          "route": "projects"
+        },
+        {
+          "label": "◈ رویدادها",
+          "route": "events"
+        },
+        {
+          "label": "↔ Workflowها",
+          "route": "workflows"
+        },
+        {
+          "label": "⚑ وضعیت‌های پروژه",
+          "route": "project-statuses"
+        },
+        {
+          "label": "⚙ انواع رویداد",
+          "route": "event-types"
+        },
+        {
+          "label": "▤ تأمین ملزومات",
+          "route": "procurement"
+        },
+        {
+          "label": "▤ فایل‌ها",
+          "route": "attachments"
+        },
+        {
+          "label": "▥ گزارش‌ها",
+          "route": "reports"
+        },
+        {
+          "label": "♙ کاربران",
+          "route": "users"
+        },
+        {
+          "label": "▦ واحدها",
+          "route": "departments"
+        },
+        {
+          "label": "♟ نقش‌ها",
+          "route": "roles"
+        },
+        {
+          "label": "✓ دسترسی‌ها",
+          "route": "permissions"
+        },
+        {
+          "label": "◷ گزارش فعالیت‌ها",
+          "route": "audit"
+        },
+        {
+          "label": "⚙ تنظیمات",
+          "route": "settings"
+        },
+        {
+          "label": "▦ مدیریت سامانه",
+          "route": "admin"
+        }
+      ],
+      "visibleControlCount": 1,
+      "visibleTextLength": 500,
+      "navigationMs": 2691,
+      "status": "loaded",
+      "mobileLayout": {
+        "viewportWidth": 390,
+        "documentWidth": 390,
+        "bodyWidth": 390,
+        "horizontalOverflow": false,
+        "visibleForms": 0,
+        "visibleButtons": 7,
+        "visibleControls": 1
+      },
+      "safeButtonChecks": [
+        {
+          "id": "events-filter-toggle",
+          "label": "☷ فیلترهای بیشتر ⌄",
+          "clickCompleted": false,
+          "error": "locator.click: Timeout 1200ms exceeded.\nCall log:\n  - waiting for locator('#page-content').locator('[id=\"events-filter-toggle\"]').first()\n    - locator resolved to <button type=\"bu"
+        },
+        {
+          "id": "event-tab-pending",
+          "label": "! در انتظار اقدام ۲",
+          "clickCompleted": false,
+          "error": "locator.click: Timeout 1200ms exceeded.\nCall log:\n  - waiting for locator('#page-content').locator('[id=\"event-tab-pending\"]').first()\n    - locator resolved to <button role=\"tab\" "
+        },
+        {
+          "id": "event-tab-progress",
+          "label": "◷ در حال انجام ۰",
+          "clickCompleted": false,
+          "error": "locator.click: Timeout 1200ms exceeded.\nCall log:\n  - waiting for locator('#page-content').locator('[id=\"event-tab-progress\"]').first()\n    - locator resolved to <button role=\"tab\""
+        },
+        {
+          "id": "event-tab-completed",
+          "label": "✓ تکمیل‌شده ۰",
+          "clickCompleted": false,
+          "error": "locator.click: Timeout 1200ms exceeded.\nCall log:\n  - waiting for locator('#page-content').locator('[id=\"event-tab-completed\"]').first()\n    - locator resolved to <button role=\"tab"
+        }
+      ]
+    },
+    {
+      "requestedRoute": "workflows",
+      "currentHash": "workflows",
+      "urlChanged": true,
+      "title": "مدیریت تولید",
+      "contentVisible": true,
+      "denied": false,
+      "errorVisible": false,
+      "forms": [],
+      "buttons": [
+        {
+          "index": 0,
+          "id": "workflow-create-button",
+          "label": "+ ثبت Workflow",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        }
+      ],
+      "linkCount": 0,
+      "navigation": [
+        {
+          "label": "⌂ داشبورد",
+          "route": "dashboard"
+        },
+        {
+          "label": "▣ پروژه‌ها",
+          "route": "projects"
+        },
+        {
+          "label": "◈ رویدادها",
+          "route": "events"
+        },
+        {
+          "label": "↔ Workflowها",
+          "route": "workflows"
+        },
+        {
+          "label": "⚑ وضعیت‌های پروژه",
+          "route": "project-statuses"
+        },
+        {
+          "label": "⚙ انواع رویداد",
+          "route": "event-types"
+        },
+        {
+          "label": "▤ تأمین ملزومات",
+          "route": "procurement"
+        },
+        {
+          "label": "▤ فایل‌ها",
+          "route": "attachments"
+        },
+        {
+          "label": "▥ گزارش‌ها",
+          "route": "reports"
+        },
+        {
+          "label": "♙ کاربران",
+          "route": "users"
+        },
+        {
+          "label": "▦ واحدها",
+          "route": "departments"
+        },
+        {
+          "label": "♟ نقش‌ها",
+          "route": "roles"
+        },
+        {
+          "label": "✓ دسترسی‌ها",
+          "route": "permissions"
+        },
+        {
+          "label": "◷ گزارش فعالیت‌ها",
+          "route": "audit"
+        },
+        {
+          "label": "⚙ تنظیمات",
+          "route": "settings"
+        },
+        {
+          "label": "▦ مدیریت سامانه",
+          "route": "admin"
+        }
+      ],
+      "visibleControlCount": 2,
+      "visibleTextLength": 225,
+      "navigationMs": 2671,
+      "status": "loaded",
+      "mobileLayout": {
+        "viewportWidth": 390,
+        "documentWidth": 390,
+        "bodyWidth": 390,
+        "horizontalOverflow": false,
+        "visibleForms": 0,
+        "visibleButtons": 1,
+        "visibleControls": 2
+      }
+    },
+    {
+      "requestedRoute": "project-statuses",
+      "currentHash": "project-statuses",
+      "urlChanged": true,
+      "title": "مدیریت تولید",
+      "contentVisible": true,
+      "denied": false,
+      "errorVisible": false,
+      "forms": [],
+      "buttons": [
+        {
+          "index": 0,
+          "id": "project-status-create",
+          "label": "+ وضعیت جدید",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        }
+      ],
+      "linkCount": 0,
+      "navigation": [
+        {
+          "label": "⌂ داشبورد",
+          "route": "dashboard"
+        },
+        {
+          "label": "▣ پروژه‌ها",
+          "route": "projects"
+        },
+        {
+          "label": "◈ رویدادها",
+          "route": "events"
+        },
+        {
+          "label": "↔ Workflowها",
+          "route": "workflows"
+        },
+        {
+          "label": "⚑ وضعیت‌های پروژه",
+          "route": "project-statuses"
+        },
+        {
+          "label": "⚙ انواع رویداد",
+          "route": "event-types"
+        },
+        {
+          "label": "▤ تأمین ملزومات",
+          "route": "procurement"
+        },
+        {
+          "label": "▤ فایل‌ها",
+          "route": "attachments"
+        },
+        {
+          "label": "▥ گزارش‌ها",
+          "route": "reports"
+        },
+        {
+          "label": "♙ کاربران",
+          "route": "users"
+        },
+        {
+          "label": "▦ واحدها",
+          "route": "departments"
+        },
+        {
+          "label": "♟ نقش‌ها",
+          "route": "roles"
+        },
+        {
+          "label": "✓ دسترسی‌ها",
+          "route": "permissions"
+        },
+        {
+          "label": "◷ گزارش فعالیت‌ها",
+          "route": "audit"
+        },
+        {
+          "label": "⚙ تنظیمات",
+          "route": "settings"
+        },
+        {
+          "label": "▦ مدیریت سامانه",
+          "route": "admin"
+        }
+      ],
+      "visibleControlCount": 1,
+      "visibleTextLength": 109,
+      "navigationMs": 2670,
+      "status": "loaded",
+      "mobileLayout": {
+        "viewportWidth": 390,
+        "documentWidth": 390,
+        "bodyWidth": 390,
+        "horizontalOverflow": false,
+        "visibleForms": 0,
+        "visibleButtons": 1,
+        "visibleControls": 1
+      },
+      "safeButtonChecks": [
+        {
+          "id": "project-status-create",
+          "label": "+ وضعیت جدید",
+          "clickCompleted": false,
+          "error": "locator.click: Timeout 1200ms exceeded.\nCall log:\n  - waiting for locator('#page-content').locator('[id=\"project-status-create\"]').first()\n    - locator resolved to <button type=\"b"
+        }
+      ]
+    },
+    {
+      "requestedRoute": "event-types",
+      "currentHash": "event-types",
+      "urlChanged": true,
+      "title": "مدیریت تولید",
+      "contentVisible": true,
+      "denied": false,
+      "errorVisible": false,
+      "forms": [],
+      "buttons": [
+        {
+          "index": 0,
+          "id": "event-type-create-button",
+          "label": "+ ثبت نوع رویداد",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 1,
+          "id": "",
+          "label": "ویرایش",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 2,
+          "id": "",
+          "label": "فیلدهای پویا",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 3,
+          "id": "",
+          "label": "تنظیمات تأمین",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 4,
+          "id": "",
+          "label": "ویرایش",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 5,
+          "id": "",
+          "label": "فیلدهای پویا",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 6,
+          "id": "",
+          "label": "تنظیمات تأمین",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 7,
+          "id": "",
+          "label": "ویرایش",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 8,
+          "id": "",
+          "label": "فیلدهای پویا",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 9,
+          "id": "",
+          "label": "تنظیمات تأمین",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        }
+      ],
+      "linkCount": 0,
+      "navigation": [
+        {
+          "label": "⌂ داشبورد",
+          "route": "dashboard"
+        },
+        {
+          "label": "▣ پروژه‌ها",
+          "route": "projects"
+        },
+        {
+          "label": "◈ رویدادها",
+          "route": "events"
+        },
+        {
+          "label": "↔ Workflowها",
+          "route": "workflows"
+        },
+        {
+          "label": "⚑ وضعیت‌های پروژه",
+          "route": "project-statuses"
+        },
+        {
+          "label": "⚙ انواع رویداد",
+          "route": "event-types"
+        },
+        {
+          "label": "▤ تأمین ملزومات",
+          "route": "procurement"
+        },
+        {
+          "label": "▤ فایل‌ها",
+          "route": "attachments"
+        },
+        {
+          "label": "▥ گزارش‌ها",
+          "route": "reports"
+        },
+        {
+          "label": "♙ کاربران",
+          "route": "users"
+        },
+        {
+          "label": "▦ واحدها",
+          "route": "departments"
+        },
+        {
+          "label": "♟ نقش‌ها",
+          "route": "roles"
+        },
+        {
+          "label": "✓ دسترسی‌ها",
+          "route": "permissions"
+        },
+        {
+          "label": "◷ گزارش فعالیت‌ها",
+          "route": "audit"
+        },
+        {
+          "label": "⚙ تنظیمات",
+          "route": "settings"
+        },
+        {
+          "label": "▦ مدیریت سامانه",
+          "route": "admin"
+        }
+      ],
+      "visibleControlCount": 1,
+      "visibleTextLength": 381,
+      "navigationMs": 2673,
+      "status": "loaded",
+      "mobileLayout": {
+        "viewportWidth": 390,
+        "documentWidth": 390,
+        "bodyWidth": 390,
+        "horizontalOverflow": false,
+        "visibleForms": 0,
+        "visibleButtons": 10,
+        "visibleControls": 1
+      }
+    },
+    {
+      "requestedRoute": "procurement",
+      "currentHash": "procurement",
+      "urlChanged": true,
+      "title": "مدیریت تولید",
+      "contentVisible": true,
+      "denied": false,
+      "errorVisible": false,
+      "forms": [],
+      "buttons": [
+        {
+          "index": 0,
+          "id": "procurement-create-project-order",
+          "label": "+ سفارش مرتبط با پروژه",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 1,
+          "id": "procurement-create-general-order",
+          "label": "+ سفارش عمومی",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 2,
+          "id": "procurement-create-receipt",
+          "label": "+ ثبت دریافت انبار",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 3,
+          "id": "procurement-refresh",
+          "label": "↻ بروزرسانی",
+          "type": "button",
+          "disabled": true,
+          "inForm": false
+        }
+      ],
+      "linkCount": 0,
+      "navigation": [
+        {
+          "label": "⌂ داشبورد",
+          "route": "dashboard"
+        },
+        {
+          "label": "▣ پروژه‌ها",
+          "route": "projects"
+        },
+        {
+          "label": "◈ رویدادها",
+          "route": "events"
+        },
+        {
+          "label": "↔ Workflowها",
+          "route": "workflows"
+        },
+        {
+          "label": "⚑ وضعیت‌های پروژه",
+          "route": "project-statuses"
+        },
+        {
+          "label": "⚙ انواع رویداد",
+          "route": "event-types"
+        },
+        {
+          "label": "▤ تأمین ملزومات",
+          "route": "procurement"
+        },
+        {
+          "label": "▤ فایل‌ها",
+          "route": "attachments"
+        },
+        {
+          "label": "▥ گزارش‌ها",
+          "route": "reports"
+        },
+        {
+          "label": "♙ کاربران",
+          "route": "users"
+        },
+        {
+          "label": "▦ واحدها",
+          "route": "departments"
+        },
+        {
+          "label": "♟ نقش‌ها",
+          "route": "roles"
+        },
+        {
+          "label": "✓ دسترسی‌ها",
+          "route": "permissions"
+        },
+        {
+          "label": "◷ گزارش فعالیت‌ها",
+          "route": "audit"
+        },
+        {
+          "label": "⚙ تنظیمات",
+          "route": "settings"
+        },
+        {
+          "label": "▦ مدیریت سامانه",
+          "route": "admin"
+        }
+      ],
+      "visibleControlCount": 0,
+      "visibleTextLength": 186,
+      "navigationMs": 2680,
+      "status": "loaded",
+      "mobileLayout": {
+        "viewportWidth": 390,
+        "documentWidth": 390,
+        "bodyWidth": 390,
+        "horizontalOverflow": false,
+        "visibleForms": 0,
+        "visibleButtons": 4,
+        "visibleControls": 0
+      },
+      "safeButtonChecks": [
+        {
+          "id": "procurement-create-project-order",
+          "label": "+ سفارش مرتبط با پروژه",
+          "clickCompleted": false,
+          "error": "locator.click: Timeout 1200ms exceeded.\nCall log:\n  - waiting for locator('#page-content').locator('[id=\"procurement-create-project-order\"]').first()\n    - locator resolved to <but"
+        },
+        {
+          "id": "procurement-create-general-order",
+          "label": "+ سفارش عمومی",
+          "clickCompleted": false,
+          "error": "locator.click: Timeout 1200ms exceeded.\nCall log:\n  - waiting for locator('#page-content').locator('[id=\"procurement-create-general-order\"]').first()\n    - locator resolved to <but"
+        }
+      ]
+    },
+    {
+      "requestedRoute": "attachments",
+      "currentHash": "attachments",
+      "urlChanged": true,
+      "title": "مدیریت تولید",
+      "contentVisible": true,
+      "denied": false,
+      "errorVisible": false,
+      "forms": [],
+      "buttons": [
+        {
+          "index": 0,
+          "id": "attachment-upload-button",
+          "label": "+ بارگذاری فایل",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        }
+      ],
+      "linkCount": 0,
+      "navigation": [
+        {
+          "label": "⌂ داشبورد",
+          "route": "dashboard"
+        },
+        {
+          "label": "▣ پروژه‌ها",
+          "route": "projects"
+        },
+        {
+          "label": "◈ رویدادها",
+          "route": "events"
+        },
+        {
+          "label": "↔ Workflowها",
+          "route": "workflows"
+        },
+        {
+          "label": "⚑ وضعیت‌های پروژه",
+          "route": "project-statuses"
+        },
+        {
+          "label": "⚙ انواع رویداد",
+          "route": "event-types"
+        },
+        {
+          "label": "▤ تأمین ملزومات",
+          "route": "procurement"
+        },
+        {
+          "label": "▤ فایل‌ها",
+          "route": "attachments"
+        },
+        {
+          "label": "▥ گزارش‌ها",
+          "route": "reports"
+        },
+        {
+          "label": "♙ کاربران",
+          "route": "users"
+        },
+        {
+          "label": "▦ واحدها",
+          "route": "departments"
+        },
+        {
+          "label": "♟ نقش‌ها",
+          "route": "roles"
+        },
+        {
+          "label": "✓ دسترسی‌ها",
+          "route": "permissions"
+        },
+        {
+          "label": "◷ گزارش فعالیت‌ها",
+          "route": "audit"
+        },
+        {
+          "label": "⚙ تنظیمات",
+          "route": "settings"
+        },
+        {
+          "label": "▦ مدیریت سامانه",
+          "route": "admin"
+        }
+      ],
+      "visibleControlCount": 2,
+      "visibleTextLength": 142,
+      "navigationMs": 2668,
+      "status": "loaded",
+      "mobileLayout": {
+        "viewportWidth": 390,
+        "documentWidth": 390,
+        "bodyWidth": 390,
+        "horizontalOverflow": false,
+        "visibleForms": 0,
+        "visibleButtons": 1,
+        "visibleControls": 2
+      }
+    },
+    {
+      "requestedRoute": "reports",
+      "currentHash": "reports",
+      "urlChanged": true,
+      "title": "مدیریت تولید",
+      "contentVisible": true,
+      "denied": false,
+      "errorVisible": false,
+      "forms": [],
+      "buttons": [
+        {
+          "index": 0,
+          "id": "project-report-load",
+          "label": "ساخت گزارش",
+          "type": "button",
+          "disabled": true,
+          "inForm": false
+        },
+        {
+          "index": 1,
+          "id": "project-report-print",
+          "label": "چاپ / ذخیره PDF",
+          "type": "button",
+          "disabled": true,
+          "inForm": false
+        }
+      ],
+      "linkCount": 0,
+      "navigation": [
+        {
+          "label": "⌂ داشبورد",
+          "route": "dashboard"
+        },
+        {
+          "label": "▣ پروژه‌ها",
+          "route": "projects"
+        },
+        {
+          "label": "◈ رویدادها",
+          "route": "events"
+        },
+        {
+          "label": "↔ Workflowها",
+          "route": "workflows"
+        },
+        {
+          "label": "⚑ وضعیت‌های پروژه",
+          "route": "project-statuses"
+        },
+        {
+          "label": "⚙ انواع رویداد",
+          "route": "event-types"
+        },
+        {
+          "label": "▤ تأمین ملزومات",
+          "route": "procurement"
+        },
+        {
+          "label": "▤ فایل‌ها",
+          "route": "attachments"
+        },
+        {
+          "label": "▥ گزارش‌ها",
+          "route": "reports"
+        },
+        {
+          "label": "♙ کاربران",
+          "route": "users"
+        },
+        {
+          "label": "▦ واحدها",
+          "route": "departments"
+        },
+        {
+          "label": "♟ نقش‌ها",
+          "route": "roles"
+        },
+        {
+          "label": "✓ دسترسی‌ها",
+          "route": "permissions"
+        },
+        {
+          "label": "◷ گزارش فعالیت‌ها",
+          "route": "audit"
+        },
+        {
+          "label": "⚙ تنظیمات",
+          "route": "settings"
+        },
+        {
+          "label": "▦ مدیریت سامانه",
+          "route": "admin"
+        }
+      ],
+      "visibleControlCount": 1,
+      "visibleTextLength": 187,
+      "navigationMs": 2673,
+      "status": "loaded",
+      "mobileLayout": {
+        "viewportWidth": 390,
+        "documentWidth": 390,
+        "bodyWidth": 390,
+        "horizontalOverflow": false,
+        "visibleForms": 0,
+        "visibleButtons": 2,
+        "visibleControls": 1
+      }
+    },
+    {
+      "requestedRoute": "users",
+      "currentHash": "users",
+      "urlChanged": true,
+      "title": "مدیریت تولید",
+      "contentVisible": true,
+      "denied": false,
+      "errorVisible": false,
+      "forms": [],
+      "buttons": [
+        {
+          "index": 0,
+          "id": "user-create-button",
+          "label": "+ ثبت کاربر",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        }
+      ],
+      "linkCount": 0,
+      "navigation": [
+        {
+          "label": "⌂ داشبورد",
+          "route": "dashboard"
+        },
+        {
+          "label": "▣ پروژه‌ها",
+          "route": "projects"
+        },
+        {
+          "label": "◈ رویدادها",
+          "route": "events"
+        },
+        {
+          "label": "↔ Workflowها",
+          "route": "workflows"
+        },
+        {
+          "label": "⚑ وضعیت‌های پروژه",
+          "route": "project-statuses"
+        },
+        {
+          "label": "⚙ انواع رویداد",
+          "route": "event-types"
+        },
+        {
+          "label": "▤ تأمین ملزومات",
+          "route": "procurement"
+        },
+        {
+          "label": "▤ فایل‌ها",
+          "route": "attachments"
+        },
+        {
+          "label": "▥ گزارش‌ها",
+          "route": "reports"
+        },
+        {
+          "label": "♙ کاربران",
+          "route": "users"
+        },
+        {
+          "label": "▦ واحدها",
+          "route": "departments"
+        },
+        {
+          "label": "♟ نقش‌ها",
+          "route": "roles"
+        },
+        {
+          "label": "✓ دسترسی‌ها",
+          "route": "permissions"
+        },
+        {
+          "label": "◷ گزارش فعالیت‌ها",
+          "route": "audit"
+        },
+        {
+          "label": "⚙ تنظیمات",
+          "route": "settings"
+        },
+        {
+          "label": "▦ مدیریت سامانه",
+          "route": "admin"
+        }
+      ],
+      "visibleControlCount": 1,
+      "visibleTextLength": 95,
+      "navigationMs": 2677,
+      "status": "loaded",
+      "mobileLayout": {
+        "viewportWidth": 390,
+        "documentWidth": 390,
+        "bodyWidth": 390,
+        "horizontalOverflow": false,
+        "visibleForms": 0,
+        "visibleButtons": 1,
+        "visibleControls": 1
+      }
+    },
+    {
+      "requestedRoute": "departments",
+      "currentHash": "departments",
+      "urlChanged": true,
+      "title": "مدیریت تولید",
+      "contentVisible": true,
+      "denied": false,
+      "errorVisible": false,
+      "forms": [],
+      "buttons": [
+        {
+          "index": 0,
+          "id": "department-create-button",
+          "label": "+ ثبت واحد",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 1,
+          "id": "",
+          "label": "مشاهده",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 2,
+          "id": "",
+          "label": "مشاهده",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 3,
+          "id": "",
+          "label": "مشاهده",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 4,
+          "id": "",
+          "label": "مشاهده",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 5,
+          "id": "",
+          "label": "مشاهده",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 6,
+          "id": "",
+          "label": "مشاهده",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 7,
+          "id": "",
+          "label": "مشاهده",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        }
+      ],
+      "linkCount": 0,
+      "navigation": [
+        {
+          "label": "⌂ داشبورد",
+          "route": "dashboard"
+        },
+        {
+          "label": "▣ پروژه‌ها",
+          "route": "projects"
+        },
+        {
+          "label": "◈ رویدادها",
+          "route": "events"
+        },
+        {
+          "label": "↔ Workflowها",
+          "route": "workflows"
+        },
+        {
+          "label": "⚑ وضعیت‌های پروژه",
+          "route": "project-statuses"
+        },
+        {
+          "label": "⚙ انواع رویداد",
+          "route": "event-types"
+        },
+        {
+          "label": "▤ تأمین ملزومات",
+          "route": "procurement"
+        },
+        {
+          "label": "▤ فایل‌ها",
+          "route": "attachments"
+        },
+        {
+          "label": "▥ گزارش‌ها",
+          "route": "reports"
+        },
+        {
+          "label": "♙ کاربران",
+          "route": "users"
+        },
+        {
+          "label": "▦ واحدها",
+          "route": "departments"
+        },
+        {
+          "label": "♟ نقش‌ها",
+          "route": "roles"
+        },
+        {
+          "label": "✓ دسترسی‌ها",
+          "route": "permissions"
+        },
+        {
+          "label": "◷ گزارش فعالیت‌ها",
+          "route": "audit"
+        },
+        {
+          "label": "⚙ تنظیمات",
+          "route": "settings"
+        },
+        {
+          "label": "▦ مدیریت سامانه",
+          "route": "admin"
+        }
+      ],
+      "visibleControlCount": 1,
+      "visibleTextLength": 431,
+      "navigationMs": 946,
+      "status": "loaded",
+      "mobileLayout": {
+        "viewportWidth": 390,
+        "documentWidth": 390,
+        "bodyWidth": 390,
+        "horizontalOverflow": false,
+        "visibleForms": 0,
+        "visibleButtons": 8,
+        "visibleControls": 1
+      }
+    },
+    {
+      "requestedRoute": "roles",
+      "currentHash": "roles",
+      "urlChanged": true,
+      "title": "مدیریت تولید",
+      "contentVisible": true,
+      "denied": false,
+      "errorVisible": false,
+      "forms": [],
+      "buttons": [
+        {
+          "index": 0,
+          "id": "role-create-button",
+          "label": "+ ایجاد نقش",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        }
+      ],
+      "linkCount": 0,
+      "navigation": [
+        {
+          "label": "⌂ داشبورد",
+          "route": "dashboard"
+        },
+        {
+          "label": "▣ پروژه‌ها",
+          "route": "projects"
+        },
+        {
+          "label": "◈ رویدادها",
+          "route": "events"
+        },
+        {
+          "label": "↔ Workflowها",
+          "route": "workflows"
+        },
+        {
+          "label": "⚑ وضعیت‌های پروژه",
+          "route": "project-statuses"
+        },
+        {
+          "label": "⚙ انواع رویداد",
+          "route": "event-types"
+        },
+        {
+          "label": "▤ تأمین ملزومات",
+          "route": "procurement"
+        },
+        {
+          "label": "▤ فایل‌ها",
+          "route": "attachments"
+        },
+        {
+          "label": "▥ گزارش‌ها",
+          "route": "reports"
+        },
+        {
+          "label": "♙ کاربران",
+          "route": "users"
+        },
+        {
+          "label": "▦ واحدها",
+          "route": "departments"
+        },
+        {
+          "label": "♟ نقش‌ها",
+          "route": "roles"
+        },
+        {
+          "label": "✓ دسترسی‌ها",
+          "route": "permissions"
+        },
+        {
+          "label": "◷ گزارش فعالیت‌ها",
+          "route": "audit"
+        },
+        {
+          "label": "⚙ تنظیمات",
+          "route": "settings"
+        },
+        {
+          "label": "▦ مدیریت سامانه",
+          "route": "admin"
+        }
+      ],
+      "visibleControlCount": 1,
+      "visibleTextLength": 91,
+      "navigationMs": 183,
+      "status": "loaded",
+      "mobileLayout": {
+        "viewportWidth": 390,
+        "documentWidth": 390,
+        "bodyWidth": 390,
+        "horizontalOverflow": false,
+        "visibleForms": 0,
+        "visibleButtons": 1,
+        "visibleControls": 1
+      }
+    },
+    {
+      "requestedRoute": "permissions",
+      "currentHash": "permissions",
+      "urlChanged": true,
+      "title": "مدیریت تولید",
+      "contentVisible": true,
+      "denied": false,
+      "errorVisible": false,
+      "forms": [],
+      "buttons": [],
+      "linkCount": 0,
+      "navigation": [
+        {
+          "label": "⌂ داشبورد",
+          "route": "dashboard"
+        },
+        {
+          "label": "▣ پروژه‌ها",
+          "route": "projects"
+        },
+        {
+          "label": "◈ رویدادها",
+          "route": "events"
+        },
+        {
+          "label": "↔ Workflowها",
+          "route": "workflows"
+        },
+        {
+          "label": "⚑ وضعیت‌های پروژه",
+          "route": "project-statuses"
+        },
+        {
+          "label": "⚙ انواع رویداد",
+          "route": "event-types"
+        },
+        {
+          "label": "▤ تأمین ملزومات",
+          "route": "procurement"
+        },
+        {
+          "label": "▤ فایل‌ها",
+          "route": "attachments"
+        },
+        {
+          "label": "▥ گزارش‌ها",
+          "route": "reports"
+        },
+        {
+          "label": "♙ کاربران",
+          "route": "users"
+        },
+        {
+          "label": "▦ واحدها",
+          "route": "departments"
+        },
+        {
+          "label": "♟ نقش‌ها",
+          "route": "roles"
+        },
+        {
+          "label": "✓ دسترسی‌ها",
+          "route": "permissions"
+        },
+        {
+          "label": "◷ گزارش فعالیت‌ها",
+          "route": "audit"
+        },
+        {
+          "label": "⚙ تنظیمات",
+          "route": "settings"
+        },
+        {
+          "label": "▦ مدیریت سامانه",
+          "route": "admin"
+        }
+      ],
+      "visibleControlCount": 1,
+      "visibleTextLength": 81,
+      "navigationMs": 177,
+      "status": "loaded",
+      "mobileLayout": {
+        "viewportWidth": 390,
+        "documentWidth": 390,
+        "bodyWidth": 390,
+        "horizontalOverflow": false,
+        "visibleForms": 0,
+        "visibleButtons": 0,
+        "visibleControls": 1
+      }
+    },
+    {
+      "requestedRoute": "audit",
+      "currentHash": "audit",
+      "urlChanged": true,
+      "title": "مدیریت تولید",
+      "contentVisible": true,
+      "denied": false,
+      "errorVisible": false,
+      "forms": [],
+      "buttons": [
+        {
+          "index": 0,
+          "id": "audit-refresh",
+          "label": "بروزرسانی",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        }
+      ],
+      "linkCount": 0,
+      "navigation": [
+        {
+          "label": "⌂ داشبورد",
+          "route": "dashboard"
+        },
+        {
+          "label": "▣ پروژه‌ها",
+          "route": "projects"
+        },
+        {
+          "label": "◈ رویدادها",
+          "route": "events"
+        },
+        {
+          "label": "↔ Workflowها",
+          "route": "workflows"
+        },
+        {
+          "label": "⚑ وضعیت‌های پروژه",
+          "route": "project-statuses"
+        },
+        {
+          "label": "⚙ انواع رویداد",
+          "route": "event-types"
+        },
+        {
+          "label": "▤ تأمین ملزومات",
+          "route": "procurement"
+        },
+        {
+          "label": "▤ فایل‌ها",
+          "route": "attachments"
+        },
+        {
+          "label": "▥ گزارش‌ها",
+          "route": "reports"
+        },
+        {
+          "label": "♙ کاربران",
+          "route": "users"
+        },
+        {
+          "label": "▦ واحدها",
+          "route": "departments"
+        },
+        {
+          "label": "♟ نقش‌ها",
+          "route": "roles"
+        },
+        {
+          "label": "✓ دسترسی‌ها",
+          "route": "permissions"
+        },
+        {
+          "label": "◷ گزارش فعالیت‌ها",
+          "route": "audit"
+        },
+        {
+          "label": "⚙ تنظیمات",
+          "route": "settings"
+        },
+        {
+          "label": "▦ مدیریت سامانه",
+          "route": "admin"
+        }
+      ],
+      "visibleControlCount": 1,
+      "visibleTextLength": 132,
+      "navigationMs": 178,
+      "status": "loaded",
+      "mobileLayout": {
+        "viewportWidth": 390,
+        "documentWidth": 390,
+        "bodyWidth": 390,
+        "horizontalOverflow": false,
+        "visibleForms": 0,
+        "visibleButtons": 1,
+        "visibleControls": 1
+      },
+      "safeButtonChecks": [
+        {
+          "id": "audit-refresh",
+          "label": "بروزرسانی",
+          "clickCompleted": false,
+          "error": "locator.click: Timeout 1200ms exceeded.\nCall log:\n  - waiting for locator('#page-content').locator('[id=\"audit-refresh\"]').first()\n    - locator resolved to <button type=\"button\" i"
+        }
+      ]
+    },
+    {
+      "requestedRoute": "settings",
+      "currentHash": "settings",
+      "urlChanged": true,
+      "title": "مدیریت تولید",
+      "contentVisible": true,
+      "denied": false,
+      "errorVisible": false,
+      "forms": [],
+      "buttons": [],
+      "linkCount": 0,
+      "navigation": [
+        {
+          "label": "⌂ داشبورد",
+          "route": "dashboard"
+        },
+        {
+          "label": "▣ پروژه‌ها",
+          "route": "projects"
+        },
+        {
+          "label": "◈ رویدادها",
+          "route": "events"
+        },
+        {
+          "label": "↔ Workflowها",
+          "route": "workflows"
+        },
+        {
+          "label": "⚑ وضعیت‌های پروژه",
+          "route": "project-statuses"
+        },
+        {
+          "label": "⚙ انواع رویداد",
+          "route": "event-types"
+        },
+        {
+          "label": "▤ تأمین ملزومات",
+          "route": "procurement"
+        },
+        {
+          "label": "▤ فایل‌ها",
+          "route": "attachments"
+        },
+        {
+          "label": "▥ گزارش‌ها",
+          "route": "reports"
+        },
+        {
+          "label": "♙ کاربران",
+          "route": "users"
+        },
+        {
+          "label": "▦ واحدها",
+          "route": "departments"
+        },
+        {
+          "label": "♟ نقش‌ها",
+          "route": "roles"
+        },
+        {
+          "label": "✓ دسترسی‌ها",
+          "route": "permissions"
+        },
+        {
+          "label": "◷ گزارش فعالیت‌ها",
+          "route": "audit"
+        },
+        {
+          "label": "⚙ تنظیمات",
+          "route": "settings"
+        },
+        {
+          "label": "▦ مدیریت سامانه",
+          "route": "admin"
+        }
+      ],
+      "visibleControlCount": 2,
+      "visibleTextLength": 194,
+      "navigationMs": 172,
+      "status": "loaded",
+      "mobileLayout": {
+        "viewportWidth": 390,
+        "documentWidth": 390,
+        "bodyWidth": 390,
+        "horizontalOverflow": false,
+        "visibleForms": 0,
+        "visibleButtons": 0,
+        "visibleControls": 2
+      }
+    },
+    {
+      "requestedRoute": "admin",
+      "currentHash": "admin",
+      "urlChanged": true,
+      "title": "مدیریت تولید",
+      "contentVisible": true,
+      "denied": false,
+      "errorVisible": false,
+      "forms": [],
+      "buttons": [],
+      "linkCount": 0,
+      "navigation": [
+        {
+          "label": "⌂ داشبورد",
+          "route": "dashboard"
+        },
+        {
+          "label": "▣ پروژه‌ها",
+          "route": "projects"
+        },
+        {
+          "label": "◈ رویدادها",
+          "route": "events"
+        },
+        {
+          "label": "↔ Workflowها",
+          "route": "workflows"
+        },
+        {
+          "label": "⚑ وضعیت‌های پروژه",
+          "route": "project-statuses"
+        },
+        {
+          "label": "⚙ انواع رویداد",
+          "route": "event-types"
+        },
+        {
+          "label": "▤ تأمین ملزومات",
+          "route": "procurement"
+        },
+        {
+          "label": "▤ فایل‌ها",
+          "route": "attachments"
+        },
+        {
+          "label": "▥ گزارش‌ها",
+          "route": "reports"
+        },
+        {
+          "label": "♙ کاربران",
+          "route": "users"
+        },
+        {
+          "label": "▦ واحدها",
+          "route": "departments"
+        },
+        {
+          "label": "♟ نقش‌ها",
+          "route": "roles"
+        },
+        {
+          "label": "✓ دسترسی‌ها",
+          "route": "permissions"
+        },
+        {
+          "label": "◷ گزارش فعالیت‌ها",
+          "route": "audit"
+        },
+        {
+          "label": "⚙ تنظیمات",
+          "route": "settings"
+        },
+        {
+          "label": "▦ مدیریت سامانه",
+          "route": "admin"
+        }
+      ],
+      "visibleControlCount": 0,
+      "visibleTextLength": 236,
+      "navigationMs": 171,
+      "status": "loaded",
+      "mobileLayout": {
+        "viewportWidth": 390,
+        "documentWidth": 390,
+        "bodyWidth": 390,
+        "horizontalOverflow": false,
+        "visibleForms": 0,
+        "visibleButtons": 0,
+        "visibleControls": 0
       }
     }
   ],
@@ -106,36 +2060,891 @@
       "path": "/PRSPRO2/pages/login.html",
       "method": "GET",
       "status": 200,
-      "durationMs": 0
+      "durationMs": 7
     },
     {
       "path": "/macros/s/:id/exec",
       "method": "GET",
       "status": 302,
-      "durationMs": 1295
+      "durationMs": 1127
     },
     {
       "path": "/macros/echo",
       "method": "GET",
       "status": 200,
-      "durationMs": 199
+      "durationMs": 283
     },
     {
       "path": "/PRSPRO2/pages/login.html",
       "method": "GET",
       "status": 200,
       "durationMs": 2
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "POST",
+      "status": 302,
+      "durationMs": 3870
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 114
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3384
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 113
+    },
+    {
+      "path": "/PRSPRO2/pages/dashboard.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 21
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2158
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 112
+    },
+    {
+      "path": "/PRSPRO2/pages/projects.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2
+    },
+    {
+      "path": "/PRSPRO2/pages/projects.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3449
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 123
+    },
+    {
+      "path": "/PRSPRO2/pages/project-detail.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/PRSPRO2/pages/project-detail.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2705
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 93
+    },
+    {
+      "path": "/PRSPRO2/pages/events.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3
+    },
+    {
+      "path": "/PRSPRO2/pages/events.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 19
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 4681
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 125
+    },
+    {
+      "path": "/PRSPRO2/pages/workflows.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3
+    },
+    {
+      "path": "/PRSPRO2/pages/workflows.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3371
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 125
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3898
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 109
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 5017
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 122
+    },
+    {
+      "path": "/PRSPRO2/pages/project-statuses.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 5
+    },
+    {
+      "path": "/PRSPRO2/pages/project-statuses.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3242
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 110
+    },
+    {
+      "path": "/PRSPRO2/pages/event-types.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2
+    },
+    {
+      "path": "/PRSPRO2/pages/event-types.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3709
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 113
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2380
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 125
+    },
+    {
+      "path": "/PRSPRO2/pages/procurement.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/PRSPRO2/pages/procurement.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3
+    },
+    {
+      "path": "/PRSPRO2/pages/attachments.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2
+    },
+    {
+      "path": "/PRSPRO2/pages/attachments.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3080
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 102
+    },
+    {
+      "path": "/PRSPRO2/pages/reports.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2
+    },
+    {
+      "path": "/PRSPRO2/pages/reports.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2766
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 110
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 7290
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 123
+    },
+    {
+      "path": "/PRSPRO2/pages/users.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2
+    },
+    {
+      "path": "/PRSPRO2/pages/users.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2710
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 123
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2690
+    },
+    {
+      "path": "/PRSPRO2/pages/departments.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3
+    },
+    {
+      "path": "/PRSPRO2/pages/departments.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 120
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2867
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 107
+    },
+    {
+      "path": "/PRSPRO2/pages/roles.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 11
+    },
+    {
+      "path": "/PRSPRO2/pages/roles.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 5
+    },
+    {
+      "path": "/PRSPRO2/pages/permissions.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3
+    },
+    {
+      "path": "/PRSPRO2/pages/permissions.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 9
+    },
+    {
+      "path": "/PRSPRO2/pages/audit.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 5
+    },
+    {
+      "path": "/PRSPRO2/pages/audit.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 5
+    },
+    {
+      "path": "/PRSPRO2/pages/settings.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 6
+    },
+    {
+      "path": "/PRSPRO2/pages/settings.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1
+    },
+    {
+      "path": "/PRSPRO2/pages/admin.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2
+    },
+    {
+      "path": "/PRSPRO2/pages/admin.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2
+    },
+    {
+      "path": "/PRSPRO2/pages/dashboard.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1
+    },
+    {
+      "path": "/PRSPRO2/pages/dashboard.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2
+    },
+    {
+      "path": "/PRSPRO2/pages/projects.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 5
+    },
+    {
+      "path": "/PRSPRO2/pages/projects.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 6
+    },
+    {
+      "path": "/PRSPRO2/pages/project-detail.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/PRSPRO2/pages/project-detail.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3199
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 117
+    },
+    {
+      "path": "/PRSPRO2/pages/events.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2
+    },
+    {
+      "path": "/PRSPRO2/pages/events.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3428
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2712
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 130
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 117
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3093
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 97
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2282
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 205
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 4274
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 123
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3976
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 112
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2369
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 111
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3169
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 111
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 5898
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 127
+    },
+    {
+      "path": "/PRSPRO2/pages/workflows.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2
+    },
+    {
+      "path": "/PRSPRO2/pages/workflows.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1
+    },
+    {
+      "path": "/PRSPRO2/pages/project-statuses.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2
+    },
+    {
+      "path": "/PRSPRO2/pages/project-statuses.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2
+    },
+    {
+      "path": "/PRSPRO2/pages/event-types.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1
+    },
+    {
+      "path": "/PRSPRO2/pages/event-types.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1
+    },
+    {
+      "path": "/PRSPRO2/pages/procurement.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1
+    },
+    {
+      "path": "/PRSPRO2/pages/procurement.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2910
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 113
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3113
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 99
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2995
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 104
+    },
+    {
+      "path": "/PRSPRO2/pages/attachments.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1
+    },
+    {
+      "path": "/PRSPRO2/pages/attachments.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3153
+    },
+    {
+      "path": "/PRSPRO2/pages/reports.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2
+    },
+    {
+      "path": "/PRSPRO2/pages/reports.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 125
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3155
+    },
+    {
+      "path": "/PRSPRO2/pages/users.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1
+    },
+    {
+      "path": "/PRSPRO2/pages/users.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 119
+    },
+    {
+      "path": "/PRSPRO2/pages/departments.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2
+    },
+    {
+      "path": "/PRSPRO2/pages/departments.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2
+    },
+    {
+      "path": "/PRSPRO2/pages/roles.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1
+    },
+    {
+      "path": "/PRSPRO2/pages/roles.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2
+    },
+    {
+      "path": "/PRSPRO2/pages/permissions.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1
+    },
+    {
+      "path": "/PRSPRO2/pages/permissions.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 9
+    },
+    {
+      "path": "/PRSPRO2/pages/audit.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2
+    },
+    {
+      "path": "/PRSPRO2/pages/audit.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2239
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 105
+    },
+    {
+      "path": "/PRSPRO2/pages/settings.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2
+    },
+    {
+      "path": "/PRSPRO2/pages/settings.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2573
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 97
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2966
+    },
+    {
+      "path": "/PRSPRO2/pages/admin.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1
+    },
+    {
+      "path": "/PRSPRO2/pages/admin.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2830
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 118
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 123
     }
   ],
-  "consoleErrors": [],
-  "pageErrors": [],
-  "coverageGaps": [
-    "login: 1 submit control(s) inventoried but not submitted by the safe audit."
+  "consoleErrors": [
+    {
+      "type": "console",
+      "message": "Workflow assignment initialization failed: TypeError: Cannot set properties of null (setting 'value')\n    at loadInitialData (http://127.0.0.1:4173/PRSPRO2/js/modules/workflow-department-assignments.js?v=20261022-bulk-assign-2:186:53)",
+      "route": "project-statuses"
+    },
+    {
+      "type": "console",
+      "message": "Workflow assignment initialization failed: TypeError: Cannot set properties of null (setting 'value')\n    at loadInitialData (http://127.0.0.1:4173/PRSPRO2/js/modules/workflow-department-assignments.js?v=20261022-bulk-assign-2:186:53)",
+      "route": "project-statuses"
+    }
   ],
-  "overallStatus": "limited-no-test-credentials",
+  "pageErrors": [],
+  "coverageGaps": [],
+  "overallStatus": "authenticated-audit-complete",
   "login": {
-    "loginFormReadyMs": 181,
-    "authenticated": false,
-    "note": "Set repository secrets PMS_TEST_USERNAME and PMS_TEST_PASSWORD to audit permission-protected pages."
+    "loginFormReadyMs": 150,
+    "loginAttemptMs": 7564,
+    "authenticated": true
   }
 }
