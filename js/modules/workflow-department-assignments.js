@@ -149,7 +149,11 @@
         'workflowManagementBootstrap',
         {
           onRefresh: function (data) {
-            if (requestId !== state.initialRequestId) return;
+            // The SPA may unmount this section while the background refresh is in flight.
+            if (
+              requestId !== state.initialRequestId ||
+              !document.getElementById('workflow-department-assignments')
+            ) return;
             state.workflows = normalizeList(data && data.workflows, ['items', 'workflows']).filter(isActive);
             state.departments = normalizeList(data && data.departments, ['items', 'departments']).filter(isActive);
             if (PMS.Cache) {
@@ -165,7 +169,11 @@
         }
       );
 
-      if (requestId !== state.initialRequestId) return;
+      // Ignore late responses after navigating away from the page that owns this module.
+      if (
+        requestId !== state.initialRequestId ||
+        !document.getElementById('workflow-department-assignments')
+      ) return;
       const data = result.data || {};
       state.workflows = normalizeList(data.workflows, ['items', 'workflows']).filter(isActive);
       state.departments = normalizeList(data.departments, ['items', 'departments']).filter(isActive);
@@ -218,7 +226,11 @@
         getManagementDataCacheKey(workflowId),
         {
           onRefresh: function (data) {
-            if (requestId !== state.workflowDataRequestId || workflowId !== state.workflowId) return;
+            if (
+              requestId !== state.workflowDataRequestId ||
+              workflowId !== state.workflowId ||
+              !document.getElementById('workflow-department-assignments')
+            ) return;
             applyWorkflowManagementData(data);
             content.hidden = false;
             renderBulkEditor();
@@ -231,7 +243,11 @@
         }
       );
 
-      if (requestId !== state.workflowDataRequestId || workflowId !== state.workflowId) return;
+      if (
+        requestId !== state.workflowDataRequestId ||
+        workflowId !== state.workflowId ||
+        !document.getElementById('workflow-department-assignments')
+      ) return;
       applyWorkflowManagementData(result.data);
       content.hidden = false;
       renderBulkEditor();
