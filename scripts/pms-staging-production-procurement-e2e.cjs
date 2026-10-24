@@ -80,14 +80,22 @@ const arr = (x, keys) => { x = unwrap(x); if (Array.isArray(x)) return x; for (c
     if(!orderId||!orderItemId) throw new Error('Order create returned missing order/item ID: '+JSON.stringify(orderResult).slice(0,900));
     report.created.orderId=orderId; report.created.orderItemId=orderItemId;
     step('create-procurement-order',{ok:true,orderId,orderItemId,orderedQuantity:requested});
-    const receiptResponse=await api('POST','/procurement/receipts/batch',{Receipts:[{PurchaseOrderItemID:orderItemId,QuantityReceived:Math.max(1,Math.floor(requested/2)),IdempotencyKey:'QA_E2E_RECEIPT_'+stamp,Notes:'QA E2E partial receipt'}]});
+    const receiptResponse=await api('POST','/procurement/receipts/batch',{Receipts:[{PurchaseOrderItemID:orderItemId,ProjectID:projectId,QuantityReceived:Math.max(1,Math.floor(requested/2)),IdempotencyKey:'QA_E2E_RECEIPT_'+stamp,Notes:'QA E2E partial receipt'}]});
     step('record-partial-receipt',{ok:true,response:JSON.stringify(unwrap(receiptResponse)).slice(0,400)});
     const finalNeeds=arr(await api('GET','/procurement/needs'),['needs','Needs','items','Items']);
     const finalNeed=finalNeeds.find(n=>String(n.ProjectID)===String(projectId)&&String(idOf(n))===String(idOf(need)));
     const finalOrders=arr(await api('GET','/procurement/orders'),['orders','Orders','items','Items']);
     const finalOrder=finalOrders.find(o=>String(idOf(o))===String(orderId));
     if(!finalNeed||!finalOrder) throw new Error('Read-after-write verification failed for material need/order.');
-    step('verify-read-after-write',{ok:true,needVisible:true,orderVisible:true,needStatus:finalNeed.Status||null,orderStatus:finalOrder.Status||null});
+    const finalItem=(finalOrder.Items||finalOrder.items||[]).find(item=>String(idOf(item))===String(orderItemId));
+    if(!finalItem) throw new Error('Read-after-write verification failed: purchase order item was not returned.');
+    const receivedQuantity=Number(finalItem.ReceivedQuantity||0);
+    const remainingQuantity=Number(finalItem.RemainingQuantity);
+    const expectedReceipt=Math.max(1,Math.floor(requested/2));
+    if(Math.abs(receivedQuantity-expectedReceipt)>0.0001) throw new Error('Partial receipt mismatch: expected received '+expectedReceipt+', got '+receivedQuantity);
+    if(Math.abs(remainingQuantity-(requested-expectedReceipt))>0.0001) throw new Error('Remaining quantity mismatch: expected '+(requested-expectedReceipt)+', got '+remainingQuantity);
+    if(String(finalOrder.Status||'').toUpperCase()!=='PARTIALLY_RECEIVED') throw new Error('Expected order status PARTIALLY_RECEIVED, got '+String(finalOrder.Status||''));
+    step('verify-read-after-write',{ok:true,needVisible:true,orderVisible:true,needStatus:finalNeed.Status||null,orderStatus:finalOrder.Status||null,orderedQuantity:requested,receivedQuantity,remainingQuantity});
     report.status='success';
   } catch (error) {
     report.status='failed';
