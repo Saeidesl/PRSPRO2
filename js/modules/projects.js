@@ -208,6 +208,16 @@
       ));
     },
 
+    canCreateOrEditProjects: function () {
+      const router = window.PMS && window.PMS.Router;
+      return !!(router && (
+        router.isAdmin() ||
+        (Array.isArray(router.permissions) &&
+          (router.permissions.indexOf('PROJECT_CREATE') !== -1 ||
+           router.permissions.indexOf('PROJECT_EDIT') !== -1))
+      ));
+    },
+
     openProjectEditForm: async function (projectId) {
       if (!this.canEditProjects()) {
         alert('دسترسی ویرایش پروژه را ندارید.');
@@ -963,7 +973,7 @@
             </div>
 
             <div style="display:flex;gap:10px;flex-wrap:wrap;margin:4px 0 16px;">
-              ${this.canEditProjects() ? '<button type="button" id="new-project-material-specs-button" class="btn btn-secondary">تعریف مصرف ملزومات</button>' : ''}
+              ${this.canCreateOrEditProjects() ? '<button type="button" id="new-project-material-specs-button" class="btn btn-secondary">تعریف مصرف ملزومات</button>' : ''}
               <button type="button" id="new-project-color-size-button" class="btn btn-secondary">تعریف رنگ‌بندی و سایزبندی</button>
             </div>
             <div id="new-project-material-specs-summary" style="font-size:12px;color:var(--color-text-secondary);margin:-8px 0 14px;">مصرف ملزومات اختیاری است و هنوز تعریف نشده است.</div>
