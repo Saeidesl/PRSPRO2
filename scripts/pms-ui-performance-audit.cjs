@@ -42,7 +42,7 @@ let browser;
 // the resulting fields and closes the dialog; it never fills or submits a form.
 const formOpenersByRoute = {
   projects: ['project-create-button'],
-  'project-detail': ['project-add-event-button'],
+  // Project-detail dialogs require a selected project and are not tested context-free.
   events: ['event-create-button'],
   workflows: ['workflow-create-button'],
   'project-statuses': ['project-status-create'],
@@ -99,10 +99,11 @@ async function main() {
   const context = await browser.newContext({ viewport: { width: 1365, height: 900 }, reducedMotion: 'reduce' });
   const page = await context.newPage();
   page.setDefaultTimeout(8000);
+  const normalizedRoute = () => (page.url().split('#')[1] || 'unknown').split('/')[0];
   page.on('console', msg => {
-    if (msg.type() === 'error') results.consoleErrors.push({ type: 'console', message: msg.text().slice(0, 300), route: page.url().split('#')[1] || 'unknown' });
+    if (msg.type() === 'error') results.consoleErrors.push({ type: 'console', message: msg.text().replace(/[0-9a-f]{8}-[0-9a-f-]{27,}/gi, '[id]').replace(/[0-9a-f]{20,}/gi, '[id]').slice(0, 300), route: normalizedRoute() });
   });
-  page.on('pageerror', error => results.pageErrors.push({ message: String(error.message || error).slice(0, 300), route: page.url().split('#')[1] || 'unknown' }));
+  page.on('pageerror', error => results.pageErrors.push({ message: String(error.message || error).replace(/[0-9a-f]{8}-[0-9a-f-]{27,}/gi, '[id]').replace(/[0-9a-f]{20,}/gi, '[id]').slice(0, 300), route: normalizedRoute() }));
   page.on('request', request => {
     started.set(request, Date.now());
   });
@@ -181,21 +182,22 @@ async function main() {
         }))
       }));
       const buttons = Array.from(root.querySelectorAll('button,input[type="button"],input[type="submit"],[role="button"]')).filter(visible).map((el, index) => {
-        const id = el.id || '';
-        // Unidentified buttons are commonly project cards and can contain live project data.
-        const rawLabel = (el.innerText || el.getAttribute('aria-label') || el.title || el.value || '').trim().replace(/\s+/g, ' ');
+        const rawId = el.id || '';
+        const dynamicId = /[0-9a-f]{8}-[0-9a-f-]{27,}|[0-9a-f]{20,}|[A-Z]{2,}_[A-Za-z0-9]{20,}/i.test(rawId);
+        const id = dynamicId ? '' : rawId;
+        // Never persist visible labels or opaque IDs from data-backed project/item rows.
+        const rawLabel = (el.innerText || el.getAttribute('aria-label') || el.title || el.value || '').trim().replace(/\\s+/g, ' ');
         return { index, id, label: id ? rawLabel.slice(0, 100) : 'dynamic-button', type: el.getAttribute('type') || '', disabled: !!el.disabled, inForm: !!el.closest('form') };
       });
       const linkCount = Array.from(root.querySelectorAll('a[href]')).filter(visible).length;
       const controls = Array.from(root.querySelectorAll('input,select,textarea,[contenteditable="true"]')).filter(visible);
       const nav = Array.from(document.querySelectorAll('a[href^="#"],button[data-route], [data-route]')).filter(visible).map(el => {
         const rawRoute = el.getAttribute('data-route') || (el.getAttribute('href') || '').replace(/^#/, '');
-        const dynamicRoute = rawRoute.includes('/');
-        return { label: dynamicRoute ? 'dynamic-navigation-link' : (el.innerText || el.getAttribute('aria-label') || '').trim().replace(/\s+/g, ' ').slice(0, 80), route: rawRoute.split('/')[0] };
+        return { label: 'navigation-link', route: rawRoute.split('/')[0] };
       }).filter(item => item.route);
       const bodyText = (root.innerText || '').replace(/\s+/g, ' ').slice(0, 500);
       return {
-        requestedRoute: routeName, currentHash: location.hash.replace(/^#/, ''),
+        requestedRoute: routeName, currentHash: location.hash.replace(/^#/, '').split('/')[0],
         urlChanged: location.href !== startUrl, title: document.title,
         contentVisible: !!root && visible(root), denied: /اجازه مشاهده این صفحه را ندارید|دسترسی ندارید|عدم دسترسی/.test(bodyText),
         errorVisible: /خطا در بارگذاری صفحه|سامانه به‌درستی راه‌اندازی نشد/.test(bodyText),
