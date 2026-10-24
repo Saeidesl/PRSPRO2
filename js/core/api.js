@@ -9,6 +9,92 @@
   let memoryToken = null;
   let authExpiredNotified = false;
   const inFlightGetRequests = new Map();
+  const diagnosticsEnabled = (function () {
+    try {
+      return new URLSearchParams(window.location.search).get('pmsDiagnostics') === '1';
+    } catch (error) {
+      return false;
+    }
+  })();
+  const diagnosticRows = [];
+
+  function renderPerformanceDiagnostics() {
+    if (!diagnosticsEnabled || !document.body) return;
+    let panel = document.getElementById('pms-performance-diagnostics');
+    if (!panel) {
+      panel = document.createElement('section');
+      panel.id = 'pms-performance-diagnostics';
+      panel.setAttribute('aria-label', 'تشخیص سرعت PMS');
+      panel.style.cssText = 'position:fixed;z-index:99999;left:10px;bottom:10px;width:min(620px,calc(100vw - 20px));max-height:45vh;overflow:auto;padding:12px;background:#111827;color:#f9fafb;border:1px solid #64748b;border-radius:10px;box-shadow:0 8px 30px #0005;font:12px/1.6 system-ui,sans-serif;direction:rtl';
+      const heading = document.createElement('div');
+      heading.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;font-weight:700';
+      const title = document.createElement('span');
+      title.textContent = 'تشخیص سرعت درخواست‌ها (حالت آزمایشی)';
+      const close = document.createElement('button');
+      close.type = 'button';
+      close.textContent = 'بستن';
+      close.style.cssText = 'border:1px solid #64748b;border-radius:6px;padding:2px 8px;background:#374151;color:#fff;cursor:pointer';
+      close.addEventListener('click', function () { panel.remove(); });
+      heading.appendChild(title);
+      heading.appendChild(close);
+      const note = document.createElement('p');
+      note.textContent = 'زمان مرورگر از ارسال تا دریافت پاسخ است؛ جزئیات بک‌اند فقط برای مدیر مجاز نمایش داده می‌شود.';
+      note.style.cssText = 'margin:0 0 8px;color:#cbd5e1';
+      const table = document.createElement('table');
+      table.id = 'pms-performance-diagnostics-table';
+      table.style.cssText = 'width:100%;border-collapse:collapse;text-align:right;word-break:break-word';
+      panel.appendChild(heading);
+      panel.appendChild(note);
+      panel.appendChild(table);
+      document.body.appendChild(panel);
+    }
+
+    const table = document.getElementById('pms-performance-diagnostics-table');
+    if (!table) return;
+    table.textContent = '';
+    const header = document.createElement('tr');
+    ['مسیر', 'زمان مرورگر', 'کل بک‌اند', 'خواندن/پردازش بک‌اند'].forEach(function (label) {
+      const cell = document.createElement('th');
+      cell.textContent = label;
+      cell.style.cssText = 'padding:5px;border-bottom:1px solid #475569';
+      header.appendChild(cell);
+    });
+    table.appendChild(header);
+
+    diagnosticRows.slice().reverse().forEach(function (item) {
+      const row = document.createElement('tr');
+      const backend = item.backend ? String(item.backend.totalMs) + ' ms' : '—';
+      const detail = item.backend
+        ? 'دسترسی ' + item.backend.accessMs + ' / روتر ' + item.backend.routerMs +
+          (item.sheets.length ? ' / Sheets: ' + item.sheets.map(function (s) {
+            return s.operation + ':' + s.totalMs + 'ms×' + s.count;
+          }).join(', ') : '')
+        : 'جزئیات مدیر در دسترس نیست';
+      [item.path, item.clientMs + ' ms', backend, detail].forEach(function (value) {
+        const cell = document.createElement('td');
+        cell.textContent = value;
+        cell.style.cssText = 'padding:5px;border-bottom:1px solid #374151;vertical-align:top';
+        row.appendChild(cell);
+      });
+      table.appendChild(row);
+    });
+  }
+
+  function recordPerformance(path, clientMs, data) {
+    if (!diagnosticsEnabled) return;
+    const diagnostics = data && data._diagnostics;
+    const sheets = diagnostics && Array.isArray(diagnostics.sheetOperations)
+      ? diagnostics.sheetOperations.slice(0, 3)
+      : [];
+    diagnosticRows.push({
+      path: String(path || ''),
+      clientMs: Math.round(clientMs),
+      backend: diagnostics || null,
+      sheets: sheets
+    });
+    if (diagnosticRows.length > 20) diagnosticRows.shift();
+    renderPerformanceDiagnostics();
+  }
 
   const syncState = {
     status: 'idle',
@@ -176,6 +262,7 @@
       options = options || {};
 
       const actualMethod = String(method || 'GET').toUpperCase();
+      const requestStartedAt = Date.now();
       // Auxiliary requests can opt out of the global header status.
       const tracked =
         (actualMethod === 'GET' || actualMethod === 'HEAD') &&
@@ -186,6 +273,7 @@
       try {
         const params = new URLSearchParams();
         params.set('path', path || '/');
+        if (diagnosticsEnabled && (actualMethod === 'GET' || actualMethod === 'HEAD')) params.set('_diagnostics', '1');
         if (options.query && typeof options.query === 'object') {
           Object.keys(options.query).forEach((key) => {
             const value = options.query[key];
@@ -247,6 +335,7 @@
           } catch (parseError) {
             data = null;
           }
+          recordPerformance(path, Date.now() - requestStartedAt, data);
 
           const transientHttpError =
             response.status === 429 || response.status >= 500;
