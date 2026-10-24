@@ -80,7 +80,7 @@ const arr = (x, keys) => { x = unwrap(x); if (Array.isArray(x)) return x; for (c
     if(!orderId||!orderItemId) throw new Error('Order create returned missing order/item ID: '+JSON.stringify(orderResult).slice(0,900));
     report.created.orderId=orderId; report.created.orderItemId=orderItemId;
     step('create-procurement-order',{ok:true,orderId,orderItemId,orderedQuantity:requested});
-    const receiptResponse=await api('POST','/procurement/receipts/batch',{Receipts:[{PurchaseOrderItemID:orderItemId,QuantityReceived:Math.max(1,Math.floor(requested/2)),IdempotencyKey:'QA_E2E_RECEIPT_'+stamp,Notes:'QA E2E partial receipt'}]});
+    const receiptResponse=await api('POST','/procurement/receipts/batch',{Receipts:[{PurchaseOrderItemID:orderItemId,ProjectID:projectId,QuantityReceived:Math.max(1,Math.floor(requested/2)),IdempotencyKey:'QA_E2E_RECEIPT_'+stamp,Notes:'QA E2E partial receipt'}]});
     step('record-partial-receipt',{ok:true,response:JSON.stringify(unwrap(receiptResponse)).slice(0,400)});
     const finalNeeds=arr(await api('GET','/procurement/needs'),['needs','Needs','items','Items']);
     const finalNeed=finalNeeds.find(n=>String(n.ProjectID)===String(projectId)&&String(idOf(n))===String(idOf(need)));
