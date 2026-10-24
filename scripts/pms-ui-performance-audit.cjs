@@ -288,7 +288,7 @@ const visible = el => {
           await page.waitForFunction((baselineCount) => {
             const visible = el => { const rect = el.getBoundingClientRect(); if (rect.width <= 0 || rect.height <= 0) return false; for (let node = el; node && node !== document.documentElement; node = node.parentElement) { const style = getComputedStyle(node); if (node.hidden || node.getAttribute('aria-hidden') === 'true' || style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false; } return true; };
             const formCount = Array.from(document.querySelectorAll('form')).filter(visible).length;
-            const dialogVisible = Array.from(document.querySelectorAll('.modal-overlay,.modal,[role="dialog"],dialog')).some(visible);
+            const dialogVisible = Array.from(document.querySelectorAll('.modal-overlay,.modal,[role="dialog"],dialog')).filter(visible).some(dialog => dialog.querySelector('form,input,select,textarea,[contenteditable="true"]'));
             return formCount > baselineCount || dialogVisible;
           }, before.forms.length, { timeout: 2500 }).catch(() => {});
           const inventory = await inventoryDialogForms(page);
