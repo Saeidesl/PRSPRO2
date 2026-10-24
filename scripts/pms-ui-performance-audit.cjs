@@ -274,8 +274,9 @@ const visible = el => {
             return formCount > baselineCount || dialogVisible;
           }, before.forms.length, { timeout: 2500 }).catch(() => {});
           const inventory = await inventoryDialogForms(page);
-          const newForms = inventory.forms.filter(form => !before.forms.some(oldForm => oldForm.id === form.id && oldForm.fieldCount === form.fieldCount));
-          snapshot.dynamicFormInventory.push({ openerId, opened: inventory.dialogVisible || newForms.length > 0, visibleControls: inventory.visibleControls, forms: newForms });
+          // Include every form visible after the opener click, including templates that
+          // are already present in the DOM but only become relevant within this dialog.
+          snapshot.dynamicFormInventory.push({ openerId, opened: inventory.dialogVisible || inventory.forms.length > 0 || inventory.visibleControls > before.visibleControls, baselineFormCount: before.forms.length, baselineVisibleControls: before.visibleControls, visibleControls: inventory.visibleControls, forms: inventory.forms });
         } catch (error) {
           snapshot.dynamicFormInventory.push({ openerId, opened: false, error: String(error.message || error).slice(0, 180), forms: [] });
         }
