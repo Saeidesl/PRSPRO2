@@ -48,8 +48,8 @@ check('FRONTEND-ENTRYPOINT',
 
 check('EVENT-TYPES-ROUTE-OWNED-INIT',
   'Event-type data is not fetched globally on the login page; the router initializes the module only when its route opens.',
-  !/document\\.addEventListener\\(['"]DOMContentLoaded['"],\\s*init\\)/.test(eventTypes) &&
-    !/else\\s*\\{\\s*init\\(\\);\\s*\\}/.test(eventTypes.slice(-500)));
+  !/document\.addEventListener\(['"]DOMContentLoaded['"],\s*init\)/.test(eventTypes) &&
+    !/else\s*\{\s*init\(\);\s*\}/.test(eventTypes.slice(-500)));
 
 let diff = '';
 try {
