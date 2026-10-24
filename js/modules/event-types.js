@@ -1370,11 +1370,10 @@
         ? settings.FieldMap : {};
       const action = String(settings.Action || 'NONE').toUpperCase();
 
-      let html = '<p class="form-help">این تنظیم مشخص می‌کند ثبت این نوع رویداد، نیاز ملزومات ایجاد کند، دریافت انبار را ثبت کند یا نیاز قطعی را از تعداد تأییدشده محاسبه کند.</p>' +
+      let html = '<p class="form-help">این تنظیم مشخص می‌کند ثبت این نوع رویداد، دریافت انبار را ثبت کند یا نیاز قطعی را از تعداد تأییدشده محاسبه کند.</p>' +
         '<form id="event-type-procurement-form">' +
         '<label class="form-group"><span>عملیات تأمین</span><select class="form-control" name="Action">' +
         '<option value="NONE">بدون عملیات تأمین</option>' +
-        '<option value="CREATE_NEED">ایجاد نیاز ملزومات</option>' +
         '<option value="RECORD_RECEIPT">ثبت دریافت واقعی از سفارش</option>' +
         '<option value="RECALCULATE_CONFIRMED_NEEDS">محاسبه نیاز قطعی از تعداد تأییدشده</option>' +
         '</select></label>' +
@@ -1384,21 +1383,11 @@
       modal.body.innerHTML = html;
       const form = modal.body.querySelector('#event-type-procurement-form');
       const actionInput = form.elements.namedItem('Action');
-      actionInput.value = ['NONE', 'CREATE_NEED', 'RECORD_RECEIPT', 'RECALCULATE_CONFIRMED_NEEDS'].indexOf(action) >= 0 ? action : 'NONE';
+      actionInput.value = ['NONE', 'RECORD_RECEIPT', 'RECALCULATE_CONFIRMED_NEEDS'].indexOf(action) >= 0 ? action : 'NONE';
 
       function renderMappings() {
         const selectedAction = actionInput.value;
-        const definitions = selectedAction === 'CREATE_NEED'
-          ? [
-              ['ItemName', 'نام ملزوم', true],
-              ['Unit', 'واحد اندازه‌گیری', true],
-              ['RequestedQuantity', 'مقدار موردنیاز', true],
-              ['ItemCode', 'کد ملزوم', false],
-              ['ProjectID', 'شناسه پروژه (اختیاری)', false],
-              ['NeededBy', 'تاریخ نیاز (اختیاری)', false],
-              ['Notes', 'توضیحات (اختیاری)', false]
-            ]
-          : (selectedAction === 'RECORD_RECEIPT'
+        const definitions = selectedAction === 'RECORD_RECEIPT'
             ? [
                 ['PurchaseOrderItemID', 'شناسه ردیف سفارش خرید', true],
                 ['QuantityReceived', 'مقدار دریافت‌شده', true],
@@ -1406,7 +1395,7 @@
                 ['Notes', 'توضیحات (اختیاری)', false]
               ] : (selectedAction === 'RECALCULATE_CONFIRMED_NEEDS'
                 ? [['ConfirmedQuantity', 'تعداد قطعی تأییدشده', true]]
-                : []));
+                : []);
         const container = form.querySelector('#event-type-procurement-mappings');
         if (!definitions.length) {
           container.innerHTML = '<p class="form-help">با این گزینه، رویداد هیچ رکورد تأمینی ایجاد نمی‌کند.</p>';
@@ -1432,10 +1421,9 @@
         form.querySelectorAll('[data-map-key]').forEach(function (select) {
           if (select.value) fieldMapPayload[select.dataset.mapKey] = select.value;
         });
-        const requiredKeys = selectedAction === 'CREATE_NEED'
-          ? ['ItemName', 'Unit', 'RequestedQuantity']
-          : (selectedAction === 'RECORD_RECEIPT' ? ['PurchaseOrderItemID', 'QuantityReceived']
-            : (selectedAction === 'RECALCULATE_CONFIRMED_NEEDS' ? ['ConfirmedQuantity'] : []));
+        const requiredKeys = selectedAction === 'RECORD_RECEIPT'
+          ? ['PurchaseOrderItemID', 'QuantityReceived']
+          : (selectedAction === 'RECALCULATE_CONFIRMED_NEEDS' ? ['ConfirmedQuantity'] : []);
         const missing = requiredKeys.filter(function (key) { return !fieldMapPayload[key]; });
         if (missing.length) {
           showMessage('فیلدهای الزامی را انتخاب کن: ' + missing.join('، '));
