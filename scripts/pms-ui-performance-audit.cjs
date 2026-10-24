@@ -244,7 +244,9 @@ async function main() {
             snapshot.dynamicFormInventory.push({ openerId, opened: false, reason: 'opener-not-visible-or-enabled', forms: [] });
             continue;
           }
-          await opener.click({ timeout: 1500 });
+          // These are explicitly allow-listed type=button launchers. Dispatch a
+          // DOM click so a sticky shell layer cannot block inventory-only testing.
+          await opener.evaluate(el => el.click());
           await page.waitForTimeout(180);
           const inventory = await inventoryDialogForms(page);
           snapshot.dynamicFormInventory.push({ openerId, opened: inventory.dialogVisible || inventory.forms.length > 0, visibleControls: inventory.visibleControls, forms: inventory.forms });
