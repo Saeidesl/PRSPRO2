@@ -31,7 +31,7 @@ check('EVENT-INTEGRATION-FAILURE-SURFACING',
   ]));
 check('EVENT-INTEGRATION-RETRY',
   'The frontend has a recovery path for retrying a failed event-to-procurement integration.',
-  /showProcurementRetryNotice/.test(events) && /PROCUREMENT_INTEGRATION_RETRY|retryProcurementIntegration|procurement\/retry/i.test(events));
+  /showProcurementRetryNotice/.test(events) && /PROCUREMENT_INTEGRATION_RETRY|retryProcurementIntegration|procurement-retry/i.test(events));
 check('MATERIAL-PLANNING-UI',
   'The material-planning screen exposes specification and calculation history information.',
   hasAll(materialPlanning, [
