@@ -19,6 +19,7 @@ function hasAll(source, patterns) {
 }
 
 const events = read('js/modules/events.js');
+const eventTypes = read('js/modules/event-types.js');
 const materialPlanning = read('js/modules/material-planning.js');
 const appHtml = read('index.html');
 
@@ -44,6 +45,11 @@ check('FRONTEND-ENTRYPOINT',
   'The frontend entry point and its primary event/material-planning modules exist.',
   appHtml.length > 0 && fs.existsSync(path.join(root, 'js/modules/events.js')) &&
     fs.existsSync(path.join(root, 'js/modules/material-planning.js')));
+
+check('EVENT-TYPES-ROUTE-OWNED-INIT',
+  'Event-type data is not fetched globally on the login page; the router initializes the module only when its route opens.',
+  !/document\\.addEventListener\\(['"]DOMContentLoaded['"],\\s*init\\)/.test(eventTypes) &&
+    !/else\\s*\\{\\s*init\\(\\);\\s*\\}/.test(eventTypes.slice(-500)));
 
 let diff = '';
 try {
