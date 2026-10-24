@@ -1,12 +1,149 @@
 {
   "schemaVersion": 1,
   "suite": "PMS Comprehensive UI and Performance Audit",
-  "generatedAt": null,
-  "overallStatus": "not-run",
-  "note": "This file is updated by the PMS comprehensive UI performance audit workflow. It is not a test result until generatedAt is populated by a workflow run.",
-  "summary": {},
-  "routes": [],
+  "generatedAt": "2026-10-24T17:58:55.714Z",
+  "baseURL": "https://saeidesl.github.io/PRSPRO2/",
+  "mode": "public-login-and-shell-only",
+  "safety": {
+    "formSubmission": "disabled",
+    "destructiveActions": "never-clicked",
+    "sensitiveValuesRecorded": false,
+    "note": "This suite inventories every reachable form/control and measures navigation/network timing. Data-changing workflows require explicit staging scenarios and are not submitted by this audit."
+  },
+  "summary": {
+    "requestedRoutes": 1,
+    "loadedRoutes": 1,
+    "permissionDeniedRoutes": 0,
+    "failedRoutes": 0,
+    "visibleFormsInventoried": 1,
+    "visibleButtonsInventoried": 2,
+    "visibleInputsAndControlsInventoried": 2,
+    "networkRequestsMeasured": 6,
+    "failedNetworkRequests": 0,
+    "consoleErrors": 1,
+    "pageErrors": 0,
+    "safeButtonChecks": 0,
+    "formSubmissionsExecuted": 0
+  },
+  "routes": [
+    {
+      "requestedRoute": "login",
+      "currentHash": "login",
+      "urlChanged": false,
+      "title": "مدیریت تولید",
+      "contentVisible": true,
+      "denied": false,
+      "errorVisible": false,
+      "forms": [
+        {
+          "index": 0,
+          "id": "login-form",
+          "name": "",
+          "action": "",
+          "method": "GET",
+          "fieldCount": 2,
+          "requiredCount": 2,
+          "submitCount": 1,
+          "nativeValidity": false,
+          "fields": [
+            {
+              "id": "login-username",
+              "name": "username",
+              "type": "text",
+              "label": "نام کاربری",
+              "required": true,
+              "disabled": false
+            },
+            {
+              "id": "login-password",
+              "name": "password",
+              "type": "password",
+              "label": "رمز عبور",
+              "required": true,
+              "disabled": false
+            }
+          ]
+        }
+      ],
+      "buttons": [
+        {
+          "index": 0,
+          "id": "",
+          "label": "☾ تیره",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 1,
+          "id": "login-button",
+          "label": "ورود",
+          "type": "submit",
+          "disabled": false,
+          "inForm": true
+        }
+      ],
+      "linkCount": 0,
+      "navigation": [],
+      "visibleControlCount": 2,
+      "visibleTextLength": 118,
+      "navigationMs": 1970,
+      "status": "loaded"
+    }
+  ],
+  "network": [
+    {
+      "path": "/PRSPRO2/pages/login.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 55
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 1072
+    },
+    {
+      "path": "/macros/s/:id/exec",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 1246
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 186
+    },
+    {
+      "path": "/PRSPRO2/pages/login.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 17
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 193
+    }
+  ],
+  "consoleErrors": [
+    {
+      "type": "console",
+      "message": "Event Types loading failed: Error: نشست کاربر معتبر نیست یا منقضی شده است.\n    at Object.createApiError (https://saeidesl.github.io/PRSPRO2/js/core/api.js?v=20261022-retry-sync-2:535:21)\n    at Object.request (https://saeidesl.github.io/PRSPRO2/js/core/api.js?v=20261022-retry-sync-2:367:22)\n    at a",
+      "route": "login"
+    }
+  ],
+  "pageErrors": [],
   "coverageGaps": [
-    "Run the PMS comprehensive UI performance audit workflow to populate the live report."
-  ]
+    "login: 1 submit control(s) inventoried but not submitted by the safe audit."
+  ],
+  "overallStatus": "limited-no-test-credentials",
+  "login": {
+    "loginFormReadyMs": 478,
+    "authenticated": false,
+    "note": "Set repository secrets PMS_TEST_USERNAME and PMS_TEST_PASSWORD to audit permission-protected pages."
+  }
 }
