@@ -22,30 +22,6 @@
     return 'pms_project_create_settings_v1_' + (hash >>> 0).toString(36);
   }
 
-  function projectJalaliDateToIso(value) {
-    const raw = String(value || '').trim();
-    if (!raw) return '';
-    const ascii = raw.replace(/[۰-۹٠-٩]/g, function (digit) {
-      const persian = '۰۱۲۳۴۵۶۷۸۹';
-      const arabic = '٠١٢٣٤٥٦٧٨٩';
-      const index = persian.indexOf(digit);
-      return String(index >= 0 ? index : arabic.indexOf(digit));
-    }).replace(/[.-]/g, '/');
-    const match = ascii.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
-    if (!match) throw new Error('تاریخ را به شکل شمسی سال/ماه/روز وارد کنید؛ مانند ۱۴۰۵/۰۷/۲۷.');
-    const jy = Number(match[1]), jm = Number(match[2]), jd = Number(match[3]);
-    if (jm < 1 || jm > 12 || jd < 1 || jd > 31) throw new Error('تاریخ شمسی معتبر نیست.');
-    const formatter = new Intl.DateTimeFormat('en-US-u-ca-persian-nu-latn', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'UTC' });
-    const start = Date.UTC(jy + 621, 2, 18);
-    for (let offset = 0; offset < 371; offset++) {
-      const date = new Date(start + offset * 86400000);
-      const parts = {};
-      formatter.formatToParts(date).forEach(function (part) { if (part.type === 'year' || part.type === 'month' || part.type === 'day') parts[part.type] = Number(part.value); });
-      if (parts.year === jy && parts.month === jm && parts.day === jd) return date.getUTCFullYear() + '-' + String(date.getUTCMonth() + 1).padStart(2, '0') + '-' + String(date.getUTCDate()).padStart(2, '0');
-    }
-    throw new Error('این تاریخ شمسی معتبر نیست.');
-  }
-
   const CACHE_KEY = window.PMS.Cache.keys.PROJECTS;
 
   const Projects = {
@@ -213,17 +189,13 @@
       const tableContainer = document.getElementById('projects-table-container');
       if (tableContainer) {
         tableContainer.addEventListener('click', (event) => {
-          const needsButton = event.target.closest('.project-material-needs-button');
           const editButton = event.target.closest('.project-edit-button');
           const variantsButton = event.target.closest('.project-color-size-button');
-          const planningButton = event.target.closest('.project-material-planning-button');
-          const projectId = (needsButton || editButton || variantsButton || planningButton) &&
-            (needsButton || editButton || variantsButton || planningButton).getAttribute('data-project-id');
+          const projectId = (editButton || variantsButton) &&
+            (editButton || variantsButton).getAttribute('data-project-id');
           if (!projectId) return;
-          if (needsButton) this.openProjectNeedsForm(projectId);
-          else if (editButton) this.openProjectEditForm(projectId);
+          if (editButton) this.openProjectEditForm(projectId);
           else if (variantsButton) this.openProjectColorSizeForm(projectId);
-          else if (planningButton) this.openMaterialPlanningForm(projectId);
         });
       }
     },
@@ -235,6 +207,18 @@
         (Array.isArray(router.permissions) && router.permissions.indexOf('PROJECT_EDIT') !== -1)
       ));
     },
+
+    canCreateOrEditProjects: function () {
+      const router = window.PMS && window.PMS.Router;
+      return !!(router && (
+        router.isAdmin() ||
+        (Array.isArray(router.permissions) &&
+          (router.permissions.indexOf('PROJECT_CREATE') !== -1 ||
+           router.permissions.indexOf('PROJECT_EDIT') !== -1))
+      ));
+    },
+
+
 
     openProjectEditForm: async function (projectId) {
       if (!this.canEditProjects()) {
@@ -328,306 +312,6 @@
       } finally {
         progress.remove();
       }
-    },
-
-    openMaterialPlanningForm: async function (projectId) {
-      const router = window.PMS && window.PMS.Router;
-      if (!router || !(router.isAdmin() || (Array.isArray(router.permissions) && router.permissions.indexOf('PROJECT_EDIT') !== -1))) {
-        alert('برای مدیریت مشخصات مصرف ملزومات، دسترسی ویرایش پروژه لازم است.');
-        return;
-      }
-      const project = this.projects.find((item) => String(item.ID || item.Id || item.id) === String(projectId)) || {};
-      const modalId = 'project-material-planning-modal';
-      const oldModal = document.getElementById(modalId);
-      if (oldModal) oldModal.remove();
-      const modal = document.createElement('div');
-      modal.id = modalId;
-      modal.style.cssText = 'position:fixed;inset:0;z-index:10060;background:var(--color-overlay,rgba(0,0,0,.48));display:flex;align-items:center;justify-content:center;padding:12px;overflow:auto;direction:rtl;';
-      modal.innerHTML = '<div role="dialog" aria-modal="true" style="background:var(--color-surface,#fff);color:var(--color-text,#222);width:100%;max-width:960px;max-height:94dvh;overflow:auto;border-radius:14px;padding:16px;box-sizing:border-box">' +
-        '<header style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap"><div><h3 style="margin:0 0 6px">مشخصات مصرف ملزومات</h3><div>' + this.escape(project.ProjectCode || '') + ' — ' + this.escape(project.Title || project.Name || '') + '</div></div><button type="button" class="btn btn-light" data-mp-close>بستن</button></header>' +
-        '<p style="color:var(--color-text-secondary);font-size:13px">ویرایش مشخصات، نسخه جدید می‌سازد و نسخه قبلی و تاریخچه محاسبات را حفظ می‌کند.</p>' +
-        '<div id="mp-spec-list" style="display:grid;gap:8px"></div>' +
-        '<form id="mp-spec-create" style="border:1px solid var(--color-border,#ddd);border-radius:10px;padding:12px;margin-top:14px"><h4 style="margin:0 0 10px">افزودن ملزوم</h4><div class="mp-grid">' +
-        '<label>نام ملزوم<input name="ItemName" required maxlength="160"></label><label>واحد<input name="Unit" required maxlength="40" placeholder="متر، عدد و..."></label>' +
-        '<label>مصرف برای هر واحد<input name="ConsumptionPerUnit" type="number" min="0.0000001" step="any" required></label><label>ضایعات (%)<input name="WastagePercent" type="number" min="0" max="100" step="any" value="0"></label>' +
-        '<label>سیاست سفارش زودهنگام<select name="EarlyOrderPolicy"><option value="DISABLED">غیرفعال</option><option value="ESTIMATE_ALLOWED">بر اساس تعداد پیشنهادی پروژه</option><option value="MANUAL_ALLOWED">مقدار دستی</option></select></label><label data-mp-manual hidden>مقدار دستی سفارش زودهنگام<input name="EarlyOrderQuantity" type="number" min="0.0000001" step="any"></label>' +
-        '<label style="grid-column:1/-1">توضیحات<input name="Notes" maxlength="500"></label></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button type="submit" class="btn btn-primary">ذخیره ملزوم</button><button type="button" id="mp-estimate" class="btn btn-secondary">محاسبه برآورد سفارش زودهنگام</button></div><div id="mp-message" role="status" aria-live="polite" style="margin-top:10px"></div></form>' +
-        '<details style="margin-top:14px"><summary style="cursor:pointer;padding:8px 0;font-weight:600">سابقه محاسبات نیاز</summary><div id="mp-history" style="display:grid;gap:8px;margin-top:8px"></div></details></div>';
-      const style = document.createElement('style');
-      style.id = 'mp-spec-style';
-      style.textContent = '#project-material-planning-modal .mp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}#project-material-planning-modal label{display:grid;gap:5px;font-size:13px}#project-material-planning-modal input,#project-material-planning-modal select{width:100%;min-width:0;box-sizing:border-box;padding:10px;border:1px solid var(--color-border,#ccc);border-radius:8px;background:var(--color-background,#fff);color:inherit}#project-material-planning-modal .mp-spec{border:1px solid var(--color-border,#ddd);border-radius:10px;padding:12px}#project-material-planning-modal .mp-spec-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}#project-material-planning-modal .mp-spec-grid span{display:block;font-size:12px;color:var(--color-text-secondary)}#project-material-planning-modal .mp-spec-grid strong{display:block;overflow-wrap:anywhere}#project-material-planning-modal .mp-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}@media(max-width:600px){#project-material-planning-modal{align-items:flex-end!important;padding:0!important}#project-material-planning-modal [role=dialog]{max-height:94dvh;border-radius:16px 16px 0 0!important;padding:14px!important}#project-material-planning-modal .mp-grid,#project-material-planning-modal .mp-spec-grid{grid-template-columns:minmax(0,1fr)}}';
-      document.head.appendChild(style);
-      document.body.appendChild(modal);
-      const close = () => { modal.remove(); const node = document.getElementById('mp-spec-style'); if (node) node.remove(); };
-      modal.querySelector('[data-mp-close]').addEventListener('click', close);
-      modal.addEventListener('click', (event) => { if (event.target === modal) close(); });
-      const form = modal.querySelector('#mp-spec-create');
-      const policy = form.elements.EarlyOrderPolicy;
-      const manual = form.querySelector('[data-mp-manual]');
-      const manualInput = form.elements.EarlyOrderQuantity;
-      const syncPolicy = () => { manual.hidden = policy.value !== 'MANUAL_ALLOWED'; manualInput.required = policy.value === 'MANUAL_ALLOWED'; };
-      policy.addEventListener('change', syncPolicy);
-      syncPolicy();
-      const unpack = (response) => {
-        let value = response;
-        for (let i = 0; i < 5 && value && !Array.isArray(value); i += 1) {
-          if (value.data !== undefined) { value = value.data; continue; }
-          if (value.items !== undefined) { value = value.items; continue; }
-          break;
-        }
-        return Array.isArray(value) ? value : [];
-      };
-      let specs = [];
-      let history = [];
-      const message = (text, isError) => {
-        const root = modal.querySelector('#mp-message');
-        root.textContent = text;
-        root.style.color = isError ? 'var(--color-danger,#b42318)' : 'var(--color-success,#16794b)';
-      };
-      const render = () => {
-        const root = modal.querySelector('#mp-spec-list');
-        root.innerHTML = specs.length ? specs.map((spec) => '<article class="mp-spec"><div class="mp-spec-grid">' +
-          '<div><span>ملزوم</span><strong>' + this.escape(spec.ItemName) + '</strong></div>' +
-          '<div><span>مصرف هر واحد</span><strong>' + this.escape(spec.ConsumptionPerUnit) + ' ' + this.escape(spec.Unit) + '</strong></div>' +
-          '<div><span>ضایعات</span><strong>' + this.escape(spec.WastagePercent || 0) + '%</strong></div>' +
-          '<div><span>سیاست سفارش زودهنگام</span><strong>' + this.escape(({DISABLED:'غیرفعال',ESTIMATE_ALLOWED:'برآوردی',MANUAL_ALLOWED:'مقدار دستی'})[String(spec.EarlyOrderPolicy || 'DISABLED')] || spec.EarlyOrderPolicy) + '</strong></div>' +
-          '<div><span>نسخه</span><strong>' + this.escape(spec.Revision || 1) + '</strong></div><div><span>مقدار دستی</span><strong>' + this.escape(spec.EarlyOrderQuantity || '—') + '</strong></div></div>' +
-          '<div class="mp-actions"><button type="button" class="btn btn-sm btn-secondary" data-mp-edit="' + this.escape(spec.ID) + '">ویرایش و ایجاد نسخه جدید</button></div></article>').join('') :
-          '<div class="table-empty">مشخصات مصرفی تعریف نشده است.</div>';
-        const historyRoot = modal.querySelector('#mp-history');
-        historyRoot.innerHTML = history.length ? history.map((row) => '<div class="mp-spec"><strong>' +
-          this.escape(({CONFIRMED:'نیاز قطعی',ESTIMATE:'برآوردی',EARLY_ORDER_MANUAL:'سفارش زودهنگام دستی'})[String(row.CalculationType || '')] || row.CalculationType || 'محاسبه') +
-          '</strong><div>تعداد مبنا: ' + this.escape(row.BasisQuantity) + ' · نیاز محاسبه‌شده: ' + this.escape(row.CalculatedQuantity) +
-          ' · اختلاف: ' + this.escape(row.VarianceQuantity) + '</div><small>' + this.escape(row.SourceEventID || 'بدون رویداد') + ' · ' + this.escape(row.CreatedAt || '') + '</small></div>').join('') :
-          '<div class="table-empty">هنوز سابقه محاسباتی وجود ندارد.</div>';
-      };
-      const refresh = async () => {
-        const results = await Promise.all([
-          window.PMS.Api.get('/projects/' + encodeURIComponent(projectId) + '/material-specifications'),
-          window.PMS.Api.get('/projects/' + encodeURIComponent(projectId) + '/material-calculations')
-        ]);
-        specs = unpack(results[0]); history = unpack(results[1]); render();
-      };
-      const editSpec = (spec) => {
-        const dialog = document.createElement('div');
-        dialog.style.cssText = 'position:fixed;inset:0;z-index:10070;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;padding:12px;direction:rtl';
-        dialog.innerHTML = '<div role="dialog" aria-modal="true" style="background:var(--color-surface,#fff);color:var(--color-text,#222);width:100%;max-width:560px;max-height:90dvh;overflow:auto;border-radius:12px;padding:16px"><h4>ایجاد نسخه جدید مشخصات مصرف</h4><form class="mp-edit-form"><div class="mp-grid"><label>نام ملزوم<input name="ItemName" required maxlength="160"></label><label>واحد<input name="Unit" required maxlength="40"></label><label>مصرف هر واحد<input name="ConsumptionPerUnit" type="number" min="0.0000001" step="any" required></label><label>ضایعات (%)<input name="WastagePercent" type="number" min="0" max="100" step="any"></label><label>سیاست سفارش<select name="EarlyOrderPolicy"><option value="DISABLED">غیرفعال</option><option value="ESTIMATE_ALLOWED">برآوردی</option><option value="MANUAL_ALLOWED">مقدار دستی</option></select></label><label>مقدار دستی<input name="EarlyOrderQuantity" type="number" min="0.0000001" step="any"></label><label style="grid-column:1/-1">توضیحات<input name="Notes" maxlength="500"></label></div><div class="mp-edit-error" role="status" style="margin-top:8px"></div><div class="mp-actions"><button type="submit" class="btn btn-primary">ثبت نسخه جدید</button><button type="button" class="btn btn-light" data-mp-cancel>انصراف</button></div></form></div>';
-        modal.appendChild(dialog);
-        const editForm = dialog.querySelector('form');
-        ['ItemName','Unit','ConsumptionPerUnit','WastagePercent','EarlyOrderPolicy','EarlyOrderQuantity','Notes'].forEach((key) => {
-          editForm.elements[key].value = spec[key] === undefined || spec[key] === null ? '' : spec[key];
-        });
-        const editPolicy = editForm.elements.EarlyOrderPolicy;
-        const editQuantity = editForm.elements.EarlyOrderQuantity;
-        const syncEditPolicy = () => { editQuantity.required = editPolicy.value === 'MANUAL_ALLOWED'; };
-        editPolicy.addEventListener('change', syncEditPolicy);
-        syncEditPolicy();
-        dialog.querySelector('[data-mp-cancel]').addEventListener('click', () => dialog.remove());
-        editForm.addEventListener('submit', async (event) => {
-          event.preventDefault();
-          const button = editForm.querySelector('[type=submit]'); button.disabled = true;
-          try {
-            const payload = Object.fromEntries(new FormData(editForm).entries());
-            ['ConsumptionPerUnit','WastagePercent','EarlyOrderQuantity'].forEach((key) => { if (payload[key] !== '') payload[key] = Number(payload[key]); });
-            await window.PMS.Api.put('/material-specifications/' + encodeURIComponent(spec.ID), payload);
-            dialog.remove(); await refresh(); message('نسخه جدید ثبت شد؛ سوابق قبلی حفظ شده‌اند.', false);
-          } catch (error) {
-            dialog.querySelector('.mp-edit-error').textContent = this.getErrorMessage(error);
-          } finally { button.disabled = false; }
-        });
-      };
-      modal.querySelector('#mp-spec-list').addEventListener('click', (event) => {
-        const button = event.target.closest('[data-mp-edit]');
-        if (button) { const spec = specs.find((item) => String(item.ID) === String(button.getAttribute('data-mp-edit'))); if (spec) editSpec(spec); }
-      });
-      form.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const button = form.querySelector('[type=submit]'); button.disabled = true;
-        try {
-          const payload = Object.fromEntries(new FormData(form).entries());
-          ['ConsumptionPerUnit','WastagePercent','EarlyOrderQuantity'].forEach((key) => { if (payload[key] !== '') payload[key] = Number(payload[key]); });
-          await window.PMS.Api.post('/projects/' + encodeURIComponent(projectId) + '/material-specifications', payload);
-          form.reset(); form.elements.WastagePercent.value = '0'; syncPolicy(); await refresh(); message('مشخصات مصرف ذخیره شد.', false);
-        } catch (error) { message(this.getErrorMessage(error), true); }
-        finally { button.disabled = false; }
-      });
-      modal.querySelector('#mp-estimate').addEventListener('click', async (event) => {
-        const button = event.currentTarget; button.disabled = true;
-        try {
-          const response = await window.PMS.Api.post('/projects/' + encodeURIComponent(projectId) + '/material-estimates', {});
-          const data = response && response.data ? response.data : response;
-          const items = data && Array.isArray(data.items) ? data.items : [];
-          await refresh();
-          message('برآورد اجرا شد؛ ' + items.length + ' قلم محاسبه شد. پیش از سفارش، مقادیر را در بخش تدارکات بررسی کنید.', false);
-        } catch (error) { message(this.getErrorMessage(error), true); }
-        finally { button.disabled = false; }
-      });
-      try { await refresh(); } catch (error) { message(this.getErrorMessage(error), true); }
-    },
-
-    canManageProcurement: function () {
-      const router = window.PMS && window.PMS.Router;
-      return !!(router && (
-        router.isAdmin() ||
-        (Array.isArray(router.permissions) &&
-          router.permissions.indexOf('PROCUREMENT_MANAGE') !== -1)
-      ));
-    },
-
-    openProjectNeedsForm: async function (projectId) {
-      if (!this.canManageProcurement()) {
-        alert('دسترسی مشاهده و ثبت ملزومات پروژه را ندارید.');
-        return;
-      }
-
-      const progress = document.createElement('div');
-      progress.className = 'project-create-progress';
-      progress.setAttribute('role', 'status');
-      progress.setAttribute('aria-live', 'polite');
-      progress.innerHTML = '<div class="project-create-progress-card"><div class="project-create-progress-orbit" aria-hidden="true"><span class="project-create-progress-spinner"></span><span class="project-create-progress-spark">✦</span></div><div class="project-create-progress-heading">لطفاً کمی صبر کنید</div><div class="project-create-progress-message">در حال دریافت ملزومات ثبت‌شده پروژه از سرور...</div><div class="project-create-progress-track" aria-hidden="true"><span></span></div><div class="project-create-progress-footnote">لطفاً تا پایان دریافت اطلاعات صبر کنید.</div></div>';
-      document.body.appendChild(progress);
-
-      try {
-        const project = this.projects.find((item) =>
-          String(item.ID || item.Id || item.id) === String(projectId)
-        ) || {};
-        const response = await window.PMS.Api.get('/procurement/needs');
-        let data = response;
-        for (let i = 0; i < 4 && data && !Array.isArray(data); i++) {
-          if (data.data !== undefined) { data = data.data; continue; }
-          if (data.needs !== undefined) { data = data.needs; continue; }
-          if (data.items !== undefined) { data = data.items; continue; }
-          if (data.Needs !== undefined) { data = data.Needs; continue; }
-          break;
-        }
-        if (!Array.isArray(data)) throw new Error('ساختار اطلاعات ملزومات دریافتی از سرور معتبر نیست.');
-        const needs = data.filter((need) => String(need.ProjectID || '') === String(projectId));
-        this.renderProjectNeedsForm(projectId, project, needs);
-      } catch (error) {
-        alert('دریافت ملزومات پروژه ناموفق بود: ' + this.getErrorMessage(error));
-      } finally {
-        progress.remove();
-      }
-    },
-
-    renderProjectNeedsForm: function (projectId, project, existingNeeds) {
-      const existingModal = document.getElementById('project-needs-modal');
-      if (existingModal) existingModal.remove();
-
-      const modal = document.createElement('div');
-      modal.id = 'project-needs-modal';
-      modal.style.cssText = 'position:fixed;inset:0;z-index:10050;background:var(--color-overlay,rgba(0,0,0,.45));display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto;direction:rtl;';
-      modal.innerHTML = '<div role="dialog" aria-modal="true" aria-labelledby="project-needs-title" style="background:var(--color-surface,#fff);color:var(--color-text,#222);width:100%;max-width:900px;max-height:92vh;overflow:auto;border-radius:12px;padding:20px;box-sizing:border-box;">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px"><div><h3 id="project-needs-title" style="margin:0 0 6px">ملزومات پروژه</h3><div>' + this.escape(project.ProjectCode || '') + ' — ' + this.escape(project.Title || project.Name || '') + '</div></div><button type="button" class="btn btn-light" data-needs-close>بستن</button></div>' +
-        '<section style="margin-bottom:20px"><h4 style="margin:0 0 10px">ملزومات ثبت‌شده</h4><div id="project-needs-existing"></div></section>' +
-        '<div class="alert alert-info">ملزومات ثبت‌شده در بالا نمایش داده می‌شوند. برای افزودن ملزومات جدید، ردیف‌های زیر را تکمیل کنید. ردیف‌های جدید پیش از ثبت قابل حذف هستند.</div>' +
-        '<form id="project-needs-form"><div id="project-needs-rows"></div>' +
-        '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button type="button" class="btn btn-secondary" id="project-needs-add-row">+ افزودن ردیف</button><button type="submit" class="btn btn-primary">ثبت ملزومات جدید</button></div>' +
-        '<div id="project-needs-error" class="alert alert-danger" hidden style="margin-top:12px"></div></form></div>';
-      document.body.appendChild(modal);
-
-      const existingRoot = modal.querySelector('#project-needs-existing');
-      const existing = Array.isArray(existingNeeds) ? existingNeeds : [];
-      if (!existing.length) {
-        existingRoot.innerHTML = '<div class="table-empty">هنوز ملزوماتی برای این پروژه ثبت نشده است.</div>';
-      } else {
-        existingRoot.innerHTML = '<div style="display:grid;gap:8px">' + existing.map((need) => {
-          const status = String(need.ProcurementStatus || '');
-          const statusLabel = ({ NEEDS_PURCHASE: 'در انتظار سفارش', PARTIALLY_ORDERED: 'سفارش ناقص', ORDERED: 'سفارش داده‌شده', PARTIALLY_RECEIVED: 'دریافت ناقص', RECEIVED: 'تحویل کامل' })[status] || 'ثبت‌شده';
-          return '<div style="border:1px solid var(--color-border);border-radius:10px;padding:12px;min-width:0">' +
-            '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap"><strong style="overflow-wrap:anywhere">' + this.escape(need.ItemName || need.Name || 'ملزوم') + '</strong><span class="project-list-badge">' + this.escape(statusLabel) + '</span></div>' +
-            '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--color-text-secondary)">' +
-            '<span>مقدار موردنیاز: ' + this.escape(String(need.RequestedQuantity ?? '—')) + ' ' + this.escape(need.Unit || '') + '</span>' +
-            '<span>سفارش‌شده: ' + this.escape(String(need.OrderedQuantity ?? 0)) + '</span>' +
-            '<span>تحویل‌شده: ' + this.escape(String(need.ReceivedQuantity ?? 0)) + '</span>' +
-            '</div>' + (need.Notes ? '<div style="margin-top:7px;font-size:12px;overflow-wrap:anywhere">توضیحات: ' + this.escape(need.Notes) + '</div>' : '') +
-            '</div>';
-        }).join('') + '</div>';
-      }
-
-      const rows = modal.querySelector('#project-needs-rows');
-      const form = modal.querySelector('#project-needs-form');
-      const errorBox = modal.querySelector('#project-needs-error');
-      const close = () => { if (!modal.dataset.saving) modal.remove(); };
-      modal.querySelector('[data-needs-close]').addEventListener('click', close);
-      modal.addEventListener('click', (event) => { if (event.target === modal) close(); });
-
-      const addRow = () => {
-        const index = rows.querySelectorAll('[data-need-row]').length;
-        const row = document.createElement('div');
-        row.className = 'card';
-        row.setAttribute('data-need-row', String(index));
-        row.style.cssText = 'margin-top:12px;border:1px solid var(--color-border,#ddd);border-radius:8px;padding:14px;';
-        row.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px"><strong>ملزوم جدید ' + (index + 1) + '</strong><button type="button" class="btn btn-light" data-need-remove>حذف ردیف</button></div>' +
-          '<div class="form-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">' +
-          '<label class="form-group"><span>نام ملزوم *</span><input name="ItemName" required maxlength="200" style="width:100%;box-sizing:border-box"></label>' +
-          '<label class="form-group"><span>واحد اندازه‌گیری *</span><input name="Unit" required maxlength="100" style="width:100%;box-sizing:border-box"></label>' +
-          '<label class="form-group"><span>مقدار موردنیاز *</span><input name="RequestedQuantity" type="number" min="0.001" step="any" required style="width:100%;box-sizing:border-box"></label>' +
-          '<label class="form-group"><span>تاریخ موردنیاز</span><input name="NeededBy" type="text" inputmode="numeric" placeholder="۱۴۰۵/۰۷/۲۷" style="width:100%;box-sizing:border-box"></label>' +
-          '<label class="form-group"><span>توضیحات</span><input name="Notes" maxlength="500" style="width:100%;box-sizing:border-box"></label></div>';
-        rows.appendChild(row);
-      };
-
-      modal.querySelector('#project-needs-add-row').addEventListener('click', addRow);
-      rows.addEventListener('click', (event) => {
-        const remove = event.target.closest('[data-need-remove]');
-        if (remove) remove.closest('[data-need-row]').remove();
-      });
-      addRow();
-
-      form.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        if (modal.dataset.saving) return;
-        errorBox.hidden = true;
-        const dataRows = Array.from(rows.querySelectorAll('[data-need-row]')).map((row) => {
-          const get = (name) => row.querySelector('[name="' + name + '"]').value.trim();
-          return {
-            row,
-            payload: {
-              ProjectID: String(projectId),
-              ItemName: get('ItemName'),
-              Unit: get('Unit'),
-              RequestedQuantity: Number(get('RequestedQuantity')),
-              NeededBy: get('NeededBy'),
-              Notes: get('Notes')
-            }
-          };
-        });
-        if (!dataRows.length) {
-          errorBox.textContent = 'حداقل یک ملزوم جدید وارد کنید.';
-          errorBox.hidden = false;
-          return;
-        }
-        const submit = form.querySelector('[type="submit"]');
-        modal.dataset.saving = '1';
-        submit.disabled = true;
-        submit.textContent = 'در حال ثبت...';
-        const progress = document.createElement('div');
-        progress.className = 'project-create-progress';
-        progress.setAttribute('role', 'status');
-        progress.setAttribute('aria-live', 'polite');
-        progress.innerHTML = '<div class="project-create-progress-card"><div class="project-create-progress-orbit" aria-hidden="true"><span class="project-create-progress-spinner"></span><span class="project-create-progress-spark">✦</span></div><div class="project-create-progress-heading">لطفاً کمی صبر کنید</div><div class="project-create-progress-message">در حال ذخیره ملزومات پروژه...</div><div class="project-create-progress-track" aria-hidden="true"><span></span></div><div class="project-create-progress-footnote">لطفاً تا پایان ذخیره‌سازی صبر کنید.</div></div>';
-        document.body.appendChild(progress);
-        let saved = 0;
-        try {
-          dataRows.forEach((entry) => { entry.payload.NeededBy = projectJalaliDateToIso(entry.payload.NeededBy); });
-          for (let i = 0; i < dataRows.length; i++) {
-            await window.PMS.Api.post('/procurement/needs', dataRows[i].payload);
-            saved++;
-          }
-          modal.remove();
-          window.alert('تعداد ' + saved + ' ملزوم جدید برای پروژه ثبت شد.');
-        } catch (error) {
-          delete modal.dataset.saving;
-          errorBox.textContent = (error && error.message ? error.message : 'ثبت ملزومات ناموفق بود.') +
-            (saved ? ' تا پیش از خطا، ' + saved + ' ردیف ثبت شده است؛ فقط ردیف‌های باقی‌مانده را دوباره ثبت کنید.' : '');
-          errorBox.hidden = false;
-          submit.disabled = false;
-          submit.textContent = 'ثبت ملزومات جدید';
-        } finally {
-          progress.remove();
-        }
-      });
     },
 
     loadProjectStatuses: async function () {
@@ -1291,10 +975,10 @@
             </div>
 
             <div style="display:flex;gap:10px;flex-wrap:wrap;margin:4px 0 16px;">
-              ${this.canManageProcurement() ? '<button type="button" id="new-project-needs-button" class="btn btn-secondary">ملزومات موردنیاز</button>' : ''}
-              <button type="button" id="new-project-color-size-button" class="btn btn-secondary">تعریف رنگ‌بندی و سایزبندی</button>
+              ${this.canCreateOrEditProjects() ? '<button type="button" id="new-project-material-specs-button" class="btn btn-secondary">تعریف مصرف ملزومات</button>' : ''}
+              <button type="button" id="new-project-color-size-button class="btn btn-secondary">تعریف رنگ‌بندی و سایزبندی</button>
             </div>
-            <div id="new-project-needs-summary" style="font-size:12px;color:var(--color-text-secondary);margin:-8px 0 14px;">ملزومات اختیاری است و هنوز موردی تعریف نشده است.</div>
+            <div id="new-project-material-specs-summary" style="font-size:12px;color:var(--color-text-secondary);margin:-8px 0 14px;">مصرف ملزومات اختیاری است و هنوز تعریف نشده است.</div>
             <div id="new-project-color-size-summary" style="font-size:12px;color:var(--color-text-secondary);margin:-8px 0 16px;">رنگ‌بندی و سایزبندی اختیاری است و هنوز تعریف نشده است.</div>
 
             <div style="
@@ -1466,8 +1150,8 @@
 
       const colorSizeButton = modal.querySelector('#new-project-color-size-button');
       if (colorSizeButton) colorSizeButton.addEventListener('click', () => this.openColorSizeForm(modal));
-      const needsButton = modal.querySelector('#new-project-needs-button');
-      if (needsButton) needsButton.addEventListener('click', () => this.openDraftNeedsForm(modal));
+      const materialSpecsButton = modal.querySelector('#new-project-material-specs-button');
+      if (materialSpecsButton) materialSpecsButton.addEventListener('click', () => this.openDraftMaterialSpecsForm(modal));
 
       closeButton.addEventListener('click', closeModal);
       cancelButton.addEventListener('click', closeModal);
@@ -1655,10 +1339,10 @@
           if (colorSummary) colorSummary.textContent = (savedColorSize.colors.length || savedColorSize.sizes.length)
             ? savedColorSize.colors.length + ' رنگ و ' + savedColorSize.sizes.length + ' سایز تعریف شده'
             : 'رنگ‌بندی و سایزبندی تعریف نشده است.';
-          const needsButtonForEdit = modal.querySelector('#new-project-needs-button');
-          if (needsButtonForEdit) needsButtonForEdit.hidden = true;
-          const needsSummary = modal.querySelector('#new-project-needs-summary');
-          if (needsSummary) needsSummary.textContent = 'برای مدیریت ملزومات، از بخش ملزومات پروژه استفاده کنید.';
+          const materialSpecsButtonForEdit = modal.querySelector('#new-project-material-specs-button');
+          if (materialSpecsButtonForEdit) materialSpecsButtonForEdit.hidden = true;
+          const materialSpecsSummary = modal.querySelector('#new-project-material-specs-summary');
+          if (materialSpecsSummary) materialSpecsSummary.textContent = 'برای مدیریت نسخه‌های مصرف ملزومات از دکمه «مصرف ملزومات» روی کارت پروژه استفاده کنید.';
           const fileHelpForEdit = modal.querySelector('#new-project-file-help');
           if (fileHelpForEdit) fileHelpForEdit.textContent = 'برای افزودن فایل جدید، آن را انتخاب کنید؛ فایل‌های فعلی در همین فرم قابل مشاهده و مدیریت هستند.';
           this.loadProjectEditAttachments(modal, editProjectId);
@@ -1748,47 +1432,63 @@
       // در حالت ویرایش نیز کد پروژه و گردش کار قفل هستند و فقط سایر اطلاعات مجاز تغییر می‌کنند.
     },
 
-    openDraftNeedsForm: function (projectModal) {
-      const existing = document.getElementById('project-draft-needs-modal');
+    openDraftMaterialSpecsForm: function (projectModal) {
+      const existing = document.getElementById('project-draft-material-specs-modal');
       if (existing) existing.remove();
       let saved = [];
-      try { saved = JSON.parse(projectModal.dataset.projectNeeds || '[]'); } catch (error) {}
+      try { saved = JSON.parse(projectModal.dataset.projectMaterialSpecs || '[]'); } catch (error) {}
       const modal = document.createElement('div');
-      modal.id = 'project-draft-needs-modal';
-      modal.style.cssText = 'position:fixed;inset:0;z-index:10030;background:var(--color-overlay,rgba(0,0,0,.48));display:flex;align-items:center;justify-content:center;padding:16px;direction:rtl;overflow:auto;';
-      modal.innerHTML = '<div role="dialog" aria-modal="true" aria-labelledby="project-draft-needs-title" style="background:var(--color-surface);color:var(--color-text);width:100%;max-width:760px;max-height:90vh;overflow:auto;border-radius:12px;padding:20px;box-sizing:border-box"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><h3 id="project-draft-needs-title">ملزومات موردنیاز پروژه</h3><button type="button" class="btn btn-light" data-draft-needs-close>بستن</button></div><p style="color:var(--color-text-secondary);font-size:12px;line-height:1.8">نیازها را تعریف کنید؛ پس از ثبت پروژه، این موارد به همان پروژه متصل می‌شوند. این فرم سفارش خرید ثبت نمی‌کند.</p><form id="project-draft-needs-form"><div id="project-draft-needs-rows"></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button type="button" class="btn btn-secondary" id="project-draft-needs-add">+ افزودن ردیف</button><button type="submit" class="btn btn-primary">ذخیره نیازها</button></div><div id="project-draft-needs-error" class="alert alert-danger" hidden style="margin-top:12px"></div></form></div>';
+      modal.id = 'project-draft-material-specs-modal';
+      modal.style.cssText = 'position:fixed;inset:0;z-index:10030;background:var(--color-overlay,rgba(0,0,0,.48));display:flex;align-items:center;justify-content:center;padding:12px;direction:rtl;overflow:auto;';
+      modal.innerHTML = '<div role="dialog" aria-modal="true" aria-labelledby="project-draft-material-specs-title" style="background:var(--color-surface);color:var(--color-text);width:100%;max-width:820px;max-height:92vh;overflow:auto;border-radius:12px;padding:18px;box-sizing:border-box"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><h3 id="project-draft-material-specs-title">مصرف ملزومات برای هر واحد محصول</h3><button type="button" class="btn btn-light" data-draft-specs-close>بستن</button></div><p style="color:var(--color-text-secondary);font-size:12px;line-height:1.9">برای هر ملزوم، مقدار مصرف یک واحد محصول را وارد کنید. پس از ثبت تعداد قطعی تولید، سیستم کل نیاز را با احتساب درصد ضایعات محاسبه می‌کند. این فرم سفارش خرید ثبت نمی‌کند.</p><form id="project-draft-material-specs-form"><div id="project-draft-material-specs-rows"></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button type="button" class="btn btn-secondary" id="project-draft-material-specs-add">+ افزودن ملزوم</button><button type="submit" class="btn btn-primary">ذخیره مصرف ملزومات</button></div><div id="project-draft-material-specs-error" class="alert alert-danger" hidden style="margin-top:12px"></div></form></div>';
       document.body.appendChild(modal);
-      const rows = modal.querySelector('#project-draft-needs-rows');
-      const error = modal.querySelector('#project-draft-needs-error');
+      const rows = modal.querySelector('#project-draft-material-specs-rows');
+      const error = modal.querySelector('#project-draft-material-specs-error');
       const addRow = (item) => {
         const row = document.createElement('div');
-        row.setAttribute('data-draft-need-row','1');
+        row.setAttribute('data-draft-material-spec-row', '1');
         row.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;border:1px solid var(--color-border);border-radius:8px;padding:12px;margin-top:10px';
-        row.innerHTML = '<label>نام ملزوم *<input name="ItemName" required maxlength="200" style="display:block;width:100%;box-sizing:border-box;margin-top:5px"></label><label>واحد اندازه‌گیری *<input name="Unit" required maxlength="100" style="display:block;width:100%;box-sizing:border-box;margin-top:5px"></label><label>مقدار موردنیاز *<input name="RequestedQuantity" type="number" min="0.001" step="any" required style="display:block;width:100%;box-sizing:border-box;margin-top:5px"></label><label>توضیحات<input name="Notes" maxlength="500" style="display:block;width:100%;box-sizing:border-box;margin-top:5px"></label><button type="button" class="btn btn-light" data-draft-need-remove>حذف ردیف</button>';
-        ['ItemName','Unit','RequestedQuantity','Notes'].forEach((name) => { if (item && item[name] !== undefined) row.querySelector('[name="'+name+'"]').value = item[name]; });
-        row.querySelector('[data-draft-need-remove]').addEventListener('click', () => row.remove());
+        row.innerHTML = '<label>نام ملزوم *<input name="ItemName" required maxlength="160" style="display:block;width:100%;box-sizing:border-box;margin-top:5px"></label><label>واحد اندازه‌گیری *<input name="Unit" required maxlength="40" placeholder="متر، عدد، کیلوگرم..." style="display:block;width:100%;box-sizing:border-box;margin-top:5px"></label><label>مصرف برای هر واحد محصول *<input name="ConsumptionPerUnit" type="number" min="0.0001" step="0.0001" required style="display:block;width:100%;box-sizing:border-box;margin-top:5px"></label><label>ضایعات مجاز (%)<input name="WastagePercent" type="number" min="0" max="100" step="0.1" value="0" style="display:block;width:100%;box-sizing:border-box;margin-top:5px"></label><label style="grid-column:1/-1">توضیحات<input name="Notes" maxlength="500" style="display:block;width:100%;box-sizing:border-box;margin-top:5px"></label><button type="button" class="btn btn-light" data-draft-spec-remove>حذف ملزوم</button>';
+        ['ItemName','Unit','ConsumptionPerUnit','WastagePercent','Notes'].forEach((name) => {
+          if (item && item[name] !== undefined) row.querySelector('[name="' + name + '"]').value = item[name];
+        });
+        row.querySelector('[data-draft-spec-remove]').addEventListener('click', () => row.remove());
         rows.appendChild(row);
       };
       (saved.length ? saved : [{}]).forEach(addRow);
-      modal.querySelector('#project-draft-needs-add').addEventListener('click', () => addRow({}));
+      modal.querySelector('#project-draft-material-specs-add').addEventListener('click', () => addRow({}));
       const close = () => modal.remove();
-      modal.querySelector('[data-draft-needs-close]').addEventListener('click', close);
+      modal.querySelector('[data-draft-specs-close]').addEventListener('click', close);
       modal.addEventListener('click', (event) => { if (event.target === modal) close(); });
-      modal.querySelector('#project-draft-needs-form').addEventListener('submit', (event) => {
+      modal.querySelector('#project-draft-material-specs-form').addEventListener('submit', (event) => {
         event.preventDefault();
-        const items = Array.from(rows.querySelectorAll('[data-draft-need-row]')).map((row) => {
-          const get = (name) => row.querySelector('[name="'+name+'"]').value.trim();
-          return { ItemName:get('ItemName'), Unit:get('Unit'), RequestedQuantity:Number(get('RequestedQuantity')), Notes:get('Notes') };
+        const items = Array.from(rows.querySelectorAll('[data-draft-material-spec-row]')).map((row) => {
+          const get = (name) => row.querySelector('[name="' + name + '"]').value.trim();
+          return { ItemName: get('ItemName'), Unit: get('Unit'), ConsumptionPerUnit: Number(get('ConsumptionPerUnit')), WastagePercent: Number(get('WastagePercent') || 0), Notes: get('Notes') };
         });
-        if (!items.length) { projectModal.dataset.projectNeeds = '[]'; close(); return; }
-        if (items.some((item) => !item.ItemName || !item.Unit || !Number.isFinite(item.RequestedQuantity) || item.RequestedQuantity <= 0)) {
-          error.textContent = 'نام ملزوم، واحد اندازه‌گیری و مقدار مثبت برای هر ردیف الزامی است.';
+        if (items.some((item) => !item.ItemName || !item.Unit || !Number.isFinite(item.ConsumptionPerUnit) || item.ConsumptionPerUnit <= 0 || !Number.isFinite(item.WastagePercent) || item.WastagePercent < 0 || item.WastagePercent > 100)) {
+          error.textContent = 'نام ملزوم، واحد اندازه‌گیری، مصرف مثبت و درصد ضایعات بین صفر تا ۱۰۰ را بررسی کنید.';
           error.hidden = false;
           return;
         }
-        projectModal.dataset.projectNeeds = JSON.stringify(items);
-        const summary = projectModal.querySelector('#new-project-needs-summary');
-        if (summary) summary.textContent = items.length + ' ردیف ملزومات برای ثبت همراه پروژه آماده است.';
+        if (items.some((item) => item.ItemName.length > 160 || item.Unit.length > 40 || item.Notes.length > 500)) {
+          error.textContent = 'طول نام ملزوم، واحد اندازه‌گیری یا توضیحات بیش از حد مجاز است.';
+          error.hidden = false;
+          return;
+        }
+        const seen = new Set();
+        for (const item of items) {
+          const duplicateKey = item.ItemName.toLocaleLowerCase() + '|' + item.Unit.toLocaleLowerCase();
+          if (seen.has(duplicateKey)) {
+            error.textContent = 'نام و واحد یکسان را دوبار وارد نکنید.';
+            error.hidden = false;
+            return;
+          }
+          seen.add(duplicateKey);
+        }
+        projectModal.dataset.projectMaterialSpecs = JSON.stringify(items);
+        const summary = projectModal.querySelector('#new-project-material-specs-summary');
+        if (summary) summary.textContent = items.length ? items.length + ' نوع ملزوم با مصرف هر واحد تعریف شده است.' : 'مصرف ملزومات تعریف نشده است.';
         close();
       });
     },
@@ -2332,17 +2032,19 @@
         updateProgress('پروژه ذخیره شد. در حال تکمیل اطلاعات وابسته...', 'loading');
 
         let attachmentWarning = '';
-        let needsWarning = '';
-        let draftNeeds = [];
-        try { draftNeeds = JSON.parse(modal.dataset.projectNeeds || '[]'); } catch (error) {}
-        if (draftNeeds.length) {
+        let materialSpecsWarning = '';
+        let draftMaterialSpecs = [];
+        try { draftMaterialSpecs = JSON.parse(modal.dataset.projectMaterialSpecs || '[]'); } catch (error) {}
+        if (draftMaterialSpecs.length) {
+          let savedSpecs = 0;
           try {
-            for (let i = 0; i < draftNeeds.length; i++) {
-              updateProgress('پروژه ثبت شد؛ در حال ثبت ملزومات (' + (i + 1) + ' از ' + draftNeeds.length + ')...', 'loading');
-              await window.PMS.Api.post('/procurement/needs', Object.assign({}, draftNeeds[i], { ProjectID: createdId }));
+            for (let i = 0; i < draftMaterialSpecs.length; i++) {
+              updateProgress('پروژه ثبت شد؛ در حال ثبت مشخصات مصرف ملزومات (' + (i + 1) + ' از ' + draftMaterialSpecs.length + ')...', 'loading');
+              await window.PMS.Api.post('/projects/' + encodeURIComponent(createdId) + '/material-specifications', draftMaterialSpecs[i]);
+              savedSpecs++;
             }
-          } catch (needsError) {
-            needsWarning = ' پروژه ایجاد شد، اما ثبت همه ملزومات ناموفق بود: ' + this.getErrorMessage(needsError);
+          } catch (specError) {
+            materialSpecsWarning = ' پروژه ایجاد شد، اما ثبت همه مشخصات مصرف ملزومات ناموفق بود (' + savedSpecs + ' از ' + draftMaterialSpecs.length + '): ' + this.getErrorMessage(specError);
           }
         }
         if (selectedFile) {
@@ -2388,7 +2090,7 @@
         }
         modal.remove();
 
-        alert('پروژه با موفقیت ثبت شد.' + attachmentWarning + needsWarning);
+        alert('پروژه با موفقیت ثبت شد.' + attachmentWarning + materialSpecsWarning);
 
         // Refresh the list only when the user is allowed to view projects.
         const router = window.PMS.Router;
@@ -2584,14 +2286,9 @@
               <button type="button" class="btn btn-sm btn-light project-view-button" data-project-id="${this.escape(id)}">مشاهده پروژه</button>
               ${this.canEditProjects() ? `
                 <button type="button" class="btn btn-sm btn-secondary project-edit-button" data-project-id="${this.escape(id)}" title="ویرایش اطلاعات پروژه">ویرایش</button>
-              ` : ''}
-              ${this.canManageProcurement() ? `
-                <button type="button" class="btn btn-sm btn-secondary project-material-needs-button" data-project-id="${this.escape(id)}">ملزومات</button>
-              ` : ''}
-              ${this.canEditProjects() ? `
-                <button type="button" class="btn btn-sm btn-secondary project-material-specs-button" data-project-id="${this.escape(id)}" title="تعریف مصرف هر واحد و سیاست سفارش">مصرف ملزومات</button>
+              ` : ''}              ${this.canEditProjects() ? `
+                <button type="button" class="btn btn-sm btn-secondary project-material-specs-button" data-project-id="${this.escape(id)}" title="تعریف مصرف هر واحد و درصد ضایعات">مصرف ملزومات</button>
                 <button type="button" class="btn btn-sm btn-secondary project-color-size-button" data-project-id="${this.escape(id)}" title="تعریف یا ویرایش رنگ‌بندی و سایزبندی">رنگ‌بندی و سایز</button>
-                <button type="button" class="btn btn-sm btn-secondary project-material-planning-button" data-project-id="${this.escape(id)}" title="تعریف مصرف استاندارد و سفارش زودهنگام">مصرف ملزومات</button>
               ` : ''}
             </div>
           </article>
