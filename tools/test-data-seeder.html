@@ -23,6 +23,7 @@
 <div class="row">
 <button id="start">بررسی تنظیمات و شروع ساخت داده‌ها</button>
 <button id="stop" class="secondary" disabled>توقف پس از عملیات جاری</button>
+<button id="supplyChainTest" class="secondary">اجرای آزمون زنجیره تأمین ملزومات</button>
 </div>
 <progress id="progress" value="0" max="1"></progress>
 <p id="status" class="small">در انتظار بررسی نشست و تنظیمات…</p>
@@ -153,6 +154,93 @@ async function run(){
   running=false;$('start').disabled=false;$('stop').disabled=true;
  }
 }
+
+async function runSupplyChainTest(){
+ if(running)return;
+ if(!PMS.Api.getToken())throw new Error('ابتدا در برنامه وارد شوید.');
+ if(!confirm('این آزمون در پایگاه داده فعلی پروژه، نوع رویداد، نیاز ملزومات، سفارش و رسید آزمایشی ایجاد می‌کند. فقط روی محیط آزمایشی ادامه دهید. رکوردها به‌صورت خودکار حذف نمی‌شوند. ادامه می‌دهید؟'))return;
+ running=true;$('start').disabled=true;$('supplyChainTest').disabled=true;$('stop').disabled=false;stopped=false;logBox.textContent='';
+ const report={result:'IN_PROGRESS',checks:[],failures:[],created:{}};
+ const check=(name,ok,detail)=>{report.checks.push({name,ok,detail});log((ok?'✓ ':'✗ ')+name+(detail?' — '+detail:''));if(!ok)throw new Error(name+' ناموفق بود: '+detail)};
+ const id=(o,...keys)=>String(pick(o,...keys)||'');
+ const list=r=>{const d=dataOf(r);if(Array.isArray(d))return d;for(const k of ['items','Items','needs','Needs','projects','Projects','workflows','Workflows','departments','Departments','orders','Orders'])if(d&&Array.isArray(d[k]))return d[k];return []};
+ const entity=(r,...keys)=>{const d=dataOf(r);for(const k of keys)if(d&&d[k])return d[k];return d};
+ const callGet=async p=>dataOf(await PMS.Api.get(p));
+ const callPost=async(p,b)=>dataOf(await PMS.Api.post(p,b));
+ const nonce=Date.now().toString(36).toUpperCase()+'-'+Math.random().toString(36).slice(2,7).toUpperCase();
+ try{
+  status('آزمون زنجیره تأمین: بررسی تنظیمات');
+  const [workflowData,departmentData]=await Promise.all([callGet('/workflows'),callGet('/departments')]);
+  const workflows=list(workflowData),departments=list(departmentData);
+  const workflow=workflows.find(w=>String(pick(w,'Status','status')||'ACTIVE').toUpperCase()==='ACTIVE')||workflows[0];
+  const department=departments.find(d=>String(pick(d,'Code','code')).toUpperCase()==='ADMIN')||departments[0];
+  check('گردش کار و واحد قابل دسترس هستند',!!workflow&&!!department,'نیازمند گردش کار و واحد فعال');
+  const user=PMS.Session&&PMS.Session.getUser?PMS.Session.getUser():{};
+  const workflowId=id(workflow,'ID','Id','WorkflowID'),departmentId=id(department,'ID','Id','DepartmentID');
+  const userId=id(user,'ID','Id','UserID');
+  const code='TEST-SC-'+nonce;
+  const projectData=await callPost('/projects',{ProjectCode:code,Title:'آزمون زنجیره تأمین '+nonce,Quantity:100,WorkflowID:workflowId,AvailableDepartmentIDs:[departmentId],AllowedUserIDs:userId?[userId]:[],NotifyEnabled:false,Description:'AUTOMATED SUPPLY CHAIN E2E TEST'});
+  const project=entity(projectData,'project','Project'),projectId=id(project,'ID','Id','ProjectID');
+  check('ایجاد پروژه آزمایشی',!!projectId,code);report.created.projectId=projectId;report.created.projectCode=code;
+  const specData=await callPost('/projects/'+encodeURIComponent(projectId)+'/material-specifications',{SpecKey:'TEST-FABRIC-'+nonce,ItemName:'پارچه آزمون '+nonce,Unit:'meter',ConsumptionPerUnit:1.2,WastagePercent:5,Notes:'AUTOMATED E2E TEST'});
+  const spec=entity(specData,'specification','Specification');
+  check('ثبت مشخصات مصرف ملزومات',!!id(spec,'ID','Id','MaterialSpecID','SpecificationID'),JSON.stringify(spec).slice(0,250));
+  const typeData=await callPost('/event-types',{Name:'آزمون تعداد قطعی '+nonce,Code:('TEST_QTY_'+nonce).replace(/[^A-Z0-9_]/g,'_').slice(0,60),ConnectionType:'PROJECT',Category:'PROCESS',DepartmentID:departmentId,AllowedDepartmentIDs:[departmentId],AvailableDepartmentIDs:[departmentId],AllowedUserIDs:userId?[userId]:[],AllowAttachments:false,MovesProjectToStep:false,Status:'ACTIVE',Description:'AUTOMATED E2E TEST'});
+  const type=entity(typeData,'eventType','EventType'),typeId=id(type,'ID','Id','EventTypeID');
+  check('ایجاد نوع رویداد آزمایشی',!!typeId,JSON.stringify(type).slice(0,250));report.created.eventTypeId=typeId;
+  const fieldData=await callPost('/event-types/'+encodeURIComponent(typeId)+'/fields',{Name:'تعداد قطعی آزمایشی',Code:'CONFIRMED_QTY',FieldType:'number',IsRequired:true,FieldOrder:1,Status:'ACTIVE'});
+  const field=entity(fieldData,'field','Field');
+  check('تعریف فیلد تعداد قطعی',!!id(field,'ID','Id','EventFieldID','FieldID'),JSON.stringify(field).slice(0,250));
+  await callPost('/event-types/'+encodeURIComponent(typeId)+'/procurement',{Action:'RECALCULATE_CONFIRMED_NEEDS',FieldMap:{ConfirmedQuantity:'CONFIRMED_QTY'}});
+  check('تنظیم اتصال رویداد به محاسبه ملزومات',true,'RECALCULATE_CONFIRMED_NEEDS');
+  status('ثبت رویداد تعداد قطعی');
+  const eventData=await callPost('/events',{IdempotencyKey:'TEST-SC-EVENT-'+nonce,ProjectID:projectId,EventTypeID:typeId,PerformedBy:userId||undefined,DepartmentID:departmentId,Description:'تعداد قطعی آزمایشی: ۱۰۰ عدد',OccurredAt:new Date().toISOString(),DynamicData:{CONFIRMED_QTY:100}});
+  const event=entity(eventData,'event','Event'),eventId=id(event,'ID','Id','EventID');
+  check('ثبت رویداد تعداد قطعی',!!eventId,JSON.stringify(event).slice(0,250));report.created.eventId=eventId;const integration=pick(eventData,'procurementIntegration','ProcurementIntegration');if(integration&&pick(integration,'success','Success')===false)check('ادغام رویداد با تأمین ملزومات',false,JSON.stringify(integration));
+  const needs=list(await callGet('/procurement/needs'));
+  const need=needs.find(n=>String(pick(n,'ProjectID','projectId'))===projectId&&String(pick(n,'SourceEventID','sourceEventId'))===eventId&&String(pick(n,'NeedType','needType')).toUpperCase()==='CONFIRMED'&&String(pick(n,'Status','status')).toUpperCase()==='ACTIVE');
+  check('ایجاد نیاز تأییدشده برای پروژه',!!need,need?String(pick(need,'RequestedQuantity','requestedQuantity')):'نیاز مربوط به رویداد پیدا نشد');
+  const quantity=Number(pick(need,'RequestedQuantity','requestedQuantity'));
+  check('محاسبه مقدار ملزومات برابر ۱۲۶ متر است',quantity===126,'مقدار محاسبه‌شده: '+quantity);
+  report.created.needId=id(need,'ID','Id','MaterialNeedID');
+  status('ایجاد سفارش و ثبت رسیدهای انبار');
+  const orderData=await callPost('/procurement/orders',{IdempotencyKey:'TEST-SC-ORDER-'+nonce,SupplierName:'تأمین‌کننده آزمایشی '+nonce,Notes:'AUTOMATED E2E TEST',Items:[{ItemName:pick(need,'ItemName','itemName'),Unit:pick(need,'Unit','unit'),OrderedQuantity:80,ProjectID:projectId,MaterialNeedID:report.created.needId,Notes:'AUTOMATED E2E TEST'}]});
+  const order=entity(orderData,'Order','order'),orderId=id(order,'ID','Id','PurchaseOrderID');
+  const items=list(orderData).length?list(orderData):(pick(orderData,'Items','items')||[]);
+  const orderItem=items[0]||((pick(orderData,'orderItems','OrderItems')||[])[0]);
+  const orderItemId=id(orderItem,'ID','Id','PurchaseOrderItemID');
+  check('ایجاد سفارش مرتبط ۸۰ متری',!!orderId&&!!orderItemId,'سفارش '+orderId+'؛ قلم '+orderItemId);
+  report.created.orderId=orderId;
+  await callPost('/procurement/receipts',{PurchaseOrderItemID:orderItemId,ProjectID:projectId,QuantityReceived:30,Notes:'AUTOMATED E2E TEST partial',IdempotencyKey:'TEST-SC-RECEIPT-1-'+nonce});
+  let orders=list(await callGet('/procurement/orders'));
+  let partial=orders.find(o=>id(o,'ID','Id','PurchaseOrderID')===orderId);
+  check('وضعیت سفارش پس از دریافت ۳۰ از ۸۰',String(pick(partial,'Status','status')).toUpperCase()==='PARTIALLY_RECEIVED',String(pick(partial,'Status','status')));
+  await callPost('/procurement/receipts',{PurchaseOrderItemID:orderItemId,ProjectID:projectId,QuantityReceived:50,Notes:'AUTOMATED E2E TEST final',IdempotencyKey:'TEST-SC-RECEIPT-2-'+nonce});
+  orders=list(await callGet('/procurement/orders'));
+  const finalOrder=orders.find(o=>id(o,'ID','Id','PurchaseOrderID')===orderId);
+  check('وضعیت سفارش پس از دریافت کل ۸۰ متر',String(pick(finalOrder,'Status','status')).toUpperCase()==='RECEIVED',String(pick(finalOrder,'Status','status')));
+  const finalNeeds=list(await callGet('/procurement/needs'));
+  const finalNeed=finalNeeds.find(n=>id(n,'ID','Id','MaterialNeedID')===report.created.needId);
+  check('مقدار نیاز کل پس از دریافت تغییر نکرده',Number(pick(finalNeed,'RequestedQuantity','requestedQuantity'))===126,String(pick(finalNeed,'RequestedQuantity','requestedQuantity')));
+  check('مقدار سفارش‌نداده باقی‌مانده ۴۶ متر است',126-80===46,'۱۲۶ − ۸۰ = ۴۶ متر');
+  report.result='PASS';
+ }catch(e){report.result='FAIL';report.failures.push(e.message);log('خطای آزمون: '+e.message)}
+ finally{
+  log('\n===== گزارش آزمون زنجیره تأمین =====');
+  log('نتیجه: '+(report.result==='PASS'?'موفق':'ناموفق'));
+  log('بررسی‌های موفق: '+report.checks.filter(x=>x.ok).length+' از '+report.checks.length);
+  log('پروژه: '+(report.created.projectCode||'ساخته نشد'));
+  log('شناسه پروژه: '+(report.created.projectId||'—'));
+  log('نیاز محاسبه‌شده: ۱۲۶ متر؛ سفارش: ۸۰ متر؛ دریافت‌ها: ۳۰ + ۵۰ متر؛ باقی‌مانده سفارش: ۴۶ متر');
+  report.checks.filter(x=>!x.ok).forEach(x=>log('ناموفق: '+x.name+' — '+x.detail));
+  report.failures.forEach(x=>log('خطا: '+x));
+  log('گزارش ساختاریافته: '+JSON.stringify(report));
+  status(report.result==='PASS'?'آزمون زنجیره تأمین موفق شد.':'آزمون متوقف شد؛ خطاهای گزارش را بررسی کنید.');
+  running=false;$('start').disabled=false;$('supplyChainTest').disabled=false;$('stop').disabled=true;
+ }
+}
+
+$('supplyChainTest').addEventListener('click',()=>runSupplyChainTest().catch(e=>{log('خطای اجرا: '+e.message);running=false;$('start').disabled=false;$('supplyChainTest').disabled=false;$('stop').disabled=true}));
 $('start').addEventListener('click',()=>{if(confirm('این عملیات در پایگاه داده فعلی رکوردهای آزمایشی ایجاد می‌کند. ادامه می‌دهید؟'))run()});
 $('stop').addEventListener('click',()=>{stopped=true;status('درخواست توقف ثبت شد؛ عملیات جاری تمام می‌شود.')});
 if(!window.PMS||!PMS.Api){status('خطا: بارگذاری API برنامه ناموفق بود.');$('start').disabled=true}
