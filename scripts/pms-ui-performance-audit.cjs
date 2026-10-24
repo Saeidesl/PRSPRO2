@@ -168,6 +168,29 @@ async function main() {
     }, { routeName: route, startUrl: previousUrl });
     snapshot.navigationMs = Date.now() - start;
     snapshot.status = snapshot.errorVisible ? 'error' : snapshot.denied ? 'permission-denied' : snapshot.contentVisible ? 'loaded' : 'not-confirmed';
+
+    // Re-check each reachable route at a common mobile viewport and record overflow
+    // without storing page text or any user/project values.
+    await page.setViewportSize({ width: 390, height: 844 });
+    snapshot.mobileLayout = await page.evaluate(() => {
+      const root = document.querySelector('#page-content') || document.querySelector('.login-page') || document.body;
+      const visible = el => {
+        const style = getComputedStyle(el);
+        const rect = el.getBoundingClientRect();
+        return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+      };
+      return {
+        viewportWidth: window.innerWidth,
+        documentWidth: document.documentElement.scrollWidth,
+        bodyWidth: document.body.scrollWidth,
+        horizontalOverflow: Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) > window.innerWidth + 1,
+        visibleForms: Array.from(root.querySelectorAll('form')).filter(visible).length,
+        visibleButtons: Array.from(root.querySelectorAll('button,input[type="button"],input[type="submit"],[role="button"]')).filter(visible).length,
+        visibleControls: Array.from(root.querySelectorAll('input,select,textarea,[contenteditable="true"]')).filter(visible).length
+      };
+    });
+    await page.setViewportSize({ width: 1365, height: 900 });
+
     snapshot.forms.forEach(form => {
       if (form.fieldCount === 0) results.coverageGaps.push(route + ': visible form ' + (form.id || form.index) + ' has no fields; review manually.');
     });
@@ -183,7 +206,7 @@ async function main() {
       await page.evaluate(routeName => window.PMS.Router.navigate(routeName, false), routeResult.requestedRoute).catch(() => {});
       try { await page.waitForTimeout(250); } catch (_) {}
       const safeButtons = routeResult.buttons.filter(button => !button.inForm && !button.disabled && !dangerousAction.test(button.label) && button.type.toLowerCase() !== 'submit' && button.id);
-      for (const button of safeButtons.slice(0, 8)) {
+      for (const button of safeButtons) {
         try {
           const locator = page.locator('#page-content').locator('[id="' + button.id.replace(/"/g, '\\"') + '"]').first();
           if (await locator.count() && await locator.isVisible() && await locator.isEnabled()) {
@@ -211,6 +234,7 @@ async function main() {
     loadedRoutes: results.routes.filter(route => route.status === 'loaded').length,
     permissionDeniedRoutes: results.routes.filter(route => route.status === 'permission-denied').length,
     failedRoutes,
+    mobileRoutesWithHorizontalOverflow: results.routes.filter(route => route.mobileLayout && route.mobileLayout.horizontalOverflow).length,
     visibleFormsInventoried: allForms,
     visibleButtonsInventoried: allButtons,
     visibleInputsAndControlsInventoried: allInputs,
@@ -246,9 +270,9 @@ function renderMarkdown(report) {
     '',
     '## Routes',
     '',
-    '| Route | Status | Navigation ms | Forms | Buttons | Controls |',
-    '|---|---|---:|---:|---:|---:|',
-    ...report.routes.map(route => '| ' + route.requestedRoute + ' | ' + route.status + ' | ' + route.navigationMs + ' | ' + route.forms.length + ' | ' + route.buttons.length + ' | ' + route.visibleControlCount + ' |'),
+    '| Route | Status | Navigation ms | Forms | Buttons | Controls | Mobile overflow |',
+    '|---|---|---:|---:|---:|---:|---|',
+    ...report.routes.map(route => '| ' + route.requestedRoute + ' | ' + route.status + ' | ' + route.navigationMs + ' | ' + route.forms.length + ' | ' + route.buttons.length + ' | ' + route.visibleControlCount + ' | ' + (route.mobileLayout && route.mobileLayout.horizontalOverflow ? 'YES' : 'no') + ' |'),
     '',
     '## Coverage gaps',
     '',
