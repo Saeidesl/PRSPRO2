@@ -118,7 +118,7 @@ async function main() {
   page.on('console', msg => {
     if (msg.type() === 'error') results.consoleErrors.push({ type: 'console', message: msg.text().replace(/[0-9a-f]{8}-[0-9a-f-]{27,}/gi, '[id]').replace(/[0-9a-f]{20,}/gi, '[id]').slice(0, 300), route: normalizedRoute() });
   });
-  page.on('pageerror', error => results.pageErrors.push({ message: String(error.message || error).replace(/[0-9a-f]{8}-[0-9a-f-]{27,}/gi, '[id]').replace(/[0-9a-f]{20,}/gi, '[id]').slice(0, 300), route: normalizedRoute() }));
+  page.on('pageerror', error => results.pageErrors.push({ message: String(error.message || error).replace(/[0-9a-f]{8}-[0-9a-f-]{27,}/gi, '[id]').replace(/[0-9a-f]{20,}/gi, '[id]').slice(0, 300), stack: String(error.stack || '').replace(/[0-9a-f]{8}-[0-9a-f-]{27,}/gi, '[id]').replace(/[0-9a-f]{20,}/gi, '[id]').slice(0, 700), route: normalizedRoute() }));
   page.on('request', request => {
     started.set(request, Date.now());
   });
