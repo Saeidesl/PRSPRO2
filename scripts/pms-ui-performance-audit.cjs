@@ -144,18 +144,9 @@ async function main() {
   const routeList = authenticated ? routes.filter(route => route !== 'login') : ['login'];
   for (const route of routeList) {
     const start = Date.now();
+    // Load each route in a fresh document so dialogs from previous routes cannot leak.
+    await page.goto(baseURL + '#' + route, { waitUntil: 'domcontentloaded' });
     const previousUrl = page.url();
-    if (route === 'login') {
-      if (!page.url().includes('#login')) await page.goto(baseURL + '#login', { waitUntil: 'domcontentloaded' });
-    } else {
-      await page.evaluate(routeName => {
-        if (window.PMS && window.PMS.Router && typeof window.PMS.Router.navigate === 'function') {
-          window.PMS.Router.navigate(routeName, false);
-        } else {
-          location.hash = routeName;
-        }
-      }, route);
-    }
     try {
       await page.waitForFunction(routeName => {
         const hash = location.hash.replace(/^#/, '').split('/')[0];
@@ -189,17 +180,19 @@ async function main() {
           label: labelFor(el).trim().slice(0, 120), required: !!el.required, disabled: !!el.disabled
         }))
       }));
-      const buttons = Array.from(root.querySelectorAll('button,input[type="button"],input[type="submit"],[role="button"]')).filter(visible).map((el, index) => ({
-        index, id: el.id || '', label: (el.innerText || el.getAttribute('aria-label') || el.title || el.value || '').trim().replace(/\s+/g, ' ').slice(0, 160),
-        type: el.getAttribute('type') || '', disabled: !!el.disabled,
-        inForm: !!el.closest('form')
-      }));
+      const buttons = Array.from(root.querySelectorAll('button,input[type="button"],input[type="submit"],[role="button"]')).filter(visible).map((el, index) => {
+        const id = el.id || '';
+        // Unidentified buttons are commonly project cards and can contain live project data.
+        const rawLabel = (el.innerText || el.getAttribute('aria-label') || el.title || el.value || '').trim().replace(/\s+/g, ' ');
+        return { index, id, label: id ? rawLabel.slice(0, 100) : 'dynamic-button', type: el.getAttribute('type') || '', disabled: !!el.disabled, inForm: !!el.closest('form') };
+      });
       const linkCount = Array.from(root.querySelectorAll('a[href]')).filter(visible).length;
       const controls = Array.from(root.querySelectorAll('input,select,textarea,[contenteditable="true"]')).filter(visible);
-      const nav = Array.from(document.querySelectorAll('a[href^="#"],button[data-route], [data-route]')).filter(visible).map(el => ({
-        label: (el.innerText || el.getAttribute('aria-label') || '').trim().replace(/\s+/g, ' ').slice(0, 100),
-        route: el.getAttribute('data-route') || (el.getAttribute('href') || '').replace(/^#/, '')
-      })).filter(item => item.route);
+      const nav = Array.from(document.querySelectorAll('a[href^="#"],button[data-route], [data-route]')).filter(visible).map(el => {
+        const rawRoute = el.getAttribute('data-route') || (el.getAttribute('href') || '').replace(/^#/, '');
+        const dynamicRoute = rawRoute.includes('/');
+        return { label: dynamicRoute ? 'dynamic-navigation-link' : (el.innerText || el.getAttribute('aria-label') || '').trim().replace(/\s+/g, ' ').slice(0, 80), route: rawRoute.split('/')[0] };
+      }).filter(item => item.route);
       const bodyText = (root.innerText || '').replace(/\s+/g, ' ').slice(0, 500);
       return {
         requestedRoute: routeName, currentHash: location.hash.replace(/^#/, ''),
@@ -238,33 +231,30 @@ async function main() {
     snapshot.dynamicFormInventory = [];
     if (authenticated) {
       for (const openerId of (formOpenersByRoute[route] || [])) {
-        const opener = page.locator('[id="' + openerId + '"]').first();
         try {
+          // Use a fresh document for each launcher; do not remove app DOM by force.
+          await page.goto(baseURL + '#' + route, { waitUntil: 'domcontentloaded' });
+          try { await page.locator('#page-content').waitFor({ state: 'visible', timeout: 8000 }); } catch (_) {}
+          const opener = page.locator('[id="' + openerId + '"]').first();
           if (!(await opener.count()) || !(await opener.isVisible()) || !(await opener.isEnabled())) {
             snapshot.dynamicFormInventory.push({ openerId, opened: false, reason: 'opener-not-visible-or-enabled', forms: [] });
             continue;
           }
-          // These are explicitly allow-listed type=button launchers. Dispatch a
-          // DOM click so a sticky shell layer cannot block inventory-only testing.
+          const before = await inventoryDialogForms(page);
           await opener.evaluate(el => el.click());
-          await page.waitForTimeout(180);
+          await page.waitForFunction((baselineCount) => {
+            const visible = el => { const style = getComputedStyle(el); const rect = el.getBoundingClientRect(); return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0; };
+            const formCount = Array.from(document.querySelectorAll('form')).filter(visible).length;
+            const dialogVisible = Array.from(document.querySelectorAll('.modal-overlay,.modal,[role="dialog"],dialog')).some(visible);
+            return formCount > baselineCount || dialogVisible;
+          }, before.forms.length, { timeout: 2500 }).catch(() => {});
           const inventory = await inventoryDialogForms(page);
-          snapshot.dynamicFormInventory.push({ openerId, opened: inventory.dialogVisible || inventory.forms.length > 0, visibleControls: inventory.visibleControls, forms: inventory.forms });
-          // Cleanup only the test-created dialog DOM. No form values are entered and
-          // no submit, save, delete, delivery, or other mutation control is clicked.
-          await page.evaluate(() => {
-            document.querySelectorAll('.modal-overlay,.modal,[role="dialog"],dialog').forEach(el => {
-              if (el.parentElement && (el.classList.contains('modal-overlay') || el.classList.contains('modal') || el.getAttribute('role') === 'dialog' || el.tagName.toLowerCase() === 'dialog')) el.remove();
-            });
-            document.body.classList.remove('modal-open');
-          });
+          const newForms = inventory.forms.filter(form => !before.forms.some(oldForm => oldForm.id === form.id && oldForm.fieldCount === form.fieldCount));
+          snapshot.dynamicFormInventory.push({ openerId, opened: inventory.dialogVisible || newForms.length > 0, visibleControls: inventory.visibleControls, forms: newForms });
         } catch (error) {
           snapshot.dynamicFormInventory.push({ openerId, opened: false, error: String(error.message || error).slice(0, 180), forms: [] });
-          await page.evaluate(() => {
-            document.querySelectorAll('.modal-overlay,.modal,[role="dialog"],dialog').forEach(el => el.remove());
-            document.body.classList.remove('modal-open');
-          }).catch(() => {});
         }
+      }
       }
     }
     snapshot.forms.forEach(form => {
