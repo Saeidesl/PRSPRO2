@@ -179,10 +179,14 @@ async function main() {
 
     const snapshot = await page.evaluate(({ routeName, startUrl }) => {
       const root = document.querySelector('#page-content') || document.querySelector('.login-page') || document.body;
-      const visible = el => {
-        const style = getComputedStyle(el);
+const visible = el => {
         const rect = el.getBoundingClientRect();
-        return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+        if (rect.width <= 0 || rect.height <= 0) return false;
+        for (let node = el; node && node !== document.documentElement; node = node.parentElement) {
+          const style = getComputedStyle(node);
+          if (node.hidden || node.getAttribute('aria-hidden') === 'true' || style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false;
+        }
+        return true;
       };
       const labelFor = el => {
         if (el.labels && el.labels.length) return Array.from(el.labels).map(x => x.innerText.trim()).join(' ');
@@ -232,10 +236,14 @@ async function main() {
     await page.setViewportSize({ width: 390, height: 844 });
     snapshot.mobileLayout = await page.evaluate(() => {
       const root = document.querySelector('#page-content') || document.querySelector('.login-page') || document.body;
-      const visible = el => {
-        const style = getComputedStyle(el);
+const visible = el => {
         const rect = el.getBoundingClientRect();
-        return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+        if (rect.width <= 0 || rect.height <= 0) return false;
+        for (let node = el; node && node !== document.documentElement; node = node.parentElement) {
+          const style = getComputedStyle(node);
+          if (node.hidden || node.getAttribute('aria-hidden') === 'true' || style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false;
+        }
+        return true;
       };
       return {
         viewportWidth: window.innerWidth,
