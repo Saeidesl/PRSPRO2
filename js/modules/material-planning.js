@@ -43,7 +43,7 @@
         </header>
         <div id="material-specs-loading" class="loading-state">در حال دریافت اطلاعات...</div>
         <div id="material-specs-error" class="alert alert-danger" hidden></div>
-        <section><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h4>ملزومات تعریف‌شده</h4><button type="button" class="btn btn-secondary" id="material-specs-estimate">محاسبه نیاز برآوردی</button></div><p style="font-size:12px;color:var(--color-text-secondary)">فقط ملزوماتی که سیاست سفارش زودهنگام آن‌ها مجاز است در این محاسبه لحاظ می‌شوند.</p><div id="material-specs-list"></div><div id="material-specs-estimate-result" class="alert alert-info" hidden style="margin-top:10px"></div></section>
+        <section><h4>ملزومات تعریف‌شده</h4><p style="font-size:12px;color:var(--color-text-secondary)">مصرف کل پس از ثبت تعداد قطعی تولید، با احتساب ضایعات محاسبه می‌شود.</p><div id="material-specs-list"></div></section>
         <form id="material-specs-form" class="form" style="margin-top:18px;border-top:1px solid var(--color-border);padding-top:16px">
           <input type="hidden" name="specId">
           <h4 id="material-specs-form-title">افزودن ملزوم</h4>
@@ -54,10 +54,6 @@
           <div class="form-row">
             <div class="form-group"><label for="ms-consumption">مصرف برای هر واحد محصول</label><input id="ms-consumption" name="ConsumptionPerUnit" type="number" min="0.0001" step="0.0001" required></div>
             <div class="form-group"><label for="ms-wastage">ضایعات مجاز (%)</label><input id="ms-wastage" name="WastagePercent" type="number" min="0" max="100" step="0.1" value="0"></div>
-          </div>
-          <div class="form-row">
-            <div class="form-group"><label for="ms-policy">سیاست سفارش زودهنگام</label><select id="ms-policy" name="EarlyOrderPolicy"><option value="DISABLED">غیرفعال</option><option value="ESTIMATE_ALLOWED">بر اساس تعداد پیشنهادی مجاز</option><option value="MANUAL_ALLOWED">مقدار دستی مجاز</option></select></div>
-            <div class="form-group"><label for="ms-early-qty">مقدار مجاز سفارش دستی</label><input id="ms-early-qty" name="EarlyOrderQuantity" type="number" min="0.0001" step="0.0001" disabled></div>
           </div>
           <div class="form-group"><label for="ms-notes">توضیحات</label><textarea id="ms-notes" name="Notes" rows="2"></textarea></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary" id="ms-save" type="submit">ذخیره مشخصات</button><button class="btn btn-light" id="ms-reset" type="button">پاک‌کردن فرم</button></div>
@@ -71,20 +67,12 @@
     const list = modal.querySelector('#material-specs-list');
     const historyRoot = modal.querySelector('#material-specs-history');
     const form = modal.querySelector('#material-specs-form');
-    const policy = form.elements.EarlyOrderPolicy;
-    const earlyQty = form.elements.EarlyOrderQuantity;
     let specs = [];
     let history = [];
 
     function showError(message) {
       error.textContent = message;
       error.hidden = false;
-    }
-    function updatePolicy() {
-      const manual = policy.value === 'MANUAL_ALLOWED';
-      earlyQty.disabled = !manual;
-      earlyQty.required = manual;
-      earlyQty.parentElement.style.opacity = manual ? '1' : '.65';
     }
     function resetForm() {
       form.reset();
@@ -93,7 +81,6 @@
       modal.querySelector('#material-specs-form-title').textContent = 'افزودن ملزوم';
       modal.querySelector('#ms-save').textContent = 'ذخیره مشخصات';
       error.hidden = true;
-      updatePolicy();
     }
     function renderSpecs() {
       if (!specs.length) {
@@ -101,9 +88,8 @@
         return;
       }
       list.innerHTML = '<div style="display:grid;gap:8px">' + specs.map((item) => {
-        const labels = { DISABLED: 'سفارش زودهنگام غیرفعال', ESTIMATE_ALLOWED: 'سفارش برآوردی مجاز', MANUAL_ALLOWED: 'مقدار دستی مجاز' };
         return '<article style="border:1px solid var(--color-border);border-radius:10px;padding:12px;display:flex;gap:12px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap">' +
-          '<div style="min-width:0;flex:1"><strong>' + escape(item.ItemName) + '</strong><div style="font-size:12px;margin-top:6px;color:var(--color-text-secondary)">مصرف هر واحد: ' + escape(item.ConsumptionPerUnit) + ' ' + escape(item.Unit) + ' · ضایعات: ' + escape(item.WastagePercent || 0) + '%</div><div style="font-size:12px;margin-top:4px">' + escape(labels[item.EarlyOrderPolicy] || item.EarlyOrderPolicy) + ' · نسخه ' + escape(item.Revision || 1) + '</div>' + (item.Notes ? '<p style="font-size:12px;margin:6px 0 0">' + escape(item.Notes) + '</p>' : '') + '</div><button type="button" class="btn btn-sm btn-secondary" data-edit="' + escape(item.ID) + '">ویرایش / نسخه جدید</button></article>';
+          '<div style="min-width:0;flex:1"><strong>' + escape(item.ItemName) + '</strong><div style="font-size:12px;margin-top:6px;color:var(--color-text-secondary)">مصرف هر واحد: ' + escape(item.ConsumptionPerUnit) + ' ' + escape(item.Unit) + ' · ضایعات: ' + escape(item.WastagePercent || 0) + '%</div><div style="font-size:12px;margin-top:4px">نسخه ' + escape(item.Revision || 1) + '</div>' + (item.Notes ? '<p style="font-size:12px;margin:6px 0 0">' + escape(item.Notes) + '</p>' : '') + '</div><button type="button" class="btn btn-sm btn-secondary" data-edit="' + escape(item.ID) + '">ویرایش / نسخه جدید</button></article>';
       }).join('') + '</div>';
     }
     function renderHistory() {
@@ -115,32 +101,6 @@
     modal.addEventListener('click', async (event) => {
       if (event.target.closest('[data-close]')) { modal.remove(); return; }
       if (event.target.closest('#ms-reset')) { resetForm(); return; }
-      if (event.target.closest('#material-specs-estimate')) {
-        const estimateButton = modal.querySelector('#material-specs-estimate');
-        const estimateResult = modal.querySelector('#material-specs-estimate-result');
-        estimateButton.disabled = true;
-        estimateButton.textContent = 'در حال محاسبه...';
-        estimateResult.hidden = true;
-        try {
-          const response = await window.PMS.Api.post('/projects/' + encodeURIComponent(projectId) + '/material-estimates', {});
-          const result = unwrap(response) || {};
-          const items = Array.isArray(result) ? result : (result && Array.isArray(result.items) ? result.items : []);
-          estimateResult.textContent = items.length
-            ? 'نیاز برآوردی برای ' + items.length + ' ملزوم ثبت شد. می‌توانید مقدار سفارش را در بخش تدارکات بررسی کنید.'
-            : 'محاسبه انجام شد؛ مورد جدیدی برای نمایش برنگشت.';
-          estimateResult.hidden = false;
-          const refreshed = await window.PMS.Api.get('/projects/' + encodeURIComponent(projectId) + '/material-calculations');
-          history = unwrap(refreshed); history = Array.isArray(history) ? history : [];
-          renderHistory();
-        } catch (estimateError) {
-          estimateResult.textContent = 'محاسبه نیاز برآوردی ناموفق بود: ' + String(estimateError && estimateError.message || estimateError);
-          estimateResult.hidden = false;
-        } finally {
-          estimateButton.disabled = false;
-          estimateButton.textContent = 'محاسبه نیاز برآوردی';
-        }
-        return;
-      }
       const edit = event.target.closest('[data-edit]');
       if (edit) {
         const spec = specs.find((item) => String(item.ID) === String(edit.getAttribute('data-edit')));
@@ -150,8 +110,6 @@
         form.elements.Unit.value = spec.Unit || '';
         form.elements.ConsumptionPerUnit.value = spec.ConsumptionPerUnit ?? '';
         form.elements.WastagePercent.value = spec.WastagePercent ?? 0;
-        form.elements.EarlyOrderPolicy.value = spec.EarlyOrderPolicy || 'DISABLED';
-        form.elements.EarlyOrderQuantity.value = spec.EarlyOrderQuantity || '';
         form.elements.Notes.value = spec.Notes || '';
         modal.querySelector('#material-specs-form-title').textContent = 'ایجاد نسخه جدید از مشخصات';
         modal.querySelector('#ms-save').textContent = 'ثبت نسخه جدید';
@@ -159,7 +117,6 @@
         form.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     });
-    policy.addEventListener('change', updatePolicy);
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
       if (form.dataset.saving === '1') return;
@@ -169,8 +126,6 @@
         Unit: form.elements.Unit.value.trim(),
         ConsumptionPerUnit: Number(form.elements.ConsumptionPerUnit.value),
         WastagePercent: Number(form.elements.WastagePercent.value || 0),
-        EarlyOrderPolicy: policy.value,
-        EarlyOrderQuantity: policy.value === 'MANUAL_ALLOWED' ? Number(earlyQty.value) : '',
         Notes: form.elements.Notes.value.trim()
       };
       const button = modal.querySelector('#ms-save');
@@ -207,7 +162,6 @@
     } finally {
       loading.hidden = true;
     }
-    updatePolicy();
   }
 
   document.addEventListener('click', function (event) {
