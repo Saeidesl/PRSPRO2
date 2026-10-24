@@ -273,7 +273,8 @@
       try {
         const params = new URLSearchParams();
         params.set('path', path || '/');
-        if (diagnosticsEnabled && (actualMethod === 'GET' || actualMethod === 'HEAD')) params.set('_diagnostics', '1');
+        const diagnosticPath = /^\/(dashboard|projects(?:\/|$)|project-dashboard\/lookups|workflows(?:\/|$)|events(?:\/|$))/.test(String(path || '/'));
+        if (diagnosticsEnabled && diagnosticPath && (actualMethod === 'GET' || actualMethod === 'HEAD')) params.set('_diagnostics', '1');
         if (options.query && typeof options.query === 'object') {
           Object.keys(options.query).forEach((key) => {
             const value = options.query[key];
@@ -335,7 +336,7 @@
           } catch (parseError) {
             data = null;
           }
-          recordPerformance(path, Date.now() - requestStartedAt, data);
+          if (diagnosticsEnabled && diagnosticPath) recordPerformance(path, Date.now() - requestStartedAt, data);
 
           const transientHttpError =
             response.status === 429 || response.status >= 500;
