@@ -1,0 +1,95 @@
+name: PMS frontend agent suite
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'js/**'
+      - 'css/**'
+      - 'tests/**'
+      - 'scripts/**'
+      - 'AGENTS.md'
+      - 'PMS-AGENTS.md'
+      - '.github/workflows/pms-frontend-agent-suite.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'js/**'
+      - 'css/**'
+      - 'tests/**'
+      - 'scripts/**'
+      - 'AGENTS.md'
+      - 'PMS-AGENTS.md'
+      - '.github/workflows/pms-frontend-agent-suite.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pms-frontend-agent-suite-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend-contract-review:
+    name: Frontend contract and diff review agent
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Fetch base branch for safe diff review
+        run: git fetch origin main --depth=1
+      - name: Check JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          find js -type f -name '*.js' -print0 | while IFS= read -r -d '' file; do
+            node --check "$file"
+          done
+      - name: Run read-only contract and diff review
+        run: node scripts/pms-frontend-agent-review.js
+
+  frontend-assets:
+    name: Frontend asset and stylesheet QA agent
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify local assets and CSS block balance
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const html = fs.readFileSync('index.html', 'utf8');
+          const refs = [...html.matchAll(/(?:src|href)=["']([^"']+)["']/g)]
+            .map(match => match[1].split('?')[0].split('#')[0])
+            .filter(ref => /^(css|js)\//.test(ref));
+          const missing = refs.filter(ref => !fs.existsSync(ref));
+          if (missing.length) {
+            console.error('Missing local assets:', missing.join(', '));
+            process.exit(1);
+          }
+          for (const file of fs.readdirSync('css').filter(file => file.endsWith('.css'))) {
+            const fullPath = path.join('css', file);
+            const source = fs.readFileSync(fullPath, 'utf8')
+              .replace(/\/\*[\s\S]*?\*\//g, '')
+              .replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g, '""');
+            let depth = 0;
+            for (const char of source) {
+              if (char === '{') depth++;
+              if (char === '}') depth--;
+              if (depth < 0) throw new Error(fullPath + ': unexpected closing brace');
+            }
+            if (depth !== 0) throw new Error(fullPath + ': unbalanced CSS braces (' + depth + ')');
+          }
+          console.log('Frontend assets exist and CSS braces are balanced.');
+          NODE
