@@ -42,9 +42,23 @@ jobs:
           npm install --no-save playwright
           npx playwright install --with-deps chromium
 
+      - name: Serve the checked-out frontend
+        if: ${{ !inputs.base_url && !vars.PMS_BASE_URL }}
+        run: |
+          node scripts/serve-pms-audit.cjs > /tmp/pms-audit-server.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4173/PRSPRO2/ > /dev/null; then
+              echo "Current checkout is ready for browser audit."
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/pms-audit-server.log
+          exit 1
+
       - name: Run UI inventory and performance audit
         env:
-          PMS_BASE_URL: ${{ inputs.base_url || vars.PMS_BASE_URL || 'https://saeidesl.github.io/PRSPRO2/' }}
+          PMS_BASE_URL: ${{ inputs.base_url || vars.PMS_BASE_URL || 'http://127.0.0.1:4173/PRSPRO2/' }}
           PMS_TEST_USERNAME: ${{ secrets.PMS_TEST_USERNAME }}
           PMS_TEST_PASSWORD: ${{ secrets.PMS_TEST_PASSWORD }}
         run: node scripts/pms-ui-performance-audit.cjs
