@@ -1871,9 +1871,7 @@
 
   window.PMS.Modules.EventTypes = window.PMS.EventTypes;
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
+  // Router.initPageModule() owns module initialization. This file is loaded
+  // globally by index.html, so auto-initializing here triggers protected API
+  // calls on the login page and duplicates work when the actual page opens.
 })();
