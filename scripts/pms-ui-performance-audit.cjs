@@ -70,7 +70,8 @@ async function inventoryDialogForms(page) {
       return el.getAttribute('aria-label') || el.getAttribute('placeholder') || el.getAttribute('title') || el.name || el.id || '';
     };
     const dialogs = Array.from(document.querySelectorAll('.modal-overlay,.modal,[role="dialog"],dialog')).filter(visible);
-    const root = dialogs.length ? dialogs[dialogs.length - 1] : (document.querySelector('#page-content') || document.body);
+    const activeDialogs = dialogs.filter(dialog => dialog.querySelector('form,input,select,textarea,[contenteditable="true"]'));
+    const root = activeDialogs.length ? activeDialogs[activeDialogs.length - 1] : (document.querySelector('#page-content') || document.body);
     const forms = Array.from(root.querySelectorAll('form')).filter(visible).map((form, index) => ({
       index, id: form.id || '', name: form.getAttribute('name') || '',
       method: (form.getAttribute('method') || 'get').toUpperCase(),
@@ -83,7 +84,7 @@ async function inventoryDialogForms(page) {
       }))
     }));
     const visibleControls = Array.from(root.querySelectorAll('input,select,textarea,[contenteditable="true"]')).filter(visible).length;
-    const dialog = dialogs.length > 0;
+    const dialog = activeDialogs.length > 0;
     return { forms, dialogVisible: dialog, visibleControls };
   });
 }
@@ -269,11 +270,14 @@ const visible = el => {
         try {
           // Use a fresh document for each launcher; do not remove app DOM by force.
           await page.reload({ waitUntil: 'domcontentloaded' });
-    await page.evaluate(routeName => {
-      if (window.PMS && window.PMS.Router && typeof window.PMS.Router.navigate === 'function') window.PMS.Router.navigate(routeName, false);
-      else location.hash = routeName;
-    }, route);
+          await page.evaluate(routeName => {
+            if (window.PMS && window.PMS.Router && typeof window.PMS.Router.navigate === 'function') window.PMS.Router.navigate(routeName, false);
+            else location.hash = routeName;
+          }, route);
+          try { await page.waitForFunction(routeName => location.hash.replace(/^#/, '').split('/')[0] === routeName, route, { timeout: 10000 }); } catch (_) {}
           try { await page.locator('#page-content').waitFor({ state: 'visible', timeout: 8000 }); } catch (_) {}
+          try { await page.waitForLoadState('networkidle', { timeout: 2500 }); } catch (_) {}
+          await page.waitForTimeout(250);
           const opener = page.locator('[id="' + openerId + '"]').first();
           if (!(await opener.count()) || !(await opener.isVisible()) || !(await opener.isEnabled())) {
             snapshot.dynamicFormInventory.push({ openerId, opened: false, reason: 'opener-not-visible-or-enabled', forms: [] });
