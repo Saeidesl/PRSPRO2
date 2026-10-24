@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "suite": "PMS Comprehensive UI and Performance Audit",
-  "generatedAt": "2026-10-24T18:03:42.341Z",
-  "baseURL": "https://saeidesl.github.io/PRSPRO2/",
+  "generatedAt": "2026-10-24T18:05:50.472Z",
+  "baseURL": "http://127.0.0.1:4173/PRSPRO2/",
   "mode": "public-login-and-shell-only",
   "safety": {
     "formSubmission": "disabled",
@@ -88,7 +88,7 @@
       "navigation": [],
       "visibleControlCount": 2,
       "visibleTextLength": 118,
-      "navigationMs": 2253,
+      "navigationMs": 2114,
       "status": "loaded",
       "mobileLayout": {
         "viewportWidth": 390,
@@ -106,25 +106,25 @@
       "path": "/PRSPRO2/pages/login.html",
       "method": "GET",
       "status": 200,
-      "durationMs": 54
+      "durationMs": 0
     },
     {
       "path": "/macros/s/:id/exec",
       "method": "GET",
       "status": 302,
-      "durationMs": 1050
+      "durationMs": 1295
     },
     {
       "path": "/macros/echo",
       "method": "GET",
       "status": 200,
-      "durationMs": 632
+      "durationMs": 199
     },
     {
       "path": "/PRSPRO2/pages/login.html",
       "method": "GET",
       "status": 200,
-      "durationMs": 14
+      "durationMs": 2
     }
   ],
   "consoleErrors": [],
@@ -134,7 +134,7 @@
   ],
   "overallStatus": "limited-no-test-credentials",
   "login": {
-    "loginFormReadyMs": 496,
+    "loginFormReadyMs": 181,
     "authenticated": false,
     "note": "Set repository secrets PMS_TEST_USERNAME and PMS_TEST_PASSWORD to audit permission-protected pages."
   }

@@ -1,7 +1,7 @@
 # PMS UI and Performance Audit
 
-- Generated: 2026-10-24T18:03:42.341Z
-- Base URL: https://saeidesl.github.io/PRSPRO2/
+- Generated: 2026-10-24T18:05:50.472Z
+- Base URL: http://127.0.0.1:4173/PRSPRO2/
 - Mode: public-login-and-shell-only
 - Overall: **limited-no-test-credentials**
 
@@ -28,7 +28,7 @@
 
 | Route | Status | Navigation ms | Forms | Buttons | Controls | Mobile overflow |
 |---|---|---:|---:|---:|---:|---|
-| login | loaded | 2253 | 1 | 2 | 2 | no |
+| login | loaded | 2114 | 1 | 2 | 2 | no |
 
 ## Coverage gaps
 
