@@ -13,6 +13,7 @@
     eventFields: [],
     modalOpen: false,
     submitting: false,
+    pendingIdempotencyKey: '',
     fieldsRequestId: 0,
     fieldsLoading: false,
     fieldsReady: false,
@@ -1574,7 +1575,15 @@
 
       const isIndependent = !!type &&
         String(type.ConnectionType || 'PROJECT').toUpperCase() === 'INDEPENDENT';
+      if (!this.pendingIdempotencyKey) {
+        this.pendingIdempotencyKey = 'EVREQ_' + (
+          window.crypto && typeof window.crypto.randomUUID === 'function'
+            ? window.crypto.randomUUID()
+            : (Date.now().toString(36) + '_' + Math.random().toString(36).slice(2) + '_' + Math.random().toString(36).slice(2))
+        );
+      }
       const payload = {
+        IdempotencyKey: this.pendingIdempotencyKey,
         ProjectID: isIndependent ? '' : projectId,
         EventTypeID: typeId,
         EventTypeVersion: type ? Number(type.Version || 1) : 1,
@@ -1790,6 +1799,7 @@
     },
 
     closeForm: function (force) {
+      this.pendingIdempotencyKey = '';
       if (this.submitting && !force) return;
 
       const modal = document.getElementById('event-create-modal');
