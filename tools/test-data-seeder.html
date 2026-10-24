@@ -185,7 +185,7 @@ async function runSupplyChainTest(){
   const specData=await callPost('/projects/'+encodeURIComponent(projectId)+'/material-specifications',{SpecKey:'TEST-FABRIC-'+nonce,ItemName:'پارچه آزمون '+nonce,Unit:'meter',ConsumptionPerUnit:1.2,WastagePercent:5,Notes:'AUTOMATED E2E TEST'});
   const spec=entity(specData,'specification','Specification');
   check('ثبت مشخصات مصرف ملزومات',!!id(spec,'ID','Id','MaterialSpecID','SpecificationID'),JSON.stringify(spec).slice(0,250));
-  const typeData=await callPost('/event-types',{Name:'آزمون تعداد قطعی '+nonce,Code:('TEST_QTY_'+nonce).replace(/[^A-Z0-9_]/g,'_').slice(0,60),ConnectionType:'PROJECT',DepartmentID:departmentId,AllowAttachments:false,MovesProjectToStep:false,Status:'ACTIVE',Description:'AUTOMATED E2E TEST'});
+  const typeData=await callPost('/event-types',{Name:'آزمون تعداد قطعی '+nonce,Code:('TEST_QTY_'+nonce).replace(/[^A-Z0-9_]/g,'_').slice(0,60),ConnectionType:'PROJECT',Category:'PROCESS',DepartmentID:departmentId,AllowedDepartmentIDs:[departmentId],AvailableDepartmentIDs:[departmentId],AllowedUserIDs:userId?[userId]:[],AllowAttachments:false,MovesProjectToStep:false,Status:'ACTIVE',Description:'AUTOMATED E2E TEST'});
   const type=entity(typeData,'eventType','EventType'),typeId=id(type,'ID','Id','EventTypeID');
   check('ایجاد نوع رویداد آزمایشی',!!typeId,JSON.stringify(type).slice(0,250));report.created.eventTypeId=typeId;
   const fieldData=await callPost('/event-types/'+encodeURIComponent(typeId)+'/fields',{Name:'تعداد قطعی آزمایشی',Code:'CONFIRMED_QTY',FieldType:'number',IsRequired:true,FieldOrder:1,Status:'ACTIVE'});
@@ -196,7 +196,7 @@ async function runSupplyChainTest(){
   status('ثبت رویداد تعداد قطعی');
   const eventData=await callPost('/events',{IdempotencyKey:'TEST-SC-EVENT-'+nonce,ProjectID:projectId,EventTypeID:typeId,PerformedBy:userId||undefined,DepartmentID:departmentId,Description:'تعداد قطعی آزمایشی: ۱۰۰ عدد',OccurredAt:new Date().toISOString(),DynamicData:{CONFIRMED_QTY:100}});
   const event=entity(eventData,'event','Event'),eventId=id(event,'ID','Id','EventID');
-  check('ثبت رویداد تعداد قطعی',!!eventId,JSON.stringify(event).slice(0,250));report.created.eventId=eventId;
+  check('ثبت رویداد تعداد قطعی',!!eventId,JSON.stringify(event).slice(0,250));report.created.eventId=eventId;const integration=pick(eventData,'procurementIntegration','ProcurementIntegration');if(integration&&pick(integration,'success','Success')===false)check('ادغام رویداد با تأمین ملزومات',false,JSON.stringify(integration));
   const needs=list(await callGet('/procurement/needs'));
   const need=needs.find(n=>String(pick(n,'ProjectID','projectId'))===projectId&&String(pick(n,'SourceEventID','sourceEventId'))===eventId&&String(pick(n,'NeedType','needType')).toUpperCase()==='CONFIRMED'&&String(pick(n,'Status','status')).toUpperCase()==='ACTIVE');
   check('ایجاد نیاز تأییدشده برای پروژه',!!need,need?String(pick(need,'RequestedQuantity','requestedQuantity')):'نیاز مربوط به رویداد پیدا نشد');
