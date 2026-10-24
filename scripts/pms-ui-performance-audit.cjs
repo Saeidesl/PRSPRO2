@@ -38,6 +38,50 @@ const results = {
 const started = new Map();
 let browser;
 
+// These controls are intended to open an editor/dialog only. The audit inventories
+// the resulting fields and closes the dialog; it never fills or submits a form.
+const formOpenersByRoute = {
+  projects: ['project-create-button'],
+  'project-detail': ['project-add-event-button'],
+  events: ['event-create-button'],
+  workflows: ['workflow-create-button'],
+  'project-statuses': ['project-status-create'],
+  'event-types': ['event-type-create-button'],
+  procurement: ['procurement-create-project-order', 'procurement-create-general-order', 'procurement-create-receipt'],
+  attachments: ['attachment-upload-button'],
+  users: ['user-create-button'],
+  departments: ['department-create-button'],
+  roles: ['role-create-button']
+};
+
+async function inventoryDialogForms(page) {
+  return page.evaluate(() => {
+    const visible = el => {
+      const style = getComputedStyle(el);
+      const rect = el.getBoundingClientRect();
+      return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+    };
+    const labelFor = el => {
+      if (el.labels && el.labels.length) return Array.from(el.labels).map(x => x.innerText.trim()).join(' ');
+      return el.getAttribute('aria-label') || el.getAttribute('placeholder') || el.getAttribute('title') || el.name || el.id || '';
+    };
+    const forms = Array.from(document.querySelectorAll('form')).filter(visible).map((form, index) => ({
+      index, id: form.id || '', name: form.getAttribute('name') || '',
+      method: (form.getAttribute('method') || 'get').toUpperCase(),
+      fieldCount: form.querySelectorAll('input,select,textarea,[contenteditable="true"]').length,
+      requiredCount: form.querySelectorAll('[required]').length,
+      submitCount: form.querySelectorAll('button[type="submit"],input[type="submit"],button:not([type])').length,
+      fields: Array.from(form.querySelectorAll('input,select,textarea,[contenteditable="true"]')).map(el => ({
+        id: el.id || '', name: el.name || '', type: el.type || el.tagName.toLowerCase(),
+        label: labelFor(el).trim().slice(0, 120), required: !!el.required, disabled: !!el.disabled
+      }))
+    }));
+    const dialog = Array.from(document.querySelectorAll('.modal-overlay,.modal,[role="dialog"],dialog')).some(visible);
+    const visibleControls = Array.from(document.querySelectorAll('input,select,textarea,[contenteditable="true"]')).filter(visible).length;
+    return { forms, dialogVisible: dialog, visibleControls };
+  });
+}
+
 function safeLabel(el) {
   return String(el.innerText || el.getAttribute('aria-label') || el.getAttribute('title') || el.value || el.name || el.id || '').trim().replace(/\s+/g, ' ').slice(0, 160);
 }
@@ -191,6 +235,36 @@ async function main() {
     });
     await page.setViewportSize({ width: 1365, height: 900 });
 
+    snapshot.dynamicFormInventory = [];
+    if (authenticated) {
+      for (const openerId of (formOpenersByRoute[route] || [])) {
+        const opener = page.locator('[id="' + openerId + '"]').first();
+        try {
+          if (!(await opener.count()) || !(await opener.isVisible()) || !(await opener.isEnabled())) {
+            snapshot.dynamicFormInventory.push({ openerId, opened: false, reason: 'opener-not-visible-or-enabled', forms: [] });
+            continue;
+          }
+          await opener.click({ timeout: 1500 });
+          await page.waitForTimeout(180);
+          const inventory = await inventoryDialogForms(page);
+          snapshot.dynamicFormInventory.push({ openerId, opened: inventory.dialogVisible || inventory.forms.length > 0, visibleControls: inventory.visibleControls, forms: inventory.forms });
+          // Cleanup only the test-created dialog DOM. No form values are entered and
+          // no submit, save, delete, delivery, or other mutation control is clicked.
+          await page.evaluate(() => {
+            document.querySelectorAll('.modal-overlay,.modal,[role="dialog"],dialog').forEach(el => {
+              if (el.parentElement && (el.classList.contains('modal-overlay') || el.classList.contains('modal') || el.getAttribute('role') === 'dialog' || el.tagName.toLowerCase() === 'dialog')) el.remove();
+            });
+            document.body.classList.remove('modal-open');
+          });
+        } catch (error) {
+          snapshot.dynamicFormInventory.push({ openerId, opened: false, error: String(error.message || error).slice(0, 180), forms: [] });
+          await page.evaluate(() => {
+            document.querySelectorAll('.modal-overlay,.modal,[role="dialog"],dialog').forEach(el => el.remove());
+            document.body.classList.remove('modal-open');
+          }).catch(() => {});
+        }
+      }
+    }
     snapshot.forms.forEach(form => {
       if (form.fieldCount === 0) results.coverageGaps.push(route + ': visible form ' + (form.id || form.index) + ' has no fields; review manually.');
     });
@@ -225,7 +299,9 @@ async function main() {
     }
   }
 
-  const allForms = results.routes.reduce((n, route) => n + route.forms.length, 0);
+  const allForms = results.routes.reduce((n, route) => n + route.forms.length + (route.dynamicFormInventory || []).reduce((m, item) => m + (item.forms || []).length, 0), 0);
+  const dynamicForms = results.routes.reduce((n, route) => n + (route.dynamicFormInventory || []).reduce((m, item) => m + (item.forms || []).length, 0), 0);
+  const formOpenersChecked = results.routes.reduce((n, route) => n + (route.dynamicFormInventory || []).length, 0);
   const allButtons = results.routes.reduce((n, route) => n + route.buttons.length, 0);
   const allInputs = results.routes.reduce((n, route) => n + route.visibleControlCount, 0);
   const failedRoutes = results.routes.filter(route => route.status === 'error' || route.status === 'not-confirmed').length;
@@ -236,6 +312,8 @@ async function main() {
     failedRoutes,
     mobileRoutesWithHorizontalOverflow: results.routes.filter(route => route.mobileLayout && route.mobileLayout.horizontalOverflow).length,
     visibleFormsInventoried: allForms,
+    dynamicFormsInventoried: dynamicForms,
+    formOpenersChecked,
     visibleButtonsInventoried: allButtons,
     visibleInputsAndControlsInventoried: allInputs,
     networkRequestsMeasured: results.network.length,
