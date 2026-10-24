@@ -827,9 +827,7 @@
   PMS.Modules = PMS.Modules || {};
   PMS.Modules.Workflows = PMS.Workflows;
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
+  // The router owns page-module initialization. Dynamically injected scripts run
+  // after DOMContentLoaded, so auto-init here plus Router.initPageModule()
+  // caused duplicate workflow bootstrap and authorization requests.
 })();
