@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "suite": "PMS Comprehensive UI and Performance Audit",
-  "generatedAt": "2026-10-24T17:58:55.714Z",
+  "generatedAt": "2026-10-24T18:03:42.341Z",
   "baseURL": "https://saeidesl.github.io/PRSPRO2/",
   "mode": "public-login-and-shell-only",
   "safety": {
@@ -15,12 +15,13 @@
     "loadedRoutes": 1,
     "permissionDeniedRoutes": 0,
     "failedRoutes": 0,
+    "mobileRoutesWithHorizontalOverflow": 0,
     "visibleFormsInventoried": 1,
     "visibleButtonsInventoried": 2,
     "visibleInputsAndControlsInventoried": 2,
-    "networkRequestsMeasured": 6,
+    "networkRequestsMeasured": 4,
     "failedNetworkRequests": 0,
-    "consoleErrors": 1,
+    "consoleErrors": 0,
     "pageErrors": 0,
     "safeButtonChecks": 0,
     "formSubmissionsExecuted": 0
@@ -87,8 +88,17 @@
       "navigation": [],
       "visibleControlCount": 2,
       "visibleTextLength": 118,
-      "navigationMs": 1970,
-      "status": "loaded"
+      "navigationMs": 2253,
+      "status": "loaded",
+      "mobileLayout": {
+        "viewportWidth": 390,
+        "documentWidth": 390,
+        "bodyWidth": 390,
+        "horizontalOverflow": false,
+        "visibleForms": 1,
+        "visibleButtons": 2,
+        "visibleControls": 2
+      }
     }
   ],
   "network": [
@@ -96,53 +106,35 @@
       "path": "/PRSPRO2/pages/login.html",
       "method": "GET",
       "status": 200,
-      "durationMs": 55
+      "durationMs": 54
     },
     {
       "path": "/macros/s/:id/exec",
       "method": "GET",
       "status": 302,
-      "durationMs": 1072
-    },
-    {
-      "path": "/macros/s/:id/exec",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 1246
+      "durationMs": 1050
     },
     {
       "path": "/macros/echo",
       "method": "GET",
       "status": 200,
-      "durationMs": 186
+      "durationMs": 632
     },
     {
       "path": "/PRSPRO2/pages/login.html",
       "method": "GET",
       "status": 200,
-      "durationMs": 17
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 193
+      "durationMs": 14
     }
   ],
-  "consoleErrors": [
-    {
-      "type": "console",
-      "message": "Event Types loading failed: Error: نشست کاربر معتبر نیست یا منقضی شده است.\n    at Object.createApiError (https://saeidesl.github.io/PRSPRO2/js/core/api.js?v=20261022-retry-sync-2:535:21)\n    at Object.request (https://saeidesl.github.io/PRSPRO2/js/core/api.js?v=20261022-retry-sync-2:367:22)\n    at a",
-      "route": "login"
-    }
-  ],
+  "consoleErrors": [],
   "pageErrors": [],
   "coverageGaps": [
     "login: 1 submit control(s) inventoried but not submitted by the safe audit."
   ],
   "overallStatus": "limited-no-test-credentials",
   "login": {
-    "loginFormReadyMs": 478,
+    "loginFormReadyMs": 496,
     "authenticated": false,
     "note": "Set repository secrets PMS_TEST_USERNAME and PMS_TEST_PASSWORD to audit permission-protected pages."
   }

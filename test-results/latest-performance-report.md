@@ -1,6 +1,6 @@
 # PMS UI and Performance Audit
 
-- Generated: 2026-10-24T17:58:55.714Z
+- Generated: 2026-10-24T18:03:42.341Z
 - Base URL: https://saeidesl.github.io/PRSPRO2/
 - Mode: public-login-and-shell-only
 - Overall: **limited-no-test-credentials**
@@ -13,21 +13,22 @@
 | loadedRoutes | 1 |
 | permissionDeniedRoutes | 0 |
 | failedRoutes | 0 |
+| mobileRoutesWithHorizontalOverflow | 0 |
 | visibleFormsInventoried | 1 |
 | visibleButtonsInventoried | 2 |
 | visibleInputsAndControlsInventoried | 2 |
-| networkRequestsMeasured | 6 |
+| networkRequestsMeasured | 4 |
 | failedNetworkRequests | 0 |
-| consoleErrors | 1 |
+| consoleErrors | 0 |
 | pageErrors | 0 |
 | safeButtonChecks | 0 |
 | formSubmissionsExecuted | 0 |
 
 ## Routes
 
-| Route | Status | Navigation ms | Forms | Buttons | Controls |
-|---|---|---:|---:|---:|---:|
-| login | loaded | 1970 | 1 | 2 | 2 |
+| Route | Status | Navigation ms | Forms | Buttons | Controls | Mobile overflow |
+|---|---|---:|---:|---:|---:|---|
+| login | loaded | 2253 | 1 | 2 | 2 | no |
 
 ## Coverage gaps
 
