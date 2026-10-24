@@ -167,7 +167,11 @@ async function main() {
   for (const route of routeList) {
     const start = Date.now();
     // Load each route in a fresh document so dialogs from previous routes cannot leak.
-    await page.goto(baseURL + '#' + route, { waitUntil: 'domcontentloaded' });
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.evaluate(routeName => {
+      if (window.PMS && window.PMS.Router && typeof window.PMS.Router.navigate === 'function') window.PMS.Router.navigate(routeName, false);
+      else location.hash = routeName;
+    }, route);
     const previousUrl = page.url();
     try {
       await page.waitForFunction(routeName => {
@@ -264,7 +268,11 @@ const visible = el => {
       for (const openerId of (formOpenersByRoute[route] || [])) {
         try {
           // Use a fresh document for each launcher; do not remove app DOM by force.
-          await page.goto(baseURL + '#' + route, { waitUntil: 'domcontentloaded' });
+          await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.evaluate(routeName => {
+      if (window.PMS && window.PMS.Router && typeof window.PMS.Router.navigate === 'function') window.PMS.Router.navigate(routeName, false);
+      else location.hash = routeName;
+    }, route);
           try { await page.locator('#page-content').waitFor({ state: 'visible', timeout: 8000 }); } catch (_) {}
           const opener = page.locator('[id="' + openerId + '"]').first();
           if (!(await opener.count()) || !(await opener.isVisible()) || !(await opener.isEnabled())) {
