@@ -57,15 +57,22 @@ const formOpenersByRoute = {
 async function inventoryDialogForms(page) {
   return page.evaluate(() => {
     const visible = el => {
-      const style = getComputedStyle(el);
       const rect = el.getBoundingClientRect();
-      return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+      if (rect.width <= 0 || rect.height <= 0) return false;
+      for (let node = el; node && node !== document.documentElement; node = node.parentElement) {
+        const style = getComputedStyle(node);
+        if (node.hidden || node.getAttribute('aria-hidden') === 'true' || style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false;
+      }
+      return true;
     };
     const labelFor = el => {
       if (el.labels && el.labels.length) return Array.from(el.labels).map(x => x.innerText.trim()).join(' ');
       return el.getAttribute('aria-label') || el.getAttribute('placeholder') || el.getAttribute('title') || el.name || el.id || '';
     };
-    const forms = Array.from(document.querySelectorAll('form')).filter(visible).map((form, index) => ({
+    const dialogs = Array.from(document.querySelectorAll('.modal-overlay,.modal,[role="dialog"],dialog')).filter(visible);
+    const activeDialogs = dialogs.filter(dialog => dialog.querySelector('form,input,select,textarea,[contenteditable="true"]'));
+    const root = activeDialogs.length ? activeDialogs[activeDialogs.length - 1] : (document.querySelector('#page-content') || document.body);
+    const forms = Array.from(root.querySelectorAll('form')).filter(visible).map((form, index) => ({
       index, id: form.id || '', name: form.getAttribute('name') || '',
       method: (form.getAttribute('method') || 'get').toUpperCase(),
       fieldCount: form.querySelectorAll('input,select,textarea,[contenteditable="true"]').length,
@@ -76,8 +83,8 @@ async function inventoryDialogForms(page) {
         label: labelFor(el).trim().slice(0, 120), required: !!el.required, disabled: !!el.disabled
       }))
     }));
-    const dialog = Array.from(document.querySelectorAll('.modal-overlay,.modal,[role="dialog"],dialog')).some(visible);
-    const visibleControls = Array.from(document.querySelectorAll('input,select,textarea,[contenteditable="true"]')).filter(visible).length;
+    const visibleControls = Array.from(root.querySelectorAll('input,select,textarea,[contenteditable="true"]')).filter(visible).length;
+    const dialog = activeDialogs.length > 0;
     return { forms, dialogVisible: dialog, visibleControls };
   });
 }
@@ -118,7 +125,7 @@ async function main() {
   page.on('console', msg => {
     if (msg.type() === 'error') results.consoleErrors.push({ type: 'console', message: msg.text().replace(/[0-9a-f]{8}-[0-9a-f-]{27,}/gi, '[id]').replace(/[0-9a-f]{20,}/gi, '[id]').slice(0, 300), route: normalizedRoute() });
   });
-  page.on('pageerror', error => results.pageErrors.push({ message: String(error.message || error).replace(/[0-9a-f]{8}-[0-9a-f-]{27,}/gi, '[id]').replace(/[0-9a-f]{20,}/gi, '[id]').slice(0, 300), route: normalizedRoute() }));
+  page.on('pageerror', error => results.pageErrors.push({ message: String(error.message || error).replace(/[0-9a-f]{8}-[0-9a-f-]{27,}/gi, '[id]').replace(/[0-9a-f]{20,}/gi, '[id]').slice(0, 300), stack: String(error.stack || '').replace(/[0-9a-f]{8}-[0-9a-f-]{27,}/gi, '[id]').replace(/[0-9a-f]{20,}/gi, '[id]').slice(0, 700), route: normalizedRoute() }));
   page.on('request', request => {
     started.set(request, Date.now());
   });
@@ -161,7 +168,11 @@ async function main() {
   for (const route of routeList) {
     const start = Date.now();
     // Load each route in a fresh document so dialogs from previous routes cannot leak.
-    await page.goto(baseURL + '#' + route, { waitUntil: 'domcontentloaded' });
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.evaluate(routeName => {
+      if (window.PMS && window.PMS.Router && typeof window.PMS.Router.navigate === 'function') window.PMS.Router.navigate(routeName, false);
+      else location.hash = routeName;
+    }, route);
     const previousUrl = page.url();
     try {
       await page.waitForFunction(routeName => {
@@ -175,10 +186,14 @@ async function main() {
 
     const snapshot = await page.evaluate(({ routeName, startUrl }) => {
       const root = document.querySelector('#page-content') || document.querySelector('.login-page') || document.body;
-      const visible = el => {
-        const style = getComputedStyle(el);
+const visible = el => {
         const rect = el.getBoundingClientRect();
-        return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+        if (rect.width <= 0 || rect.height <= 0) return false;
+        for (let node = el; node && node !== document.documentElement; node = node.parentElement) {
+          const style = getComputedStyle(node);
+          if (node.hidden || node.getAttribute('aria-hidden') === 'true' || style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false;
+        }
+        return true;
       };
       const labelFor = el => {
         if (el.labels && el.labels.length) return Array.from(el.labels).map(x => x.innerText.trim()).join(' ');
@@ -228,10 +243,14 @@ async function main() {
     await page.setViewportSize({ width: 390, height: 844 });
     snapshot.mobileLayout = await page.evaluate(() => {
       const root = document.querySelector('#page-content') || document.querySelector('.login-page') || document.body;
-      const visible = el => {
-        const style = getComputedStyle(el);
+const visible = el => {
         const rect = el.getBoundingClientRect();
-        return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+        if (rect.width <= 0 || rect.height <= 0) return false;
+        for (let node = el; node && node !== document.documentElement; node = node.parentElement) {
+          const style = getComputedStyle(node);
+          if (node.hidden || node.getAttribute('aria-hidden') === 'true' || style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false;
+        }
+        return true;
       };
       return {
         viewportWidth: window.innerWidth,
@@ -250,8 +269,15 @@ async function main() {
       for (const openerId of (formOpenersByRoute[route] || [])) {
         try {
           // Use a fresh document for each launcher; do not remove app DOM by force.
-          await page.goto(baseURL + '#' + route, { waitUntil: 'domcontentloaded' });
+          await page.reload({ waitUntil: 'domcontentloaded' });
+          await page.evaluate(routeName => {
+            if (window.PMS && window.PMS.Router && typeof window.PMS.Router.navigate === 'function') window.PMS.Router.navigate(routeName, false);
+            else location.hash = routeName;
+          }, route);
+          try { await page.waitForFunction(routeName => location.hash.replace(/^#/, '').split('/')[0] === routeName, route, { timeout: 10000 }); } catch (_) {}
           try { await page.locator('#page-content').waitFor({ state: 'visible', timeout: 8000 }); } catch (_) {}
+          try { await page.waitForLoadState('networkidle', { timeout: 2500 }); } catch (_) {}
+          await page.waitForTimeout(250);
           const opener = page.locator('[id="' + openerId + '"]').first();
           if (!(await opener.count()) || !(await opener.isVisible()) || !(await opener.isEnabled())) {
             snapshot.dynamicFormInventory.push({ openerId, opened: false, reason: 'opener-not-visible-or-enabled', forms: [] });
@@ -260,14 +286,15 @@ async function main() {
           const before = await inventoryDialogForms(page);
           await opener.evaluate(el => el.click());
           await page.waitForFunction((baselineCount) => {
-            const visible = el => { const style = getComputedStyle(el); const rect = el.getBoundingClientRect(); return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0; };
+            const visible = el => { const rect = el.getBoundingClientRect(); if (rect.width <= 0 || rect.height <= 0) return false; for (let node = el; node && node !== document.documentElement; node = node.parentElement) { const style = getComputedStyle(node); if (node.hidden || node.getAttribute('aria-hidden') === 'true' || style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false; } return true; };
             const formCount = Array.from(document.querySelectorAll('form')).filter(visible).length;
-            const dialogVisible = Array.from(document.querySelectorAll('.modal-overlay,.modal,[role="dialog"],dialog')).some(visible);
+            const dialogVisible = Array.from(document.querySelectorAll('.modal-overlay,.modal,[role="dialog"],dialog')).filter(visible).some(dialog => dialog.querySelector('form,input,select,textarea,[contenteditable="true"]'));
             return formCount > baselineCount || dialogVisible;
           }, before.forms.length, { timeout: 2500 }).catch(() => {});
           const inventory = await inventoryDialogForms(page);
-          const newForms = inventory.forms.filter(form => !before.forms.some(oldForm => oldForm.id === form.id && oldForm.fieldCount === form.fieldCount));
-          snapshot.dynamicFormInventory.push({ openerId, opened: inventory.dialogVisible || newForms.length > 0, visibleControls: inventory.visibleControls, forms: newForms });
+          // Include every form visible after the opener click, including templates that
+          // are already present in the DOM but only become relevant within this dialog.
+          snapshot.dynamicFormInventory.push({ openerId, opened: inventory.dialogVisible || inventory.forms.length > 0 || inventory.visibleControls > before.visibleControls, baselineFormCount: before.forms.length, baselineVisibleControls: before.visibleControls, visibleControls: inventory.visibleControls, forms: inventory.forms });
         } catch (error) {
           snapshot.dynamicFormInventory.push({ openerId, opened: false, error: String(error.message || error).slice(0, 180), forms: [] });
         }
