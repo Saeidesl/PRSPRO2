@@ -1806,6 +1806,7 @@
 
     closeForm: function (force) {
       this.pendingIdempotencyKey = '';
+      this.pendingIdempotencyFingerprint = '';
       if (this.submitting && !force) return;
 
       const modal = document.getElementById('event-create-modal');
