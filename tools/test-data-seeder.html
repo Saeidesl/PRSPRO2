@@ -179,7 +179,7 @@ async function runSupplyChainTest(){
   const workflowId=id(workflow,'ID','Id','WorkflowID'),departmentId=id(department,'ID','Id','DepartmentID');
   const userId=id(user,'ID','Id','UserID');
   const code='TEST-SC-'+nonce;
-  const projectData=await callPost('/projects',{ProjectCode:code,Title:'آزمون زنجیره تأمین '+nonce,Quantity:100,WorkflowID:workflowId,Description:'AUTOMATED SUPPLY CHAIN E2E TEST'});
+  const projectData=await callPost('/projects',{ProjectCode:code,Title:'آزمون زنجیره تأمین '+nonce,Quantity:100,WorkflowID:workflowId,AvailableDepartmentIDs:[departmentId],AllowedUserIDs:userId?[userId]:[],NotifyEnabled:false,Description:'AUTOMATED SUPPLY CHAIN E2E TEST'});
   const project=entity(projectData,'project','Project'),projectId=id(project,'ID','Id','ProjectID');
   check('ایجاد پروژه آزمایشی',!!projectId,code);report.created.projectId=projectId;report.created.projectCode=code;
   const specData=await callPost('/projects/'+encodeURIComponent(projectId)+'/material-specifications',{SpecKey:'TEST-FABRIC-'+nonce,ItemName:'پارچه آزمون '+nonce,Unit:'meter',ConsumptionPerUnit:1.2,WastagePercent:5,Notes:'AUTOMATED E2E TEST'});
