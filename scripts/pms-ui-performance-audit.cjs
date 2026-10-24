@@ -57,15 +57,21 @@ const formOpenersByRoute = {
 async function inventoryDialogForms(page) {
   return page.evaluate(() => {
     const visible = el => {
-      const style = getComputedStyle(el);
       const rect = el.getBoundingClientRect();
-      return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+      if (rect.width <= 0 || rect.height <= 0) return false;
+      for (let node = el; node && node !== document.documentElement; node = node.parentElement) {
+        const style = getComputedStyle(node);
+        if (node.hidden || node.getAttribute('aria-hidden') === 'true' || style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false;
+      }
+      return true;
     };
     const labelFor = el => {
       if (el.labels && el.labels.length) return Array.from(el.labels).map(x => x.innerText.trim()).join(' ');
       return el.getAttribute('aria-label') || el.getAttribute('placeholder') || el.getAttribute('title') || el.name || el.id || '';
     };
-    const forms = Array.from(document.querySelectorAll('form')).filter(visible).map((form, index) => ({
+    const dialogs = Array.from(document.querySelectorAll('.modal-overlay,.modal,[role="dialog"],dialog')).filter(visible);
+    const root = dialogs.length ? dialogs[dialogs.length - 1] : (document.querySelector('#page-content') || document.body);
+    const forms = Array.from(root.querySelectorAll('form')).filter(visible).map((form, index) => ({
       index, id: form.id || '', name: form.getAttribute('name') || '',
       method: (form.getAttribute('method') || 'get').toUpperCase(),
       fieldCount: form.querySelectorAll('input,select,textarea,[contenteditable="true"]').length,
@@ -76,8 +82,8 @@ async function inventoryDialogForms(page) {
         label: labelFor(el).trim().slice(0, 120), required: !!el.required, disabled: !!el.disabled
       }))
     }));
-    const dialog = Array.from(document.querySelectorAll('.modal-overlay,.modal,[role="dialog"],dialog')).some(visible);
-    const visibleControls = Array.from(document.querySelectorAll('input,select,textarea,[contenteditable="true"]')).filter(visible).length;
+    const visibleControls = Array.from(root.querySelectorAll('input,select,textarea,[contenteditable="true"]')).filter(visible).length;
+    const dialog = dialogs.length > 0;
     return { forms, dialogVisible: dialog, visibleControls };
   });
 }
