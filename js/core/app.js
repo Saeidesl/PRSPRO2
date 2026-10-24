@@ -13,8 +13,11 @@
     init: function () {
       if (this.initialized) return;
       this.initialized = true;
-      this.removeLoading();
 
+      // Keep the initial loader visible while the router checks the session,
+      // fetches permissions, and prepares the first screen. renderLayout() or
+      // loadLogin() replaces #app when real UI is ready; removing it here
+      // caused several seconds of a completely blank screen on refresh.
       try {
         if (!window.PMS || !PMS.Router || typeof PMS.Router.init !== 'function') {
           throw new Error('هسته مسیریابی برنامه بارگذاری نشده است.');
