@@ -48,7 +48,7 @@ const formOpenersByRoute = {
   'project-statuses': ['project-status-create'],
   'event-types': ['event-type-create-button'],
   procurement: ['procurement-create-project-order', 'procurement-create-general-order', 'procurement-create-receipt'],
-  attachments: ['attachment-upload-button'],
+  // File upload opens a native file chooser, so keep it out of automated dialog clicks.
   users: ['user-create-button'],
   departments: ['department-create-button'],
   roles: ['role-create-button']
