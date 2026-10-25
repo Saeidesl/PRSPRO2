@@ -1106,7 +1106,10 @@
       };
       const settingsContent = settingsModal.querySelector('#project-create-settings-content');
       if (settingsContent) {
-        settingsContent.innerHTML = '<div class="project-settings-inline-note">واحدهای مجاز، کاربران، وضعیت اولیه و اطلاع‌رسانی را مستقیماً در بخش‌های فرم تنظیم کنید. با انتخاب «ذخیره تنظیمات»، این مقادیر برای پروژه‌های بعدی به‌عنوان پیش‌فرض نگه داشته می‌شوند.</div>';
+        const settingsNote = isEditMode
+          ? 'واحدهای مجاز، کاربران، وضعیت و اطلاع‌رسانی را در بخش «دسترسی و تنظیمات» فرم اصلی تغییر دهید؛ سپس با دکمه «ذخیره تغییرات» ویرایش پروژه را ثبت کنید.'
+          : 'واحدهای مجاز، کاربران، وضعیت اولیه و اطلاع‌رسانی را در بخش «دسترسی و تنظیمات» فرم اصلی انتخاب کنید. با انتخاب «ذخیره تنظیمات»، این مقادیر برای پروژه‌های بعدی به‌عنوان پیش‌فرض ذخیره می‌شوند.';
+        settingsContent.innerHTML = '<div class="project-settings-inline-note">' + settingsNote + '</div>';
       }
       if (isEditMode) {
         modal._projectEditReadiness = editReadiness;
