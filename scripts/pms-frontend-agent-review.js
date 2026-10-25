@@ -53,11 +53,18 @@ check('EVENT-TYPES-ROUTE-OWNED-INIT',
 
 let diff = '';
 try {
-  diff = execFileSync('git', ['diff', '--unified=0', 'origin/main...HEAD'], {
+  // For pull requests, compare against the exact base SHA supplied by GitHub.
+  // This avoids merge-base failures when the base branch advances or is force-updated
+  // while a workflow is running. On push/manual runs, inspect the current commit only.
+  const baseSha = String(process.env.PMS_DIFF_BASE_SHA || '').trim();
+  const diffArgs = baseSha
+    ? ['diff', '--unified=0', baseSha, 'HEAD']
+    : ['diff', '--unified=0', 'HEAD^', 'HEAD'];
+  diff = execFileSync('git', diffArgs, {
     cwd: root, encoding: 'utf8', maxBuffer: 10 * 1024 * 1024
   });
 } catch (error) {
-  console.error('Unable to inspect the PR diff. Ensure origin/main is fetched.', error.message);
+  console.error('Unable to inspect the relevant Git diff. Verify the PR base SHA or commit history.', error.message);
   process.exit(2);
 }
 const added = diff.split('\n').filter((line) => line.startsWith('+') && !line.startsWith('+++'));
