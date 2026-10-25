@@ -217,3 +217,19 @@
 - علت: browser audit قبلاً با URL پیش‌فرض تولید تلاش به ورود می‌کرد و به خطای 302 می‌رسید؛ این رفتار نمی‌تواند جایگزین تست staging باشد.
 - اصلاح در شاخه `fix/ui-audit-staging-api-20261025`: workflow متغیر `PMS_STAGING_API_BASE_URL` را پاس می‌دهد؛ اسکریپت فقط اگر URL یک Web App جداگانه Apps Script معتبر باشد، آن را پیش از بارگذاری فرانت‌اند تزریق می‌کند. بدون آن، فقط shell/صفحه ورود بررسی می‌شود و وضعیت `blocked-no-staging-api` ثبت می‌شود؛ هیچ درخواست login به API تولید ارسال نمی‌شود.
 - وضعیت: `in_progress` تا موفقیت CI. برای پوشش کامل صفحات داخلی، هنوز نیاز به یک GAS deployment و Spreadsheet مستقل staging و اعتبار ورود QA متناسب با همان محیط داریم.
+
+
+### دور 11 — ادغام ایمن‌سازی ممیزی مرورگر و بررسی پس از ادغام
+
+- PR #92 ادغام شد: https://github.com/Saeidesl/PRSPRO2/pull/92
+- Commit ادغام: `05959d799ae08c1f2d454d31c2291809542f68fb`.
+- بررسی‌های مربوط به SHA شاخه PR موفق بودند: Frontend checks، PMS frontend agent suite، PMS cross-repository QA و PMS comprehensive UI performance audit.
+- تغییر ادغام‌شده، ممیزی احراز هویت‌شده را فقط به `PMS_STAGING_API_BASE_URL` صریح و معتبر متصل می‌کند. اگر این مقدار تنظیم نشده باشد، فقط پوسته عمومی ورود بررسی می‌شود و هیچ اعتبارنامه‌ای به API تولید ارسال نمی‌شود.
+- بررسی گزارش E2E پس از ادغام: `test-results/staging-e2e-report.json` هنوز نتیجه اجرای قبلی را نشان می‌دهد: `apiTargetConfigured=false`، `created={}` و توقف قبل از login. بنابراین ایمنی fail-closed تأیید می‌شود، اما سناریوی واقعی تولید تا تأمین هنوز اجرا نشده است.
+- وضعیت‌ها:
+  - `BUG-ENV-014`: `fixed_verified` — نبود API staging باعث توقف پیش از هر نوشتن می‌شود.
+  - `BUG-CI-019`: `fixed_verified` — ذخیره گزارش با retry محدود در run قبلی موفق بوده است.
+  - `BUG-ENV-018`: `blocked` — هنوز URL یک Web App مستقل Apps Script و Spreadsheet آزمایشی لازم است.
+  - `BUG-QA-017`: احراز هویت واقعی در محیط staging هنوز اثبات نشده؛ فقط وقتی محیط staging و اعتبار QA مستقل فراهم شود قابل تکمیل است.
+- انتشار Apps Script انجام نشد؛ این اصلاح فقط در فرانت‌اند/گردش‌کار CI است و انتشار بک‌اند برای آن لازم نیست.
+- گام بعدی: پیکربندی `PMS_STAGING_API_BASE_URL` به‌همراه اعتبار QA مختص همان محیط و سپس اجرای مجدد سناریوی کامل. تا پیش از آن، نتیجه سرتاسری «موفق» اعلام نمی‌شود.
