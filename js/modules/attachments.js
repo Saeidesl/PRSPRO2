@@ -111,16 +111,18 @@
 
 
       if (uploadButton) {
-
-        uploadButton.addEventListener(
-          'click',
-          function () {
-
+        const router = window.PMS.Router;
+        const permissions = router && Array.isArray(router.permissions) ? router.permissions : [];
+        const canUpload = !!(router && (
+          (typeof router.isAdmin === 'function' && router.isAdmin()) ||
+          permissions.indexOf('ATTACHMENT_UPLOAD') !== -1
+        ));
+        uploadButton.hidden = !canUpload;
+        if (canUpload) {
+          uploadButton.addEventListener('click', function () {
             MODULE.showUploadMessage();
-
-          }
-        );
-
+          });
+        }
       }
 
     },
@@ -687,14 +689,208 @@
     },
 
 
-    showUploadMessage:
-      function () {
+    showUploadMessage: async function () {
+      if (document.getElementById('attachment-upload-modal')) return;
 
-        alert(
-          'فرم بارگذاری فایل را در مرحله بعد اضافه می‌کنیم.'
-        );
+      const router = window.PMS.Router;
+      const permissions = router && Array.isArray(router.permissions) ? router.permissions : [];
+      const canUpload = !!(router && (
+        (typeof router.isAdmin === 'function' && router.isAdmin()) ||
+        permissions.indexOf('ATTACHMENT_UPLOAD') !== -1
+      ));
+      if (!canUpload) {
+        alert('برای بارگذاری فایل، دسترسی ATTACHMENT_UPLOAD لازم است.');
+        return;
+      }
 
-      },
+      const modal = document.createElement('div');
+      modal.id = 'attachment-upload-modal';
+      modal.className = 'modal-overlay';
+      modal.innerHTML =
+        '<section class="modal" role="dialog" aria-modal="true" aria-labelledby="attachment-upload-title" style="width:min(620px,100%);max-height:90vh;overflow:auto;">' +
+          '<header class="modal-header"><h3 id="attachment-upload-title">بارگذاری فایل</h3><button type="button" class="modal-close" id="attachment-upload-close" aria-label="بستن">×</button></header>' +
+          '<div class="modal-body">' +
+            '<form id="attachment-upload-form">' +
+              '<div class="filter-group"><label for="attachment-upload-entity-type">اتصال فایل به *</label><select id="attachment-upload-entity-type" class="form-control" required><option value="PROJECT">پروژه</option><option value="EVENT">رویداد</option></select></div>' +
+              '<div class="filter-group" style="margin-top:12px"><label for="attachment-upload-entity">انتخاب مورد *</label><select id="attachment-upload-entity" class="form-control" required><option value="">ابتدا نوع اتصال را انتخاب کنید…</option></select><small id="attachment-upload-entity-help" style="display:block;margin-top:5px;color:var(--color-text-secondary)">در حال دریافت فهرست…</small></div>' +
+              '<div class="filter-group" style="margin-top:12px"><label for="attachment-upload-file">فایل *</label><input id="attachment-upload-file" class="form-control" type="file" accept=".jpg,.jpeg,.png,.webp,.pdf,.docx,.xlsx,image/jpeg,image/png,image/webp,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required><small style="display:block;margin-top:5px;color:var(--color-text-secondary)">فرمت‌های مجاز: JPG، PNG، WEBP، PDF، DOCX و XLSX؛ حداکثر ۵ مگابایت.</small></div>' +
+              '<div class="filter-group" style="margin-top:12px"><label for="attachment-upload-filename">نام فایل</label><input id="attachment-upload-filename" class="form-control" type="text" maxlength="180" autocomplete="off" placeholder="نام اصلی فایل استفاده می‌شود"></div>' +
+              '<div id="attachment-upload-status" role="status" aria-live="polite" style="margin-top:12px"></div>' +
+              '<div style="display:flex;gap:8px;justify-content:flex-start;flex-wrap:wrap;margin-top:16px"><button class="btn btn-primary" id="attachment-upload-submit" type="submit">بارگذاری</button><button class="btn btn-secondary" id="attachment-upload-cancel" type="button">انصراف</button></div>' +
+            '</form>' +
+          '</div>' +
+        '</section>';
+
+      document.body.appendChild(modal);
+
+      const form = modal.querySelector('#attachment-upload-form');
+      const typeSelect = modal.querySelector('#attachment-upload-entity-type');
+      const entitySelect = modal.querySelector('#attachment-upload-entity');
+      const entityHelp = modal.querySelector('#attachment-upload-entity-help');
+      const fileInput = modal.querySelector('#attachment-upload-file');
+      const fileNameInput = modal.querySelector('#attachment-upload-filename');
+      const status = modal.querySelector('#attachment-upload-status');
+      const submit = modal.querySelector('#attachment-upload-submit');
+      let entityRequestId = 0;
+
+      const onKeyDown = function (event) {
+        if (event.key === 'Escape') close();
+      };
+      const close = function () {
+        modal.remove();
+        document.removeEventListener('keydown', onKeyDown);
+      };
+      modal.querySelector('#attachment-upload-close').addEventListener('click', close);
+      modal.querySelector('#attachment-upload-cancel').addEventListener('click', close);
+      modal.addEventListener('click', function (event) {
+        if (event.target === modal) close();
+      });
+      document.addEventListener('keydown', onKeyDown);
+
+      const unwrapList = function (response, keys) {
+        let data = Api.extractData(response);
+        for (let depth = 0; depth < 4 && data && !Array.isArray(data); depth += 1) {
+          let next = null;
+          for (let i = 0; i < keys.length; i += 1) {
+            if (Array.isArray(data[keys[i]])) { next = data[keys[i]]; break; }
+          }
+          if (!next && data.data && typeof data.data === 'object') next = data.data;
+          if (!next) break;
+          data = next;
+        }
+        return Array.isArray(data) ? data : [];
+      };
+
+      const getEntityId = function (item, kind) {
+        return String(item.ID || item.Id || item.id ||
+          (kind === 'PROJECT' ? item.ProjectID : item.EventID) || '');
+      };
+      const getEntityLabel = function (item, kind, id) {
+        if (kind === 'PROJECT') {
+          const code = item.ProjectCode || item.Code || '';
+          const title = item.Title || item.Name || item.ProjectName || '';
+          return [code, title].filter(Boolean).join(' — ') || id;
+        }
+        const title = item.EventTypeName || item.EventTypeTitle || item.Title || item.Name || item.EventTitle || 'رویداد';
+        const project = item.ProjectCode || item.ProjectTitle || '';
+        const date = item.EventDate || item.CreatedAt || item.RegisteredAt || '';
+        return [title, project, date ? String(date).slice(0, 10) : ''].filter(Boolean).join(' — ') || id;
+      };
+
+      const loadEntities = async function () {
+        const requestId = ++entityRequestId;
+        const kind = typeSelect.value;
+        entitySelect.disabled = true;
+        entitySelect.innerHTML = '<option value="">در حال دریافت فهرست…</option>';
+        entityHelp.textContent = 'در حال دریافت فهرست…';
+        status.textContent = '';
+        try {
+          const response = await Api.get(kind === 'PROJECT' ? '/projects' : '/events', { trackSync: false });
+          if (requestId !== entityRequestId || !document.body.contains(modal)) return;
+          const keys = kind === 'PROJECT'
+            ? ['projects', 'items', 'results', 'data']
+            : ['events', 'items', 'results', 'data'];
+          const items = unwrapList(response, keys);
+          const options = items.map(function (item) {
+            const id = getEntityId(item, kind);
+            return id ? { id: id, label: getEntityLabel(item, kind, id) } : null;
+          }).filter(Boolean);
+          entitySelect.innerHTML = '<option value="">یک مورد انتخاب کنید…</option>' + options.map(function (item) {
+            return '<option value="' + MODULE.escapeHtml(item.id) + '">' + MODULE.escapeHtml(item.label) + '</option>';
+          }).join('');
+          entitySelect.disabled = false;
+          entityHelp.textContent = options.length
+            ? options.length + ' مورد قابل انتخاب است.'
+            : 'موردی برای انتخاب پیدا نشد یا دسترسی مشاهده این فهرست وجود ندارد.';
+        } catch (error) {
+          if (requestId !== entityRequestId || !document.body.contains(modal)) return;
+          entitySelect.innerHTML = '<option value="">فهرست قابل دریافت نیست</option>';
+          entitySelect.disabled = true;
+          entityHelp.textContent = 'دریافت فهرست ناموفق بود. دسترسی مشاهده پروژه‌ها/رویدادها و اتصال سرور را بررسی کنید.';
+          status.textContent = error.message || 'خطا در دریافت فهرست.';
+        }
+      };
+
+      typeSelect.addEventListener('change', loadEntities);
+      fileInput.addEventListener('change', function () {
+        const file = fileInput.files && fileInput.files[0];
+        if (file && !fileNameInput.value.trim()) fileNameInput.value = file.name;
+      });
+      form.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        if (submit.disabled) return;
+        const entityId = entitySelect.value;
+        const kind = typeSelect.value;
+        const file = fileInput.files && fileInput.files[0];
+        if (!entityId) {
+          status.textContent = 'ابتدا پروژه یا رویداد را انتخاب کنید.';
+          entitySelect.focus();
+          return;
+        }
+        if (!file) {
+          status.textContent = 'لطفاً یک فایل انتخاب کنید.';
+          fileInput.focus();
+          return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+          status.textContent = 'حجم فایل نباید بیشتر از ۵ مگابایت باشد.';
+          fileInput.focus();
+          return;
+        }
+        const extension = (file.name.split('.').pop() || '').toLowerCase();
+        const mimeByExtension = {
+          jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp',
+          pdf: 'application/pdf',
+          docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        };
+        const allowedMimeTypes = Object.keys(mimeByExtension).map(function (key) { return mimeByExtension[key]; });
+        const mimeType = allowedMimeTypes.indexOf(file.type) !== -1 ? file.type : mimeByExtension[extension];
+        if (!mimeType) {
+          status.textContent = 'نوع فایل مجاز نیست. فقط JPG، PNG، WEBP، PDF، DOCX و XLSX پذیرفته می‌شوند.';
+          fileInput.focus();
+          return;
+        }
+
+        submit.disabled = true;
+        status.textContent = 'در حال آماده‌سازی و ارسال فایل…';
+        try {
+          const dataUrl = await new Promise(function (resolve, reject) {
+            const reader = new FileReader();
+            reader.onload = function () { resolve(String(reader.result || '')); };
+            reader.onerror = function () { reject(new Error('خواندن فایل ناموفق بود.')); };
+            reader.readAsDataURL(file);
+          });
+          const requestedName = String(fileNameInput.value || '').trim();
+          const chosenName = requestedName || file.name;
+          const dot = chosenName.lastIndexOf('.');
+          const finalName = dot > 0 ? chosenName : chosenName + '.' + extension;
+          const response = await Api.post('/attachments', {
+            EntityType: kind,
+            EntityID: entityId,
+            FileName: finalName.replace(/[\\/:*?"<>|]/g, '_').slice(0, 180),
+            MimeType: mimeType,
+            Base64: dataUrl
+          });
+          const result = Api.extractData(response) || {};
+          if (result.success === false || result.error) {
+            throw new Error(result.message || result.error || 'بارگذاری فایل ناموفق بود.');
+          }
+          if (Cache && typeof Cache.remove === 'function') Cache.remove(MODULE.cacheKey);
+          status.textContent = 'فایل با موفقیت بارگذاری شد.';
+          await MODULE.load();
+          window.setTimeout(close, 350);
+        } catch (error) {
+          status.textContent = error.message || 'بارگذاری فایل ناموفق بود.';
+        } finally {
+          if (document.body.contains(modal)) submit.disabled = false;
+        }
+      });
+
+      await loadEntities();
+      const firstFocusable = modal.querySelector('#attachment-upload-entity-type');
+      if (firstFocusable) firstFocusable.focus();
+    },
 
 
     getEntityLabel:
