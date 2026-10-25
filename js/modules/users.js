@@ -302,19 +302,19 @@
         '</div>' +
         '<div class="modal-body">' +
           '<form id="user-create-form">' +
-            '<label>نام و نام خانوادگی *</label>' +
-            '<input class="form-control" name="Name" required maxlength="150">' +
-            '<label>نام کاربری *</label>' +
-            '<input class="form-control" name="Username" required maxlength="100" autocomplete="username">' +
+            '<label for="user-create-name">نام و نام خانوادگی *</label>' +
+            '<input class="form-control" id="user-create-name" name="Name" required maxlength="150">' +
+            '<label for="user-create-username">نام کاربری *</label>' +
+            '<input class="form-control" id="user-create-username" name="Username" required maxlength="100" autocomplete="username">' +
             '<label for="user-create-password">رمز عبور *</label>' +
             '<input class="form-control" id="user-create-password" name="Password" type="password" required minlength="8" autocomplete="new-password">' +
             '<small>رمز عبور باید حداقل ۸ کاراکتر داشته باشد.</small>' +
-            '<label>واحد سازمانی</label>' +
-            '<select class="form-control" name="DepartmentID">' +
+            '<label for="user-create-department">واحد سازمانی</label>' +
+            '<select class="form-control" id="user-create-department" name="DepartmentID">' +
               '<option value="">بدون واحد</option>' + departmentOptions +
             '</select>' +
-            '<label>وضعیت</label>' +
-            '<select class="form-control" name="Status">' +
+            '<label for="user-create-status">وضعیت</label>' +
+            '<select class="form-control" id="user-create-status" name="Status">' +
               '<option value="ACTIVE">فعال</option>' +
               '<option value="INACTIVE">غیرفعال</option>' +
             '</select>' +
@@ -501,23 +501,23 @@
         '</div>' +
         '<div class="modal-body">' +
           '<form id="user-edit-form">' +
-            '<label>نام و نام خانوادگی *</label>' +
-            '<input class="form-control" name="Name" required maxlength="150" value="' +
+            '<label for="user-edit-name">نام و نام خانوادگی *</label>' +
+            '<input class="form-control" id="user-edit-name" name="Name" required maxlength="150" value="' +
               esc(user.Name || user.name || '') + '">' +
-            '<label>نام کاربری *</label>' +
-            '<input class="form-control" name="Username" required maxlength="100" autocomplete="username" value="' +
+            '<label for="user-edit-username">نام کاربری *</label>' +
+            '<input class="form-control" id="user-edit-username" name="Username" required maxlength="100" autocomplete="username" value="' +
               esc(user.Username || user.username || '') + '">' +
-            '<label>واحد سازمانی</label>' +
-            '<select class="form-control" name="DepartmentID">' +
+            '<label for="user-edit-department">واحد سازمانی</label>' +
+            '<select class="form-control" id="user-edit-department" name="DepartmentID">' +
               '<option value="">بدون واحد</option>' + departmentOptions +
             '</select>' +
-            '<label>وضعیت</label>' +
-            '<select class="form-control" name="Status">' +
+            '<label for="user-edit-status">وضعیت</label>' +
+            '<select class="form-control" id="user-edit-status" name="Status">' +
               '<option value="ACTIVE"' + (currentStatus === 'ACTIVE' ? ' selected' : '') + '>فعال</option>' +
               '<option value="INACTIVE"' + (currentStatus === 'INACTIVE' ? ' selected' : '') + '>غیرفعال</option>' +
             '</select>' +
-            '<label>رمز عبور جدید</label>' +
-            '<input class="form-control" name="Password" type="password" minlength="8" autocomplete="new-password">' +
+            '<label for="user-edit-password">رمز عبور جدید</label>' +
+            '<input class="form-control" id="user-edit-password" name="Password" type="password" minlength="8" autocomplete="new-password">' +
             '<small>اگر نمی‌خواهید رمز عبور تغییر کند، این قسمت را خالی بگذارید.</small>' +
             '<fieldset style="margin-top:16px">' +
               '<legend>نقش‌های کاربر</legend>' +
