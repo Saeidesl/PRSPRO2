@@ -68,3 +68,20 @@ PR: https://github.com/Saeidesl/PRSPRO2/pull/93
 - یافته: `openReceiptForm` در `js/modules/procurement.js` نیز پیش از ساخت فرم، `await loadProjectsForOrder()` را اجرا می‌کند. در نتیجه کاربر هنگام lookup هیچ فرم/حالت انتظار نمی‌بیند.
 - وضعیت اولیه: `in_progress`; این مورد جدا از اصلاح فرم سفارش پروژه است، چون فرم دریافت به فهرست پروژه‌ها و سفارش‌های قابل دریافت وابسته است.
 - معیار پذیرش: فرم دریافت باید فوری ظاهر شود؛ فهرست پروژه/سفارش تا زمان دریافت، غیرفعال و دارای متن انتظار باشد؛ ثبت دریافت تا آماده‌شدن فهرست غیرفعال بماند؛ خطای lookup پیام قابل فهم بدهد و داده‌ای ارسال نشود.
+
+
+## نتیجه نهایی دور سوم — بازخورد فوری فرم دریافت انبار
+
+- وضعیت: `fixed_verified` برای نمایش فوری فرم دریافت و مدیریت حالت انتظار فهرست پروژه‌ها/سفارش عمومی.
+- PR #95 ادغام شد: https://github.com/Saeidesl/PRSPRO2/pull/95
+- Commit ادغام: `c904cab771ee59e132f68bf3bc6387b614d90ae4`.
+- شواهد: Frontend checks و همه تست‌های رگرسیون موفق؛ Frontend agent suite موفق؛ cross-repository QA موفق؛ ممیزی مرورگر و تست Chromium موفق. [Frontend checks](https://github.com/Saeidesl/PRSPRO2/actions/runs/40224464023)، [agent suite](https://github.com/Saeidesl/PRSPRO2/actions/runs/40224464087)، [cross-repository QA](https://github.com/Saeidesl/PRSPRO2/actions/runs/40224464101)، [browser audit](https://github.com/Saeidesl/PRSPRO2/actions/runs/40224463997).
+- رفتار تأییدشده در تست رگرسیون: فرم قبل از پایان lookup ساخته می‌شود؛ انتخاب پروژه و ثبت دریافت تا آماده‌شدن فهرست غیرفعال‌اند؛ شکست lookup پیام قابل مشاهده می‌دهد؛ پاسخ async پس از بسته‌شدن فرم نادیده گرفته می‌شود.
+- محدودیت: ثبت واقعی دریافت در محیط عملیاتی انجام نشد؛ ممیزی authenticated به staging مستقل نیاز دارد.
+- دامنه: فرانت‌اند و تست‌ها؛ بک‌اند، Google Sheets و Apps Script تغییر نکردند.
+
+## مورد بعدی برای بررسی — BUG-PERF-012
+
+- گزارش قدیمی، زمان آماده‌شدن مسیر Procurement را حدود 4.37 ثانیه ثبت کرده بود. این عدد مربوط به ممیزی قبلی است و نباید به‌عنوان وضعیت فعلی فرض شود.
+- ممیزی تازه در PRها فقط shell/login را بررسی می‌کند، چون `PMS_STAGING_API_BASE_URL` و حساب QA staging در دسترس نیستند؛ بنابراین زمان فعلی Procurement و تفکیک API/رندر هنوز قابل تأیید نیست.
+- اقدام بعدی: بازبینی مسیر `js/modules/procurement.js` و قرارداد `/procurement/workspace`، مشخص‌کردن نقاط احتمالی درخواست‌های تکراری و آماده‌سازی اندازه‌گیری مستقل. هیچ بهینه‌سازی حدسی یا تغییر بک‌اند انجام نمی‌شود تا داده اندازه‌گیری‌شده و قرارداد فعلی تأیید شود.
