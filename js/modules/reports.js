@@ -290,6 +290,17 @@
           add('ملزومات', 'وضعیت', need.ProcurementStatus || need.Status);
         });
       }
+      if (config.calculations !== false) {
+        (((this.currentReport.procurement || {}).calculations) || []).forEach(function (row) {
+          add('محاسبات ملزومات', 'مشخصات ملزوم', row.MaterialSpecName || row.MaterialSpecID);
+          add('محاسبات ملزومات', 'تعداد مبنا', row.BasisQuantity);
+          add('محاسبات ملزومات', 'مصرف هر واحد', row.ConsumptionPerUnit);
+          add('محاسبات ملزومات', 'درصد ضایعات', row.WastagePercent);
+          add('محاسبات ملزومات', 'مقدار محاسبه‌شده', row.CalculatedQuantity);
+          add('محاسبات ملزومات', 'اختلاف', row.VarianceQuantity);
+          add('محاسبات ملزومات', 'تاریخ', row.CreatedAt);
+        });
+      }
       if (config.orders !== false) {
         (((this.currentReport.procurement || {}).orders) || []).forEach(function (order) {
           (order.Items || []).forEach(function (item) {
