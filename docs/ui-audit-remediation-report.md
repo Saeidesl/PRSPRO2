@@ -43,6 +43,7 @@
 | BUG-PERF-012 | متوسط | `needs_investigation` | زمان آماده‌شدن بعضی مسیرها از 3 ثانیه بیشتر است؛ Procurement حدود 4.37s در آخرین گزارش. | تفکیک زمان API، رندر و شبکه؛ هدف‌گذاری بهبود بدون تغییر رفتار. |
 | BUG-QA-013 | بالا | `coverage_gap` | ممیزی خودکار 0 ارسال فرم انجام داده و تنها 14 دکمه امن را بررسی کرده؛ عملیات واقعی همه فرم‌ها اثبات نشده است. | گسترش E2E در محیط ایزوله، با داده‌های QA قابل شناسایی و پاک‌سازی ایمن. |
 | BUG-CI-015 | بالا | `fixed_verified` | اسکریپت بازبینی diff اکنون در PR از SHA پایه همان رویداد استفاده می‌کند و در push/manual فقط آخرین commit را بررسی می‌کند؛ دیگر به merge-base متغیر `origin/main` وابسته نیست. | پس از اصلاح، Frontend contract/diff review موفق شد. |
+| BUG-QA-017 | بالا | `blocked` | Browser audit run `40219463602` با وجود متغیرهای ورود، بعد از POST به `/api/auth/login` در مسیر ورود ماند؛ گزارش JSON نشان داد `authenticated=false`، `dynamicFormsInventoried=0` و فقط یک route بررسی شده است. | اعتبار تست/secretها و علت پاسخ ورود را در محیط مجاز بررسی کن؛ پس از اصلاح، ممیزی authenticated را دوباره اجرا کن. کد ابزار تست اکنون این وضعیت را `authentication-failed` ثبت می‌کند و با exit code غیرصفر مشخص می‌سازد. |
 | BUG-ENV-014 | بالا | `blocked` | گزارش E2E در 2026-10-24 پروژه/رویداد/نیاز/سفارش/دریافت جزئی ساخته است؛ workflow مقصد را در گزارش ذخیره نمی‌کند و fallback به GitHub Pages است، در حالی که API به GAS متصل است. | پیش از هر تست نوشتنی، مقصد API و محیط تست را شفاف و ایمن کن؛ داده‌های ایجادشده را بدون بررسی حذف نکن. |
 
 ## گردش کار رفع
@@ -178,3 +179,10 @@
 - تغییرات در شاخه `fix/dynamic-form-loading-feedback-20261025` باعث می‌شوند مودال ایجاد کاربر و نوع رویداد قبل از دریافت فهرست‌ها ظاهر شوند و پیام loading قابل‌دسترس داشته باشند.
 - Frontend checks، PMS frontend agent suite و PMS cross-repository QA برای SHA `1053501193edff18af7558c083a32bc42f8f8161` موفق شدند.
 - Browser audit run https://github.com/Saeidesl/PRSPRO2/actions/runs/40219463602 با نتیجه workflow موفق تمام شد، اما گزارش آن `limited-no-test-credentials` است: فقط مسیر ورود بارگذاری شد، `dynamicFormsInventoried=0` و `formOpenersChecked=0`. بنابراین این اجرا اثبات رفتار فرم‌ها نیست و باید وضعیت مورد تا دسترسی به نشست تست معتبر `merged_pending_browser_audit` بماند.
+
+### دور 7 — شفاف‌سازی شکست ورود در ممیزی خودکار
+
+- شواهد run `40219463602`: `login.authenticated=false`, `loginAttemptMs=15049`, `requestedRoutes=1`, `dynamicFormsInventoried=0`, `formOpenersChecked=0`; درخواست `POST /api/auth/login` پاسخ HTTP 302 داشت و هیچ خطای شبکه یا صفحه‌ای ثبت نشد.
+- علت دقیق احراز هویت هنوز مشخص نیست؛ ابزار قبلی پس از 15 ثانیه timeout می‌داد و وضعیت گمراه‌کننده `limited-no-test-credentials` ثبت می‌کرد، حتی وقتی متغیرها تنظیم شده بودند.
+- اصلاح ابزار در شاخه `fix/ui-audit-auth-diagnostics-20261025`: انتظار برای تغییر مسیر یا پیام خطای قابل‌مشاهده، ذخیره پیام خطا در گزارش و ثبت `authentication-failed`/exit code غیرصفر وقتی credentials تنظیم شده‌اند اما ورود موفق نیست.
+- وضعیت: `in_progress` تا تست ابزار؛ رفع ورود واقعی به حساب QA به اعتبار معتبر/محیط مجاز وابسته است و در حال حاضر `blocked` ثبت می‌شود.

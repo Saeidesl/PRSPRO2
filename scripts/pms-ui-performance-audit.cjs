@@ -155,14 +155,42 @@ async function main() {
     const loginStart = Date.now();
     await page.locator('#login-button').click();
     try {
-      await page.waitForFunction(() => !location.hash.includes('login'), null, { timeout: 15000 });
-      authenticated = true;
+      await page.waitForFunction(() => {
+        const authenticatedRoute = !location.hash.includes('login');
+        const hasVisibleLoginError = Array.from(document.querySelectorAll(
+          '#login-error, #login-message, [role="alert"], .alert-danger'
+        )).some(element => element.offsetParent !== null && String(element.textContent || '').trim());
+        return authenticatedRoute || hasVisibleLoginError;
+      }, null, { timeout: 15000 });
     } catch (_) {
-      results.coverageGaps.push('Login did not reach an authenticated route; protected-page audit was not completed.');
+      // Keep the timeout result, then capture the visible UI message below.
     }
-    results.login = { loginFormReadyMs: loginReadyMs, loginAttemptMs: Date.now() - loginStart, authenticated };
+    authenticated = await page.evaluate(() => !location.hash.includes('login'));
+    const loginErrorMessage = authenticated ? '' : await page.evaluate(() => {
+      const candidates = Array.from(document.querySelectorAll(
+        '#login-error, #login-message, [role="alert"], .alert-danger'
+      ));
+      const visible = candidates.find(element =>
+        element.offsetParent !== null && String(element.textContent || '').trim()
+      );
+      return visible ? String(visible.textContent || '').trim().slice(0, 300) : '';
+    });
+    if (!authenticated) {
+      const reason = loginErrorMessage || 'No visible error message appeared before the login timeout.';
+      results.coverageGaps.push('Login failed with test credentials; protected-page audit was not completed. UI message: ' + reason);
+    }
+    results.login = {
+      loginFormReadyMs: loginReadyMs,
+      loginAttemptMs: Date.now() - loginStart,
+      authenticated,
+      errorMessage: loginErrorMessage
+    };
   } else {
-    results.login = { loginFormReadyMs: loginReadyMs, authenticated: false, note: 'Set repository secrets PMS_TEST_USERNAME and PMS_TEST_PASSWORD to audit permission-protected pages.' };
+    results.login = {
+      loginFormReadyMs: loginReadyMs,
+      authenticated: false,
+      note: 'Set repository secrets PMS_TEST_USERNAME and PMS_TEST_PASSWORD to audit permission-protected pages.'
+    };
   }
 
   const routeList = authenticated ? routes.filter(route => route !== 'login') : ['login'];
@@ -377,13 +405,18 @@ const visible = el => {
     formSubmissionsExecuted: 0
   };
   const failedSafeButtonChecks = results.routes.reduce((n, route) => n + (route.safeButtonChecks || []).filter(check => check.clickCompleted === false).length, 0);
-  results.overallStatus = failedRoutes || results.pageErrors.length || failedSafeButtonChecks ? 'needs-attention' : (authenticated ? 'authenticated-audit-complete' : 'limited-no-test-credentials');
+  const authenticationFailed = Boolean(username && password && !authenticated);
+  results.overallStatus = failedRoutes || results.pageErrors.length || failedSafeButtonChecks
+    ? 'needs-attention'
+    : (authenticated
+      ? 'authenticated-audit-complete'
+      : (authenticationFailed ? 'authentication-failed' : 'limited-no-test-credentials'));
   results.coverageGaps = [...new Set(results.coverageGaps)];
   fs.writeFileSync(path.join(process.cwd(), 'test-results', 'latest-performance-report.json'), JSON.stringify(results, null, 2) + '\n');
   fs.writeFileSync(path.join(process.cwd(), 'test-results', 'latest-performance-report.md'), renderMarkdown(results));
   console.log(JSON.stringify({ summary: results.summary, overallStatus: results.overallStatus, report: 'test-results/latest-performance-report.json' }, null, 2));
   await browser.close();
-  if (failedRoutes || results.pageErrors.length) process.exitCode = 1;
+  if (failedRoutes || results.pageErrors.length || authenticationFailed) process.exitCode = 1;
 }
 function renderMarkdown(report) {
   const lines = [
