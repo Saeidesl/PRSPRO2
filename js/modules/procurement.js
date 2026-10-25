@@ -674,22 +674,11 @@
 
   async function openOrderForm(orderType) {
     const isProjectOrder = orderType === 'PROJECT';
-    try {
-      if (isProjectOrder) {
-        await loadProjectsForOrder();
-        if (!state.projects.length) {
-          showMessage('فهرست پروژه‌ها دریافت نشد یا پروژه‌ای برای انتخاب وجود ندارد.', true);
-          return;
-        }
-      }
-    } catch (error) {
-      showMessage('دریافت فهرست پروژه‌ها ناموفق بود. لطفاً دوباره تلاش کنید.', true);
-      return;
-    }
 
+    // Open the form immediately; project lookups must not delay visible user feedback.
     const title = isProjectOrder ? 'ثبت سفارش مرتبط با پروژه' : 'ثبت سفارش عمومی';
     const projectField = isProjectOrder
-      ? '<label class="form-group"><span>کد پروژه *</span><select name="ProjectID" required>' + projectOptions() + '</select></label>'
+      ? '<label class="form-group"><span>کد پروژه *</span><select name="ProjectID" required disabled><option value="">در حال دریافت فهرست پروژه‌ها…</option></select></label>'
       : '';
     const root = modal(title,
       '<form id="procurement-order-form" data-order-type="' + orderType + '"><div class="form-grid">' +
@@ -706,6 +695,8 @@
     orderForm.dataset.idempotencyKey = requestIdempotencyKey('PO');
     const itemsRoot = root.querySelector('#procurement-order-items');
     const projectSelect = root.querySelector('[name="ProjectID"]');
+    const submitButton = orderForm.querySelector('[type="submit"]');
+    if (projectSelect && submitButton) submitButton.disabled = true;
     if (projectSelect) {
       projectSelect.addEventListener('change', async function () {
         if (!projectSelect.value) {
@@ -820,6 +811,28 @@
         }
       }
     });
+
+    if (projectSelect) {
+      loadProjectsForOrder().then(function (projects) {
+        if (!orderForm.isConnected) return;
+        if (projects.length) {
+          projectSelect.innerHTML = projectOptions();
+          projectSelect.disabled = false;
+          if (submitButton) submitButton.disabled = false;
+        } else {
+          projectSelect.innerHTML = option('', 'فهرست پروژه‌ها در دسترس نیست', true);
+          projectSelect.disabled = true;
+          if (submitButton) submitButton.disabled = true;
+          showMessage('فهرست پروژه‌ها دریافت نشد یا پروژه‌ای برای انتخاب وجود ندارد. دوباره تلاش کنید.', true);
+        }
+      }).catch(function () {
+        if (!orderForm.isConnected) return;
+        projectSelect.innerHTML = option('', 'خطا در دریافت فهرست پروژه‌ها', true);
+        projectSelect.disabled = true;
+        if (submitButton) submitButton.disabled = true;
+        showMessage('دریافت فهرست پروژه‌ها ناموفق بود. لطفاً دوباره تلاش کنید.', true);
+      });
+    }
   }
   async function openReceiptForm(options) { options = options || {};
     try {
