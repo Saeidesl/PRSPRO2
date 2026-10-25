@@ -33,7 +33,8 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Run staging production-to-procurement scenario
         env:
-          PMS_BASE_URL: ${{ vars.PMS_BASE_URL || 'https://saeidesl.github.io/PRSPRO2/' }}
+          PMS_BASE_URL: ${{ vars.PMS_STAGING_BASE_URL || vars.PMS_BASE_URL || 'https://saeidesl.github.io/PRSPRO2/' }}
+          PMS_STAGING_API_BASE_URL: ${{ secrets.PMS_STAGING_API_BASE_URL }}
           PMS_TEST_USERNAME: ${{ secrets.PMS_TEST_USERNAME }}
           PMS_TEST_PASSWORD: ${{ secrets.PMS_TEST_PASSWORD }}
         run: node scripts/pms-staging-production-procurement-e2e.cjs
