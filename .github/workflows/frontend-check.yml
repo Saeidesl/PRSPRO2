@@ -64,3 +64,18 @@ jobs:
           }
           console.log('All referenced assets exist and CSS braces are balanced.');
           NODE
+
+      - name: Verify write-enabled E2E fails closed without staging API
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          env -u PMS_STAGING_API_BASE_URL -u PMS_TEST_USERNAME -u PMS_TEST_PASSWORD \
+            node scripts/pms-staging-production-procurement-e2e.cjs
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then
+            echo "Expected E2E to stop when no isolated staging API is configured."
+            exit 1
+          fi
+          node -e "const r=require('./test-results/staging-e2e-report.json'); if (!/PMS_STAGING_API_BASE_URL/.test(r.error || '') || Object.keys(r.created || {}).length) { console.error('E2E safety guard did not fail closed', r); process.exit(1); } console.log('E2E safety guard passed: no API target, no records created.');"
