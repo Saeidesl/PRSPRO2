@@ -835,17 +835,10 @@
     }
   }
   async function openReceiptForm(options) { options = options || {};
-    try {
-      await loadProjectsForOrder();
-    } catch (error) {
-      showMessage('دریافت فهرست پروژه‌ها ناموفق بود. لطفاً دوباره تلاش کنید.', true);
-      return;
-    }
-
     const root = modal('ثبت دریافت واقعی انبار',
       '<form id="procurement-receipt-form">' +
       '<div class="form-grid procurement-receipt-header">' +
-      '<label class="form-group"><span>پروژه / نوع سفارش *</span><select name="ProjectID" required>' + receiptProjectOptions() + '</select></label>' +
+      '<label class="form-group"><span>پروژه / نوع سفارش *</span><select name="ProjectID" required disabled><option value="">در حال دریافت فهرست پروژه‌ها…</option></select></label>' +
       '<label class="form-group"><span>تاریخ دریافت</span><input name="ReceivedAt" type="text" inputmode="numeric" placeholder="۱۴۰۵/۰۷/۲۷"></label>' +
       '<label class="form-group"><span>توضیحات دریافت</span><input name="Notes" maxlength="500" placeholder="اختیاری"></label>' +
       '</div>' +
@@ -860,12 +853,8 @@
     const form = root.querySelector('#procurement-receipt-form');
     form.dataset.idempotencyKey = requestIdempotencyKey('REC');
     const projectSelect = form.elements.ProjectID;
-    if (options.orderId) {
-      const orderOption = document.createElement('option');
-      orderOption.value = '__ORDER__';
-      orderOption.textContent = 'تمام اقلام باقی‌مانده این سفارش';
-      projectSelect.insertBefore(orderOption, projectSelect.options[1] || null);
-    }
+    const submitButton = form.querySelector('[type="submit"]');
+    if (submitButton) submitButton.disabled = true;
     const itemsContainer = root.querySelector('#procurement-receipt-items');
     const summary = root.querySelector('#procurement-receipt-summary');
     const receiveDate = form.elements.ReceivedAt;
@@ -988,8 +977,6 @@
     }
 
     projectSelect.addEventListener('change', renderReceiptItems);
-    if (options.orderId) { projectSelect.value = '__ORDER__'; renderReceiptItems(); }
-    else if (options.projectId) { projectSelect.value = options.projectId; renderReceiptItems(); }
     itemsContainer.addEventListener('change', function (event) {
       if (event.target.matches('[name="SelectedItem"]')) {
         const row = event.target.closest('[data-receipt-row]');
@@ -1057,6 +1044,41 @@
           submit.textContent = 'ثبت دریافت اقلام انتخاب‌شده';
         }
       }
+    });
+
+    loadProjectsForOrder().then(function (projects) {
+      if (!form.isConnected) return;
+      if (!projects.length) {
+        projectSelect.innerHTML = option('', 'فهرست پروژه‌ها در دسترس نیست', true);
+        projectSelect.disabled = true;
+        if (submitButton) submitButton.disabled = true;
+        itemsContainer.innerHTML = '<div class="table-empty" role="status">دریافت فهرست پروژه‌ها ناموفق بود؛ فرم را ببندید و دوباره تلاش کنید.</div>';
+        showMessage('فهرست پروژه‌ها دریافت نشد یا پروژه‌ای برای انتخاب وجود ندارد. دوباره تلاش کنید.', true);
+        return;
+      }
+      projectSelect.innerHTML = receiptProjectOptions();
+      if (options.orderId) {
+        const orderOption = document.createElement('option');
+        orderOption.value = '__ORDER__';
+        orderOption.textContent = 'تمام اقلام باقی‌مانده این سفارش';
+        projectSelect.insertBefore(orderOption, projectSelect.options[1] || null);
+      }
+      projectSelect.disabled = false;
+      if (submitButton) submitButton.disabled = false;
+      if (options.orderId) {
+        projectSelect.value = '__ORDER__';
+        renderReceiptItems();
+      } else if (options.projectId) {
+        projectSelect.value = options.projectId;
+        renderReceiptItems();
+      }
+    }).catch(function () {
+      if (!form.isConnected) return;
+      projectSelect.innerHTML = option('', 'خطا در دریافت فهرست پروژه‌ها', true);
+      projectSelect.disabled = true;
+      if (submitButton) submitButton.disabled = true;
+      itemsContainer.innerHTML = '<div class="table-empty" role="status">خطا در دریافت فهرست پروژه‌ها؛ دوباره تلاش کنید.</div>';
+      showMessage('دریافت فهرست پروژه‌ها ناموفق بود. لطفاً دوباره تلاش کنید.', true);
     });
   }
 
