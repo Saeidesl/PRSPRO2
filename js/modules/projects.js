@@ -1020,7 +1020,7 @@
             <div class="filter-group form-group project-form-field" style="margin-bottom:16px;">
               <label for="new-project-file">افزودن فایل <span style="color:var(--color-text-secondary);font-size:12px;">(اختیاری)</span></label>
               <input type="file" id="new-project-file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" style="width:100%;box-sizing:border-box;">
-              <div id="new-project-filename-wrap" class="filter-group form-group project-form-field" style="margin-top:10px;" hidden>
+              <div id="new-project-filename-wrap" class="filter-group" style="margin-top:10px;" hidden>
                 <label for="new-project-filename">نام فایل</label>
                 <input type="text" id="new-project-filename" maxlength="180" autocomplete="off" placeholder="نام دلخواه فایل را وارد کنید" style="width:100%;box-sizing:border-box;min-height:42px;padding:9px 12px;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface);color:var(--color-text);font:inherit;">
                 <small id="new-project-filename-preview" style="display:block;margin-top:5px;color:var(--color-text-secondary);overflow-wrap:anywhere;">نام نهایی فایل با کد پروژه ترکیب می‌شود.</small>
