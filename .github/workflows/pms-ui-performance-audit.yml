@@ -82,15 +82,35 @@ jobs:
           if [ ! -f test-results/latest-performance-report.json ]; then
             echo '{"overallStatus":"runner-error","note":"Audit runner did not produce a report."}' > test-results/latest-performance-report.json
           fi
+          mkdir -p /tmp/pms-audit-report
+          cp test-results/latest-performance-report.json /tmp/pms-audit-report/latest-performance-report.json
+          if [ -f test-results/latest-performance-report.md ]; then
+            cp test-results/latest-performance-report.md /tmp/pms-audit-report/latest-performance-report.md
+          else
+            printf '# PMS UI and Performance Audit\n\n- Overall: **runner-error**\n- The audit runner did not produce a Markdown report.\n' > /tmp/pms-audit-report/latest-performance-report.md
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add test-results/latest-performance-report.json test-results/latest-performance-report.md
-          if git diff --cached --quiet; then
-            echo "Report unchanged; no repository commit needed."
-          else
+
+          # Build the report commit on the latest main and retry if another QA run
+          # pushes while this audit is finishing.
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git reset --hard origin/main
+            mkdir -p test-results
+            cp /tmp/pms-audit-report/latest-performance-report.json test-results/latest-performance-report.json
+            cp /tmp/pms-audit-report/latest-performance-report.md test-results/latest-performance-report.md
+            git add test-results/latest-performance-report.json test-results/latest-performance-report.md
+            if git diff --cached --quiet; then
+              echo "Report unchanged; no repository commit needed."
+              exit 0
+            fi
             git commit -m "test: update latest PMS performance audit report [skip ci]"
-            # Other QA workflows may update report files on main concurrently.
-            # Rebase the report commit onto the latest remote main before pushing.
-            git pull --rebase origin main
-            git push
-          fi
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Report push raced with another main update (attempt $attempt/3); retrying."
+            sleep 2
+          done
+          echo "Unable to persist audit report after three attempts." >&2
+          exit 1
