@@ -51,5 +51,5 @@ test('main project create/edit dialog uses shared keyboard accessibility', () =>
   assert.match(source, /let projectModalKeyboard = null/);
   assert.match(source, /projectModalKeyboard = bindProjectModalKeyboard\(modal/);
   assert.match(source, /projectModalKeyboard\.focusFirst\(\)/);
-  assert.match(source, /if \(projectModalKeyboard\) projectModalKeyboard\.destroy\(\)/);
+  assert.match(source, /if \(projectModalKeyboard\)[\s\S]{0,100}projectModalKeyboard\.destroy\(\)/);
 });
