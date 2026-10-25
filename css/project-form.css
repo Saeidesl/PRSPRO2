@@ -90,10 +90,10 @@
   outline: 2px solid var(--color-focus-ring, var(--color-primary));
   outline-offset: 2px;
 }
-#project-create-form #new-project-description-setting,
+#project-create-form > .filter-group:has(#new-project-description),
+#project-create-form > .filter-group:has(#new-project-file),
 #project-create-form #new-project-departments-setting,
 #project-create-form #new-project-users-setting,
-#project-create-form #new-project-file,
 #project-create-form #new-project-notify-setting,
 #project-create-form #project-edit-attachments {
   grid-column: 1 / -1;
@@ -110,6 +110,7 @@
 }
 #project-create-form #new-project-users-setting,
 #project-create-form #new-project-status-setting { grid-column: span 1; }
+#project-create-form > .filter-group:has(#new-project-file) { grid-column: 1 / -1; }
 #project-create-form #new-project-notify-setting > label {
   display: flex;
   align-items: center;
@@ -230,10 +231,11 @@
 #project-draft-material-specs-rows [data-draft-material-spec-row] label[style*="grid-column"] {
   grid-column: 1 / -1 !important;
 }
-#project-draft-material-specs-form > div:last-child:not([data-draft-material-spec-row]) {
-  display: flex;
+#project-draft-material-specs-form > div:has(> #project-draft-material-specs-add) {
+  display: flex !important;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 8px !important;
+  margin-top: 14px !important;
 }
 #project-create-modal [role="dialog"] button,
 #project-edit-modal [role="dialog"] button,
