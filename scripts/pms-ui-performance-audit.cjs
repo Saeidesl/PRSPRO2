@@ -315,13 +315,20 @@ const visible = el => {
   // Never click buttons inside forms or labels that imply data changes.
   if (authenticated) {
     for (const routeResult of results.routes.filter(item => item.requestedRoute !== 'login' && item.status === 'loaded')) {
-      await page.evaluate(routeName => window.PMS.Router.navigate(routeName, false), routeResult.requestedRoute).catch(() => {});
-      try { await page.locator('#page-content').waitFor({ state: 'visible', timeout: 10000 }); } catch (_) {}
-      try { await page.waitForLoadState('networkidle', { timeout: 2500 }); } catch (_) {}
-      try { await page.waitForTimeout(500); } catch (_) {}
       const safeButtons = routeResult.buttons.filter(button => !button.inForm && !button.disabled && !dangerousAction.test(button.label) && button.type.toLowerCase() !== 'submit' && button.id);
       for (const button of safeButtons) {
         try {
+          // Form inventory opens dialogs intentionally. Reload before each smoke click
+          // so an old modal/backdrop cannot intercept a later button interaction.
+          await page.reload({ waitUntil: 'domcontentloaded' });
+          await page.locator('#page-content').waitFor({ state: 'visible', timeout: 10000 });
+          await page.evaluate(routeName => {
+            if (window.PMS && window.PMS.Router && typeof window.PMS.Router.navigate === 'function') window.PMS.Router.navigate(routeName, false);
+            else location.hash = routeName;
+          }, routeResult.requestedRoute);
+          await page.waitForFunction(routeName => location.hash.replace(/^#/, '').split('/')[0] === routeName, routeResult.requestedRoute, { timeout: 10000 }).catch(() => {});
+          try { await page.waitForLoadState('networkidle', { timeout: 4000 }); } catch (_) {}
+          await page.waitForTimeout(350);
           const locator = page.locator('#page-content').locator('[id="' + button.id.replace(/"/g, '\\"') + '"]').first();
           if (await locator.count() && await locator.isVisible() && await locator.isEnabled()) {
             const before = await page.locator('#page-content').innerText().catch(() => '');
@@ -331,10 +338,13 @@ const visible = el => {
             const after = await page.locator('#page-content').innerText().catch(() => '');
             routeResult.safeButtonChecks = routeResult.safeButtonChecks || [];
             routeResult.safeButtonChecks.push({ id: button.id, label: button.label, clickCompleted: true, visibleContentChanged: before !== after });
+          } else {
+            routeResult.safeButtonChecks = routeResult.safeButtonChecks || [];
+            routeResult.safeButtonChecks.push({ id: button.id, label: button.label, clickCompleted: false, error: 'Button was not visible and enabled after clean route navigation.' });
           }
         } catch (error) {
           routeResult.safeButtonChecks = routeResult.safeButtonChecks || [];
-          routeResult.safeButtonChecks.push({ id: button.id, label: button.label, clickCompleted: false, error: String(error.message || error).slice(0, 180) });
+          routeResult.safeButtonChecks.push({ id: button.id, label: button.label, clickCompleted: false, error: String(error.message || error).slice(0, 1000) });
         }
       }
     }
