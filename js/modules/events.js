@@ -702,8 +702,10 @@
 
       this.closeModal();
 
+      const previousFocus = document.activeElement;
       const modal = document.createElement('div');
       modal.id = 'event-details-modal';
+      modal._pmsFocusReturn = previousFocus;
       modal.dir = 'rtl';
       modal.className = 'event-modal-overlay';
       modal.setAttribute('role', 'dialog');
@@ -721,6 +723,8 @@
 
       document.body.appendChild(modal);
       this.modalOpen = true;
+      const detailsFirstFocusable = modal.querySelector('button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
+      if (detailsFirstFocusable) detailsFirstFocusable.focus();
 
       document.getElementById('event-details-close')
         .addEventListener('click', () => this.closeModal());
@@ -907,14 +911,20 @@
 
     closeModal: function () {
       const details = document.getElementById('event-details-modal');
-      if (details) details.remove();
-
       const form = document.getElementById('event-create-modal');
+      const focusReturn = (form && !this.submitting && form._pmsFocusReturn) ||
+        (details && details._pmsFocusReturn);
+
+      if (details) details.remove();
       if (form && !this.submitting) form.remove();
 
       this.modalOpen = Boolean(
         document.getElementById('event-create-modal')
       );
+      if (!this.modalOpen && focusReturn && focusReturn.isConnected &&
+          typeof focusReturn.focus === 'function') {
+        focusReturn.focus();
+      }
     },
 
     openForm: async function () {
@@ -928,8 +938,10 @@
       this.fieldsLoadedForTypeId = '';
       this.fieldsRequestId++;
 
+      const previousFocus = document.activeElement;
       const modal = document.createElement('div');
       modal.id = 'event-create-modal';
+      modal._pmsFocusReturn = previousFocus;
       modal.dir = 'rtl';
       modal.className = 'event-modal-overlay';
       modal.setAttribute('role', 'dialog');
