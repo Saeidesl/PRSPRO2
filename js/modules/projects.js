@@ -976,7 +976,7 @@
 
             <div style="display:flex;gap:10px;flex-wrap:wrap;margin:4px 0 16px;">
               ${this.canCreateOrEditProjects() ? '<button type="button" id="new-project-material-specs-button" class="btn btn-secondary">تعریف مصرف ملزومات</button>' : ''}
-              <button type="button" id="new-project-color-size-button class="btn btn-secondary">تعریف رنگ‌بندی و سایزبندی</button>
+              <button type="button" id="new-project-color-size-button" class="btn btn-secondary">تعریف رنگ‌بندی و سایزبندی</button>
             </div>
             <div id="new-project-material-specs-summary" style="font-size:12px;color:var(--color-text-secondary);margin:-8px 0 14px;">مصرف ملزومات اختیاری است و هنوز تعریف نشده است.</div>
             <div id="new-project-color-size-summary" style="font-size:12px;color:var(--color-text-secondary);margin:-8px 0 16px;">رنگ‌بندی و سایزبندی اختیاری است و هنوز تعریف نشده است.</div>
