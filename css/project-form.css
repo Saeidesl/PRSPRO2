@@ -1,0 +1,316 @@
+/* Project form layout unification — shared PMS tokens, RTL-first. */
+#project-create-modal,
+#project-edit-modal,
+#project-color-size-modal,
+#project-draft-material-specs-modal {
+  box-sizing: border-box;
+  padding: clamp(8px, 2.4vw, 24px) !important;
+  overscroll-behavior: contain;
+}
+#project-create-modal > [role="dialog"],
+#project-edit-modal > [role="dialog"],
+#project-color-size-modal > [role="dialog"],
+#project-draft-material-specs-modal > [role="dialog"] {
+  box-sizing: border-box !important;
+  width: min(100%, 920px) !important;
+  max-width: 920px !important;
+  max-height: min(92dvh, 900px) !important;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: clamp(16px, 2.8vw, 28px) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-xl, 14px) !important;
+  background: var(--color-surface) !important;
+  color: var(--color-text) !important;
+  box-shadow: var(--shadow-overlay) !important;
+}
+#project-create-title,
+#project-color-size-title,
+#project-draft-material-specs-title {
+  margin: 0;
+  color: var(--color-text);
+  font-size: clamp(17px, 2.2vw, 22px);
+  line-height: 1.65;
+  font-weight: 750;
+}
+#project-create-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 16px;
+  min-width: 0;
+  width: 100%;
+}
+#project-create-form > .filter-group {
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
+  margin: 0 0 16px !important;
+  padding: 0;
+}
+#project-create-form > .filter-group > label,
+#project-create-form > .filter-group > label:not(:has(input[type="checkbox"])) {
+  display: block;
+  margin: 0 0 7px;
+  color: var(--color-text);
+  font-size: var(--font-size-sm, 13px);
+  font-weight: 650;
+  line-height: 1.8;
+}
+#project-create-form input:not([type="checkbox"]):not([type="file"]),
+#project-create-form select,
+#project-create-form textarea {
+  min-width: 0;
+  max-width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  box-sizing: border-box !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--control-radius, 8px) !important;
+  background: var(--color-input-bg, var(--color-surface)) !important;
+  color: var(--color-input-text, var(--color-text)) !important;
+  font: inherit;
+}
+#project-create-form textarea { min-height: 96px; }
+#project-create-form input[type="file"] {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px;
+  border: 1px dashed var(--color-border) !important;
+  border-radius: var(--control-radius, 8px);
+  background: var(--color-surface-hover, var(--color-surface));
+  color: var(--color-text);
+  box-sizing: border-box;
+}
+#project-create-form input:focus-visible,
+#project-create-form select:focus-visible,
+#project-create-form textarea:focus-visible {
+  outline: 2px solid var(--color-focus-ring, var(--color-primary));
+  outline-offset: 2px;
+}
+#project-create-form #new-project-description-setting,
+#project-create-form #new-project-departments-setting,
+#project-create-form #new-project-users-setting,
+#project-create-form #new-project-file,
+#project-create-form #new-project-notify-setting,
+#project-create-form #project-edit-attachments {
+  grid-column: 1 / -1;
+}
+#project-create-form #new-project-departments-setting,
+#project-create-form #new-project-users-setting,
+#project-create-form #new-project-status-setting,
+#project-create-form #new-project-file,
+#project-create-form #new-project-notify-setting {
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface-hover, var(--color-surface));
+}
+#project-create-form #new-project-users-setting,
+#project-create-form #new-project-status-setting { grid-column: span 1; }
+#project-create-form #new-project-notify-setting > label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  cursor: pointer;
+}
+#project-create-form #new-project-notify {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  min-height: 18px;
+  accent-color: var(--color-primary);
+}
+#project-create-form .project-access-grid {
+  margin-top: 8px;
+}
+#project-create-form small,
+#project-create-form .project-lookup-loading,
+#project-create-form .project-lookup-error {
+  line-height: 1.9;
+}
+#project-create-form > div:has(> #new-project-material-specs-button),
+#project-create-form > div:has(> #project-create-submit) {
+  grid-column: 1 / -1;
+}
+#project-create-form > div:has(> #new-project-material-specs-button) {
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 10px !important;
+  margin: 4px 0 10px !important;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+}
+#project-create-form > div:has(> #new-project-material-specs-button) + #new-project-material-specs-summary,
+#project-create-form > div:has(> #new-project-material-specs-button) + #new-project-material-specs-summary + #new-project-color-size-summary {
+  grid-column: 1 / -1;
+  margin: 0 0 10px !important;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--color-surface-hover, var(--color-surface));
+  line-height: 1.8;
+}
+#project-create-form > div:has(> #project-create-submit) {
+  display: flex !important;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px !important;
+  margin: 8px 0 0 !important;
+  padding-top: 18px;
+  border-top: 1px solid var(--color-border);
+}
+#project-create-form > div:has(> #project-create-submit) .btn {
+  min-height: 44px;
+  padding: 10px 20px;
+}
+#project-color-size-modal > [role="dialog"] { width: min(100%, 820px) !important; }
+#project-color-size-form { min-width: 0; }
+#project-color-size-form > div:first-child {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+}
+#project-color-size-form > div:first-child > section {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface-hover, var(--color-surface));
+}
+#project-color-size-form [data-color-size-list] { min-width: 0; }
+#project-color-size-form [data-variant-row] {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin-bottom: 8px;
+}
+#project-color-size-form [data-variant-row] input {
+  min-height: 42px;
+  flex: 1 1 auto;
+}
+#project-color-size-form [data-variant-row] .btn,
+#project-color-size-form [data-color-size-add],
+#project-color-size-form [data-color-size-clear],
+#project-color-size-form [data-color-size-close] { min-height: 42px; }
+#project-draft-material-specs-rows [data-draft-material-spec-row] {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  margin-top: 12px !important;
+  padding: 14px !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 12px !important;
+  background: var(--color-surface-hover, var(--color-surface));
+  color: var(--color-text);
+}
+#project-draft-material-specs-rows [data-draft-material-spec-row] label {
+  min-width: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-sm, 13px);
+  font-weight: 600;
+  line-height: 1.8;
+}
+#project-draft-material-specs-rows [data-draft-material-spec-row] label input {
+  width: 100% !important;
+  min-width: 0;
+  min-height: 42px;
+  padding: 9px 10px;
+  margin-top: 5px;
+  box-sizing: border-box;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+#project-draft-material-specs-rows [data-draft-material-spec-row] label[style*="grid-column"] {
+  grid-column: 1 / -1 !important;
+}
+#project-draft-material-specs-form > div:last-child:not([data-draft-material-spec-row]) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+#project-create-modal [role="dialog"] button,
+#project-edit-modal [role="dialog"] button,
+#project-color-size-modal [role="dialog"] button,
+#project-draft-material-specs-modal [role="dialog"] button {
+  font-family: inherit;
+}
+@media (max-width: 680px) {
+  #project-create-modal,
+  #project-edit-modal,
+  #project-color-size-modal,
+  #project-draft-material-specs-modal {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+  #project-create-modal > [role="dialog"],
+  #project-edit-modal > [role="dialog"],
+  #project-color-size-modal > [role="dialog"],
+  #project-draft-material-specs-modal > [role="dialog"] {
+    width: 100% !important;
+    max-width: none !important;
+    max-height: 94dvh !important;
+    border-radius: 18px 18px 0 0 !important;
+    padding: 18px 14px calc(14px + env(safe-area-inset-bottom)) !important;
+    border-bottom: 0 !important;
+  }
+  #project-create-form { grid-template-columns: minmax(0, 1fr); }
+  #project-create-form > .filter-group,
+  #project-create-form #new-project-users-setting,
+  #project-create-form #new-project-status-setting { grid-column: 1 / -1; }
+  #project-create-form #new-project-departments-setting,
+  #project-create-form #new-project-users-setting,
+  #project-create-form #new-project-status-setting,
+  #project-create-form #new-project-file,
+  #project-create-form #new-project-notify-setting { padding: 12px; }
+  #project-create-form > div:has(> #project-create-submit) {
+    position: sticky;
+    bottom: -1px;
+    z-index: 2;
+    padding: 12px 0 calc(4px + env(safe-area-inset-bottom));
+    background: var(--color-surface);
+  }
+  #project-create-form > div:has(> #project-create-submit) .btn {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+  #project-create-form > div:has(> #new-project-material-specs-button) .btn {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+  #project-color-size-form > div:first-child {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
+  }
+  #project-color-size-form > div:first-child > section { padding: 12px; }
+  #project-draft-material-specs-rows [data-draft-material-spec-row] {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px !important;
+    padding: 12px !important;
+  }
+  #project-draft-material-specs-rows [data-draft-material-spec-row] label[style*="grid-column"] {
+    grid-column: 1 !important;
+  }
+}
+@media (max-width: 380px) {
+  #project-create-modal > [role="dialog"],
+  #project-edit-modal > [role="dialog"],
+  #project-color-size-modal > [role="dialog"],
+  #project-draft-material-specs-modal > [role="dialog"] {
+    padding-inline: 10px !important;
+  }
+  #project-color-size-form [data-variant-row] { gap: 6px; }
+  #project-color-size-form [data-variant-row] .btn { padding-inline: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #project-create-modal *,
+  #project-edit-modal *,
+  #project-color-size-modal *,
+  #project-draft-material-specs-modal * { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+}
