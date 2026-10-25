@@ -44,8 +44,9 @@
 | BUG-QA-013 | بالا | `coverage_gap` | ممیزی خودکار 0 ارسال فرم انجام داده و تنها 14 دکمه امن را بررسی کرده؛ عملیات واقعی همه فرم‌ها اثبات نشده است. | گسترش E2E در محیط ایزوله، با داده‌های QA قابل شناسایی و پاک‌سازی ایمن. |
 | BUG-CI-015 | بالا | `fixed_verified` | اسکریپت بازبینی diff اکنون در PR از SHA پایه همان رویداد استفاده می‌کند و در push/manual فقط آخرین commit را بررسی می‌کند؛ دیگر به merge-base متغیر `origin/main` وابسته نیست. | پس از اصلاح، Frontend contract/diff review موفق شد. |
 | BUG-QA-017 | بالا | `blocked` | Browser audit run `40219463602` با وجود متغیرهای ورود، بعد از POST به `/api/auth/login` در مسیر ورود ماند؛ گزارش JSON نشان داد `authenticated=false`، `dynamicFormsInventoried=0` و فقط یک route بررسی شده است. | اعتبار تست/secretها و علت پاسخ ورود را در محیط مجاز بررسی کن؛ پس از اصلاح، ممیزی authenticated را دوباره اجرا کن. کد ابزار تست اکنون این وضعیت را `authentication-failed` ثبت می‌کند و با exit code غیرصفر مشخص می‌سازد. |
+| BUG-CI-019 | متوسط | `in_progress` | مرحله ذخیره گزارش E2E در main پس از اجرای run `40220156931` با `rejected (fetch first)` شکست خورد؛ هم‌زمان workflow دیگری main را جلو برده بود. | گزارش را خارج از checkout موقت نگه دار، قبل از هر تلاش main را fetch/reset کن و push را با retry محدود انجام بده؛ سپس workflow را آزمایش کن. |
 | BUG-ENV-018 | بالا | `blocked` | سناریوی نوشتنی E2E برای اجرا به URL یک Web App مستقل Google Apps Script و Spreadsheet آزمایشی نیاز دارد؛ صرفاً انتشار نسخه جدید روی همان پروژه/Sheet محیط staging محسوب نمی‌شود. | secret `PMS_STAGING_API_BASE_URL` را فقط با URL محیط جداگانه تنظیم کن و سپس E2E را اجرا کن؛ تا آن زمان اسکریپت قبل از login و هر نوشتن متوقف می‌شود. |
-| BUG-ENV-014 | بالا | `in_progress` | workflow E2E قبلاً API فرانت‌اند را از URL ثابت تولید می‌گرفت و با fallback به GitHub Pages می‌توانست داده واقعی بنویسد. | الزام مقصد صریح staging API و تست fail-closed؛ پس از موفقیت CI به `fixed_verified` تغییر می‌کند. |
+| BUG-ENV-014 | بالا | `fixed_verified` | workflow E2E قبلاً API فرانت‌اند را از URL ثابت تولید می‌گرفت و با fallback به GitHub Pages می‌توانست داده واقعی بنویسد. | الزام مقصد صریح staging API و تست fail-closed؛ پس از موفقیت CI به `fixed_verified` تغییر می‌کند. |
 
 ## گردش کار رفع
 
@@ -196,3 +197,11 @@
   - اسکریپت E2E به `PMS_STAGING_API_BASE_URL` نیاز دارد و URL باید ساختار Web App Apps Script را داشته باشد؛ نبود/نامعتبر بودن آن باعث توقف قبل از بازکردن مرورگر، login و هر درخواست نوشتنی می‌شود.
   - workflow متغیر secret را پاس می‌دهد و تست CI جدید تأیید می‌کند که بدون staging API هیچ رکوردی ساخته نمی‌شود.
 - وضعیت: `in_progress` تا موفقیت تست guard. خود سناریوی end-to-end همچنان به یک GAS/Spreadsheet جداگانه نیاز دارد و تا آن زمان `BUG-ENV-018` مسدود است.
+
+### نتیجه ایمن‌سازی E2E و اصلاح ذخیره گزارش
+
+- آزمون regression در Frontend checks موفق شد: اجرای E2E بدون `PMS_STAGING_API_BASE_URL` قبل از بازکردن مرورگر متوقف شد و `test-results/staging-e2e-report.json` هیچ رکوردی در `created` نداشت. این مورد BUG-ENV-014 را `fixed_verified` می‌کند.
+- اجرای واقعی workflow پس از ادغام PR #90 نیز در log ثبت کرد: `Missing or invalid PMS_STAGING_API_BASE_URL; ... no records were written.` بنابراین هیچ رکوردی در این run نوشته نشد.
+- مرحله persist گزارش همان run به‌دلیل رقابت هم‌زمان روی `main` شکست خورد: `rejected (fetch first)`. این مورد جدید BUG-CI-019 است.
+- اصلاح در شاخه `fix/e2e-report-persistence-retry-20261025`: گزارش در `RUNNER_TEMP` حفظ می‌شود و مرحله ذخیره، `origin/main` را fetch/reset می‌کند و حداکثر سه بار push را retry می‌کند.
+- وضعیت BUG-CI-019: `in_progress` تا تست CI. وضعیت BUG-ENV-018 همچنان `blocked` است تا یک URL و Spreadsheet آزمایشی جداگانه پیکربندی شود.
