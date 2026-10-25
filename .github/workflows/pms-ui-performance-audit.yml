@@ -79,15 +79,40 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [ ! -f test-results/latest-performance-report.json ]; then
-            echo '{"overallStatus":"runner-error","note":"Audit runner did not produce a report."}' > test-results/latest-performance-report.json
+          mkdir -p /tmp/pms-audit-report
+          if [ -f test-results/latest-performance-report.json ]; then
+            cp test-results/latest-performance-report.json /tmp/pms-audit-report/latest-performance-report.json
+          else
+            echo '{"overallStatus":"runner-error","note":"Audit runner did not produce a report."}' > /tmp/pms-audit-report/latest-performance-report.json
+          fi
+          if [ -f test-results/latest-performance-report.md ]; then
+            cp test-results/latest-performance-report.md /tmp/pms-audit-report/latest-performance-report.md
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add test-results/latest-performance-report.json test-results/latest-performance-report.md
-          if git diff --cached --quiet; then
-            echo "Report unchanged; no repository commit needed."
-          else
+
+          # Another workflow may update main while this browser audit is running.
+          # Rebase by rebuilding the report commit on the newest main instead of
+          # failing the entire audit on a non-fast-forward push.
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git reset --hard origin/main
+            mkdir -p test-results
+            cp /tmp/pms-audit-report/latest-performance-report.json test-results/latest-performance-report.json
+            if [ -f /tmp/pms-audit-report/latest-performance-report.md ]; then
+              cp /tmp/pms-audit-report/latest-performance-report.md test-results/latest-performance-report.md
+            fi
+            git add test-results/latest-performance-report.json test-results/latest-performance-report.md
+            if git diff --cached --quiet; then
+              echo "Report unchanged; no repository commit needed."
+              exit 0
+            fi
             git commit -m "test: update latest PMS performance audit report [skip ci]"
-            git push
-          fi
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Report push raced with another main update (attempt $attempt/3); retrying."
+            sleep 2
+          done
+          echo "Unable to persist audit report after three attempts." >&2
+          exit 1
