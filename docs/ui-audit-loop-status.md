@@ -27,7 +27,22 @@ PR: https://github.com/Saeidesl/PRSPRO2/pull/93
 - `.github/workflows/pms-ui-performance-audit.yml` پس از نصب Playwright این تست را اجرا می‌کند.
 - Commit تست مرورگر: `c286b1a3da5d1804ba58c94ae607dcbbb552688b`.
 - Commit اتصال تست به CI: `5aec2ad27450c80ec999799cbb2ceaf1f119c491`.
-- وضعیت: منتظر اجرای تست Chromium در workflow مربوط به ممیزی مرورگر روی آخرین SHA. تا موفقیت این تست و بررسی CI، مورد هنوز `in_progress` است.
+- وضعیت: `fixed_verified` برای رفتار کنترلر صفحه‌کلید در Chromium. تست مرورگر و همه بررسی‌های مرتبط موفق شدند؛ PR #93 در commit `e25d8f6cbc3e42232ab0fc2d20c38b9ceeabc87b` ادغام شد.
+
+
+
+## نتیجه نهایی دور — دسترس‌پذیری صفحه‌کلید مودال‌های پروژه
+
+- وضعیت: `fixed_verified` برای رفتار کنترلر صفحه‌کلید در مرورگر Chromium و آزمون‌های CI.
+- PR #93 ادغام شد: https://github.com/Saeidesl/PRSPRO2/pull/93
+- Commit ادغام: `e25d8f6cbc3e42232ab0fc2d20c38b9ceeabc87b`.
+- شواهد: [Frontend checks](https://github.com/Saeidesl/PRSPRO2/actions/runs/40223671848) موفق؛ [PMS frontend agent suite](https://github.com/Saeidesl/PRSPRO2/actions/runs/40223671853) موفق؛ [PMS cross-repository QA](https://github.com/Saeidesl/PRSPRO2/actions/runs/40223671836) موفق؛ [ممیزی Chromium و UI](https://github.com/Saeidesl/PRSPRO2/actions/runs/40223671862) موفق. در job مرورگر، نصب Playwright، تست واقعی Chromium و ممیزی UI همگی موفق شدند.
+- تست Chromium بررسی می‌کند: فوکوس اولیه، چرخش Tab و Shift+Tab، Escape، بازگشت فوکوس به عنصر بازکننده و بسته‌شدن فقط پنجره بالایی.
+- محدوده اثبات: رفتار تابع مشترک در Chromium تأیید شده؛ آزمون کامل صفحه‌خوان و آزمون دستی در دستگاه موبایل جداگانه انجام نشده است.
+- گزارش ممیزی عمومی همچنان `blocked-no-staging-api` است و فقط login/shell را بررسی کرده؛ بنابراین این دور، موفقیت سناریوی کامل PMS یا تعامل احراز هویت‌شده در تمام صفحات را اثبات نمی‌کند.
+- بک‌اند، Google Sheets و Apps Script تغییر نکردند؛ انتشار نسخه جدید لازم نبود.
+- گام بعدی: بررسی مورد بعدی قابل اصلاح از فهرست ممیزی؛ مشکل نبود staging برای سناریوهای نوشتنی به‌عنوان مانع محیطی باقی می‌ماند.
+
 
 ## معیار بستن دور
 1. Frontend checks روی آخرین SHA موفق شود.
