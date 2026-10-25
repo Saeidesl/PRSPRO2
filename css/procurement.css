@@ -397,9 +397,9 @@
 }
 :root[data-theme="dark"] .procurement-summary-card .procurement-status-badge.is-delivery,
 :root[data-theme="dark"] .procurement-status-badge.is-delivery {
-  background: color-mix(in srgb, var(--color-primary) 18%, var(--color-surface));
-  color: var(--color-primary);
-  border-color: color-mix(in srgb, var(--color-primary) 45%, var(--color-border));
+  background: color-mix(in srgb, var(--color-info) 18%, var(--color-surface));
+  color: var(--color-info);
+  border-color: color-mix(in srgb, var(--color-info) 45%, var(--color-border));
 }
 :root[data-theme="dark"] .procurement-summary-card .procurement-quantity-warn,
 :root[data-theme="dark"] .procurement-quantity-warn,
@@ -408,7 +408,7 @@
 }
 :root[data-theme="dark"] .procurement-summary-card .procurement-quantity-pending,
 :root[data-theme="dark"] .procurement-quantity-pending {
-  color: var(--color-primary) !important;
+  color: var(--color-info) !important;
 }
 :root[data-theme="dark"] .procurement-summary-card .procurement-quantity-done,
 :root[data-theme="dark"] .procurement-quantity-done {
