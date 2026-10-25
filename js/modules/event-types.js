@@ -500,6 +500,16 @@
       return;
     }
 
+    const modal = createModal(
+      editing ? 'ویرایش نوع رویداد' : 'ثبت نوع رویداد',
+      'event-type-form-modal'
+    );
+    modal.body.innerHTML =
+      '<div class="table-empty" role="status" aria-live="polite" style="padding:24px;text-align:center">' +
+      '<span class="et-spinner" aria-hidden="true"></span>' +
+      'در حال دریافت فهرست واحدها، کاربران و وضعیت‌های پروژه…' +
+      '</div>';
+
     try {
       await loadConfigurationLists();
     } catch (error) {
@@ -508,10 +518,7 @@
       console.error('Configuration lists loading failed:', error);
     }
 
-    const modal = createModal(
-      editing ? 'ویرایش نوع رویداد' : 'ثبت نوع رویداد',
-      'event-type-form-modal'
-    );
+    if (!modal.overlay.isConnected) return;
 
     const activeDepartments = state.departments.filter(isActive);
     const activeUsers = state.users.filter(isActive);
