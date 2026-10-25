@@ -13,6 +13,7 @@
     eventFields: [],
     modalOpen: false,
     submitting: false,
+    escapeHandlerBound: false,
     pendingIdempotencyKey: '',
     pendingIdempotencyFingerprint: '',
     fieldsRequestId: 0,
@@ -43,6 +44,15 @@
     },
 
     bindEvents: function () {
+      if (!this.escapeHandlerBound) {
+        this.escapeHandlerBound = true;
+        document.addEventListener('keydown', function (event) {
+          if (event.key === 'Escape' && Events.modalOpen && !Events.submitting) {
+            Events.closeModal();
+          }
+        });
+      }
+
       document.addEventListener('click', function (event) {
         const target = event.target;
 
