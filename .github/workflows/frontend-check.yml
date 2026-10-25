@@ -31,8 +31,8 @@ jobs:
             node --check "$file"
           done
 
-      - name: Run project modal accessibility regression tests
-        run: node --test tests/project-modal-accessibility.test.js
+      - name: Run frontend regression tests
+        run: node --test tests/*.test.js
 
       - name: Verify local assets and CSS block balance
         shell: bash
