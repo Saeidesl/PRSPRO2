@@ -46,3 +46,10 @@ test('project image lightbox uses shared keyboard accessibility', () => {
   assert.match(source, /openProjectImage: function/);
   assert.match(source, /keyboard = bindProjectModalKeyboard\(overlay, \(\) => overlay\.remove\(\)\)/);
 });
+
+test('main project create/edit dialog uses shared keyboard accessibility', () => {
+  assert.match(source, /let projectModalKeyboard = null/);
+  assert.match(source, /projectModalKeyboard = bindProjectModalKeyboard\(modal/);
+  assert.match(source, /projectModalKeyboard\.focusFirst\(\)/);
+  assert.match(source, /if \(projectModalKeyboard\) projectModalKeyboard\.destroy\(\)/);
+});

@@ -1217,12 +1217,14 @@
         if (fileHelp) fileHelp.textContent = 'برای افزودن فایل، مدیر باید دسترسی ATTACHMENT_UPLOAD را به نقش شما بدهد.';
       }
 
+      let projectModalKeyboard = null;
       const closeModal = () => {
         if (this.isSaving) {
           return;
         }
 
-        modal.remove();
+        if (projectModalKeyboard) projectModalKeyboard.close();
+        else modal.remove();
 
         if (this.modal === modal) {
           this.modal = null;
@@ -1259,8 +1261,18 @@
           settingsModalKeyboard.destroy();
           settingsModalKeyboard = null;
         }
+        if (projectModalKeyboard) {
+          projectModalKeyboard.destroy();
+          projectModalKeyboard = null;
+        }
         originalRemove();
       };
+      projectModalKeyboard = bindProjectModalKeyboard(modal, () => {
+        if (this.isSaving) return;
+        modal.remove();
+        if (this.modal === modal) this.modal = null;
+      });
+      projectModalKeyboard.focusFirst();
 
       form.addEventListener('input', () => { modal.dataset.lookupUserInteracted = 'true'; });
       form.addEventListener('change', () => { modal.dataset.lookupUserInteracted = 'true'; });
