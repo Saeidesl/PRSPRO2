@@ -89,5 +89,8 @@ jobs:
             echo "Report unchanged; no repository commit needed."
           else
             git commit -m "test: update latest PMS performance audit report [skip ci]"
+            # Other QA workflows may update report files on main concurrently.
+            # Rebase the report commit onto the latest remote main before pushing.
+            git pull --rebase origin main
             git push
           fi

@@ -299,7 +299,7 @@ const visible = el => {
           // are already present in the DOM but only become relevant within this dialog.
           snapshot.dynamicFormInventory.push({ openerId, opened: inventory.dialogVisible || inventory.forms.length > 0 || inventory.visibleControls > before.visibleControls, baselineFormCount: before.forms.length, baselineVisibleControls: before.visibleControls, visibleControls: inventory.visibleControls, forms: inventory.forms });
         } catch (error) {
-          snapshot.dynamicFormInventory.push({ openerId, opened: false, error: String(error.message || error).slice(0, 180), forms: [] });
+          snapshot.dynamicFormInventory.push({ openerId, opened: false, error: String(error.message || error).slice(0, 1000), forms: [] });
         }
       }
     }
@@ -316,16 +316,18 @@ const visible = el => {
   if (authenticated) {
     for (const routeResult of results.routes.filter(item => item.requestedRoute !== 'login' && item.status === 'loaded')) {
       await page.evaluate(routeName => window.PMS.Router.navigate(routeName, false), routeResult.requestedRoute).catch(() => {});
-      try { await page.waitForTimeout(250); } catch (_) {}
+      try { await page.locator('#page-content').waitFor({ state: 'visible', timeout: 10000 }); } catch (_) {}
+      try { await page.waitForLoadState('networkidle', { timeout: 2500 }); } catch (_) {}
+      try { await page.waitForTimeout(500); } catch (_) {}
       const safeButtons = routeResult.buttons.filter(button => !button.inForm && !button.disabled && !dangerousAction.test(button.label) && button.type.toLowerCase() !== 'submit' && button.id);
       for (const button of safeButtons) {
         try {
           const locator = page.locator('#page-content').locator('[id="' + button.id.replace(/"/g, '\\"') + '"]').first();
           if (await locator.count() && await locator.isVisible() && await locator.isEnabled()) {
             const before = await page.locator('#page-content').innerText().catch(() => '');
-            await locator.scrollIntoViewIfNeeded({ timeout: 3000 });
-            await locator.click({ timeout: 4000 });
-            await page.waitForTimeout(100);
+            await locator.scrollIntoViewIfNeeded({ timeout: 6000 });
+            await locator.click({ timeout: 8000 });
+            await page.waitForTimeout(200);
             const after = await page.locator('#page-content').innerText().catch(() => '');
             routeResult.safeButtonChecks = routeResult.safeButtonChecks || [];
             routeResult.safeButtonChecks.push({ id: button.id, label: button.label, clickCompleted: true, visibleContentChanged: before !== after });
