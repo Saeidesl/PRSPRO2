@@ -1137,8 +1137,20 @@
           statusSelect.value = awaiting ? awaiting.value : statusSelect.options[1].value;
         }
       };
-      const openSettings = () => { settingsModal.style.display = 'flex'; const first = settingsModal.querySelector('input,select,button'); if (first) first.focus(); };
-      const closeSettings = () => { settingsModal.style.display = 'none'; };
+      let settingsModalKeyboard = null;
+      const openSettings = () => {
+        if (settingsModalKeyboard) settingsModalKeyboard.destroy();
+        settingsModal.style.display = 'flex';
+        settingsModalKeyboard = bindProjectModalKeyboard(settingsModal, () => { settingsModal.style.display = 'none'; });
+        settingsModalKeyboard.focusFirst();
+      };
+      const closeSettings = () => {
+        if (settingsModalKeyboard) {
+          const keyboard = settingsModalKeyboard;
+          settingsModalKeyboard = null;
+          keyboard.close();
+        } else settingsModal.style.display = 'none';
+      };
       modal.querySelector('#project-settings-open').addEventListener('click', openSettings);
       settingsModal.querySelector('[data-settings-close]').addEventListener('click', closeSettings);
       settingsModal.querySelector('[data-settings-cancel]').addEventListener('click', closeSettings);
@@ -1243,6 +1255,10 @@
 
       modal.remove = () => {
         document.removeEventListener('keydown', escapeHandler);
+        if (settingsModalKeyboard) {
+          settingsModalKeyboard.destroy();
+          settingsModalKeyboard = null;
+        }
         originalRemove();
       };
 

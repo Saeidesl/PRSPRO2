@@ -27,3 +27,11 @@ test('project dialog controller ignores hidden and non-topmost dialogs', () => {
   assert.match(source, /getTopmostOverlay\(\) !== overlay/);
   assert.match(source, /style\.display === 'none'/);
 });
+
+test('project settings subdialog uses shared keyboard focus management', () => {
+  assert.match(source, /let settingsModalKeyboard = null/);
+  assert.match(source, /settingsModalKeyboard = bindProjectModalKeyboard\(settingsModal/);
+  assert.match(source, /settingsModalKeyboard\.focusFirst\(\)/);
+  assert.match(source, /settingsModalKeyboard\.destroy\(\)/);
+  assert.match(source, /const closeSettings = \(\) => \{/);
+});
