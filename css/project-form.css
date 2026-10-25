@@ -316,3 +316,100 @@
   #project-color-size-modal *,
   #project-draft-material-specs-modal * { scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }
+
+
+/* Project creation form — sectioned layout matching the approved concept. */
+#project-create-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+#project-create-title::before {
+  content: "";
+  display: block;
+  flex: 0 0 4px;
+  height: 30px;
+  border-radius: 99px;
+  background: var(--color-primary);
+}
+.project-form-section-title {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  margin: 8px 0 14px;
+  padding: 13px 15px;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 18%, var(--color-border));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-primary) 5%, var(--color-surface));
+  color: var(--color-text);
+}
+.project-form-section-title > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.project-form-section-title strong {
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.8;
+}
+.project-form-section-title small {
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.8;
+}
+.project-form-section-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--color-primary) 13%, var(--color-surface));
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: 850;
+}
+#project-create-form #new-project-departments-setting,
+#project-create-form #new-project-file,
+#project-create-form #new-project-notify-setting {
+  grid-column: 1 / -1;
+}
+#project-create-form #new-project-users-setting,
+#project-create-form #new-project-status-setting {
+  grid-column: span 1;
+}
+.project-settings-inline-note {
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface-hover, var(--color-surface));
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 2;
+}
+@media (max-width: 680px) {
+  .project-form-section-title {
+    gap: 10px;
+    margin: 5px 0 11px;
+    padding: 11px 12px;
+    border-radius: 10px;
+  }
+  .project-form-section-title strong { font-size: 13px; }
+  .project-form-section-title small { font-size: 10px; }
+  .project-form-section-number {
+    flex-basis: 29px;
+    width: 29px;
+    height: 29px;
+    border-radius: 9px;
+  }
+  #project-create-form #new-project-users-setting,
+  #project-create-form #new-project-status-setting {
+    grid-column: 1 / -1;
+  }
+}
