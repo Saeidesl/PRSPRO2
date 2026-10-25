@@ -46,3 +46,11 @@ No backend, spreadsheet data, or Apps Script deployment was changed.
 - Commitهای این دور: `b513be6d7a04f724700f1bfd94af9e9bb837acee` و `de1e879e4f332f92957dab01d188ded3feda8014`.
 - وضعیت فعلی: `in_progress` تا اجرای تست هدفمند و CI روی آخرین commit. فقط پس از نتیجه واقعی تست، وضعیت به‌روزرسانی می‌شود.
 - دامنه تغییر: فقط تست فرانت‌اند و مستندات؛ هیچ کد بک‌اند، داده Google Sheets یا انتشار Apps Script تغییر نکرده است.
+
+
+## نتیجه نهایی آزمون مرورگر — 2026-10-25
+
+- PR #93 ادغام شد: https://github.com/Saeidesl/PRSPRO2/pull/93؛ commit ادغام `e25d8f6cbc3e42232ab0fc2d20c38b9ceeabc87b`.
+- تست واقعی Chromium در workflow ممیزی موفق شد؛ همچنین Frontend checks، agent suite و cross-repository QA موفق شدند.
+- تأییدشده: فوکوس اولیه، Tab/Shift+Tab، Escape، بازگشت فوکوس و اولویت مودال بالایی در کنترلر مشترک.
+- محدودیت: این تست روی DOM مستقل با کنترلر واقعی اجرا می‌شود؛ آزمون صفحه‌خوان، دستگاه موبایل و جریان احراز هویت‌شده کل برنامه همچنان خارج از پوشش این تست است.
