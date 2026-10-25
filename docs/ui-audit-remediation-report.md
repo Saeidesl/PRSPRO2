@@ -43,8 +43,8 @@
 | BUG-PERF-012 | متوسط | `needs_investigation` | زمان آماده‌شدن بعضی مسیرها از 3 ثانیه بیشتر است؛ Procurement حدود 4.37s در آخرین گزارش. | تفکیک زمان API، رندر و شبکه؛ هدف‌گذاری بهبود بدون تغییر رفتار. |
 | BUG-QA-013 | بالا | `coverage_gap` | ممیزی خودکار 0 ارسال فرم انجام داده و تنها 14 دکمه امن را بررسی کرده؛ عملیات واقعی همه فرم‌ها اثبات نشده است. | گسترش E2E در محیط ایزوله، با داده‌های QA قابل شناسایی و پاک‌سازی ایمن. |
 | BUG-CI-015 | بالا | `fixed_verified` | اسکریپت بازبینی diff اکنون در PR از SHA پایه همان رویداد استفاده می‌کند و در push/manual فقط آخرین commit را بررسی می‌کند؛ دیگر به merge-base متغیر `origin/main` وابسته نیست. | پس از اصلاح، Frontend contract/diff review موفق شد. |
-| BUG-QA-017 | بالا | `blocked` | Browser audit run `40219463602` با وجود متغیرهای ورود، بعد از POST به `/api/auth/login` در مسیر ورود ماند؛ گزارش JSON نشان داد `authenticated=false`، `dynamicFormsInventoried=0` و فقط یک route بررسی شده است. | اعتبار تست/secretها و علت پاسخ ورود را در محیط مجاز بررسی کن؛ پس از اصلاح، ممیزی authenticated را دوباره اجرا کن. کد ابزار تست اکنون این وضعیت را `authentication-failed` ثبت می‌کند و با exit code غیرصفر مشخص می‌سازد. |
-| BUG-CI-019 | متوسط | `in_progress` | مرحله ذخیره گزارش E2E در main پس از اجرای run `40220156931` با `rejected (fetch first)` شکست خورد؛ هم‌زمان workflow دیگری main را جلو برده بود. | گزارش را خارج از checkout موقت نگه دار، قبل از هر تلاش main را fetch/reset کن و push را با retry محدود انجام بده؛ سپس workflow را آزمایش کن. |
+| BUG-QA-017 | بالا | `blocked` | اجرای قبلی ممیزی، credentials را به API تولید فرستاد و پاسخ ورود با خطای 302 برگشت؛ این تست به‌دلیل نبود مقصد staging معتبر، نتیجه قابل اتکایی برای ورود فراهم نمی‌کند. | ابزار ممیزی اکنون فقط در صورت پیکربندی `PMS_STAGING_API_BASE_URL` تلاش به ورود می‌کند؛ تا پیکربندی URL جداگانه، وضعیت `blocked-no-staging-api` گزارش می‌شود. |
+| BUG-CI-019 | متوسط | `fixed_verified` | مرحله ذخیره گزارش E2E در main پس از اجرای run `40220156931` با `rejected (fetch first)` شکست خورد؛ هم‌زمان workflow دیگری main را جلو برده بود. | گزارش را خارج از checkout موقت نگه دار، قبل از هر تلاش main را fetch/reset کن و push را با retry محدود انجام بده؛ سپس workflow را آزمایش کن. |
 | BUG-ENV-018 | بالا | `blocked` | سناریوی نوشتنی E2E برای اجرا به URL یک Web App مستقل Google Apps Script و Spreadsheet آزمایشی نیاز دارد؛ صرفاً انتشار نسخه جدید روی همان پروژه/Sheet محیط staging محسوب نمی‌شود. | secret `PMS_STAGING_API_BASE_URL` را فقط با URL محیط جداگانه تنظیم کن و سپس E2E را اجرا کن؛ تا آن زمان اسکریپت قبل از login و هر نوشتن متوقف می‌شود. |
 | BUG-ENV-014 | بالا | `fixed_verified` | workflow E2E قبلاً API فرانت‌اند را از URL ثابت تولید می‌گرفت و با fallback به GitHub Pages می‌توانست داده واقعی بنویسد. | الزام مقصد صریح staging API و تست fail-closed؛ پس از موفقیت CI به `fixed_verified` تغییر می‌کند. |
 
@@ -205,3 +205,15 @@
 - مرحله persist گزارش همان run به‌دلیل رقابت هم‌زمان روی `main` شکست خورد: `rejected (fetch first)`. این مورد جدید BUG-CI-019 است.
 - اصلاح در شاخه `fix/e2e-report-persistence-retry-20261025`: گزارش در `RUNNER_TEMP` حفظ می‌شود و مرحله ذخیره، `origin/main` را fetch/reset می‌کند و حداکثر سه بار push را retry می‌کند.
 - وضعیت BUG-CI-019: `in_progress` تا تست CI. وضعیت BUG-ENV-018 همچنان `blocked` است تا یک URL و Spreadsheet آزمایشی جداگانه پیکربندی شود.
+
+### نتیجه دور 9 — تأیید ایمنی E2E و ذخیره گزارش
+
+- اجرای workflow روی main با run `40220411791` پیش از login متوقف شد؛ گزارش ذخیره‌شده در `test-results/staging-e2e-report.json` نشان می‌دهد `apiTargetConfigured=false`، `created={}` و پیام صریح «no records were written».
+- مرحله `Persist E2E report in repository` در همان run موفق شد و گزارش را در تلاش اول ذخیره کرد؛ بنابراین BUG-CI-019 `fixed_verified` است.
+- BUG-ENV-014 `fixed_verified` است: تست regression در Frontend checks نیز اثبات کرد که نبود staging API باعث توقف قبل از browser/API و بدون ایجاد رکورد می‌شود.
+
+### دور 10 — جلوگیری از استفاده API تولید در ممیزی مرورگر
+
+- علت: browser audit قبلاً با URL پیش‌فرض تولید تلاش به ورود می‌کرد و به خطای 302 می‌رسید؛ این رفتار نمی‌تواند جایگزین تست staging باشد.
+- اصلاح در شاخه `fix/ui-audit-staging-api-20261025`: workflow متغیر `PMS_STAGING_API_BASE_URL` را پاس می‌دهد؛ اسکریپت فقط اگر URL یک Web App جداگانه Apps Script معتبر باشد، آن را پیش از بارگذاری فرانت‌اند تزریق می‌کند. بدون آن، فقط shell/صفحه ورود بررسی می‌شود و وضعیت `blocked-no-staging-api` ثبت می‌شود؛ هیچ درخواست login به API تولید ارسال نمی‌شود.
+- وضعیت: `in_progress` تا موفقیت CI. برای پوشش کامل صفحات داخلی، هنوز نیاز به یک GAS deployment و Spreadsheet مستقل staging و اعتبار ورود QA متناسب با همان محیط داریم.
