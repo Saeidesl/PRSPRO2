@@ -284,6 +284,7 @@
     const modal = document.createElement('div');
     modal.id = 'user-create-modal';
     modal.className = 'modal-overlay';
+    modal._pmsFocusReturn = document.activeElement;
 
     const departmentOptions = state.departments.map(function (department) {
       const id = department.ID || department.id || '';
@@ -331,6 +332,38 @@
       '</div>';
 
     document.body.appendChild(modal);
+    const createDialog = modal.querySelector('.modal');
+    const createHeading = createDialog && createDialog.querySelector('h3');
+    if (createDialog) {
+      createDialog.setAttribute('role', 'dialog');
+      createDialog.setAttribute('aria-modal', 'true');
+      createDialog.setAttribute('aria-labelledby', 'user-create-dialog-title');
+    }
+    if (createHeading) createHeading.id = 'user-create-dialog-title';
+    modal._pmsEscapeHandler = function (event) {
+      if (event.key === 'Escape') {
+        closeModal();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const dialog = modal.querySelector('[role="dialog"]');
+      const focusable = dialog ? Array.from(dialog.querySelectorAll(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )).filter(function (element) { return !element.hidden && element.getAttribute('aria-hidden') !== 'true'; }) : [];
+      if (!focusable.length) { event.preventDefault(); return; }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', modal._pmsEscapeHandler);
+    const createFirstInput = modal.querySelector('#user-create-name');
+    if (createFirstInput) createFirstInput.focus();
 
     document.getElementById('user-create-close').addEventListener('click', closeModal);
     document.getElementById('user-create-cancel').addEventListener('click', closeModal);
@@ -478,6 +511,7 @@
     const modal = document.createElement('div');
     modal.id = 'user-edit-modal';
     modal.className = 'modal-overlay';
+    modal._pmsFocusReturn = document.activeElement;
 
     const currentDepartmentId = user.DepartmentID || user.departmentId || '';
 
@@ -534,6 +568,38 @@
       '</div>';
 
     document.body.appendChild(modal);
+    const editDialog = modal.querySelector('.modal');
+    const editHeading = editDialog && editDialog.querySelector('h3');
+    if (editDialog) {
+      editDialog.setAttribute('role', 'dialog');
+      editDialog.setAttribute('aria-modal', 'true');
+      editDialog.setAttribute('aria-labelledby', 'user-edit-dialog-title');
+    }
+    if (editHeading) editHeading.id = 'user-edit-dialog-title';
+    modal._pmsEscapeHandler = function (event) {
+      if (event.key === 'Escape') {
+        closeModal();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const dialog = modal.querySelector('[role="dialog"]');
+      const focusable = dialog ? Array.from(dialog.querySelectorAll(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )).filter(function (element) { return !element.hidden && element.getAttribute('aria-hidden') !== 'true'; }) : [];
+      if (!focusable.length) { event.preventDefault(); return; }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', modal._pmsEscapeHandler);
+    const editFirstInput = modal.querySelector('#user-edit-name');
+    if (editFirstInput) editFirstInput.focus();
 
     document.getElementById('user-edit-close').addEventListener('click', closeModal);
     document.getElementById('user-edit-cancel').addEventListener('click', closeModal);
@@ -772,13 +838,14 @@
     const modal = document.createElement('div');
     modal.id = 'user-roles-modal';
     modal.className = 'modal-overlay';
+    modal._pmsFocusReturn = document.activeElement;
     modal.dataset.userId = String(userId || '');
     modal.dataset.loading = loading ? 'true' : 'false';
 
     modal.innerHTML =
-      '<div class="modal">' +
+      '<div class="modal" role="dialog" aria-modal="true" aria-labelledby="user-roles-dialog-title">' +
         '<div class="modal-header">' +
-          '<h3>نقش‌های کاربر: ' + esc(userName) + '</h3>' +
+          '<h3 id="user-roles-dialog-title">نقش‌های کاربر: ' + esc(userName) + '</h3>' +
           '<button type="button" class="modal-close" aria-label="بستن">×</button>' +
         '</div>' +
         '<div class="modal-body">' + content + '</div>' +
@@ -786,24 +853,55 @@
 
     document.body.appendChild(modal);
 
-    modal.querySelector('.modal-close').addEventListener('click', function () {
-      modal.remove();
-    });
+    modal._pmsEscapeHandler = function (event) {
+      if (event.key === 'Escape') {
+        closeModal();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const dialog = modal.querySelector('[role="dialog"]');
+      const focusable = dialog ? Array.from(dialog.querySelectorAll(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )).filter(function (element) { return !element.hidden && element.getAttribute('aria-hidden') !== 'true'; }) : [];
+      if (!focusable.length) { event.preventDefault(); return; }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', modal._pmsEscapeHandler);
+    modal.querySelector('.modal-close').addEventListener('click', closeModal);
 
     modal.addEventListener('click', function (event) {
-      if (event.target === modal) modal.remove();
+      if (event.target === modal) closeModal();
     });
+    const firstFocusable = modal.querySelector('button, input, select, textarea');
+    if (firstFocusable) firstFocusable.focus();
   }
 
   function closeModal() {
+    let focusReturn = null;
     [
       'user-create-modal',
       'user-edit-modal',
       'user-roles-modal'
     ].forEach(function (id) {
       const element = document.getElementById(id);
-      if (element) element.remove();
+      if (!element) return;
+      if (element._pmsEscapeHandler) {
+        document.removeEventListener('keydown', element._pmsEscapeHandler);
+      }
+      if (element._pmsFocusReturn && element._pmsFocusReturn.isConnected) {
+        focusReturn = element._pmsFocusReturn;
+      }
+      element.remove();
     });
+    if (focusReturn && typeof focusReturn.focus === 'function') focusReturn.focus();
   }
 
   function getDepartmentName(departmentId) {

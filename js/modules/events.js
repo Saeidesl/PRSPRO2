@@ -13,6 +13,7 @@
     eventFields: [],
     modalOpen: false,
     submitting: false,
+    escapeHandlerBound: false,
     pendingIdempotencyKey: '',
     pendingIdempotencyFingerprint: '',
     fieldsRequestId: 0,
@@ -43,6 +44,34 @@
     },
 
     bindEvents: function () {
+      if (!this.escapeHandlerBound) {
+        this.escapeHandlerBound = true;
+        document.addEventListener('keydown', function (event) {
+          if (!Events.modalOpen) return;
+          if (event.key === 'Escape') {
+            if (!Events.submitting) Events.closeModal();
+            return;
+          }
+          if (event.key !== 'Tab') return;
+          const overlay = document.getElementById('event-create-modal') ||
+            document.getElementById('event-details-modal');
+          const dialog = overlay && overlay.querySelector('[role="dialog"]');
+          const focusable = dialog ? Array.from(dialog.querySelectorAll(
+            'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          )).filter(function (element) { return !element.hidden && element.getAttribute('aria-hidden') !== 'true'; }) : [];
+          if (!focusable.length) { event.preventDefault(); return; }
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
+          if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+          } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+          }
+        });
+      }
+
       document.addEventListener('click', function (event) {
         const target = event.target;
 
@@ -692,8 +721,10 @@
 
       this.closeModal();
 
+      const previousFocus = document.activeElement;
       const modal = document.createElement('div');
       modal.id = 'event-details-modal';
+      modal._pmsFocusReturn = previousFocus;
       modal.dir = 'rtl';
       modal.className = 'event-modal-overlay';
       modal.setAttribute('role', 'dialog');
@@ -711,6 +742,8 @@
 
       document.body.appendChild(modal);
       this.modalOpen = true;
+      const detailsFirstFocusable = modal.querySelector('button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
+      if (detailsFirstFocusable) detailsFirstFocusable.focus();
 
       document.getElementById('event-details-close')
         .addEventListener('click', () => this.closeModal());
@@ -897,14 +930,20 @@
 
     closeModal: function () {
       const details = document.getElementById('event-details-modal');
-      if (details) details.remove();
-
       const form = document.getElementById('event-create-modal');
+      const focusReturn = (form && !this.submitting && form._pmsFocusReturn) ||
+        (details && details._pmsFocusReturn);
+
+      if (details) details.remove();
       if (form && !this.submitting) form.remove();
 
       this.modalOpen = Boolean(
         document.getElementById('event-create-modal')
       );
+      if (!this.modalOpen && focusReturn && focusReturn.isConnected &&
+          typeof focusReturn.focus === 'function') {
+        focusReturn.focus();
+      }
     },
 
     openForm: async function () {
@@ -918,8 +957,10 @@
       this.fieldsLoadedForTypeId = '';
       this.fieldsRequestId++;
 
+      const previousFocus = document.activeElement;
       const modal = document.createElement('div');
       modal.id = 'event-create-modal';
+      modal._pmsFocusReturn = previousFocus;
       modal.dir = 'rtl';
       modal.className = 'event-modal-overlay';
       modal.setAttribute('role', 'dialog');

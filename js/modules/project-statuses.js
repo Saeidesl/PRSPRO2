@@ -154,13 +154,17 @@
     const editing = !!item;
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay project-status-modal';
+    const previousFocus = document.activeElement;
 
     const modal = document.createElement('div');
     modal.className = 'modal';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'project-status-dialog-title');
     modal.style.maxWidth = '520px';
     modal.innerHTML = `
       <div class="modal-header">
-        <h3>${editing ? 'ویرایش وضعیت' : 'ایجاد وضعیت جدید'}</h3>
+        <h3 id="project-status-dialog-title">${editing ? 'ویرایش وضعیت' : 'ایجاد وضعیت جدید'}</h3>
         <button type="button" class="btn btn-light btn-sm" data-close-modal>✕</button>
       </div>
       <div class="modal-body">
@@ -183,12 +187,41 @@
     document.body.appendChild(overlay);
     document.body.classList.add('modal-open');
 
+    const onKeyDown = function (event) {
+      if (event.key === 'Escape') {
+        close();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const focusable = Array.from(modal.querySelectorAll(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )).filter(function (element) { return !element.hidden && element.getAttribute('aria-hidden') !== 'true'; });
+      if (!focusable.length) { event.preventDefault(); return; }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
     function close() {
+      document.removeEventListener('keydown', onKeyDown);
       overlay.remove();
       if (!document.querySelector('.modal-overlay')) {
         document.body.classList.remove('modal-open');
       }
+      if (previousFocus && previousFocus.isConnected && typeof previousFocus.focus === 'function') {
+        previousFocus.focus();
+      }
     }
+
+    document.addEventListener('keydown', onKeyDown);
+    const firstFocusable = modal.querySelector('input, select, textarea, button');
+    if (firstFocusable) firstFocusable.focus();
 
     overlay.addEventListener('click', function (event) {
       if (event.target === overlay || event.target.closest('[data-close-modal]')) {

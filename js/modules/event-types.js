@@ -1725,11 +1725,13 @@
     const overlay = document.createElement('div');
     overlay.id = id;
     overlay.className = 'modal-overlay';
+    const titleId = id + '-dialog-title';
+    const previousFocus = document.activeElement;
 
     overlay.innerHTML =
-      '<div class="modal">' +
+      '<div class="modal" role="dialog" aria-modal="true" aria-labelledby="' + escapeHtml(titleId) + '">' +
         '<div class="modal-header">' +
-          '<h3>' + escapeHtml(title) + '</h3>' +
+          '<h3 id="' + escapeHtml(titleId) + '">' + escapeHtml(title) + '</h3>' +
           '<button type="button" class="modal-close" aria-label="بستن">×</button>' +
         '</div>' +
         '<div class="modal-body"></div>' +
@@ -1737,15 +1739,43 @@
 
     document.body.appendChild(overlay);
 
-    const close = function () {
-      overlay.remove();
+    const onKeyDown = function (event) {
+      if (event.key === 'Escape') {
+        close();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const dialog = overlay.querySelector('[role="dialog"]');
+      const focusable = dialog ? Array.from(dialog.querySelectorAll(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )).filter(function (element) { return !element.hidden && element.getAttribute('aria-hidden') !== 'true'; }) : [];
+      if (!focusable.length) { event.preventDefault(); return; }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
-
+    const close = function () {
+      document.removeEventListener('keydown', onKeyDown);
+      overlay.remove();
+      if (previousFocus && previousFocus.isConnected && typeof previousFocus.focus === 'function') {
+        previousFocus.focus();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
     overlay.querySelector('.modal-close').addEventListener('click', close);
 
     overlay.addEventListener('click', function (event) {
       if (event.target === overlay) close();
     });
+
+    const firstFocusable = overlay.querySelector('input, select, textarea, button');
+    if (firstFocusable) firstFocusable.focus();
 
     return {
       overlay: overlay,

@@ -657,13 +657,16 @@
 
     if (oldModal) closeModal(oldModal);
 
+    const previousFocus = document.activeElement;
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay workflow-modal-overlay';
+    overlay._pmsFocusReturn = previousFocus;
 
     const modal = document.createElement('div');
     modal.className = 'modal';
     modal.setAttribute('role', 'dialog');
     modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'workflow-dialog-title');
 
     modal.style.maxWidth = '760px';
     modal.style.width = 'calc(100% - 24px)';
@@ -673,7 +676,7 @@
     modal.innerHTML = `
       <div class="modal-header"
            style="display:flex;align-items:center;justify-content:space-between;gap:12px">
-        <h3 style="margin:0;font-size:18px">
+        <h3 id="workflow-dialog-title" style="margin:0;font-size:18px">
           ${escapeHtml(config.title)}
         </h3>
         <button type="button"
@@ -687,6 +690,29 @@
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
     document.body.classList.add('modal-open');
+
+    overlay._pmsEscapeHandler = function (event) {
+      if (event.key === 'Escape') {
+        closeModal(overlay);
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const dialog = overlay.querySelector('[role="dialog"]');
+      const focusable = dialog ? Array.from(dialog.querySelectorAll(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )).filter(function (element) { return !element.hidden && element.getAttribute('aria-hidden') !== 'true'; }) : [];
+      if (!focusable.length) { event.preventDefault(); return; }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', overlay._pmsEscapeHandler);
 
     overlay.addEventListener('click', function (event) {
       if (
@@ -709,12 +735,19 @@
   }
 
   function closeModal(overlay) {
+    if (overlay && overlay._pmsEscapeHandler) {
+      document.removeEventListener('keydown', overlay._pmsEscapeHandler);
+    }
     if (overlay && overlay.parentNode) {
       overlay.parentNode.removeChild(overlay);
     }
 
     if (!document.querySelector('.modal-overlay')) {
       document.body.classList.remove('modal-open');
+    }
+    if (overlay && overlay._pmsFocusReturn && overlay._pmsFocusReturn.isConnected &&
+        typeof overlay._pmsFocusReturn.focus === 'function') {
+      overlay._pmsFocusReturn.focus();
     }
   }
 

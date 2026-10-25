@@ -348,6 +348,7 @@
     const old = document.getElementById('pms-role-modal');
     if (old) old.remove();
 
+    const previousFocus = document.activeElement;
     const modal = document.createElement('div');
     modal.id = 'pms-role-modal';
     modal.dataset.roleId = String(roleId);
@@ -359,7 +360,7 @@
       'box-sizing:border-box;overflow-y:auto;';
 
     modal.innerHTML = `
-      <div class="modal-content" style="
+      <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="pms-role-dialog-title" style="
         width:100%;max-width:820px;max-height:92vh;overflow:auto;
         box-sizing:border-box;padding:22px;border-radius:12px;">
 
@@ -367,7 +368,7 @@
           display:flex;align-items:center;justify-content:space-between;
           gap:12px;margin-bottom:8px;">
           <div>
-            <h3 style="margin:0 0 5px;">مدیریت دسترسی‌های نقش</h3>
+            <h3 id="pms-role-dialog-title" style="margin:0 0 5px;">مدیریت دسترسی‌های نقش</h3>
             <div style="font-size:13px;color:var(--color-text-muted);">
               دسترسی‌های موردنیاز این نقش را انتخاب و مدیریت کن.
             </div>
@@ -453,17 +454,45 @@
 
     document.body.appendChild(modal);
 
-    modal.querySelectorAll('.modal-close, .rp-close').forEach(
-      function (button) {
-        button.addEventListener('click', function () {
-          modal.remove();
-        });
+    const closeRoleModal = function () {
+      document.removeEventListener('keydown', onRoleModalKeyDown);
+      modal.remove();
+      if (previousFocus && previousFocus.isConnected && typeof previousFocus.focus === 'function') {
+        previousFocus.focus();
       }
-    );
+    };
+    const onRoleModalKeyDown = function (event) {
+      if (event.key === 'Escape') {
+        closeRoleModal();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const dialog = modal.querySelector('[role="dialog"]');
+      const focusable = dialog ? Array.from(dialog.querySelectorAll(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )).filter(function (element) { return !element.hidden && element.getAttribute('aria-hidden') !== 'true'; }) : [];
+      if (!focusable.length) { event.preventDefault(); return; }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', onRoleModalKeyDown);
+
+    modal.querySelectorAll('.modal-close, .rp-close').forEach(function (button) {
+      button.addEventListener('click', closeRoleModal);
+    });
 
     modal.addEventListener('click', function (event) {
-      if (event.target === modal) modal.remove();
+      if (event.target === modal) closeRoleModal();
     });
+    const firstFocusable = modal.querySelector('input, button, select, textarea');
+    if (firstFocusable) firstFocusable.focus();
 
     modal.querySelectorAll('.rp-tab').forEach(function (tab) {
       tab.addEventListener('click', function () {
