@@ -23,7 +23,37 @@
         if (!Reports.currentReport) return;
         window.print();
       });
-      this.bindBuilder();\n      this.loadProjects();
+      this.bindBuilder();
+      this.loadProjects();
+    },
+
+
+    bindBuilder: function () {
+      ['project-report-event-search', 'project-report-event-from', 'project-report-event-to', 'project-report-event-sort'].forEach(function (id) {
+        const control = document.getElementById(id);
+        if (!control || control.dataset.bound === '1') return;
+        control.dataset.bound = '1';
+        control.addEventListener('input', function () { Reports.renderReport(); });
+        control.addEventListener('change', function () { Reports.renderReport(); });
+      });
+      document.querySelectorAll('[data-report-section]').forEach(function (control) {
+        if (control.dataset.bound === '1') return;
+        control.dataset.bound = '1';
+        control.addEventListener('change', function () { Reports.renderReport(); });
+      });
+      const bindings = [
+        ['project-report-template-save', function () { Reports.saveTemplate(); }],
+        ['project-report-template-load', function () { Reports.applyTemplate(); }],
+        ['project-report-template-delete', function () { Reports.deleteTemplate(); }],
+        ['project-report-export-csv', function () { Reports.exportCsv(); }]
+      ];
+      bindings.forEach(function (item) {
+        const button = document.getElementById(item[0]);
+        if (!button || button.dataset.bound === '1') return;
+        button.dataset.bound = '1';
+        button.addEventListener('click', item[1]);
+      });
+      this.refreshTemplates();
     },
 
     escape: function (value) {
@@ -294,7 +324,8 @@
       const calculations = Array.isArray(procurement.calculations) ? procurement.calculations : [];
       const selected = this.selectedEventIds;
 
-      const visibleEvents = this.filterEvents(events);\n      const eventRows = visibleEvents.length ? visibleEvents.map((event) => {
+      const visibleEvents = this.filterEvents(events);
+      const eventRows = visibleEvents.length ? visibleEvents.map((event) => {
         const id = String(event.ID || event.Id || '');
         const checked = selected.indexOf(id) !== -1 ? ' checked' : '';
         const detail = event.Description || event.Notes || event.Remarks || '';
@@ -370,7 +401,11 @@
         (orderRows.length ? '<div class="table-wrapper"><table class="data-table"><thead><tr><th>شماره سفارش</th><th>ملزوم</th><th>تاریخ سفارش</th><th>تاریخ تحویل</th><th>وضعیت</th></tr></thead><tbody>' + orderRows.join('') + '</tbody></table></div>' : '<p class="project-report-muted">سفارشی برای این پروژه پیدا نشد.</p>') + '</section>' +
         '</article>';
 
-      const sections = this.selectedSections();\n      target.querySelectorAll('[data-report-output]').forEach(function (section) {\n        const key = section.getAttribute('data-report-output');\n        section.style.display = sections[key] === false ? 'none' : '';\n      });\n      target.querySelectorAll('[data-report-event]').forEach((checkbox) => {
+      const sections = this.selectedSections();
+      target.querySelectorAll('[data-report-output]').forEach(function (section) {
+        const key = section.getAttribute('data-report-output');\n        section.style.display = sections[key] === false ? 'none' : '';
+      });
+      target.querySelectorAll('[data-report-event]').forEach((checkbox) => {
         checkbox.addEventListener('change', function () {
           const id = String(checkbox.getAttribute('data-report-event') || '');
           if (checkbox.checked && Reports.selectedEventIds.indexOf(id) === -1) Reports.selectedEventIds.push(id);
