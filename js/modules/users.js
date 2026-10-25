@@ -802,13 +802,14 @@
     const modal = document.createElement('div');
     modal.id = 'user-roles-modal';
     modal.className = 'modal-overlay';
+    modal._pmsFocusReturn = document.activeElement;
     modal.dataset.userId = String(userId || '');
     modal.dataset.loading = loading ? 'true' : 'false';
 
     modal.innerHTML =
-      '<div class="modal">' +
+      '<div class="modal" role="dialog" aria-modal="true" aria-labelledby="user-roles-dialog-title">' +
         '<div class="modal-header">' +
-          '<h3>نقش‌های کاربر: ' + esc(userName) + '</h3>' +
+          '<h3 id="user-roles-dialog-title">نقش‌های کاربر: ' + esc(userName) + '</h3>' +
           '<button type="button" class="modal-close" aria-label="بستن">×</button>' +
         '</div>' +
         '<div class="modal-body">' + content + '</div>' +
@@ -816,13 +817,17 @@
 
     document.body.appendChild(modal);
 
-    modal.querySelector('.modal-close').addEventListener('click', function () {
-      modal.remove();
-    });
+    modal._pmsEscapeHandler = function (event) {
+      if (event.key === 'Escape') closeModal();
+    };
+    document.addEventListener('keydown', modal._pmsEscapeHandler);
+    modal.querySelector('.modal-close').addEventListener('click', closeModal);
 
     modal.addEventListener('click', function (event) {
-      if (event.target === modal) modal.remove();
+      if (event.target === modal) closeModal();
     });
+    const firstFocusable = modal.querySelector('button, input, select, textarea');
+    if (firstFocusable) firstFocusable.focus();
   }
 
   function closeModal() {
