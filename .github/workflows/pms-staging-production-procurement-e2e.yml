@@ -58,10 +58,37 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+users.noreply.github.com"
-          git add test-results/staging-e2e-report.json test-results/staging-e2e-report.md
-          if git diff --cached --quiet; then
-            echo "E2E report unchanged."
+          report_json="$RUNNER_TEMP/staging-e2e-report.json"
+          report_md="$RUNNER_TEMP/staging-e2e-report.md"
+          cp test-results/staging-e2e-report.json "$report_json"
+          if [ -f test-results/staging-e2e-report.md ]; then
+            cp test-results/staging-e2e-report.md "$report_md"
           else
-            git commit -m "test: persist staging E2E report [skip ci]"
-            git push
+            printf '# Staging E2E report\n\nMarkdown report was not generated; inspect the JSON report.\n' > "$report_md"
           fi
+
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git reset --hard origin/main
+            mkdir -p test-results
+            cp "$report_json" test-results/staging-e2e-report.json
+            cp "$report_md" test-results/staging-e2e-report.md
+            git add test-results/staging-e2e-report.json test-results/staging-e2e-report.md
+
+            if git diff --cached --quiet; then
+              echo "E2E report unchanged."
+              exit 0
+            fi
+
+            git commit -m "test: persist staging E2E report [skip ci]"
+            if git push origin HEAD:main; then
+              echo "E2E report persisted successfully on attempt $attempt."
+              exit 0
+            fi
+
+            echo "Report push conflicted with another main-branch update (attempt $attempt/3)." >&2
+            sleep $((attempt * 2))
+          done
+
+          echo "Unable to persist E2E report after 3 attempts." >&2
+          exit 1
