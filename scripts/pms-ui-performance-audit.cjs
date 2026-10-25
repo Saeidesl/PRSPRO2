@@ -48,7 +48,8 @@ const formOpenersByRoute = {
   'project-statuses': ['project-status-create'],
   'event-types': ['event-type-create-button'],
   procurement: ['procurement-create-project-order', 'procurement-create-general-order', 'procurement-create-receipt'],
-  // File upload opens a native file chooser, so keep it out of automated dialog clicks.
+  // The attachment upload button opens a form only; the audit inventories it without submitting.
+  attachments: ['attachment-upload-button'],
   users: ['user-create-button'],
   departments: ['department-create-button'],
   roles: ['role-create-button']
