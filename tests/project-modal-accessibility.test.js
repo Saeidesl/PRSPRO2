@@ -39,9 +39,10 @@ function createControllerFixture({ overlays = 1 } = {}) {
     documentElement: {},
     body: {},
     activeElement: null,
-    addEventListener(type, listener) { this.listeners[type] = listener; },
+    addEventListener(type, listener) { (this.listeners[type] ||= []).push(listener); },
     removeEventListener(type, listener) {
-      if (this.listeners[type] === listener) delete this.listeners[type];
+      this.listeners[type] = (this.listeners[type] || []).filter((item) => item !== listener);
+      if (!this.listeners[type].length) delete this.listeners[type];
     },
     querySelectorAll(selector) {
       return selector === '[data-pms-accessible-modal="true"]'
@@ -113,13 +114,13 @@ test('keyboard controller moves focus into the dialog and traps Tab in both dire
 
   document.activeElement = last;
   const forward = keyboardEvent('Tab');
-  document.listeners.keydown(forward);
+  document.listeners.keydown[0](forward);
   assert.equal(document.activeElement, first, 'Tab from the last control should wrap to the first');
   assert.equal(forward.defaultPrevented, true);
 
   document.activeElement = first;
   const backward = keyboardEvent('Tab', true);
-  document.listeners.keydown(backward);
+  document.listeners.keydown[0](backward);
   assert.equal(document.activeElement, last, 'Shift+Tab from the first control should wrap to the last');
   assert.equal(backward.defaultPrevented, true);
 
@@ -134,7 +135,7 @@ test('Escape closes the active dialog, removes its listener, and restores focus'
   controller.focusFirst();
 
   const escape = keyboardEvent('Escape');
-  document.listeners.keydown(escape);
+  document.listeners.keydown[0](escape);
 
   assert.equal(closeCount, 1, 'Escape should invoke the close callback exactly once');
   assert.equal(escape.defaultPrevented, true);
@@ -152,9 +153,9 @@ test('a non-topmost dialog ignores keyboard events', () => {
   bindProjectModalKeyboard(top, () => {});
   
   const escape = keyboardEvent('Escape');
-  document.listeners.keydown(escape);
+  document.listeners.keydown[0](escape);
   assert.equal(lowerCloseCount, 0, 'Escape must not close a dialog underneath another dialog');
-  assert.equal(escape.defaultPrevented, false);
+  assert.equal(escape.defaultPrevented, false, 'the lower dialog handler must leave the event untouched');
 });
 
 test('project dialogs are wired to the shared keyboard controller', () => {
