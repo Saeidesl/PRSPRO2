@@ -306,9 +306,9 @@
             '<input class="form-control" name="Name" required maxlength="150">' +
             '<label>نام کاربری *</label>' +
             '<input class="form-control" name="Username" required maxlength="100" autocomplete="username">' +
-            '<label>رمز عبور</label>' +
-            '<input class="form-control" name="Password" type="password" autocomplete="new-password">' +
-            '<small>اگر رمز خالی باشد، ممکن است ورود کاربر امکان‌پذیر نباشد.</small>' +
+            '<label for="user-create-password">رمز عبور *</label>' +
+            '<input class="form-control" id="user-create-password" name="Password" type="password" required minlength="8" autocomplete="new-password">' +
+            '<small>رمز عبور باید حداقل ۸ کاراکتر داشته باشد.</small>' +
             '<label>واحد سازمانی</label>' +
             '<select class="form-control" name="DepartmentID">' +
               '<option value="">بدون واحد</option>' + departmentOptions +
@@ -369,8 +369,10 @@
       return;
     }
 
-    if (password && password.length < 8) {
-      errorBox.textContent = 'رمز عبور باید حداقل ۸ کاراکتر باشد.';
+    if (!password || password.length < 8) {
+      errorBox.textContent = 'رمز عبور الزامی است و باید حداقل ۸ کاراکتر داشته باشد.';
+      const passwordInput = form.querySelector('[name="Password"]');
+      if (passwordInput) passwordInput.focus();
       return;
     }
 
