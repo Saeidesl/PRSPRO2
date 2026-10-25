@@ -22,6 +22,75 @@
     return 'pms_project_create_settings_v1_' + (hash >>> 0).toString(36);
   }
 
+  // Shared keyboard and focus handling for project dialogs.
+  function bindProjectModalKeyboard(overlay, onClose) {
+    overlay.dataset.pmsAccessibleModal = 'true';
+    const dialog = overlay.querySelector('[role="dialog"]') || overlay;
+    let returnFocusTarget = document.activeElement;
+    let closed = false;
+    const isVisible = (element) => {
+      if (!element || !element.isConnected || element.hidden) return false;
+      for (let node = element; node && node !== document.documentElement; node = node.parentElement) {
+        const style = window.getComputedStyle(node);
+        if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false;
+      }
+      return true;
+    };
+    const getTopmostOverlay = () => Array.from(document.querySelectorAll('[data-pms-accessible-modal="true"]'))
+      .filter(isVisible).slice(-1)[0];
+    const getFocusable = () => Array.from(dialog.querySelectorAll(
+      'a[href],button:not([disabled]),input:not([disabled]):not([type="hidden"]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
+    )).filter((element) => isVisible(element) && element.getAttribute('aria-hidden') !== 'true');
+    const onKeydown = (event) => {
+      if (closed || !isVisible(overlay) || getTopmostOverlay() !== overlay) return;
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        close();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const focusable = getFocusable();
+      if (!focusable.length) {
+        event.preventDefault();
+        if (!dialog.hasAttribute('tabindex')) dialog.setAttribute('tabindex', '-1');
+        dialog.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
+        event.preventDefault(); last.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || !dialog.contains(document.activeElement))) {
+        event.preventDefault(); first.focus();
+      }
+    };
+    const cleanup = () => {
+      if (closed) return;
+      closed = true;
+      document.removeEventListener('keydown', onKeydown, true);
+    };
+    const close = () => {
+      if (closed) return;
+      cleanup();
+      onClose();
+      if (returnFocusTarget && returnFocusTarget.isConnected && typeof returnFocusTarget.focus === 'function') {
+        returnFocusTarget.focus();
+      }
+    };
+    const focusFirst = () => {
+      if (document.activeElement && document.activeElement !== document.body) returnFocusTarget = document.activeElement;
+      const first = getFocusable()[0];
+      if (first) first.focus();
+      else {
+        if (!dialog.hasAttribute('tabindex')) dialog.setAttribute('tabindex', '-1');
+        dialog.focus();
+      }
+    };
+    document.addEventListener('keydown', onKeydown, true);
+    return { close, focusFirst, destroy: cleanup };
+  }
+
   const CACHE_KEY = window.PMS.Cache.keys.PROJECTS;
 
   const Projects = {
@@ -1068,8 +1137,20 @@
           statusSelect.value = awaiting ? awaiting.value : statusSelect.options[1].value;
         }
       };
-      const openSettings = () => { settingsModal.style.display = 'flex'; const first = settingsModal.querySelector('input,select,button'); if (first) first.focus(); };
-      const closeSettings = () => { settingsModal.style.display = 'none'; };
+      let settingsModalKeyboard = null;
+      const openSettings = () => {
+        if (settingsModalKeyboard) settingsModalKeyboard.destroy();
+        settingsModal.style.display = 'flex';
+        settingsModalKeyboard = bindProjectModalKeyboard(settingsModal, () => { settingsModal.style.display = 'none'; });
+        settingsModalKeyboard.focusFirst();
+      };
+      const closeSettings = () => {
+        if (settingsModalKeyboard) {
+          const keyboard = settingsModalKeyboard;
+          settingsModalKeyboard = null;
+          keyboard.close();
+        } else settingsModal.style.display = 'none';
+      };
       modal.querySelector('#project-settings-open').addEventListener('click', openSettings);
       settingsModal.querySelector('[data-settings-close]').addEventListener('click', closeSettings);
       settingsModal.querySelector('[data-settings-cancel]').addEventListener('click', closeSettings);
@@ -1136,12 +1217,14 @@
         if (fileHelp) fileHelp.textContent = 'برای افزودن فایل، مدیر باید دسترسی ATTACHMENT_UPLOAD را به نقش شما بدهد.';
       }
 
+      let projectModalKeyboard = null;
       const closeModal = () => {
         if (this.isSaving) {
           return;
         }
 
-        modal.remove();
+        if (projectModalKeyboard) projectModalKeyboard.close();
+        else modal.remove();
 
         if (this.modal === modal) {
           this.modal = null;
@@ -1174,8 +1257,22 @@
 
       modal.remove = () => {
         document.removeEventListener('keydown', escapeHandler);
+        if (settingsModalKeyboard) {
+          settingsModalKeyboard.destroy();
+          settingsModalKeyboard = null;
+        }
+        if (projectModalKeyboard) {
+          projectModalKeyboard.destroy();
+          projectModalKeyboard = null;
+        }
         originalRemove();
       };
+      projectModalKeyboard = bindProjectModalKeyboard(modal, () => {
+        if (this.isSaving) return;
+        modal.remove();
+        if (this.modal === modal) this.modal = null;
+      });
+      projectModalKeyboard.focusFirst();
 
       form.addEventListener('input', () => { modal.dataset.lookupUserInteracted = 'true'; });
       form.addEventListener('change', () => { modal.dataset.lookupUserInteracted = 'true'; });
@@ -1457,9 +1554,11 @@
       };
       (saved.length ? saved : [{}]).forEach(addRow);
       modal.querySelector('#project-draft-material-specs-add').addEventListener('click', () => addRow({}));
-      const close = () => modal.remove();
+      const modalKeyboard = bindProjectModalKeyboard(modal, () => modal.remove());
+      const close = () => modalKeyboard.close();
       modal.querySelector('[data-draft-specs-close]').addEventListener('click', close);
       modal.addEventListener('click', (event) => { if (event.target === modal) close(); });
+      modalKeyboard.focusFirst();
       modal.querySelector('#project-draft-material-specs-form').addEventListener('submit', (event) => {
         event.preventDefault();
         const items = Array.from(rows.querySelectorAll('[data-draft-material-spec-row]')).map((row) => {
@@ -1575,9 +1674,11 @@
         });
       });
 
-      const close = () => modal.remove();
+      const modalKeyboard = bindProjectModalKeyboard(modal, () => modal.remove());
+      const close = () => modalKeyboard.close();
       modal.querySelector('[data-color-size-close]').addEventListener('click', close);
       modal.addEventListener('click', (event) => { if (event.target === modal) close(); });
+      modalKeyboard.focusFirst();
       modal.querySelector('[data-color-size-clear]').addEventListener('click', () => {
         renderList('colors', []);
         renderList('sizes', []);
@@ -1782,7 +1883,15 @@
         cancel.type = 'button'; cancel.className = 'btn btn-light'; cancel.textContent = 'انصراف';
         const submit = document.createElement('button');
         submit.type = 'button'; submit.className = 'btn btn-danger'; submit.textContent = 'تأیید حذف';
-        const finish = (value) => { overlay.remove(); resolve(value); };
+        let keyboard = null;
+        let result = '';
+        let finished = false;
+        const finish = (value) => {
+          if (finished) return;
+          result = value;
+          if (keyboard) keyboard.close();
+          else { finished = true; overlay.remove(); resolve(result); }
+        };
         cancel.addEventListener('click', () => finish(''));
         overlay.addEventListener('click', (event) => { if (event.target === overlay) finish(''); });
         submit.addEventListener('click', () => {
@@ -1796,7 +1905,12 @@
         panel.append(title, description, fieldLabel, textarea, error, actions);
         overlay.appendChild(panel);
         document.body.appendChild(overlay);
-        textarea.focus();
+        keyboard = bindProjectModalKeyboard(overlay, () => {
+          finished = true;
+          overlay.remove();
+          resolve(result);
+        });
+        keyboard.focusFirst();
       });
     },
 
@@ -2348,24 +2462,18 @@
       image.src = src;
       image.alt = alt || 'تصویر پروژه';
 
+      let keyboard = null;
       const close = function () {
-        document.removeEventListener('keydown', onKeyDown);
-        overlay.remove();
+        if (keyboard) keyboard.close();
+        else overlay.remove();
       };
-      const onKeyDown = function (event) {
-        if (event.key === 'Escape') {
-          event.preventDefault();
-          close();
-        }
-      };
-
       closeButton.addEventListener('click', close);
       overlay.addEventListener('click', function (event) {
         if (event.target === overlay) close();
       });
-      document.addEventListener('keydown', onKeyDown);
       document.body.appendChild(overlay);
-      closeButton.focus();
+      keyboard = bindProjectModalKeyboard(overlay, () => overlay.remove());
+      keyboard.focusFirst();
     },
 
     // ========================================================

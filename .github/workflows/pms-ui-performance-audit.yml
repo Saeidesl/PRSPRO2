@@ -42,6 +42,10 @@ jobs:
           npm install --no-save playwright
           npx playwright install --with-deps chromium
 
+      - name: Run real-browser project modal keyboard tests
+        run: node tests/project-modal-accessibility.browser.cjs
+
+
       - name: Serve the checked-out frontend
         if: ${{ !inputs.base_url && !vars.PMS_BASE_URL }}
         run: |
