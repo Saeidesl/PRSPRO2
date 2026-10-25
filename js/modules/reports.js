@@ -403,7 +403,8 @@
 
       const sections = this.selectedSections();
       target.querySelectorAll('[data-report-output]').forEach(function (section) {
-        const key = section.getAttribute('data-report-output');\n        section.style.display = sections[key] === false ? 'none' : '';
+        const key = section.getAttribute('data-report-output');
+        section.style.display = sections[key] === false ? 'none' : '';
       });
       target.querySelectorAll('[data-report-event]').forEach((checkbox) => {
         checkbox.addEventListener('change', function () {
