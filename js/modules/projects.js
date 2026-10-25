@@ -941,17 +941,17 @@
           </div>
 
           <form id="project-create-form">
-            <div class="filter-group" style="margin-bottom:16px;">
+            <div class="filter-group form-group project-form-field" style="margin-bottom:16px;">
               <label for="new-project-code">کد پروژه <span style="color:var(--color-danger);">*</span></label>
               <input type="text" id="new-project-code" name="ProjectCode" required maxlength="100" autocomplete="off" placeholder="کد پروژه را وارد کنید" style="width:100%;box-sizing:border-box;" ${isEditMode ? "readonly aria-readonly=\"true\"" : ""}>
               <small style="display:block;margin-top:5px;color:var(--color-text-secondary);">کد را اپراتور وارد می‌کند و پس از ایجاد پروژه قابل تغییر نیست.</small>
             </div>
-            <div class="filter-group" style="margin-bottom:16px;">
+            <div class="filter-group form-group project-form-field" style="margin-bottom:16px;">
               <label for="new-project-title">نام پروژه <span style="color:var(--color-danger);">*</span></label>
               <input type="text" id="new-project-title" name="Title" required maxlength="200" autocomplete="off" placeholder="نام پروژه تولید" style="width:100%;box-sizing:border-box;">
             </div>
 
-            <div class="filter-group" style="margin-bottom:16px;">
+            <div class="filter-group form-group project-form-field" style="margin-bottom:16px;">
               <label for="new-project-quantity">
                 تعداد پیشنهادی <span style="color:var(--color-text-secondary);font-size:12px;">(اختیاری)</span>
               </label>
@@ -967,7 +967,7 @@
               >
             </div>
 
-            <div class="filter-group" style="margin-bottom:16px;">
+            <div class="filter-group form-group project-form-field" style="margin-bottom:16px;">
               <label for="new-project-workflow">
                 گردش کار <span style="color:var(--color-danger);">*</span>
               </label>
@@ -987,7 +987,7 @@
               </small>
             </div>
 
-            <div class="filter-group" style="margin-bottom:20px;">
+            <div class="filter-group form-group project-form-field" style="margin-bottom:20px;">
               <label for="new-project-description">
                 توضیحات
               </label>
@@ -1001,26 +1001,26 @@
               ></textarea>
             </div>
 
-            <div id="new-project-departments-setting" class="filter-group" style="margin-bottom:18px;">
+            <div id="new-project-departments-setting" class="filter-group form-group project-form-field" style="margin-bottom:18px;">
               <label>واحدهای مجاز برای مشاهده پروژه و ثبت رویداد <span style="color:var(--color-danger);">*</span></label>
               <div id="new-project-departments" class="project-access-grid" role="group" aria-label="انتخاب واحدهای مجاز" aria-describedby="new-project-departments-help"><div class="project-lookup-loading">در حال دریافت واحدها…</div></div>
               <small id="new-project-departments-help" style="display:block;margin-top:6px;color:var(--color-text-secondary);">حداقل یک واحد را انتخاب کنید.</small>
             </div>
-            <div id="new-project-users-setting" class="filter-group" style="margin-bottom:16px;">
+            <div id="new-project-users-setting" class="filter-group form-group project-form-field" style="margin-bottom:16px;">
               <label for="new-project-users">کاربران مجاز <span style="color:var(--color-text-secondary);font-size:12px;">(اختیاری)</span></label>
               <select id="new-project-users" name="AllowedUserIDs" multiple size="5" style="width:100%;box-sizing:border-box;min-height:120px;"></select>
               <small style="display:block;margin-top:5px;color:var(--color-text-secondary);">اگر انتخاب نشود، محدودیت اختصاصی کاربر برای پروژه ثبت نمی‌شود.</small>
             </div>
-            <div id="new-project-status-setting" class="filter-group" style="margin-bottom:16px;">
+            <div id="new-project-status-setting" class="filter-group form-group project-form-field" style="margin-bottom:16px;">
               <label for="new-project-status">وضعیت پروژه پس از ایجاد</label>
               <select id="new-project-status" name="Status" style="width:100%;box-sizing:border-box;"><option value="">در حال دریافت وضعیت‌ها...</option></select>
               <small style="display:block;margin-top:5px;color:var(--color-text-secondary);">وضعیتی که انتخاب می‌کنید هنگام ثبت پروژه اعمال می‌شود.</small>
             </div>
 
-            <div class="filter-group" style="margin-bottom:16px;">
+            <div class="filter-group form-group project-form-field" style="margin-bottom:16px;">
               <label for="new-project-file">افزودن فایل <span style="color:var(--color-text-secondary);font-size:12px;">(اختیاری)</span></label>
               <input type="file" id="new-project-file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" style="width:100%;box-sizing:border-box;">
-              <div id="new-project-filename-wrap" class="filter-group" style="margin-top:10px;" hidden>
+              <div id="new-project-filename-wrap" class="filter-group form-group project-form-field" style="margin-top:10px;" hidden>
                 <label for="new-project-filename">نام فایل</label>
                 <input type="text" id="new-project-filename" maxlength="180" autocomplete="off" placeholder="نام دلخواه فایل را وارد کنید" style="width:100%;box-sizing:border-box;min-height:42px;padding:9px 12px;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface);color:var(--color-text);font:inherit;">
                 <small id="new-project-filename-preview" style="display:block;margin-top:5px;color:var(--color-text-secondary);overflow-wrap:anywhere;">نام نهایی فایل با کد پروژه ترکیب می‌شود.</small>
@@ -1035,7 +1035,7 @@
               </div>
             </div>
 
-            <div id="new-project-notify-setting" class="filter-group" style="margin-bottom:16px;">
+            <div id="new-project-notify-setting" class="filter-group form-group project-form-field" style="margin-bottom:16px;">
               <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
                 <input type="checkbox" id="new-project-notify" checked>
                 <span>فعال بودن اطلاع‌رسانی</span>
