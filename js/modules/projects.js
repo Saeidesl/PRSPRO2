@@ -1871,7 +1871,15 @@
         cancel.type = 'button'; cancel.className = 'btn btn-light'; cancel.textContent = 'انصراف';
         const submit = document.createElement('button');
         submit.type = 'button'; submit.className = 'btn btn-danger'; submit.textContent = 'تأیید حذف';
-        const finish = (value) => { overlay.remove(); resolve(value); };
+        let keyboard = null;
+        let result = '';
+        let finished = false;
+        const finish = (value) => {
+          if (finished) return;
+          result = value;
+          if (keyboard) keyboard.close();
+          else { finished = true; overlay.remove(); resolve(result); }
+        };
         cancel.addEventListener('click', () => finish(''));
         overlay.addEventListener('click', (event) => { if (event.target === overlay) finish(''); });
         submit.addEventListener('click', () => {
@@ -1885,7 +1893,12 @@
         panel.append(title, description, fieldLabel, textarea, error, actions);
         overlay.appendChild(panel);
         document.body.appendChild(overlay);
-        textarea.focus();
+        keyboard = bindProjectModalKeyboard(overlay, () => {
+          finished = true;
+          overlay.remove();
+          resolve(result);
+        });
+        keyboard.focusFirst();
       });
     },
 
@@ -2437,24 +2450,18 @@
       image.src = src;
       image.alt = alt || 'تصویر پروژه';
 
+      let keyboard = null;
       const close = function () {
-        document.removeEventListener('keydown', onKeyDown);
-        overlay.remove();
+        if (keyboard) keyboard.close();
+        else overlay.remove();
       };
-      const onKeyDown = function (event) {
-        if (event.key === 'Escape') {
-          event.preventDefault();
-          close();
-        }
-      };
-
       closeButton.addEventListener('click', close);
       overlay.addEventListener('click', function (event) {
         if (event.target === overlay) close();
       });
-      document.addEventListener('keydown', onKeyDown);
       document.body.appendChild(overlay);
-      closeButton.focus();
+      keyboard = bindProjectModalKeyboard(overlay, () => overlay.remove());
+      keyboard.focusFirst();
     },
 
     // ========================================================

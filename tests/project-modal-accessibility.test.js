@@ -35,3 +35,14 @@ test('project settings subdialog uses shared keyboard focus management', () => {
   assert.match(source, /settingsModalKeyboard\.destroy\(\)/);
   assert.match(source, /const closeSettings = \(\) => \{/);
 });
+
+test('attachment deletion reason dialog uses shared keyboard accessibility', () => {
+  assert.match(source, /requestProjectAttachmentDeleteReason: function/);
+  assert.match(source, /keyboard = bindProjectModalKeyboard\(overlay/);
+  assert.match(source, /keyboard\.focusFirst\(\)/);
+});
+
+test('project image lightbox uses shared keyboard accessibility', () => {
+  assert.match(source, /openProjectImage: function/);
+  assert.match(source, /keyboard = bindProjectModalKeyboard\(overlay, \(\) => overlay\.remove\(\)\)/);
+});
