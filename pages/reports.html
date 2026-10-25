@@ -65,6 +65,16 @@
 .project-report-sections label{display:flex;align-items:center;gap:6px}
 .project-report-template-controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
 .project-report-template-buttons{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px}
+.project-report-builder{margin-top:18px;border-top:1px solid var(--color-border);padding-top:14px}
+.project-report-builder>summary{cursor:pointer;font-weight:600;padding:6px 0}
+.project-report-builder-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:14px}
+.project-report-builder-grid .form-group,.project-report-template-controls .form-group{min-width:0;margin:0}
+.project-report-builder-grid input,.project-report-builder-grid select,.project-report-template-controls input,.project-report-template-controls select{width:100%;min-width:0;box-sizing:border-box}
+.project-report-sections{display:flex;gap:14px;flex-wrap:wrap;border:1px solid var(--color-border);border-radius:8px;padding:12px;margin:14px 0}
+.project-report-sections legend{padding:0 6px;font-weight:600}
+.project-report-sections label{display:flex;align-items:center;gap:6px}
+.project-report-template-controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.project-report-template-buttons{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px}
 .project-report-controls{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
 .project-report-controls .form-group{flex:1 1 280px;min-width:0;margin:0}
 .project-report-controls select{width:100%;max-width:100%;box-sizing:border-box}
@@ -91,7 +101,7 @@
 .project-report-paper .table-wrapper{max-width:100%;overflow-x:auto}
 .project-report-paper .data-table{width:100%;min-width:0;table-layout:fixed}
 .project-report-paper .data-table th,.project-report-paper .data-table td{white-space:normal;overflow-wrap:anywhere}
-@media(max-width:700px){
+@media(max-width:900px){.project-report-builder-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}\n@media(max-width:700px){\n .project-report-builder-grid,.project-report-template-controls{grid-template-columns:minmax(0,1fr)}\n .project-report-template-buttons>*{flex:1 1 130px}
  .project-report-paper{padding:14px}
  .project-report-toolbar{align-items:stretch;flex-direction:column}
  .project-report-facts{grid-template-columns:repeat(2,minmax(0,1fr))}
