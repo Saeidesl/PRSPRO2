@@ -1,6 +1,6 @@
 # PMS UI and Performance Audit
 
-- Generated: 2026-10-25T07:16:50.755Z
+- Generated: 2026-10-25T17:12:13.699Z
 - Base URL: http://127.0.0.1:4173/PRSPRO2/
 - Mode: authenticated-read-only
 - Overall: **authenticated-audit-complete**
@@ -14,12 +14,12 @@
 | permissionDeniedRoutes | 0 |
 | failedRoutes | 0 |
 | mobileRoutesWithHorizontalOverflow | 0 |
-| visibleFormsInventoried | 10 |
-| dynamicFormsInventoried | 10 |
+| visibleFormsInventoried | 9 |
+| dynamicFormsInventoried | 9 |
 | formOpenersChecked | 11 |
-| visibleButtonsInventoried | 52 |
+| visibleButtonsInventoried | 127 |
 | visibleInputsAndControlsInventoried | 19 |
-| networkRequestsMeasured | 322 |
+| networkRequestsMeasured | 310 |
 | failedNetworkRequests | 0 |
 | consoleErrors | 0 |
 | pageErrors | 0 |
@@ -31,23 +31,23 @@
 
 | Route | Status | Ready ms | Settled ms | Forms | Buttons | Controls | Mobile overflow |
 |---|---|---:|---:|---:|---:|---:|---|
-| dashboard | loaded | 2869 | 5525 | 0 | 7 | 2 | no |
-| projects | loaded | 2359 | 5014 | 0 | 1 | 2 | no |
-| project-detail | loaded | 3349 | 6005 | 0 | 2 | 0 | no |
-| events | loaded | 3861 | 6516 | 0 | 8 | 1 | no |
-| workflows | loaded | 2863 | 5518 | 0 | 1 | 2 | no |
-| project-statuses | loaded | 3883 | 6537 | 0 | 9 | 1 | no |
-| event-types | loaded | 2362 | 5016 | 0 | 10 | 1 | no |
-| procurement | loaded | 2861 | 5515 | 0 | 4 | 0 | no |
-| attachments | loaded | 2854 | 5508 | 0 | 1 | 2 | no |
-| reports | loaded | 2364 | 5018 | 0 | 2 | 1 | no |
-| users | loaded | 2345 | 4999 | 0 | 1 | 1 | no |
-| departments | loaded | 3873 | 6436 | 0 | 2 | 1 | no |
-| roles | loaded | 2861 | 5298 | 0 | 3 | 1 | no |
-| permissions | loaded | 3884 | 6537 | 0 | 0 | 1 | no |
-| audit | loaded | 3856 | 6511 | 0 | 1 | 1 | no |
-| settings | loaded | 2355 | 5008 | 0 | 0 | 2 | no |
-| admin | loaded | 2348 | 2900 | 0 | 0 | 0 | no |
+| dashboard | loaded | 3386 | 6043 | 0 | 5 | 2 | no |
+| projects | loaded | 3374 | 6030 | 0 | 5 | 2 | no |
+| project-detail | loaded | 2866 | 5519 | 0 | 2 | 0 | no |
+| events | loaded | 2868 | 5524 | 0 | 6 | 1 | no |
+| workflows | loaded | 3402 | 6057 | 0 | 1 | 2 | no |
+| project-statuses | loaded | 3888 | 6543 | 0 | 9 | 1 | no |
+| event-types | loaded | 3378 | 6037 | 0 | 43 | 1 | no |
+| procurement | loaded | 4371 | 7026 | 0 | 4 | 0 | no |
+| attachments | loaded | 2361 | 5015 | 0 | 1 | 2 | no |
+| reports | loaded | 2887 | 5542 | 0 | 2 | 1 | no |
+| users | loaded | 3876 | 6531 | 0 | 21 | 1 | no |
+| departments | loaded | 2867 | 5452 | 0 | 8 | 1 | no |
+| roles | loaded | 2880 | 5536 | 0 | 19 | 1 | no |
+| permissions | loaded | 2901 | 5554 | 0 | 0 | 1 | no |
+| audit | loaded | 2866 | 5522 | 0 | 1 | 1 | no |
+| settings | loaded | 2868 | 5521 | 0 | 0 | 2 | no |
+| admin | loaded | 2868 | 3372 | 0 | 0 | 0 | no |
 
 ## Coverage gaps
 
