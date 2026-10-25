@@ -10,7 +10,8 @@
     departments: [],
     roles: [],
     search: '',
-    saving: false
+    saving: false,
+    createFormRequestId: 0
   };
 
   function hasPermission(code) {
@@ -221,13 +222,68 @@
   }
 
   async function openCreateForm() {
+    const requestId = ++state.createFormRequestId;
+    closeModal();
+
+    const modal = document.createElement('div');
+    modal.id = 'user-create-loading-modal';
+    modal.className = 'modal-overlay';
+    modal._pmsFocusReturn = document.activeElement;
+    modal.innerHTML =
+      '<div class="modal" role="dialog" aria-modal="true" aria-labelledby="user-create-loading-title">' +
+        '<div class="modal-header"><h3 id="user-create-loading-title">ایجاد کاربر جدید</h3>' +
+        '<button type="button" class="modal-close" aria-label="بستن">×</button></div>' +
+        '<div class="modal-body"><p role="status" aria-live="polite">در حال دریافت فهرست واحدها و نقش‌ها…</p>' +
+        '<div class="loading-spinner" aria-hidden="true"></div></div>' +
+      '</div>';
+    document.body.appendChild(modal);
+
+    const closeLoading = function () {
+      if (state.createFormRequestId === requestId) state.createFormRequestId += 1;
+      closeModal();
+    };
+    modal._pmsEscapeHandler = function (event) {
+      if (event.key === 'Escape') {
+        closeLoading();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const dialog = modal.querySelector('[role="dialog"]');
+      const focusable = dialog ? Array.from(dialog.querySelectorAll(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )) : [];
+      if (!focusable.length) { event.preventDefault(); return; }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', modal._pmsEscapeHandler);
+    modal.querySelector('.modal-close').addEventListener('click', closeLoading);
+    modal.addEventListener('click', function (event) {
+      if (event.target === modal) closeLoading();
+    });
+    const closeButton = modal.querySelector('.modal-close');
+    if (closeButton) closeButton.focus();
+
     try {
       const jobs = [state.departments.length ? Promise.resolve() : loadDepartments()];
       if (canEditUsers()) jobs.push(state.roles.length ? Promise.resolve() : loadRoles());
       await Promise.all(jobs);
 
+      if (state.createFormRequestId !== requestId ||
+          !document.getElementById('user-create-loading-modal')) return;
+
+      closeModal();
       showCreateModal();
     } catch (error) {
+      if (state.createFormRequestId !== requestId) return;
+      closeModal();
       showError(error);
     }
   }
@@ -889,7 +945,8 @@
     [
       'user-create-modal',
       'user-edit-modal',
-      'user-roles-modal'
+      'user-roles-modal',
+      'user-create-loading-modal'
     ].forEach(function (id) {
       const element = document.getElementById(id);
       if (!element) return;
