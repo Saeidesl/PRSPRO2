@@ -1,4 +1,4 @@
-const { chromium } = require('playwright');
+let chromium;
 const fs = require('node:fs');
 const path = require('node:path');
 const baseURL = (process.env.PMS_BASE_URL || 'https://saeidesl.github.io/PRSPRO2/').replace(/\/?$/, '/');
@@ -19,6 +19,7 @@ const arr = (x, keys) => { x = unwrap(x); if (Array.isArray(x)) return x; for (c
     }
     report.apiTargetConfigured = true;
     if (!username || !password) throw new Error('Missing PMS_TEST_USERNAME/PMS_TEST_PASSWORD repository secrets; no records were written.');
+    chromium = require('playwright').chromium;
     browser = await chromium.launch({headless:true});
     const page = await browser.newPage({viewport:{width:1365,height:900}});
     page.setDefaultTimeout(15000);
