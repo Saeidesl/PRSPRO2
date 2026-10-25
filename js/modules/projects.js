@@ -941,6 +941,7 @@
           </div>
 
           <form id="project-create-form">
+            <div class="project-form-section-title" id="project-main-info-heading"><span class="project-form-section-number">۱</span><div><strong>اطلاعات اصلی</strong><small>مشخصات پایه و مسیر تولید پروژه</small></div></div>
             <div class="filter-group form-group project-form-field" style="margin-bottom:16px;">
               <label for="new-project-code">کد پروژه <span style="color:var(--color-danger);">*</span></label>
               <input type="text" id="new-project-code" name="ProjectCode" required maxlength="100" autocomplete="off" placeholder="کد پروژه را وارد کنید" style="width:100%;box-sizing:border-box;" ${isEditMode ? "readonly aria-readonly=\"true\"" : ""}>
@@ -1001,6 +1002,7 @@
               ></textarea>
             </div>
 
+            <div class="project-form-section-title" id="project-access-heading"><span class="project-form-section-number">۲</span><div><strong>دسترسی و تنظیمات</strong><small>تعیین واحدها و کاربران مجاز و وضعیت اولیه</small></div></div>
             <div id="new-project-departments-setting" class="filter-group form-group project-form-field" style="margin-bottom:18px;">
               <label>واحدهای مجاز برای مشاهده پروژه و ثبت رویداد <span style="color:var(--color-danger);">*</span></label>
               <div id="new-project-departments" class="project-access-grid" role="group" aria-label="انتخاب واحدهای مجاز" aria-describedby="new-project-departments-help"><div class="project-lookup-loading">در حال دریافت واحدها…</div></div>
@@ -1017,6 +1019,15 @@
               <small style="display:block;margin-top:5px;color:var(--color-text-secondary);">وضعیتی که انتخاب می‌کنید هنگام ثبت پروژه اعمال می‌شود.</small>
             </div>
 
+            <div class="project-form-section-title" id="project-production-heading"><span class="project-form-section-number">۳</span><div><strong>مشخصات تولید</strong><small>تعریف مصرف ملزومات و ترکیب رنگ و سایز</small></div></div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin:4px 0 16px;">
+              ${this.canCreateOrEditProjects() ? '<button type="button" id="new-project-material-specs-button" class="btn btn-secondary">تعریف مصرف ملزومات</button>' : ''}
+              <button type="button" id="new-project-color-size-button" class="btn btn-secondary">تعریف رنگ‌بندی و سایزبندی</button>
+            </div>
+            <div id="new-project-material-specs-summary" style="font-size:12px;color:var(--color-text-secondary);margin:-8px 0 14px;">مصرف ملزومات اختیاری است و هنوز تعریف نشده است.</div>
+            <div id="new-project-color-size-summary" style="font-size:12px;color:var(--color-text-secondary);margin:-8px 0 16px;">رنگ‌بندی و سایزبندی اختیاری است و هنوز تعریف نشده است.</div>
+
+            <div class="project-form-section-title" id="project-attachments-heading"><span class="project-form-section-number">۴</span><div><strong>فایل و اطلاع‌رسانی</strong><small>پیوست‌های پروژه و اعلان‌های مرتبط</small></div></div>
             <div class="filter-group form-group project-form-field" style="margin-bottom:16px;">
               <label for="new-project-file">افزودن فایل <span style="color:var(--color-text-secondary);font-size:12px;">(اختیاری)</span></label>
               <input type="file" id="new-project-file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" style="width:100%;box-sizing:border-box;">
@@ -1034,7 +1045,6 @@
                 <small style="display:block;margin-top:8px;color:var(--color-text-secondary);">برای جایگزینی فایل، فایل قبلی را حذف و فایل جدیدی انتخاب کنید. حذف فایل فقط با دسترسی حذف پیوست امکان‌پذیر است.</small>
               </div>
             </div>
-
             <div id="new-project-notify-setting" class="filter-group form-group project-form-field" style="margin-bottom:16px;">
               <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
                 <input type="checkbox" id="new-project-notify" checked>
@@ -1042,13 +1052,6 @@
               </label>
               <small style="display:block;margin-top:5px;color:var(--color-text-secondary);">این گزینه به‌صورت پیش‌فرض فعال است.</small>
             </div>
-
-            <div style="display:flex;gap:10px;flex-wrap:wrap;margin:4px 0 16px;">
-              ${this.canCreateOrEditProjects() ? '<button type="button" id="new-project-material-specs-button" class="btn btn-secondary">تعریف مصرف ملزومات</button>' : ''}
-              <button type="button" id="new-project-color-size-button" class="btn btn-secondary">تعریف رنگ‌بندی و سایزبندی</button>
-            </div>
-            <div id="new-project-material-specs-summary" style="font-size:12px;color:var(--color-text-secondary);margin:-8px 0 14px;">مصرف ملزومات اختیاری است و هنوز تعریف نشده است.</div>
-            <div id="new-project-color-size-summary" style="font-size:12px;color:var(--color-text-secondary);margin:-8px 0 16px;">رنگ‌بندی و سایزبندی اختیاری است و هنوز تعریف نشده است.</div>
 
             <div style="
               display:flex;
@@ -1102,10 +1105,9 @@
         editSubmitButton.setAttribute('aria-busy', ready ? 'false' : 'true');
       };
       const settingsContent = settingsModal.querySelector('#project-create-settings-content');
-      ['new-project-departments-setting','new-project-users-setting','new-project-status-setting','new-project-notify-setting'].forEach((id) => {
-        const setting = modal.querySelector('#' + id);
-        if (setting && settingsContent) settingsContent.appendChild(setting);
-      });
+      if (settingsContent) {
+        settingsContent.innerHTML = '<div class="project-settings-inline-note">واحدهای مجاز، کاربران، وضعیت اولیه و اطلاع‌رسانی را مستقیماً در بخش‌های فرم تنظیم کنید. با انتخاب «ذخیره تنظیمات»، این مقادیر برای پروژه‌های بعدی به‌عنوان پیش‌فرض نگه داشته می‌شوند.</div>';
+      }
       if (isEditMode) {
         modal._projectEditReadiness = editReadiness;
         modal._updateProjectEditReadiness = updateEditSubmitReadiness;
