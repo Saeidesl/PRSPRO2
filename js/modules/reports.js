@@ -23,7 +23,7 @@
         if (!Reports.currentReport) return;
         window.print();
       });
-      this.loadProjects();
+      this.bindBuilder();\n      this.loadProjects();
     },
 
     escape: function (value) {
@@ -120,6 +120,168 @@
       }
     },
 
+
+    filterEvents: function (events) {
+      const query = String((document.getElementById('project-report-event-search') || {}).value || '').trim().toLocaleLowerCase();
+      const fromValue = (document.getElementById('project-report-event-from') || {}).value || '';
+      const toValue = (document.getElementById('project-report-event-to') || {}).value || '';
+      const sort = (document.getElementById('project-report-event-sort') || {}).value || 'newest';
+      const from = fromValue ? new Date(fromValue + 'T00:00:00').getTime() : null;
+      const to = toValue ? new Date(toValue + 'T23:59:59.999').getTime() : null;
+      return events.filter(function (event) {
+        const searchable = [event.EventTypeName, event.EventTypeCode, event.Title, event.DepartmentName,
+          event.PerformedByName, event.CreatorName, event.Description, event.Notes, event.Remarks]
+          .join(' ').toLocaleLowerCase();
+        if (query && searchable.indexOf(query) === -1) return false;
+        const rawDate = event.OccurredAt || event.CreatedAt;
+        const timestamp = rawDate ? new Date(rawDate).getTime() : NaN;
+        if (from !== null && (!isFinite(timestamp) || timestamp < from)) return false;
+        if (to !== null && (!isFinite(timestamp) || timestamp > to)) return false;
+        return true;
+      }).sort(function (a, b) {
+        const aTime = new Date(a.OccurredAt || a.CreatedAt || 0).getTime() || 0;
+        const bTime = new Date(b.OccurredAt || b.CreatedAt || 0).getTime() || 0;
+        return sort === 'oldest' ? aTime - bTime : bTime - aTime;
+      });
+    },
+
+    selectedSections: function () {
+      const selected = {};
+      document.querySelectorAll('[data-report-section]').forEach(function (input) {
+        selected[input.getAttribute('data-report-section')] = !!input.checked;
+      });
+      return selected;
+    },
+
+    templateKey: 'pms_project_report_templates_v1',
+
+    readTemplates: function () {
+      try {
+        const templates = JSON.parse(window.localStorage.getItem(this.templateKey) || '{}');
+        return templates && typeof templates === 'object' && !Array.isArray(templates) ? templates : {};
+      } catch (error) { return {}; }
+    },
+
+    refreshTemplates: function () {
+      const select = document.getElementById('project-report-template-list');
+      if (!select) return;
+      const templates = this.readTemplates();
+      const previous = select.value;
+      select.innerHTML = '<option value="">انتخاب قالب ذخیره‌شده</option>' +
+        Object.keys(templates).sort().map(function (name) {
+          return '<option value="' + Reports.escape(name) + '">' + Reports.escape(name) + '</option>';
+        }).join('');
+      if (Object.prototype.hasOwnProperty.call(templates, previous)) select.value = previous;
+    },
+
+    saveTemplate: function () {
+      const input = document.getElementById('project-report-template-name');
+      const name = String(input && input.value || '').trim();
+      if (!name) { this.showMessage('نام قالب را وارد کنید.', true); return; }
+      const templates = this.readTemplates();
+      templates[name] = {
+        sections: this.selectedSections(),
+        search: (document.getElementById('project-report-event-search') || {}).value || '',
+        from: (document.getElementById('project-report-event-from') || {}).value || '',
+        to: (document.getElementById('project-report-event-to') || {}).value || '',
+        sort: (document.getElementById('project-report-event-sort') || {}).value || 'newest'
+      };
+      try {
+        window.localStorage.setItem(this.templateKey, JSON.stringify(templates));
+        this.refreshTemplates();
+        const select = document.getElementById('project-report-template-list');
+        if (select) select.value = name;
+        this.showMessage('قالب در همین مرورگر ذخیره شد.', false);
+      } catch (error) { this.showMessage('ذخیره قالب در مرورگر ممکن نیست.', true); }
+    },
+
+    applyTemplate: function () {
+      const select = document.getElementById('project-report-template-list');
+      const name = select && select.value;
+      const config = this.readTemplates()[name];
+      if (!config) { this.showMessage('یک قالب ذخیره‌شده انتخاب کنید.', true); return; }
+      document.querySelectorAll('[data-report-section]').forEach(function (input) {
+        const key = input.getAttribute('data-report-section');
+        input.checked = !config.sections || config.sections[key] !== false;
+      });
+      [['project-report-event-search', config.search || ''],
+       ['project-report-event-from', config.from || ''],
+       ['project-report-event-to', config.to || ''],
+       ['project-report-event-sort', config.sort || 'newest']].forEach(function (item) {
+        const input = document.getElementById(item[0]);
+        if (input) input.value = item[1];
+      });
+      this.renderReport();
+      this.showMessage('قالب اعمال شد.', false);
+    },
+
+    deleteTemplate: function () {
+      const select = document.getElementById('project-report-template-list');
+      const name = select && select.value;
+      if (!name) { this.showMessage('یک قالب ذخیره‌شده انتخاب کنید.', true); return; }
+      const templates = this.readTemplates();
+      delete templates[name];
+      try {
+        window.localStorage.setItem(this.templateKey, JSON.stringify(templates));
+        this.refreshTemplates();
+        this.showMessage('قالب حذف شد.', false);
+      } catch (error) { this.showMessage('حذف قالب انجام نشد.', true); }
+    },
+
+    exportCsv: function () {
+      if (!this.currentReport || !this.currentReport.project) {
+        this.showMessage('ابتدا گزارش یک پروژه را بسازید.', true); return;
+      }
+      const config = this.selectedSections(), project = this.currentReport.project, rows = [['بخش', 'عنوان', 'مقدار']];
+      const add = function (section, label, value) { rows.push([section, label, value == null ? '' : String(value)]); };
+      if (config.project !== false) {
+        [['کد پروژه', project.ProjectCode], ['عنوان', project.Title], ['تعداد', project.Quantity],
+         ['وضعیت', project.Status], ['تاریخ ایجاد', project.CreatedAt], ['توضیحات', project.Description]]
+          .forEach(function (item) { add('پروژه', item[0], item[1]); });
+      }
+      if (config.events !== false) {
+        this.filterEvents(this.currentReport.events || []).filter(function (event) {
+          return Reports.selectedEventIds.indexOf(String(event.ID || event.Id || '')) !== -1;
+        }).forEach(function (event) {
+          add('رویداد', 'نام', event.EventTypeName || event.EventTypeCode || event.Title);
+          add('رویداد', 'واحد', event.DepartmentName);
+          add('رویداد', 'ثبت‌کننده', event.PerformedByName || event.CreatorName);
+          add('رویداد', 'تاریخ', event.OccurredAt || event.CreatedAt);
+          add('رویداد', 'تعداد', event.Quantity ?? event.VariantQuantity ?? event.TotalQuantity ?? '');
+          add('رویداد', 'توضیحات', event.Description || event.Notes || event.Remarks);
+        });
+      }
+      if (config.needs !== false) {
+        (((this.currentReport.procurement || {}).needs) || []).forEach(function (need) {
+          add('ملزومات', 'نام', need.ItemName || need.Name || need.SupplyName);
+          add('ملزومات', 'مقدار موردنیاز', need.RequestedQuantity ?? need.RequiredQuantity ?? need.Quantity);
+          add('ملزومات', 'سفارش‌شده', need.OrderedQuantity);
+          add('ملزومات', 'تحویل‌شده', need.ReceivedQuantity);
+          add('ملزومات', 'وضعیت', need.ProcurementStatus || need.Status);
+        });
+      }
+      if (config.orders !== false) {
+        (((this.currentReport.procurement || {}).orders) || []).forEach(function (order) {
+          (order.Items || []).forEach(function (item) {
+            add('سفارش', 'شماره', order.OrderCode || order.ID);
+            add('سفارش', 'ملزوم', item.ItemName || item.Name || item.SupplyName);
+            add('سفارش', 'تاریخ سفارش', order.OrderDate || order.CreatedAt);
+            add('سفارش', 'تاریخ تحویل', item.DeliveryDate || item.ReceivedAt || order.DeliveryDate || order.ReceivedAt);
+            add('سفارش', 'وضعیت', item.Status || order.Status);
+          });
+        });
+      }
+      const csv = '\uFEFF' + rows.map(function (row) {
+        return row.map(function (value) { return '"' + String(value).replace(/"/g, '""') + '"'; }).join(',');
+      }).join('\r\n');
+      const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'project-report-' + String(project.ProjectCode || project.ID || 'export').replace(/[^a-zA-Z0-9_-]/g, '_') + '.csv';
+      document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
+      this.showMessage('خروجی CSV آماده شد.', false);
+    },
+
     renderReport: function () {
       const target = document.getElementById('project-report-content');
       const data = this.currentReport;
@@ -132,7 +294,7 @@
       const calculations = Array.isArray(procurement.calculations) ? procurement.calculations : [];
       const selected = this.selectedEventIds;
 
-      const eventRows = events.length ? events.map((event) => {
+      const visibleEvents = this.filterEvents(events);\n      const eventRows = visibleEvents.length ? visibleEvents.map((event) => {
         const id = String(event.ID || event.Id || '');
         const checked = selected.indexOf(id) !== -1 ? ' checked' : '';
         const detail = event.Description || event.Notes || event.Remarks || '';
@@ -191,7 +353,7 @@
         '<button type="button" class="btn btn-light" id="project-report-select-none">پاک کردن انتخاب</button></div></div>' +
         '<article id="project-report-print-area" class="project-report-paper">' +
         '<header class="project-report-title"><h2>گزارش تولید پروژه</h2><p>زمان تهیه: ' + this.formatDate(data.generatedAt) + '</p></header>' +
-        '<section class="project-report-section"><h3>اطلاعات کلی پروژه</h3><div class="project-report-facts">' +
+        '<section data-report-output="project" class="project-report-section"><h3>اطلاعات کلی پروژه</h3><div class="project-report-facts">' +
         '<div><span>کد پروژه</span><strong>' + this.escape(project.ProjectCode || '—') + '</strong></div>' +
         '<div><span>عنوان پروژه</span><strong>' + this.escape(project.Title || '—') + '</strong></div>' +
         '<div><span>تعداد پیشنهادی</span><strong>' + this.escape(project.Quantity === '' ? '—' : project.Quantity) + '</strong></div>' +
@@ -199,16 +361,16 @@
         '<div><span>تاریخ ایجاد</span><strong>' + this.formatDate(project.CreatedAt) + '</strong></div>' +
         '<div><span>آخرین ویرایش</span><strong>' + this.formatDate(project.UpdatedAt) + '</strong></div>' +
         '</div>' + (project.Description ? '<p class="project-report-description">' + this.escape(project.Description) + '</p>' : '') + '</section>' +
-        '<section class="project-report-section"><h3>رویدادهای انتخاب‌شده</h3><div class="project-report-events">' + eventRows + '</div></section>' +
-        '<section class="project-report-section"><h3>ملزومات ثبت‌شده برای پروژه</h3>' +
+        '<section data-report-output="events" class="project-report-section"><h3>رویدادهای انتخاب‌شده</h3><div class="project-report-events">' + eventRows + '</div></section>' +
+        '<section data-report-output="needs" class="project-report-section"><h3>ملزومات ثبت‌شده برای پروژه</h3>' +
         (needs.length ? '<div class="table-wrapper"><table class="data-table"><thead><tr><th>ملزوم</th><th>کد</th><th>واحد</th><th>نیاز</th><th>سفارش</th><th>دریافت</th><th>کسری سفارش</th><th>وضعیت</th></tr></thead><tbody>' + needRows + '</tbody></table></div>' : '<p class="project-report-muted">ملزومی برای این پروژه ثبت نشده است.</p>') + '</section>' +
-        '<section class="project-report-section"><h3>تاریخچه محاسبه نیاز ملزومات</h3>' +
+        '<section data-report-output="calculations" class="project-report-section"><h3>تاریخچه محاسبه نیاز ملزومات</h3>' +
         (calculations.length ? '<div class="table-wrapper"><table class="data-table"><thead><tr><th>شناسه مشخصات</th><th>تعداد مبنا</th><th>مصرف هر واحد</th><th>ضایعات</th><th>نیاز محاسبه‌شده</th><th>اختلاف</th><th>تاریخ</th></tr></thead><tbody>' + calculationRows + '</tbody></table></div>' : '<p class="project-report-muted">تاریخچه محاسبه‌ای برای این پروژه ثبت نشده است.</p>') + '</section>' +
-        '<section class="project-report-section"><h3>سفارش‌ها و تحویل ملزومات</h3>' +
+        '<section data-report-output="orders" class="project-report-section"><h3>سفارش‌ها و تحویل ملزومات</h3>' +
         (orderRows.length ? '<div class="table-wrapper"><table class="data-table"><thead><tr><th>شماره سفارش</th><th>ملزوم</th><th>تاریخ سفارش</th><th>تاریخ تحویل</th><th>وضعیت</th></tr></thead><tbody>' + orderRows.join('') + '</tbody></table></div>' : '<p class="project-report-muted">سفارشی برای این پروژه پیدا نشد.</p>') + '</section>' +
         '</article>';
 
-      target.querySelectorAll('[data-report-event]').forEach((checkbox) => {
+      const sections = this.selectedSections();\n      target.querySelectorAll('[data-report-output]').forEach(function (section) {\n        const key = section.getAttribute('data-report-output');\n        section.style.display = sections[key] === false ? 'none' : '';\n      });\n      target.querySelectorAll('[data-report-event]').forEach((checkbox) => {
         checkbox.addEventListener('change', function () {
           const id = String(checkbox.getAttribute('data-report-event') || '');
           if (checkbox.checked && Reports.selectedEventIds.indexOf(id) === -1) Reports.selectedEventIds.push(id);
@@ -219,7 +381,7 @@
       const all = document.getElementById('project-report-select-all');
       const none = document.getElementById('project-report-select-none');
       if (all) all.addEventListener('click', function () {
-        Reports.selectedEventIds = events.map(function (event) { return String(event.ID || event.Id || ''); }).filter(Boolean);
+        Reports.selectedEventIds = visibleEvents.map(function (event) { return String(event.ID || event.Id || ''); }).filter(Boolean);
         Reports.renderReport();
       });
       if (none) none.addEventListener('click', function () {
