@@ -16,10 +16,18 @@ PR: https://github.com/Saeidesl/PRSPRO2/pull/93
 - تغییر: افزودن تست برای فوکوس اولیه، چرخش Tab و Shift+Tab، بستن با Escape، پاک‌سازی listener و نادیده‌گرفتن پنجره زیرین؛ fixture چند listener را نیز پشتیبانی می‌کند.
 - مستند جزئیات: [گزارش تکمیلی مودال‌ها](ui-audit-project-modals-followup.md).
 - Commitهای تست: `b513be6d7a04f724700f1bfd94af9e9bb837acee` و `de1e879e4f332f92957dab01d188ded3feda8014`.
-- Commit گزارش: `dc5e3bb9a8dd48a094bd453aba189db9e86a4f49`.
+- Commit گزارش اولیه: `ef68b8194baf9bbe37c1e959efbd4ce88ffb1628`; مستند وضعیت در این دور تکمیل شد.
 - وضعیت: `in_progress` — تست هدفمند روی commit `de1e879e4f332f92957dab01d188ded3feda8014` در Frontend checks موفق شد؛ اجرای CI برای commit جدید گزارش `dc5e3bb9a8dd48a094bd453aba189db9e86a4f49` هنوز در حال اجرا/صف است.
 - محدودیت: این تست رفتار کنترلر را با fixture شبیه‌سازی‌شده بررسی می‌کند، نه مرورگر واقعی یا صفحه‌خوان. آزمون تعاملی کامل مرورگر و staging احراز هویت‌شده همچنان مسدود/در انتظار است.
 - دامنه: فقط تست‌ها و مستندات فرانت‌اند؛ بک‌اند، Google Sheets و انتشار Apps Script تغییر نکردند.
+
+## گام تکمیلی — آزمون واقعی Chromium
+
+- افزوده شد: `tests/project-modal-accessibility.browser.cjs`؛ تست از تابع واقعی کنترلر استفاده می‌کند و در مرورگر Chromium واقعی، فوکوس اولیه، Tab/Shift+Tab، Escape، بازگشت فوکوس و اولویت پنجره بالایی را بررسی می‌کند.
+- `.github/workflows/pms-ui-performance-audit.yml` پس از نصب Playwright این تست را اجرا می‌کند.
+- Commit تست مرورگر: `c286b1a3da5d1804ba58c94ae607dcbbb552688b`.
+- Commit اتصال تست به CI: `5aec2ad27450c80ec999799cbb2ceaf1f119c491`.
+- وضعیت: منتظر اجرای تست Chromium در workflow مربوط به ممیزی مرورگر روی آخرین SHA. تا موفقیت این تست و بررسی CI، مورد هنوز `in_progress` است.
 
 ## معیار بستن دور
 1. Frontend checks روی آخرین SHA موفق شود.
