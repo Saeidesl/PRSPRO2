@@ -4,7 +4,8 @@ const path = require('node:path');
 const baseURL = (process.env.PMS_BASE_URL || 'https://saeidesl.github.io/PRSPRO2/').replace(/\/?$/, '/');
 const username = process.env.PMS_TEST_USERNAME || '';
 const password = process.env.PMS_TEST_PASSWORD || '';
-const report = { suite: 'PMS staging production-to-procurement E2E', startedAt: new Date().toISOString(), environment: 'staging', steps: [], created: {}, status: 'running' };
+const stagingApiBaseURL = String(process.env.PMS_STAGING_API_BASE_URL || '').trim();
+const report = { suite: 'PMS staging production-to-procurement E2E', startedAt: new Date().toISOString(), environment: 'staging', apiTargetConfigured: false, steps: [], created: {}, status: 'running' };
 const step = (name, data) => report.steps.push({ name, at: new Date().toISOString(), ...data });
 const idOf = x => x && (x.ID || x.Id || x.id || x.ProjectID || x.EventTypeID || x.PurchaseOrderID);
 const unwrap = x => x && x.data !== undefined ? x.data : x;
@@ -13,10 +14,17 @@ const arr = (x, keys) => { x = unwrap(x); if (Array.isArray(x)) return x; for (c
   fs.mkdirSync('test-results', {recursive:true});
   let browser;
   try {
+    if (!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec\/?$/.test(stagingApiBaseURL)) {
+      throw new Error('Missing or invalid PMS_STAGING_API_BASE_URL; the staging Apps Script endpoint must be explicitly configured. The scenario stopped before login and no records were written.');
+    }
+    report.apiTargetConfigured = true;
     if (!username || !password) throw new Error('Missing PMS_TEST_USERNAME/PMS_TEST_PASSWORD repository secrets; no records were written.');
     browser = await chromium.launch({headless:true});
     const page = await browser.newPage({viewport:{width:1365,height:900}});
     page.setDefaultTimeout(15000);
+    await page.addInitScript(function (apiUrl) {
+      window.PMS_API_BASE_URL = apiUrl;
+    }, stagingApiBaseURL);
     await page.goto(baseURL + '#login', {waitUntil:'domcontentloaded'});
     await page.locator('#login-form').waitFor({state:'visible',timeout:20000});
     await page.locator('#login-username').fill(username);
