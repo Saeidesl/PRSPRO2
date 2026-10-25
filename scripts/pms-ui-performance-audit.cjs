@@ -9,6 +9,8 @@ const { chromium } = require('playwright');
 const baseURL = (process.env.PMS_BASE_URL || 'https://saeidesl.github.io/PRSPRO2/').replace(/\/?$/, '/');
 const username = process.env.PMS_TEST_USERNAME || '';
 const password = process.env.PMS_TEST_PASSWORD || '';
+const stagingApiBaseURL = String(process.env.PMS_STAGING_API_BASE_URL || '').trim();
+const stagingApiConfigured = /^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec\/?$/.test(stagingApiBaseURL);
 const routes = [
   'login', 'dashboard', 'projects', 'project-detail', 'events', 'workflows',
   'project-statuses', 'event-types', 'procurement', 'attachments', 'reports',
@@ -20,7 +22,7 @@ const results = {
   suite: 'PMS Comprehensive UI and Performance Audit',
   generatedAt: new Date().toISOString(),
   baseURL,
-  mode: username && password ? 'authenticated-read-only' : 'public-login-and-shell-only',
+  mode: stagingApiConfigured && username && password ? 'authenticated-read-only' : 'public-login-and-shell-only',
   safety: {
     formSubmission: 'disabled',
     destructiveActions: 'never-clicked',
@@ -143,13 +145,19 @@ async function main() {
     }
   });
 
+  if (stagingApiConfigured) {
+    await page.addInitScript(function (apiUrl) {
+      window.PMS_API_BASE_URL = apiUrl;
+    }, stagingApiBaseURL);
+  }
+
   const initialStart = Date.now();
   await page.goto(baseURL + '#login', { waitUntil: 'domcontentloaded' });
   try { await page.locator('#login-form').waitFor({ state: 'visible', timeout: 10000 }); } catch (_) {}
   const loginReadyMs = Date.now() - initialStart;
   const loginForm = page.locator('#login-form');
   let authenticated = false;
-  if (username && password && await loginForm.count()) {
+  if (stagingApiConfigured && username && password && await loginForm.count()) {
     await page.locator('#login-username').fill(username);
     await page.locator('#login-password').fill(password);
     const loginStart = Date.now();
@@ -186,11 +194,15 @@ async function main() {
       errorMessage: loginErrorMessage
     };
   } else {
+    const note = !stagingApiConfigured
+      ? 'Authenticated audit skipped: configure PMS_STAGING_API_BASE_URL to a separate staging Apps Script deployment. Production API will not be used for test login.'
+      : 'Set repository secrets PMS_TEST_USERNAME and PMS_TEST_PASSWORD to audit permission-protected pages.';
     results.login = {
       loginFormReadyMs: loginReadyMs,
       authenticated: false,
-      note: 'Set repository secrets PMS_TEST_USERNAME and PMS_TEST_PASSWORD to audit permission-protected pages.'
+      note
     };
+    results.coverageGaps.push(note);
   }
 
   const routeList = authenticated ? routes.filter(route => route !== 'login') : ['login'];
@@ -405,12 +417,14 @@ const visible = el => {
     formSubmissionsExecuted: 0
   };
   const failedSafeButtonChecks = results.routes.reduce((n, route) => n + (route.safeButtonChecks || []).filter(check => check.clickCompleted === false).length, 0);
-  const authenticationFailed = Boolean(username && password && !authenticated);
+  const authenticationFailed = Boolean(stagingApiConfigured && username && password && !authenticated);
   results.overallStatus = failedRoutes || results.pageErrors.length || failedSafeButtonChecks
     ? 'needs-attention'
     : (authenticated
       ? 'authenticated-audit-complete'
-      : (authenticationFailed ? 'authentication-failed' : 'limited-no-test-credentials'));
+      : (stagingApiConfigured && authenticationFailed
+        ? 'authentication-failed'
+        : (!stagingApiConfigured ? 'blocked-no-staging-api' : 'limited-no-test-credentials')));
   results.coverageGaps = [...new Set(results.coverageGaps)];
   fs.writeFileSync(path.join(process.cwd(), 'test-results', 'latest-performance-report.json'), JSON.stringify(results, null, 2) + '\n');
   fs.writeFileSync(path.join(process.cwd(), 'test-results', 'latest-performance-report.md'), renderMarkdown(results));
