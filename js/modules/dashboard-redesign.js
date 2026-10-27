@@ -132,10 +132,10 @@
             '<label class="dash-filter-field"><span>واحد یا بخش تولید</span><select id="dash-filter-unit"><option value="">همه واحدها</option></select></label>' +
             '<label class="dash-filter-field"><span>ثبت‌کننده رویداد</span><select id="dash-filter-registrant"><option value="">همه ثبت‌کنندگان</option></select></label>' +
             '<label class="dash-filter-field"><span>نوع رویداد</span><select id="dash-filter-type"><option value="">همه رویدادها</option></select></label>' +
-            '<label class="dash-filter-field"><span>ایجاد پروژه از تاریخ شمسی</span><input id="dash-filter-created-from" type="text" inputmode="numeric" placeholder="۱۴۰۵/۰۱/۰۱"></label>' +
-            '<label class="dash-filter-field"><span>ایجاد پروژه تا تاریخ شمسی</span><input id="dash-filter-created-to" type="text" inputmode="numeric" placeholder="۱۴۰۵/۱۲/۲۹"></label>' +
-            '<label class="dash-filter-field"><span>آخرین فعالیت از تاریخ شمسی</span><input id="dash-filter-activity-from" type="text" inputmode="numeric" placeholder="۱۴۰۵/۰۱/۰۱"></label>' +
-            '<label class="dash-filter-field"><span>آخرین فعالیت تا تاریخ شمسی</span><input id="dash-filter-activity-to" type="text" inputmode="numeric" placeholder="۱۴۰۵/۱۲/۲۹"></label>' +
+            '<label class="dash-filter-field"><span>ایجاد پروژه از تاریخ شمسی</span><input id="dash-filter-created-from" type="text" data-jalali-date inputmode="numeric" placeholder="۱۴۰۵/۰۱/۰۱"></label>' +
+            '<label class="dash-filter-field"><span>ایجاد پروژه تا تاریخ شمسی</span><input id="dash-filter-created-to" type="text" data-jalali-date inputmode="numeric" placeholder="۱۴۰۵/۱۲/۲۹"></label>' +
+            '<label class="dash-filter-field"><span>آخرین فعالیت از تاریخ شمسی</span><input id="dash-filter-activity-from" type="text" data-jalali-date inputmode="numeric" placeholder="۱۴۰۵/۰۱/۰۱"></label>' +
+            '<label class="dash-filter-field"><span>آخرین فعالیت تا تاریخ شمسی</span><input id="dash-filter-activity-to" type="text" data-jalali-date inputmode="numeric" placeholder="۱۴۰۵/۱۲/۲۹"></label>' +
           '</div>' +
           '<div id="dash-active-filters" class="dash-active-filters"></div>' +
           '<div class="dash-filter-actions"><button type="button" id="dash-clear-filters" class="btn btn-light">پاک کردن همه</button></div>' +
@@ -298,7 +298,18 @@
           'dash-filter-activity-to': 'activityTo'
         };
         if (filterMap[id]) {
-          self.filters[filterMap[id]] = event.target.value || '';
+          var filterValue = event.target.value || '';
+          if (/^dash-filter-(created|activity)-(from|to)$/.test(id)) {
+            var calendar = window.PMS && window.PMS.JalaliCalendar;
+            if (filterValue && /^\\d{4}-\\d{2}-\\d{2}$/.test(filterValue) && calendar) {
+              var isoDate = calendar.parseISO(filterValue);
+              filterValue = isoDate ? calendar.toJalali(isoDate) : '';
+            } else {
+              var visibleDate = document.getElementById(id + '-jalali');
+              if (visibleDate && visibleDate.value) filterValue = visibleDate.value;
+            }
+          }
+          self.filters[filterMap[id]] = filterValue;
           self.visibleCount = PAGE_SIZE;
           self.saveState();
           self.applyFilters(false);
@@ -1551,7 +1562,17 @@
       };
       Object.keys(map).forEach(function (key) {
         var element = document.getElementById(map[key]);
-        if (element) element.value = Dashboard.filters[key] || '';
+        if (!element) return;
+        var value = Dashboard.filters[key] || '';
+        if (/^(createdFrom|createdTo|activityFrom|activityTo)$/.test(key)) {
+          var calendar = window.PMS && window.PMS.JalaliCalendar;
+          var iso = calendar && value ? calendar.fromJalali(value) : '';
+          element.value = iso || '';
+          var visible = document.getElementById(map[key] + '-jalali');
+          if (visible) visible.value = value && calendar ? calendar.toFa(value) : '';
+        } else {
+          element.value = value;
+        }
       });
     },
 
