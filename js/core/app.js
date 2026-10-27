@@ -13,6 +13,8 @@
     init: function () {
       if (this.initialized) return;
       this.initialized = true;
+      this.startSessionHeartbeat();
+
 
       // Keep the initial loader visible while the router checks the session,
       // fetches permissions, and prepares the first screen. renderLayout() or
@@ -33,6 +35,25 @@
         console.error('PMS startup error:', error);
         this.showStartupError(error);
       }
+    },
+
+    // Keep the admin online-presence list accurate even when a user is idle.
+    // The backend throttles last-seen writes, so this does not write on every poll.
+    startSessionHeartbeat: function () {
+      if (this.sessionHeartbeatTimer) window.clearInterval(this.sessionHeartbeatTimer);
+      const self = this;
+      this.sessionHeartbeatTimer = window.setInterval(function () {
+        if (!window.PMS || !PMS.Session || !PMS.Session.isAuthenticated() ||
+            !PMS.Api || typeof PMS.Api.get !== 'function') return;
+        const route = PMS.Router && PMS.Router.getCurrentRoute
+          ? PMS.Router.getCurrentRoute().split('/')[0]
+          : '';
+        if (route === 'login') return;
+        PMS.Api.get('/auth/me', { trackSync: false, retry: false }).catch(function (error) {
+          // The API's normal auth-expiry handling redirects when the session is revoked.
+          console.debug('Session presence check failed:', error && error.message ? error.message : error);
+        });
+      }, 60000);
     },
 
     removeLoading: function () {
