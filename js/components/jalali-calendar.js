@@ -115,7 +115,18 @@
         visible.dispatchEvent(new Event('change',{bubbles:true}));
         render(); close();
       }
-      function close(){pop.hidden=true;visible.setAttribute('aria-expanded','false');}
+      function isMobileCalendar(){return !!(window.matchMedia && window.matchMedia('(max-width: 480px)').matches);}
+      function close(){
+        pop.hidden=true;
+        visible.setAttribute('aria-expanded','false');
+        if(pop.parentNode===document.body) wrap.appendChild(pop);
+        pop.style.removeProperty('position');
+        pop.style.removeProperty('transform');
+        pop.style.removeProperty('top');
+        pop.style.removeProperty('left');
+        pop.style.removeProperty('max-height');
+        pop.style.removeProperty('overflow-y');
+      }
       function render() {
         const today=self.localDateParts(new Date());
         let html='<div class="pms-jalali-cal-head"><button type="button" data-cal="prev" aria-label="ماه قبل">‹</button><strong>'+self.months[viewMonth-1]+' '+self.toFa(viewYear)+'</strong><button type="button" data-cal="next" aria-label="ماه بعد">›</button></div><div class="pms-jalali-cal-grid pms-jalali-weekdays">'+self.weekdays.map(function(x){return '<span>'+x+'</span>';}).join('')+'</div><div class="pms-jalali-cal-grid">';
@@ -139,7 +150,25 @@
         const parsed=self.parseJalali(visible.value);
         const now=self.localDateParts(new Date());
         viewYear=parsed?parsed.parts.year:now.year; viewMonth=parsed?parsed.parts.month:now.month;
-        render(); pop.hidden=false; visible.setAttribute('aria-expanded','true');
+        render();
+        if(isMobileCalendar()){
+          if(pop.parentNode!==document.body) document.body.appendChild(pop);
+          pop.style.position='fixed';
+          pop.style.left='50%';
+          pop.style.top='50%';
+          pop.style.transform='translate(-50%, -50%)';
+          pop.style.maxHeight='calc(100dvh - 32px)';
+          pop.style.overflowY='auto';
+        } else {
+          if(pop.parentNode!==wrap) wrap.appendChild(pop);
+          pop.style.removeProperty('position');
+          pop.style.removeProperty('transform');
+          pop.style.removeProperty('top');
+          pop.style.removeProperty('left');
+          pop.style.removeProperty('max-height');
+          pop.style.removeProperty('overflow-y');
+        }
+        pop.hidden=false; visible.setAttribute('aria-expanded','true');
       }
       visible.addEventListener('focus',function(){});
       visible.addEventListener('blur',function(){
@@ -166,7 +195,8 @@
         if(action==='clear'){setValue('','');return;}
         if(btn.dataset.day){setValue(self.fromJalali(viewYear+'/'+viewMonth+'/'+btn.dataset.day));}
       });
-      document.addEventListener('click',function(e){if(!wrap.contains(e.target))close();});
+      document.addEventListener('click',function(e){if(!wrap.contains(e.target)&&!pop.contains(e.target))close();});
+      window.addEventListener('resize',function(){if(!pop.hidden){if(isMobileCalendar()&&pop.parentNode!==document.body){open();}else if(!isMobileCalendar()&&pop.parentNode===document.body){close();open();}}});
       original.addEventListener('change',updateFromISO);
       if(original.form) original.form.addEventListener('reset',function(){setTimeout(updateFromISO,0);});
       render();
