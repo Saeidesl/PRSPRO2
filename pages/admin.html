@@ -6,6 +6,24 @@
     </div>
   </div>
 
+  <div class="card" style="margin-bottom:20px;border-color:var(--color-danger, #cf222e)">
+    <div class="card-body">
+      <h2 style="margin:0 0 6px">حذف کامل پروژه</h2>
+      <p class="text-muted">اطلاعات وابسته به پروژه حذف نرم می‌شوند و فایل‌های پیوست به سطل زبالهٔ Google Drive منتقل می‌شوند. قبل از حذف، پیش‌نمایش را بررسی کنید.</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:end">
+        <div style="flex:1;min-width:220px"><label for="admin-delete-project-id">پروژه</label><select id="admin-delete-project-id" class="form-control" style="width:100%"><option value="">در حال دریافت پروژه‌ها…</option></select></div>
+        <button type="button" class="btn btn-secondary" id="admin-delete-project-preview">بررسی اطلاعات وابسته</button>
+      </div>
+      <div id="admin-delete-project-preview-result" class="text-muted" role="status" aria-live="polite" style="margin-top:14px"></div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin-top:12px">
+        <div style="flex:1;min-width:220px"><label for="admin-delete-project-code">برای تأیید، کد پروژه را وارد کنید</label><input id="admin-delete-project-code" class="form-control" autocomplete="off" placeholder="کد پروژه"></div>
+        <button type="button" class="btn btn-danger" id="admin-delete-project-confirm" disabled>حذف پروژه و اطلاعات وابسته</button>
+      </div>
+      <p class="text-muted" style="margin-top:10px">تا وقتی پیش‌نمایش پروژه انتخاب‌شده تأیید نشده باشد، حذف غیرفعال است.</p>
+      <div id="admin-delete-project-message" role="status" aria-live="polite" style="margin-top:10px"></div>
+    </div>
+  </div>
+
   <div class="card">
     <div class="card-body">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
