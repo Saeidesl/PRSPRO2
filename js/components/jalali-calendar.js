@@ -124,6 +124,9 @@
         pop.style.removeProperty('transform');
         pop.style.removeProperty('top');
         pop.style.removeProperty('left');
+        pop.style.removeProperty('right');
+        pop.style.removeProperty('inset-inline-start');
+        pop.style.removeProperty('width');
         pop.style.removeProperty('max-height');
         pop.style.removeProperty('overflow-y');
       }
@@ -153,22 +156,43 @@
         render();
         if(isMobileCalendar()){
           if(pop.parentNode!==document.body) document.body.appendChild(pop);
+          // Anchor to the trigger, then clamp to the viewport. Avoid RTL inset-inline
+          // conflicts and fixed-position centering that can overflow on narrow screens.
           pop.style.position='fixed';
-          pop.style.left='50%';
-          pop.style.top='50%';
-          pop.style.transform='translate(-50%, -50%)';
-          pop.style.maxHeight='calc(100dvh - 32px)';
+          pop.style.left='0px';
+          pop.style.right='auto';
+          pop.style.insetInlineStart='auto';
+          pop.style.top='0px';
+          pop.style.transform='none';
+          pop.style.width='min(320px, calc(100vw - 24px))';
+          pop.style.maxHeight='calc(100dvh - 24px)';
           pop.style.overflowY='auto';
+          pop.hidden=false;
+          const margin=12;
+          const viewportWidth=document.documentElement.clientWidth || window.innerWidth;
+          const viewportHeight=window.innerHeight || document.documentElement.clientHeight;
+          const anchor=trigger.getBoundingClientRect();
+          const popupRect=pop.getBoundingClientRect();
+          const left=Math.max(margin,Math.min(anchor.left,viewportWidth-popupRect.width-margin));
+          let top=anchor.bottom+8;
+          if(top+popupRect.height>viewportHeight-margin) top=anchor.top-popupRect.height-8;
+          top=Math.max(margin,Math.min(top,viewportHeight-popupRect.height-margin));
+          pop.style.left=Math.round(left)+'px';
+          pop.style.top=Math.round(top)+'px';
         } else {
           if(pop.parentNode!==wrap) wrap.appendChild(pop);
           pop.style.removeProperty('position');
           pop.style.removeProperty('transform');
           pop.style.removeProperty('top');
           pop.style.removeProperty('left');
+          pop.style.removeProperty('right');
+          pop.style.removeProperty('inset-inline-start');
+          pop.style.removeProperty('width');
           pop.style.removeProperty('max-height');
           pop.style.removeProperty('overflow-y');
+          pop.hidden=false;
         }
-        pop.hidden=false; visible.setAttribute('aria-expanded','true');
+        visible.setAttribute('aria-expanded','true');
       }
       visible.addEventListener('focus',function(){});
       visible.addEventListener('blur',function(){
