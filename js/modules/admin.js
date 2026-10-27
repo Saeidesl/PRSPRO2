@@ -11,6 +11,7 @@
     init: function () {
       this.bindEvents();
       this.loadSessions();
+      this.loadProjectsForDeletion();
 
       if (this.refreshTimer) window.clearInterval(this.refreshTimer);
       const self = this;
@@ -33,6 +34,32 @@
       if (refresh && !refresh.dataset.bound) {
         refresh.dataset.bound = 'true';
         refresh.addEventListener('click', function () { Admin.loadSessions(); });
+      }
+      const previewButton = document.getElementById('admin-delete-project-preview');
+      const deleteButton = document.getElementById('admin-delete-project-confirm');
+      if (previewButton && !previewButton.dataset.bound) {
+        previewButton.dataset.bound = 'true';
+        previewButton.addEventListener('click', function () { Admin.previewProjectDeletion(); });
+      }
+      if (deleteButton && !deleteButton.dataset.bound) {
+        deleteButton.dataset.bound = 'true';
+        deleteButton.addEventListener('click', function () { Admin.deleteProject(); });
+      }
+      const projectSelect = document.getElementById('admin-delete-project-id');
+      const projectCode = document.getElementById('admin-delete-project-code');
+      if (projectSelect && !projectSelect.dataset.bound) {
+        projectSelect.dataset.bound = 'true';
+        projectSelect.addEventListener('change', function () {
+          Admin.deletionPreview = null;
+          const result = document.getElementById('admin-delete-project-preview-result');
+          if (result) result.textContent = '';
+          if (deleteButton) deleteButton.disabled = true;
+          if (projectCode) projectCode.value = '';
+        });
+      }
+      if (projectCode && !projectCode.dataset.bound) {
+        projectCode.dataset.bound = 'true';
+        projectCode.addEventListener('input', function () { Admin.updateDeleteButton(); });
       }
       if (table && !table.dataset.bound) {
         table.dataset.bound = 'true';
@@ -139,6 +166,114 @@
       } finally {
         buttons.forEach(function (button) { button.disabled = false; });
       }
+    },
+
+    deletionPreview: null,
+
+    loadProjectsForDeletion: async function () {
+      const select = document.getElementById('admin-delete-project-id');
+      if (!select) return;
+      try {
+        const response = await PMS.Api.get('/projects', { trackSync: false });
+        const projects = PMS.Api.extractData(response);
+        if (!Array.isArray(projects)) throw new Error('فهرست پروژه‌ها در قالب مورد انتظار دریافت نشد.');
+        select.innerHTML = '<option value="">انتخاب پروژه…</option>' + projects.map(function (project) {
+          const id = project.ID || project.Id || '';
+          const code = project.ProjectCode || '';
+          const name = project.ProjectName || project.Name || '';
+          return '<option value="' + Admin.escape(id) + '">' + Admin.escape(code + (name ? ' — ' + name : '')) + '</option>';
+        }).join('');
+      } catch (error) {
+        select.innerHTML = '<option value="">دریافت پروژه‌ها ناموفق بود</option>';
+        Admin.setDeletionMessage(error && error.message ? error.message : 'دریافت فهرست پروژه‌ها ناموفق بود.', true);
+      }
+    },
+
+    previewProjectDeletion: async function () {
+      const select = document.getElementById('admin-delete-project-id');
+      const result = document.getElementById('admin-delete-project-preview-result');
+      const button = document.getElementById('admin-delete-project-preview');
+      if (!select || !select.value) {
+        this.setDeletionMessage('ابتدا پروژه را انتخاب کنید.', true);
+        return;
+      }
+      this.deletionPreview = null;
+      this.updateDeleteButton();
+      if (button) button.disabled = true;
+      if (result) result.textContent = 'در حال بررسی وابستگی‌ها…';
+      try {
+        const response = await PMS.Api.get('/admin/projects/' + encodeURIComponent(select.value) + '/deletion-preview', { trackSync: false, retry: false });
+        const preview = PMS.Api.extractData(response);
+        if (!preview || !preview.project || !preview.counts) throw new Error('پاسخ پیش‌نمایش معتبر نیست.');
+        this.deletionPreview = preview;
+        const labels = {
+          events: 'رویدادها', eventData: 'داده‌های رویداد', attachments: 'پیوست‌ها',
+          materialNeeds: 'نیازهای ملزومات', purchaseOrders: 'سفارش‌های خرید',
+          purchaseOrderItems: 'اقلام سفارش', allocations: 'تخصیص‌ها', receipts: 'رسیدها',
+          materialSpecifications: 'مشخصات ملزومات', materialCalculations: 'محاسبات ملزومات'
+        };
+        const lines = Object.keys(labels).map(function (key) {
+          return '<div style="display:flex;justify-content:space-between;gap:12px;padding:4px 0"><span>' +
+            Admin.escape(labels[key]) + '</span><strong>' + Number(preview.counts[key] || 0) + '</strong></div>';
+        }).join('');
+        if (result) result.innerHTML = '<div><strong>پروژه: ' + Admin.escape(preview.project.ProjectCode) + ' — ' +
+          Admin.escape(preview.project.ProjectName || '') + '</strong></div><div style="margin-top:8px">' + lines + '</div>';
+        this.setDeletionMessage('پیش‌نمایش آماده است. کد پروژه را برای تأیید وارد کنید.', false);
+        this.updateDeleteButton();
+      } catch (error) {
+        if (result) result.textContent = '';
+        this.setDeletionMessage(error && error.message ? error.message : 'بررسی اطلاعات وابسته ناموفق بود.', true);
+      } finally {
+        if (button) button.disabled = false;
+      }
+    },
+
+    updateDeleteButton: function () {
+      const button = document.getElementById('admin-delete-project-confirm');
+      const code = document.getElementById('admin-delete-project-code');
+      const select = document.getElementById('admin-delete-project-id');
+      const expected = this.deletionPreview && this.deletionPreview.confirmationCode;
+      if (button) button.disabled = !(this.deletionPreview && select && select.value === String(this.deletionPreview.project.ID) &&
+        code && expected && code.value.trim() === String(expected).trim());
+    },
+
+    deleteProject: async function () {
+      if (!this.deletionPreview) return;
+      const preview = this.deletionPreview;
+      if (!window.confirm('این عملیات اطلاعات وابسته به پروژه «' + preview.project.ProjectCode + '» را حذف می‌کند. ادامه می‌دهید؟')) return;
+      const button = document.getElementById('admin-delete-project-confirm');
+      const select = document.getElementById('admin-delete-project-id');
+      const code = document.getElementById('admin-delete-project-code');
+      if (button) button.disabled = true;
+      try {
+        await PMS.Api.delete('/admin/projects/' + encodeURIComponent(preview.project.ID), {
+          body: { confirmationCode: code ? code.value.trim() : '' },
+          trackSync: false,
+          retry: false
+        });
+        this.deletionPreview = null;
+        if (code) code.value = '';
+        this.setDeletionMessage('درخواست حذف با موفقیت انجام شد.', false);
+        if (select) {
+          const option = select.querySelector('option[value="' + CSS.escape(String(preview.project.ID)) + '"]');
+          if (option) option.remove();
+          select.value = '';
+        }
+        const result = document.getElementById('admin-delete-project-preview-result');
+        if (result) result.textContent = '';
+        await this.loadProjectsForDeletion();
+      } catch (error) {
+        this.setDeletionMessage(error && error.message ? error.message : 'حذف پروژه ناموفق بود. وضعیت رکوردها را بررسی کنید.', true);
+      } finally {
+        this.updateDeleteButton();
+      }
+    },
+
+    setDeletionMessage: function (message, isError) {
+      const element = document.getElementById('admin-delete-project-message');
+      if (!element) return;
+      element.style.color = isError ? 'var(--color-danger, #cf222e)' : 'var(--color-success, #1a7f37)';
+      element.textContent = message;
     },
 
     formatDate: function (value) {
