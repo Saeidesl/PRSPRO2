@@ -27,20 +27,27 @@
       const p = this.parts(date);
       return p.year + '/' + String(p.month).padStart(2,'0') + '/' + String(p.day).padStart(2,'0');
     },
+    _jalaliYearCache: Object.create(null),
     fromJalali: function (value) {
       const clean = this.toLatin(value).trim().replace(/[.\-]/g,'/').replace(/\s+/g,'');
       const m = /^(\d{3,4})\/(\d{1,2})\/(\d{1,2})$/.exec(clean);
       if (!m) return null;
       const jy=+m[1], jm=+m[2], jd=+m[3];
       if (jm<1 || jm>12 || jd<1 || jd>31) return null;
-      const start = Date.UTC(jy+621, 2, 18), end = start + 371 * 86400000;
-      for (let t=start; t<end; t+=86400000) {
-        const d = new Date(t), p = this.parts(d);
-        if (p.year===jy && p.month===jm && p.day===jd) {
-          return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0');
+      let yearMap=this._jalaliYearCache[jy];
+      if (!yearMap) {
+        yearMap=Object.create(null);
+        const start=Date.UTC(jy+621,2,18), end=start+371*86400000;
+        for(let t=start;t<end;t+=86400000){
+          const d=new Date(t), p=this.parts(d);
+          if(p.year===jy){
+            const iso=d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0');
+            yearMap[p.month+'/'+p.day]=iso;
+          }
         }
+        this._jalaliYearCache[jy]=yearMap;
       }
-      return null;
+      return yearMap[jm+'/'+jd] || null;
     },
     parseJalali: function (value) {
       const iso=this.fromJalali(value);
