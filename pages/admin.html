@@ -2,25 +2,43 @@
   <div class="page-header">
     <div>
       <h1>مدیریت سامانه</h1>
-      <p>نمای کلی بخش‌های مدیریتی سامانه</p>
+      <p>مدیریت نشست‌های کاربران و بررسی وضعیت حضور آن‌ها در سامانه</p>
     </div>
   </div>
 
   <div class="card">
     <div class="card-body">
-      <h3>بخش‌های مدیریتی</h3>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div>
+          <h2 style="margin:0 0 6px">نشست‌های کاربران</h2>
+          <p class="text-muted" style="margin:0">آنلاین یعنی کاربر در سه دقیقهٔ اخیر با سامانه ارتباط داشته است.</p>
+        </div>
+        <button type="button" class="btn btn-secondary" id="admin-sessions-refresh">به‌روزرسانی</button>
+      </div>
 
-      <ul>
-        <li>مدیریت کاربران و واحدها</li>
-        <li>مدیریت نقش‌ها و دسترسی‌ها</li>
-        <li>مدیریت گردش‌کارها</li>
-        <li>مدیریت انواع رویدادها</li>
-        <li>بررسی سوابق فعالیت‌ها</li>
-      </ul>
+      <div id="admin-sessions-summary" style="display:flex;gap:12px;flex-wrap:wrap;margin:18px 0">
+        <div class="card" style="padding:12px;min-width:130px;flex:1"><div class="text-muted">کاربران آنلاین</div><strong id="admin-online-count">—</strong></div>
+        <div class="card" style="padding:12px;min-width:130px;flex:1"><div class="text-muted">کل نشست‌های معتبر</div><strong id="admin-total-count">—</strong></div>
+      </div>
 
-      <p>
-        دسترسی به عملیات مدیریتی باید بر اساس مجوزهای کاربر کنترل شود.
-      </p>
+      <div id="admin-sessions-message" role="status" aria-live="polite" style="margin:12px 0"></div>
+      <div id="admin-sessions-loading" class="text-muted">در حال دریافت نشست‌ها…</div>
+      <div id="admin-sessions-empty" class="text-muted" hidden>نشست معتبری برای نمایش وجود ندارد.</div>
+      <div id="admin-sessions-table-wrap" style="width:100%;overflow-x:auto" hidden>
+        <table class="data-table" style="width:100%">
+          <thead>
+            <tr>
+              <th>کاربر</th>
+              <th>وضعیت حضور</th>
+              <th>شروع نشست</th>
+              <th>آخرین فعالیت</th>
+              <th>عملیات</th>
+            </tr>
+          </thead>
+          <tbody id="admin-sessions-table"></tbody>
+        </table>
+      </div>
+      <p class="text-muted" style="margin-top:14px">با خاتمه دادن نشست، دسترسی آن نشست بلافاصله در درخواست بعدی کاربر قطع می‌شود. نشست فعلی مدیر از این بخش قابل خاتمه نیست.</p>
     </div>
   </div>
 </section>
