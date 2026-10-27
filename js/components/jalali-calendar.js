@@ -156,29 +156,31 @@
         render();
         if(isMobileCalendar()){
           if(pop.parentNode!==document.body) document.body.appendChild(pop);
-          // Anchor to the trigger, then clamp to the viewport. Avoid RTL inset-inline
-          // conflicts and fixed-position centering that can overflow on narrow screens.
-          pop.style.position='fixed';
-          pop.style.left='0px';
-          pop.style.right='auto';
-          pop.style.insetInlineStart='auto';
-          pop.style.top='0px';
-          pop.style.transform='none';
-          pop.style.width='min(320px, calc(100vw - 24px))';
-          pop.style.maxHeight='calc(100dvh - 24px)';
-          pop.style.overflowY='auto';
           pop.hidden=false;
+          // Force viewport coordinates so RTL logical insets and application layout
+          // rules cannot move the popup outside the screen.
           const margin=12;
-          const viewportWidth=document.documentElement.clientWidth || window.innerWidth;
-          const viewportHeight=window.innerHeight || document.documentElement.clientHeight;
+          const vw=Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+          const vh=Math.max(window.innerHeight || 0, document.documentElement.clientHeight || 0);
+          pop.style.setProperty('position','fixed','important');
+          pop.style.setProperty('inset','auto','important');
+          pop.style.setProperty('right','auto','important');
+          pop.style.setProperty('inset-inline-start','auto','important');
+          pop.style.setProperty('transform','none','important');
+          pop.style.setProperty('width','min(320px, calc(100vw - 24px))','important');
+          pop.style.setProperty('max-width','calc(100vw - 24px)','important');
+          pop.style.setProperty('max-height','calc(100dvh - 24px)','important');
+          pop.style.setProperty('overflow-y','auto','important');
+          pop.style.setProperty('left',margin+'px','important');
+          pop.style.setProperty('top',margin+'px','important');
           const anchor=trigger.getBoundingClientRect();
-          const popupRect=pop.getBoundingClientRect();
-          const left=Math.max(margin,Math.min(anchor.left,viewportWidth-popupRect.width-margin));
+          const rect=pop.getBoundingClientRect();
+          const left=Math.max(margin,Math.min(anchor.left,vw-rect.width-margin));
           let top=anchor.bottom+8;
-          if(top+popupRect.height>viewportHeight-margin) top=anchor.top-popupRect.height-8;
-          top=Math.max(margin,Math.min(top,viewportHeight-popupRect.height-margin));
-          pop.style.left=Math.round(left)+'px';
-          pop.style.top=Math.round(top)+'px';
+          if(top+rect.height>vh-margin) top=anchor.top-rect.height-8;
+          top=Math.max(margin,Math.min(top,vh-rect.height-margin));
+          pop.style.setProperty('left',Math.round(left)+'px','important');
+          pop.style.setProperty('top',Math.round(top)+'px','important');
         } else {
           if(pop.parentNode!==wrap) wrap.appendChild(pop);
           pop.style.removeProperty('position');
