@@ -18,6 +18,10 @@
       const d = new Date(Date.UTC(+m[1], +m[2]-1, +m[3]));
       return d.getUTCFullYear() === +m[1] && d.getUTCMonth() === +m[2]-1 && d.getUTCDate() === +m[3] ? d : null;
     },
+    localDateParts: function (date) {
+      const local = date || new Date();
+      return this.parts(new Date(Date.UTC(local.getFullYear(), local.getMonth(), local.getDate())));
+    },
     toJalali: function (date) {
       if (!(date instanceof Date) || !isFinite(date.getTime())) return '';
       const p = this.parts(date);
@@ -71,6 +75,10 @@
       visible.setAttribute('aria-haspopup','dialog'); visible.setAttribute('aria-expanded','false');
       visible.dataset.jalaliFor=id;
       visible.required=original.required;
+      const minValue=original.getAttribute('min') || '';
+      const maxValue=original.getAttribute('max') || '';
+      if (minValue) visible.dataset.minIso=minValue.slice(0,10);
+      if (maxValue) visible.dataset.maxIso=maxValue.slice(0,10);
       visible.disabled=original.disabled;
       visible.readOnly=original.readOnly;
       visible.title='تاریخ شمسی (سال/ماه/روز)';
@@ -87,7 +95,17 @@
       const pop=document.createElement('div'); pop.className='pms-jalali-calendar'; pop.hidden=true; pop.setAttribute('role','dialog'); pop.setAttribute('aria-label','تقویم شمسی'); wrap.appendChild(pop);
       let viewYear=1405, viewMonth=1;
       function updateFromISO() { const d=self.parseISO(original.value); visible.value=d?self.toFa(self.toJalali(d)):''; }
+      function withinBounds(iso) {
+        if (!iso) return true;
+        const min=visible.dataset.minIso || '';
+        const max=visible.dataset.maxIso || '';
+        return (!min || iso >= min) && (!max || iso <= max);
+      }
       function setValue(iso, display) {
+        if (iso && !withinBounds(iso)) {
+          visible.setCustomValidity('تاریخ باید در محدوده مجاز باشد.');
+          return;
+        }
         visible.setCustomValidity('');
         const timePart=originalType==='datetime-local' ? ((String(visible.value||'').match(/(?:^|\s)(\d{1,2}:\d{2})$/)||[])[1]||'09:00') : '';
         original.value=iso ? (originalType==='datetime-local' ? iso+'T'+timePart : iso) : '';
@@ -99,7 +117,7 @@
       }
       function close(){pop.hidden=true;visible.setAttribute('aria-expanded','false');}
       function render() {
-        const today=self.parts(new Date());
+        const today=self.localDateParts(new Date());
         let html='<div class="pms-jalali-cal-head"><button type="button" data-cal="prev" aria-label="ماه قبل">‹</button><strong>'+self.months[viewMonth-1]+' '+self.toFa(viewYear)+'</strong><button type="button" data-cal="next" aria-label="ماه بعد">›</button></div><div class="pms-jalali-cal-grid pms-jalali-weekdays">'+self.weekdays.map(function(x){return '<span>'+x+'</span>';}).join('')+'</div><div class="pms-jalali-cal-grid">';
         const firstISO=self.fromJalali(viewYear+'/'+viewMonth+'/01');
         if (!firstISO) { pop.innerHTML=''; return; }
@@ -111,14 +129,15 @@
           const iso=self.fromJalali(viewYear+'/'+viewMonth+'/'+day);
           const selected=iso && iso===original.value;
           const isToday=today.year===viewYear&&today.month===viewMonth&&today.day===day;
-          html+='<button type="button" class="pms-jalali-day'+(selected?' is-selected':'')+(isToday?' is-today':'')+'" data-day="'+day+'">'+self.toFa(day)+'</button>';
+          const inRange=withinBounds(iso);
+          html+='<button type="button" class="pms-jalali-day'+(selected?' is-selected':'')+(isToday?' is-today':'')+(!inRange?' is-out-of-range':'')+'" data-day="'+day+'"'+(!inRange?' disabled aria-disabled="true"':'')+'>'+self.toFa(day)+'</button>';
         }
         html+='</div><div class="pms-jalali-cal-footer"><button type="button" data-cal="today">امروز</button><button type="button" data-cal="clear">پاک کردن</button></div>';
         pop.innerHTML=html;
       }
       function open() {
         const parsed=self.parseJalali(visible.value);
-        const now=self.parts(new Date());
+        const now=self.localDateParts(new Date());
         viewYear=parsed?parsed.parts.year:now.year; viewMonth=parsed?parsed.parts.month:now.month;
         render(); pop.hidden=false; visible.setAttribute('aria-expanded','true');
       }
@@ -129,7 +148,7 @@
         const dateText=originalType==='datetime-local'?val.replace(/\s+\d{1,2}:\d{2}$/,''):val;
         const timeMatch=originalType==='datetime-local'?val.match(/(\d{1,2}:\d{2})$/):null;
         const iso=self.fromJalali(dateText);
-        if(iso && (originalType!=='datetime-local' || (timeMatch && /^([01]?\d|2[0-3]):[0-5]\d$/.test(timeMatch[1])))){ setValue(iso); visible.setCustomValidity(''); }
+        if(iso && (originalType!=='datetime-local' || (timeMatch && /^([01]?\d|2[0-3]):[0-5]\d$/.test(timeMatch[1])))){ if(withinBounds(iso)){setValue(iso); visible.setCustomValidity('');} else {visible.setCustomValidity('تاریخ باید در محدوده مجاز باشد.');} }
         else visible.setCustomValidity('تاریخ شمسی معتبر وارد کنید؛ نمونه: ۱۴۰۵/۰۸/۰۵');
       });
       visible.addEventListener('input',function(){visible.setCustomValidity('');});
@@ -143,7 +162,7 @@
           if(viewMonth<1){viewMonth=12;viewYear--;} if(viewMonth>12){viewMonth=1;viewYear++;}
           render();return;
         }
-        if(action==='today'){const p=self.parts(new Date());setValue(self.fromJalali(p.year+'/'+p.month+'/'+p.day));return;}
+        if(action==='today'){const p=self.localDateParts(new Date());setValue(self.fromJalali(p.year+'/'+p.month+'/'+p.day));return;}
         if(action==='clear'){setValue('','');return;}
         if(btn.dataset.day){setValue(self.fromJalali(viewYear+'/'+viewMonth+'/'+btn.dataset.day));}
       });
