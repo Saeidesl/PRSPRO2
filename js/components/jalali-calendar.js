@@ -80,7 +80,7 @@
       original.classList.add('pms-date-iso-value');
       original.insertAdjacentElement('beforebegin',visible);
       document.querySelectorAll('label[for="'+CSS.escape(id)+'"]').forEach(function(label){label.htmlFor=visible.id;});
-      if (original.value) { const d=self.parseISO(original.value); visible.value=d?(self.toFa(self.toJalali(d))+(originalType==='datetime-local'?' '+String(original.value).slice(11,16):'')):original.value; }
+      if (original.value) { const isoDate=self.parseISO(original.value); if(isoDate){ visible.value=self.toFa(self.toJalali(isoDate))+(originalType==='datetime-local'?' '+String(original.value).slice(11,16):''); } else { const converted=self.fromJalali(original.value); if(converted){ original.value=converted; visible.value=self.toFa(self.toJalali(self.parseISO(converted))); } else { visible.value=original.value; } } }
       const wrap=document.createElement('span'); wrap.className='pms-jalali-date-wrap';
       visible.parentNode.insertBefore(wrap,visible); wrap.appendChild(visible); wrap.appendChild(original);
       const trigger=document.createElement('button'); trigger.type='button'; trigger.className='pms-jalali-calendar-trigger'; trigger.textContent='▦'; trigger.title='انتخاب از تقویم شمسی'; trigger.setAttribute('aria-label','باز کردن تقویم شمسی'); wrap.appendChild(trigger);
