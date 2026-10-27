@@ -88,6 +88,7 @@
       let viewYear=1405, viewMonth=1;
       function updateFromISO() { const d=self.parseISO(original.value); visible.value=d?self.toFa(self.toJalali(d)):''; }
       function setValue(iso, display) {
+        visible.setCustomValidity('');
         const timePart=originalType==='datetime-local' ? ((String(visible.value||'').match(/(?:^|\s)(\d{1,2}:\d{2})$/)||[])[1]||'09:00') : '';
         original.value=iso ? (originalType==='datetime-local' ? iso+'T'+timePart : iso) : '';
         visible.value=display || (iso ? self.toFa(self.toJalali(self.parseISO(iso)))+(originalType==='datetime-local'?' '+timePart:'') : '');
