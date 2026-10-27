@@ -7,7 +7,7 @@
   function jalaliDateToIso(value) {
     const raw = String(value || '').trim();
     if (!raw) return '';
-    if (/^\\d{4}-\\d{2}-\\d{2}(?:$|T)/.test(raw)) return raw.slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}(?:$|T)/.test(raw)) return raw.slice(0, 10);
     const ascii = raw.replace(/[۰-۹٠-٩]/g, function (digit) {
       const persian = '۰۱۲۳۴۵۶۷۸۹';
       const arabic = '٠١٢٣٤٥٦٧٨٩';
@@ -126,7 +126,7 @@
     if (!value) return null;
     if (value instanceof Date) return Number.isFinite(value.getTime()) ? value : null;
     const textValue = String(value).trim();
-    const dateOnly = textValue.match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);
+    const dateOnly = textValue.match(/^(\d{4})-(\d{2})-(\d{2})$/);
     const parsed = dateOnly
       ? new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]))
       : new Date(textValue);
