@@ -29,7 +29,7 @@
       if (!m) return null;
       const jy=+m[1], jm=+m[2], jd=+m[3];
       if (jm<1 || jm>12 || jd<1 || jd>31) return null;
-      const start = Date.UTC(jy+621, 0, 1), end = Date.UTC(jy+623, 0, 1);
+      const start = Date.UTC(jy+621, 2, 18), end = start + 371 * 86400000;
       for (let t=start; t<end; t+=86400000) {
         const d = new Date(t), p = this.parts(d);
         if (p.year===jy && p.month===jm && p.day===jd) {
