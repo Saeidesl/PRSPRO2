@@ -48,8 +48,8 @@
       const self=this;
       function scan(root) {
         if (root.nodeType !== 1 && root !== document) return;
-        if (root.matches && root.matches('input[type="date"],input[data-jalali-date],input.date-input,input.date-picker')) self.enhance(root);
-        if (root.querySelectorAll) root.querySelectorAll('input[type="date"],input[data-jalali-date],input.date-input,input.date-picker').forEach(function (input) { self.enhance(input); });
+        if (root.matches && root.matches('input[type="date"],input[type="datetime-local"],input[data-jalali-date],input.date-input,input.date-picker')) self.enhance(root);
+        if (root.querySelectorAll) root.querySelectorAll('input[type="date"],input[type="datetime-local"],input[data-jalali-date],input.date-input,input.date-picker').forEach(function (input) { self.enhance(input); });
       }
       scan(document);
       new MutationObserver(function (records) {
@@ -59,7 +59,8 @@
     enhance: function (original) {
       if (!original || original.dataset.jalaliEnhanced==='1' || original.type==='hidden') return;
       const originalType=original.type;
-      if (originalType!=='date' && !original.hasAttribute('data-jalali-date') && !original.classList.contains('date-input') && !original.classList.contains('date-picker')) return;
+      original.dataset.jalaliOriginalType=originalType;
+      if (originalType!=='date' && originalType!=='datetime-local' && !original.hasAttribute('data-jalali-date') && !original.classList.contains('date-input') && !original.classList.contains('date-picker')) return;
       original.dataset.jalaliEnhanced='1';
       const self=this, id=original.id || ('pms-date-'+Math.random().toString(36).slice(2,9));
       if (!original.id) original.id=id;
@@ -79,7 +80,7 @@
       original.classList.add('pms-date-iso-value');
       original.insertAdjacentElement('beforebegin',visible);
       document.querySelectorAll('label[for="'+CSS.escape(id)+'"]').forEach(function(label){label.htmlFor=visible.id;});
-      if (original.value) { const d=self.parseISO(original.value); visible.value=d?self.toFa(self.toJalali(d)):original.value; }
+      if (original.value) { const d=self.parseISO(original.value); visible.value=d?(self.toFa(self.toJalali(d))+(originalType==='datetime-local'?' '+String(original.value).slice(11,16):'')):original.value; }
       const wrap=document.createElement('span'); wrap.className='pms-jalali-date-wrap';
       visible.parentNode.insertBefore(wrap,visible); wrap.appendChild(visible); wrap.appendChild(original);
       const trigger=document.createElement('button'); trigger.type='button'; trigger.className='pms-jalali-calendar-trigger'; trigger.textContent='▦'; trigger.title='انتخاب از تقویم شمسی'; trigger.setAttribute('aria-label','باز کردن تقویم شمسی'); wrap.appendChild(trigger);
@@ -87,8 +88,9 @@
       let viewYear=1405, viewMonth=1;
       function updateFromISO() { const d=self.parseISO(original.value); visible.value=d?self.toFa(self.toJalali(d)):''; }
       function setValue(iso, display) {
-        original.value=iso || '';
-        visible.value=display || (iso ? self.toFa(self.toJalali(self.parseISO(iso))) : '');
+        const timePart=originalType==='datetime-local' ? ((String(visible.value||'').match(/(?:^|\\s)(\\d{1,2}:\\d{2})$/)||[])[1]||'09:00') : '';
+        original.value=iso ? (originalType==='datetime-local' ? iso+'T'+timePart : iso) : '';
+        visible.value=display || (iso ? self.toFa(self.toJalali(self.parseISO(iso)))+(originalType==='datetime-local'?' '+timePart:'') : '');
         original.dispatchEvent(new Event('input',{bubbles:true}));
         original.dispatchEvent(new Event('change',{bubbles:true}));
         visible.dispatchEvent(new Event('change',{bubbles:true}));
@@ -123,8 +125,10 @@
       visible.addEventListener('blur',function(){
         const val=visible.value.trim();
         if(!val){ if(original.value) setValue('',''); return; }
-        const iso=self.fromJalali(val);
-        if(iso){ setValue(iso); visible.setCustomValidity(''); }
+        const dateText=originalType==='datetime-local'?val.replace(/\\s+\\d{1,2}:\\d{2}$/,''):val;
+        const timeMatch=originalType==='datetime-local'?val.match(/(\\d{1,2}:\\d{2})$/):null;
+        const iso=self.fromJalali(dateText);
+        if(iso && (originalType!=='datetime-local' || (timeMatch && /^([01]?\\d|2[0-3]):[0-5]\\d$/.test(timeMatch[1])))){ setValue(iso); visible.setCustomValidity(''); }
         else visible.setCustomValidity('تاریخ شمسی معتبر وارد کنید؛ نمونه: ۱۴۰۵/۰۸/۰۵');
       });
       visible.addEventListener('input',function(){visible.setCustomValidity('');});
