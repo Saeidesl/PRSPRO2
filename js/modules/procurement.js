@@ -7,6 +7,7 @@
   function jalaliDateToIso(value) {
     const raw = String(value || '').trim();
     if (!raw) return '';
+    if (/^\d{4}-\d{2}-\d{2}(?:$|T)/.test(raw)) return raw.slice(0, 10);
     const ascii = raw.replace(/[۰-۹٠-٩]/g, function (digit) {
       const persian = '۰۱۲۳۴۵۶۷۸۹';
       const arabic = '٠١٢٣٤٥٦٧٨٩';
@@ -125,7 +126,7 @@
     if (!value) return null;
     if (value instanceof Date) return Number.isFinite(value.getTime()) ? value : null;
     const textValue = String(value).trim();
-    const dateOnly = textValue.match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);
+    const dateOnly = textValue.match(/^(\d{4})-(\d{2})-(\d{2})$/);
     const parsed = dateOnly
       ? new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]))
       : new Date(textValue);
@@ -684,8 +685,8 @@
       '<form id="procurement-order-form" data-order-type="' + orderType + '"><div class="form-grid">' +
       projectField +
       '<label class="form-group"><span>تأمین‌کننده</span><input name="SupplierName" maxlength="200"></label>' +
-      '<label class="form-group"><span>تاریخ سفارش (اختیاری)</span><input name="OrderDate" type="text" inputmode="numeric" placeholder="۱۴۰۵/۰۷/۲۷"></label>' +
-      '<label class="form-group"><span>تاریخ تحویل مورد انتظار</span><input name="ExpectedDeliveryDate" type="text" inputmode="numeric" placeholder="۱۴۰۵/۰۷/۲۷"></label>' +
+      '<label class="form-group"><span>تاریخ سفارش (اختیاری)</span><input name="OrderDate" type="text" data-jalali-date inputmode="numeric" placeholder="۱۴۰۵/۰۷/۲۷"></label>' +
+      '<label class="form-group"><span>تاریخ تحویل مورد انتظار</span><input name="ExpectedDeliveryDate" type="text" data-jalali-date inputmode="numeric" placeholder="۱۴۰۵/۰۷/۲۷"></label>' +
       '<label class="form-group"><span>توضیحات سفارش</span><input name="Notes" maxlength="1000"></label>' +
       '</div><section class="procurement-items-section"><div class="procurement-items-heading"><div><h4>اقلام سفارش</h4><p>اطلاعات هر قلم را در ردیف مربوط وارد کنید.</p></div></div>' +
       '<div class="procurement-order-list" id="procurement-order-items">' + orderItemRow(0) + '</div><div class="procurement-items-actions"><button type="button" class="btn btn-secondary" id="procurement-add-order-item">+ افزودن ردیف</button></div></section>' +
@@ -839,7 +840,7 @@
       '<form id="procurement-receipt-form">' +
       '<div class="form-grid procurement-receipt-header">' +
       '<label class="form-group"><span>پروژه / نوع سفارش *</span><select name="ProjectID" required disabled><option value="">در حال دریافت فهرست پروژه‌ها…</option></select></label>' +
-      '<label class="form-group"><span>تاریخ دریافت</span><input name="ReceivedAt" type="text" inputmode="numeric" placeholder="۱۴۰۵/۰۷/۲۷"></label>' +
+      '<label class="form-group"><span>تاریخ دریافت</span><input name="ReceivedAt" type="text" data-jalali-date inputmode="numeric" placeholder="۱۴۰۵/۰۷/۲۷"></label>' +
       '<label class="form-group"><span>توضیحات دریافت</span><input name="Notes" maxlength="500" placeholder="اختیاری"></label>' +
       '</div>' +
       '<section class="procurement-items-section procurement-receipt-section">' +
