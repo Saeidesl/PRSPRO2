@@ -88,7 +88,7 @@
       let viewYear=1405, viewMonth=1;
       function updateFromISO() { const d=self.parseISO(original.value); visible.value=d?self.toFa(self.toJalali(d)):''; }
       function setValue(iso, display) {
-        const timePart=originalType==='datetime-local' ? ((String(visible.value||'').match(/(?:^|\\s)(\\d{1,2}:\\d{2})$/)||[])[1]||'09:00') : '';
+        const timePart=originalType==='datetime-local' ? ((String(visible.value||'').match(/(?:^|\s)(\d{1,2}:\d{2})$/)||[])[1]||'09:00') : '';
         original.value=iso ? (originalType==='datetime-local' ? iso+'T'+timePart : iso) : '';
         visible.value=display || (iso ? self.toFa(self.toJalali(self.parseISO(iso)))+(originalType==='datetime-local'?' '+timePart:'') : '');
         original.dispatchEvent(new Event('input',{bubbles:true}));
@@ -125,10 +125,10 @@
       visible.addEventListener('blur',function(){
         const val=visible.value.trim();
         if(!val){ if(original.value) setValue('',''); return; }
-        const dateText=originalType==='datetime-local'?val.replace(/\\s+\\d{1,2}:\\d{2}$/,''):val;
-        const timeMatch=originalType==='datetime-local'?val.match(/(\\d{1,2}:\\d{2})$/):null;
+        const dateText=originalType==='datetime-local'?val.replace(/\s+\d{1,2}:\d{2}$/,''):val;
+        const timeMatch=originalType==='datetime-local'?val.match(/(\d{1,2}:\d{2})$/):null;
         const iso=self.fromJalali(dateText);
-        if(iso && (originalType!=='datetime-local' || (timeMatch && /^([01]?\\d|2[0-3]):[0-5]\\d$/.test(timeMatch[1])))){ setValue(iso); visible.setCustomValidity(''); }
+        if(iso && (originalType!=='datetime-local' || (timeMatch && /^([01]?\d|2[0-3]):[0-5]\d$/.test(timeMatch[1])))){ setValue(iso); visible.setCustomValidity(''); }
         else visible.setCustomValidity('تاریخ شمسی معتبر وارد کنید؛ نمونه: ۱۴۰۵/۰۸/۰۵');
       });
       visible.addEventListener('input',function(){visible.setCustomValidity('');});
