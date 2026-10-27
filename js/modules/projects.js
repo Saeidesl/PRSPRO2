@@ -952,6 +952,12 @@
             </div>
 
             <div class="filter-group form-group project-form-field" style="margin-bottom:16px;">
+              <label for="new-project-created-at">تاریخ ایجاد پروژه <span style="color:var(--color-text-secondary);font-size:12px;">(اختیاری)</span></label>
+              <input type="date" id="new-project-created-at" name="CreatedAt" style="width:100%;box-sizing:border-box;">
+              <small style="display:block;margin-top:5px;color:var(--color-text-secondary);">اگر تاریخ انتخاب نشود، تاریخ و زمان فعلی به‌صورت خودکار ثبت می‌شود.</small>
+            </div>
+
+            <div class="filter-group form-group project-form-field" style="margin-bottom:16px;">
               <label for="new-project-quantity">
                 تعداد پیشنهادی <span style="color:var(--color-text-secondary);font-size:12px;">(اختیاری)</span>
               </label>
@@ -1397,11 +1403,13 @@
           const projectCode = modal.querySelector('#new-project-code');
           const titleInput = modal.querySelector('#new-project-title');
           const quantityInput = modal.querySelector('#new-project-quantity');
+          const createdAtInput = modal.querySelector('#new-project-created-at');
           const descriptionInput = modal.querySelector('#new-project-description');
           const statusSelectForEdit = modal.querySelector('#new-project-status');
           if (projectCode) projectCode.value = String(editProject.ProjectCode || '');
           if (titleInput) titleInput.value = String(editProject.Title || editProject.Name || '');
           if (quantityInput) quantityInput.value = editProject.Quantity === undefined || editProject.Quantity === null ? '' : String(editProject.Quantity);
+          if (createdAtInput) createdAtInput.value = String(editProject.CreatedAt || editProject.createdAt || '').slice(0, 10);
           if (descriptionInput) descriptionInput.value = String(editProject.Description || '');
           if (workflowSelect) workflowSelect.value = String(editProject.WorkflowID || '');
           const parseIds = (value) => {
@@ -1995,6 +2003,7 @@
         Quantity: quantityInput.value.trim() === '' ? '' : Number(quantityInput.value),
         WorkflowID: workflowSelect.value,
         Description: descriptionInput.value.trim(),
+        CreatedAt: String((modal.querySelector('#new-project-created-at') || {}).value || '').trim(),
         ColorSizeJSON: JSON.stringify({
           colors: Array.isArray(colorSize.colors) ? colorSize.colors : [],
           sizes: Array.isArray(colorSize.sizes) ? colorSize.sizes : []
