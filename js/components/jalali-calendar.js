@@ -120,9 +120,12 @@
         pop.hidden=true;
         visible.setAttribute('aria-expanded','false');
         if(pop.parentNode===document.body) wrap.appendChild(pop);
+        pop.style.removeProperty('position');
+        pop.style.removeProperty('transform');
         pop.style.removeProperty('top');
         pop.style.removeProperty('left');
         pop.style.removeProperty('max-height');
+        pop.style.removeProperty('overflow-y');
       }
       function render() {
         const today=self.localDateParts(new Date());
