@@ -204,14 +204,16 @@
         '#dashboard-project-explorer .dash-event-hit:hover{border-color:var(--color-primary);background:var(--color-surface-hover)}',
         '#dashboard-project-explorer .dash-event-hit small{display:block;color:var(--color-text-secondary);margin-top:3px;font-size:11px}',
         '#dashboard-project-explorer .dash-project-list{display:flex;flex-direction:column;gap:9px;min-width:0}',
-        '#dashboard-project-explorer .dash-project-card{min-width:0;border:1px solid var(--color-border);border-radius:13px;background:var(--color-surface);overflow:hidden;transition:border-color .16s ease,box-shadow .16s ease}',
+        '#dashboard-project-explorer .dash-project-card{min-width:0;border:1px solid var(--color-border);border-radius:13px;background:var(--color-surface);overflow:visible;transition:border-color .16s ease,box-shadow .16s ease}',
+        '#dashboard-project-explorer .dash-project-card.has-open-menu{z-index:1000}',
         '#dashboard-project-explorer .dash-project-card{position:relative}',
         '#dashboard-project-explorer .dash-project-card-head{padding-left:48px}',
         '#dashboard-project-explorer .dash-project-menu-button{position:absolute;left:8px;top:8px;z-index:3;display:flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface);color:var(--color-text-secondary);font-size:20px;line-height:1;cursor:pointer}',
         '#dashboard-project-explorer .dash-project-menu-button:hover,#dashboard-project-explorer .dash-project-menu-button[aria-expanded="true"]{background:var(--color-surface-hover);color:var(--color-text);border-color:var(--color-primary)}',
         '#dashboard-project-explorer .dash-project-menu-button:focus-visible{outline:2px solid var(--color-primary);outline-offset:2px}',
         '#dashboard-project-explorer .dash-project-menu{position:absolute;left:8px;top:44px;z-index:5;min-width:190px;max-width:calc(100% - 16px);padding:10px 12px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-surface);color:var(--color-text);box-shadow:var(--shadow-md,0 8px 24px rgba(0,0,0,.14));font-size:12px;line-height:1.8}',
-        '#dashboard-project-explorer .dash-project-menu{position:absolute;left:8px;top:44px;z-index:5;display:flex;flex-direction:column;gap:2px;width:min(250px,calc(100vw - 32px));max-width:calc(100% - 16px);max-height:min(70vh,420px);overflow:auto;padding:7px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-surface);color:var(--color-text);box-shadow:var(--shadow-md,0 8px 24px rgba(0,0,0,.14));font-size:12px;line-height:1.6;direction:rtl}',
+        '#dashboard-project-explorer .dash-project-menu{position:absolute;left:8px;top:44px;z-index:1000;display:flex;flex-direction:column;gap:2px;width:min(250px,calc(100vw - 32px));max-width:calc(100% - 16px);max-height:min(70vh,420px);overflow:auto;padding:7px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-surface);color:var(--color-text);box-shadow:var(--shadow-md,0 8px 24px rgba(0,0,0,.14));font-size:12px;line-height:1.6;direction:rtl}',
+        '#dashboard-project-explorer .dash-project-menu.is-open-up{top:auto;bottom:44px}',
         '#dashboard-project-explorer .dash-project-menu[hidden]{display:none!important}',
         '#dashboard-project-explorer .dash-project-menu button{display:flex;align-items:center;gap:10px;width:100%;min-height:40px;padding:8px 10px;border:0;border-radius:8px;background:transparent;color:inherit;text-align:right;font:inherit;font-size:12px;cursor:pointer}',
         '#dashboard-project-explorer .dash-project-menu button:hover,#dashboard-project-explorer .dash-project-menu button:focus-visible{background:var(--color-surface-hover)}',
@@ -342,9 +344,24 @@
           var card = menuToggle.closest('[data-project-card]');
           var menu = card && card.querySelector('[data-project-menu]');
           var willOpen = !!(menu && menu.hidden);
-          root.querySelectorAll('[data-project-menu]').forEach(function (otherMenu) { otherMenu.hidden = true; });
+          root.querySelectorAll('[data-project-menu]').forEach(function (otherMenu) {
+            otherMenu.hidden = true;
+            otherMenu.classList.remove('is-open-up');
+            var ownerCard = otherMenu.closest('[data-project-card]');
+            if (ownerCard) ownerCard.classList.remove('has-open-menu');
+          });
           root.querySelectorAll('[data-project-menu-toggle]').forEach(function (otherButton) { otherButton.setAttribute('aria-expanded', 'false'); });
-          if (menu) menu.hidden = !willOpen;
+          if (menu) {
+            menu.hidden = !willOpen;
+            if (willOpen) {
+              var cardRect = card.getBoundingClientRect();
+              var menuHeight = Math.min(menu.scrollHeight || 360, Math.min(window.innerHeight * 0.7, 420));
+              var below = window.innerHeight - cardRect.top - 44;
+              var above = cardRect.bottom - 44;
+              menu.classList.toggle('is-open-up', below < menuHeight && above > below);
+              card.classList.add('has-open-menu');
+            }
+          }
           menuToggle.setAttribute('aria-expanded', String(willOpen));
           if (willOpen && menu) {
             var firstItem = menu.querySelector('[role="menuitem"]');
