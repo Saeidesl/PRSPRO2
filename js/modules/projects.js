@@ -282,6 +282,23 @@
             if (willOpen && menu) { const first = menu.querySelector('[role="menuitem"]'); if (first) first.focus(); }
             return;
           }
+          const menuAction = event.target.closest('[data-project-menu-action]');
+          if (menuAction) {
+            const card = menuAction.closest('.project-list-card');
+            const menu = card && card.querySelector('[data-project-menu]');
+            const toggle = card && card.querySelector('[data-project-menu-toggle]');
+            if (menu) menu.hidden = true;
+            if (toggle) toggle.setAttribute('aria-expanded', 'false');
+            tableContainer.dispatchEvent(new CustomEvent('pms:project-menu-action', {
+              bubbles: true,
+              detail: {
+                action: menuAction.getAttribute('data-project-menu-action'),
+                projectId: menuAction.getAttribute('data-project-id'),
+                source: 'projects'
+              }
+            }));
+            return;
+          }
           const editButton = event.target.closest('.project-edit-button');
           const variantsButton = event.target.closest('.project-color-size-button');
           const projectId = (editButton || variantsButton) &&
