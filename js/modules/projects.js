@@ -1256,7 +1256,13 @@
           modal.style.background = 'transparent';
         }
         settingsModal.style.display = 'flex';
-        settingsModalKeyboard = bindProjectModalKeyboard(settingsModal, () => { settingsModal.style.display = 'none'; });
+        settingsModalKeyboard = bindProjectModalKeyboard(settingsModal, () => {
+          settingsModal.style.display = 'none';
+          if (modal.dataset.settingsOnly === 'true') {
+            modal.remove();
+            if (this.modal === modal) this.modal = null;
+          }
+        });
         settingsModalKeyboard.focusFirst();
       };
       const closeSettings = () => {
