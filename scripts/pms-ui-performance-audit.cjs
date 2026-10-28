@@ -12,6 +12,13 @@ const password = process.env.PMS_TEST_PASSWORD || '';
 const stagingApiBaseURL = String(process.env.PMS_STAGING_API_BASE_URL || '').trim();
 const stagingApiConfigured = /^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec\/?$/.test(stagingApiBaseURL);
 const auditScope = String(process.env.PMS_AUDIT_SCOPE || 'all').trim().toLowerCase() === 'procurement' ? 'procurement' : 'all';
+const diagnosticsEnabled = process.env.PMS_PERFORMANCE_DIAGNOSTICS === '1';
+
+function withQueryParam(rawUrl, key, value) {
+  const url = new URL(rawUrl);
+  url.searchParams.set(key, value);
+  return url.toString();
+}
 const routes = [
   'login', 'dashboard', 'projects', 'project-detail', 'events', 'workflows',
   'project-statuses', 'event-types', 'procurement', 'attachments', 'reports',
@@ -154,7 +161,7 @@ async function main() {
   }
 
   const initialStart = Date.now();
-  await page.goto(baseURL + '#login', { waitUntil: 'domcontentloaded' });
+  await page.goto((diagnosticsEnabled ? withQueryParam(baseURL, 'pmsDiagnostics', '1') : baseURL) + '#login', { waitUntil: 'domcontentloaded' });
   try { await page.locator('#login-form').waitFor({ state: 'visible', timeout: 10000 }); } catch (_) {}
   const loginReadyMs = Date.now() - initialStart;
   const loginForm = page.locator('#login-form');
@@ -228,6 +235,43 @@ async function main() {
     const routeReadyMs = Date.now() - start;
     try { await page.waitForLoadState('networkidle', { timeout: 2500 }); } catch (_) {}
     await page.waitForTimeout(150);
+
+    if (diagnosticsEnabled && route === 'procurement') {
+      try {
+        const benchmarkButton = page.getByRole('button', { name: /سنجش.*مسیر تأمین/ }).first();
+        await benchmarkButton.waitFor({ state: 'visible', timeout: 5000 });
+        await benchmarkButton.click();
+        await page.waitForFunction(() => {
+          return Array.from(document.querySelectorAll('#pms-performance-diagnostics button')).some(button =>
+            String(button.textContent || '').indexOf('سنجش دوباره') !== -1
+          );
+        }, null, { timeout: 60000 });
+        const tableRows = await page.locator('#pms-performance-diagnostics-table tr').evaluateAll(rows =>
+          rows.map(row => Array.from(row.cells).map(cell => String(cell.textContent || '').trim()))
+        );
+        const seenEndpoints = new Set();
+        const benchmarkEndpoints = (tableRows.slice(1) || []).map(row => ({
+          endpoint: row[0] || '',
+          browserMs: row[1] || '',
+          backendMs: row[2] || '',
+          details: row[3] || ''
+        })).filter(row => {
+          if (row.endpoint.indexOf('/procurement/') !== 0 || seenEndpoints.has(row.endpoint)) return false;
+          seenEndpoints.add(row.endpoint);
+          return true;
+        });
+        results.procurementDiagnostics = {
+          measuredAt: new Date().toISOString(),
+          headers: tableRows[0] || [],
+          endpoints: benchmarkEndpoints
+        };
+        if (results.procurementDiagnostics.endpoints.length < 5) {
+          results.coverageGaps.push('Procurement diagnostics ran but fewer than five endpoint rows were captured.');
+        }
+      } catch (diagnosticError) {
+        results.coverageGaps.push('Procurement diagnostic benchmark did not complete: ' + String(diagnosticError.message || diagnosticError).slice(0, 300));
+      }
+    }
 
     const snapshot = await page.evaluate(({ routeName, startUrl }) => {
       const root = document.querySelector('#page-content') || document.querySelector('.login-page') || document.body;
@@ -420,7 +464,7 @@ const visible = el => {
     measuredRequests: procurementApiRequests.length,
     failedRequests: procurementApiRequests.filter(item => item.status === 'failed' || (typeof item.status === 'number' && item.status >= 400)).length,
     endpoints: procurementEndpointTimings,
-    note: 'Browser-observed network timings only; repository/Google Sheets operation timings must be read from the backend PMS_PerformanceDiagnostics sheet.'
+    note: diagnosticsEnabled ? 'Browser and admin-only backend repository timings are captured in procurementDiagnostics.' : 'Browser-observed network timings only; enable PMS_PERFORMANCE_DIAGNOSTICS for backend repository timings.'
   };
   results.summary = {
     requestedRoutes: routeList.length,
@@ -436,6 +480,7 @@ const visible = el => {
     networkRequestsMeasured: results.network.length,
     procurementApiRequestsMeasured: procurementApiRequests.length,
     procurementApiFailedRequests: results.procurementPerformance.failedRequests,
+    procurementDiagnosticEndpointsMeasured: results.procurementDiagnostics ? results.procurementDiagnostics.endpoints.length : 0,
     failedNetworkRequests: results.network.filter(item => item.status === 'failed' || (typeof item.status === 'number' && item.status >= 400)).length,
     consoleErrors: results.consoleErrors.length,
     pageErrors: results.pageErrors.length,
@@ -493,6 +538,19 @@ function renderMarkdown(report) {
       ...(report.procurementPerformance.endpoints.length
         ? report.procurementPerformance.endpoints.map(item => '| ' + item.endpoint + ' | ' + item.requests + ' | ' + item.failedRequests + ' | ' + (item.averageMs ?? 'n/a') + ' | ' + (item.medianMs ?? 'n/a') + ' | ' + (item.p95Ms ?? 'n/a') + ' | ' + (item.maxMs ?? 'n/a') + ' |')
         : ['| No procurement API requests captured | 0 | 0 | n/a | n/a | n/a | n/a |']),
+      ''
+    ] : []),
+    ...(report.procurementDiagnostics ? [
+      '## Procurement backend diagnostics',
+      '',
+      '- Measured at: ' + report.procurementDiagnostics.measuredAt,
+      '- Captured endpoints: ' + report.procurementDiagnostics.endpoints.length,
+      '',
+      '| Endpoint | Browser | Backend | Repository / sheet details |',
+      '|---|---:|---:|---|',
+      ...(report.procurementDiagnostics.endpoints.length
+        ? report.procurementDiagnostics.endpoints.map(item => '| ' + item.endpoint + ' | ' + item.browserMs + ' | ' + item.backendMs + ' | ' + item.details.replace(/\\|/g, '/') + ' |')
+        : ['| No endpoint diagnostics captured | n/a | n/a | n/a |']),
       ''
     ] : []),
     '## Coverage gaps',
