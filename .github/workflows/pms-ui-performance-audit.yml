@@ -72,7 +72,9 @@ jobs:
         env:
           PMS_BASE_URL: ${{ inputs.base_url || vars.PMS_STAGING_BASE_URL || vars.PMS_BASE_URL || 'http://127.0.0.1:4173/PRSPRO2/' }}
           PMS_AUDIT_SCOPE: ${{ inputs.scope || 'all' }}
-          PMS_STAGING_API_BASE_URL: ${{ secrets.PMS_STAGING_API_BASE_URL }}
+          # The user confirmed the default Apps Script deployment is the test environment.
+          # This audit is read-only: it never submits forms or invokes data-changing actions.
+          PMS_STAGING_API_BASE_URL: ${{ secrets.PMS_STAGING_API_BASE_URL || 'https://script.google.com/macros/s/AKfycbzHlLF_UuVZu6VIbl59EyIi4ZnLeJfssrBmo0jkn4BvrCPpqYyJ5qP71WdALtyalOKv_A/exec' }}
           PMS_TEST_USERNAME: ${{ secrets.PMS_TEST_USERNAME }}
           PMS_TEST_PASSWORD: ${{ secrets.PMS_TEST_PASSWORD }}
         run: node scripts/pms-ui-performance-audit.cjs
