@@ -11,6 +11,7 @@ const username = process.env.PMS_TEST_USERNAME || '';
 const password = process.env.PMS_TEST_PASSWORD || '';
 const stagingApiBaseURL = String(process.env.PMS_STAGING_API_BASE_URL || '').trim();
 const stagingApiConfigured = /^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec\/?$/.test(stagingApiBaseURL);
+const auditScope = String(process.env.PMS_AUDIT_SCOPE || 'all').trim().toLowerCase() === 'procurement' ? 'procurement' : 'all';
 const routes = [
   'login', 'dashboard', 'projects', 'project-detail', 'events', 'workflows',
   'project-statuses', 'event-types', 'procurement', 'attachments', 'reports',
@@ -19,7 +20,8 @@ const routes = [
 const dangerousAction = /ثبت|ذخیره|حذف|پاک.?کردن|ارسال|تحویل|تأیید|تایید|ایجاد|افزودن|ویرایش|آپلود|بارگذاری فایل|خروج|ورود|لغو سفارش|اعمال تغییر|انتشار|دریافت فایل|دانلود/i;
 const results = {
   schemaVersion: 1,
-  suite: 'PMS Comprehensive UI and Performance Audit',
+  suite: auditScope === 'procurement' ? 'PMS Procurement Performance Audit' : 'PMS Comprehensive UI and Performance Audit',
+  scope: auditScope,
   generatedAt: new Date().toISOString(),
   baseURL,
   mode: stagingApiConfigured && username && password ? 'authenticated-read-only' : 'public-login-and-shell-only',
@@ -205,7 +207,7 @@ async function main() {
     results.coverageGaps.push(note);
   }
 
-  const routeList = authenticated ? routes.filter(route => route !== 'login') : ['login'];
+  const routeList = authenticated ? (auditScope === 'procurement' ? ['procurement'] : routes.filter(route => route !== 'login')) : ['login'];
   for (const route of routeList) {
     const start = Date.now();
     // Load each route in a fresh document so dialogs from previous routes cannot leak.
@@ -397,6 +399,29 @@ const visible = el => {
   const allButtons = results.routes.reduce((n, route) => n + route.buttons.length, 0);
   const allInputs = results.routes.reduce((n, route) => n + route.visibleControlCount, 0);
   const failedRoutes = results.routes.filter(route => route.status === 'error' || route.status === 'not-confirmed').length;
+  const procurementApiRequests = results.network.filter(item => /^\/api\/procurement(?:\/|$)/.test(item.path));
+  const procurementEndpointMap = new Map();
+  for (const request of procurementApiRequests) {
+    const key = request.method + ' ' + request.path;
+    const entry = procurementEndpointMap.get(key) || { endpoint: key, requests: 0, durationsMs: [], failedRequests: 0 };
+    entry.requests += 1;
+    if (typeof request.durationMs === 'number') entry.durationsMs.push(request.durationMs);
+    if (request.status === 'failed' || (typeof request.status === 'number' && request.status >= 400)) entry.failedRequests += 1;
+    procurementEndpointMap.set(key, entry);
+  }
+  const procurementEndpointTimings = [...procurementEndpointMap.values()].map(entry => {
+    const sorted = entry.durationsMs.slice().sort((a, b) => a - b);
+    const percentile = p => sorted.length ? sorted[Math.min(sorted.length - 1, Math.ceil(p * sorted.length) - 1)] : null;
+    return { endpoint: entry.endpoint, requests: entry.requests, failedRequests: entry.failedRequests,
+      averageMs: sorted.length ? Math.round(sorted.reduce((sum, value) => sum + value, 0) / sorted.length) : null,
+      medianMs: percentile(0.5), p95Ms: percentile(0.95), maxMs: sorted.length ? sorted[sorted.length - 1] : null };
+  });
+  results.procurementPerformance = {
+    measuredRequests: procurementApiRequests.length,
+    failedRequests: procurementApiRequests.filter(item => item.status === 'failed' || (typeof item.status === 'number' && item.status >= 400)).length,
+    endpoints: procurementEndpointTimings,
+    note: 'Browser-observed network timings only; repository/Google Sheets operation timings must be read from the backend PMS_PerformanceDiagnostics sheet.'
+  };
   results.summary = {
     requestedRoutes: routeList.length,
     loadedRoutes: results.routes.filter(route => route.status === 'loaded').length,
@@ -409,6 +434,8 @@ const visible = el => {
     visibleButtonsInventoried: allButtons,
     visibleInputsAndControlsInventoried: allInputs,
     networkRequestsMeasured: results.network.length,
+    procurementApiRequestsMeasured: procurementApiRequests.length,
+    procurementApiFailedRequests: results.procurementPerformance.failedRequests,
     failedNetworkRequests: results.network.filter(item => item.status === 'failed' || (typeof item.status === 'number' && item.status >= 400)).length,
     consoleErrors: results.consoleErrors.length,
     pageErrors: results.pageErrors.length,
@@ -453,6 +480,21 @@ function renderMarkdown(report) {
     '|---|---|---:|---:|---:|---:|---:|---|',
     ...report.routes.map(route => '| ' + route.requestedRoute + ' | ' + route.status + ' | ' + (typeof route.routeReadyMs === 'number' ? route.routeReadyMs : 'n/a') + ' | ' + route.navigationMs + ' | ' + route.forms.length + ' | ' + route.buttons.length + ' | ' + route.visibleControlCount + ' | ' + (route.mobileLayout && route.mobileLayout.horizontalOverflow ? 'YES' : 'no') + ' |'),
     '',
+    ...(report.scope === 'procurement' ? [
+      '## Procurement API timings',
+      '',
+      '- Requests measured: ' + report.procurementPerformance.measuredRequests,
+      '- Failed requests: ' + report.procurementPerformance.failedRequests,
+      '- Timings below are observed by the browser and include network/backend response time.',
+      '- Backend repository and Google Sheets timings are recorded separately in `PMS_PerformanceDiagnostics`.',
+      '',
+      '| Endpoint | Requests | Failed | Average ms | Median ms | P95 ms | Max ms |',
+      '|---|---:|---:|---:|---:|---:|---:|',
+      ...(report.procurementPerformance.endpoints.length
+        ? report.procurementPerformance.endpoints.map(item => '| ' + item.endpoint + ' | ' + item.requests + ' | ' + item.failedRequests + ' | ' + (item.averageMs ?? 'n/a') + ' | ' + (item.medianMs ?? 'n/a') + ' | ' + (item.p95Ms ?? 'n/a') + ' | ' + (item.maxMs ?? 'n/a') + ' |')
+        : ['| No procurement API requests captured | 0 | 0 | n/a | n/a | n/a | n/a |']),
+      ''
+    ] : []),
     '## Coverage gaps',
     '',
     ...(report.coverageGaps.length ? report.coverageGaps.map(item => '- ' + item) : ['- None detected by automated inventory.']),
