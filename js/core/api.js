@@ -43,11 +43,35 @@
       const note = document.createElement('p');
       note.textContent = 'زمان مرورگر از ارسال تا دریافت پاسخ است؛ جزئیات بک‌اند فقط برای مدیر مجاز نمایش داده می‌شود.';
       note.style.cssText = 'margin:0 0 8px;color:#cbd5e1';
+      const benchmark = document.createElement('button');
+      benchmark.type = 'button';
+      benchmark.textContent = 'سنجش ۵ مسیر تأمین';
+      benchmark.style.cssText = 'margin:0 0 8px;border:1px solid #64748b;border-radius:6px;padding:6px 10px;background:#374151;color:#fff;cursor:pointer';
+      benchmark.addEventListener('click', async function () {
+        if (benchmark.disabled) return;
+        benchmark.disabled = true;
+        benchmark.textContent = 'در حال سنجش مسیرهای تأمین...';
+        const paths = [
+          '/procurement/workspace',
+          '/procurement/dashboard',
+          '/procurement/needs',
+          '/procurement/orders',
+          '/procurement/reports'
+        ];
+        for (const path of paths) {
+          try {
+            await Api.get(path, { retry: false, trackSync: false });
+          } catch (error) {}
+        }
+        benchmark.disabled = false;
+        benchmark.textContent = 'سنجش دوباره ۵ مسیر تأمین';
+      });
       const table = document.createElement('table');
       table.id = 'pms-performance-diagnostics-table';
       table.style.cssText = 'width:100%;border-collapse:collapse;text-align:right;word-break:break-word';
       panel.appendChild(heading);
       panel.appendChild(note);
+      panel.appendChild(benchmark);
       panel.appendChild(table);
       document.body.appendChild(panel);
     }
@@ -276,7 +300,7 @@
       try {
         const params = new URLSearchParams();
         params.set('path', path || '/');
-        const diagnosticPath = /^\/(dashboard|projects(?:\/|$)|project-dashboard\/lookups|workflows(?:\/|$)|events(?:\/|$))/.test(String(path || '/'));
+        const diagnosticPath = /^\/(dashboard|projects(?:\/|$)|project-dashboard\/lookups|workflows(?:\/|$)|events(?:\/|$)|procurement(?:\/|$))/.test(String(path || '/'));
         if (diagnosticsEnabled && diagnosticPath && (actualMethod === 'GET' || actualMethod === 'HEAD')) params.set('_diagnostics', '1');
         if (options.query && typeof options.query === 'object') {
           Object.keys(options.query).forEach((key) => {
