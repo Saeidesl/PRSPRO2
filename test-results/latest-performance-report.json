@@ -1,7 +1,8 @@
 {
   "schemaVersion": 1,
   "suite": "PMS Comprehensive UI and Performance Audit",
-  "generatedAt": "2026-10-27T17:28:51.324Z",
+  "scope": "all",
+  "generatedAt": "2026-10-28T13:06:20.376Z",
   "baseURL": "http://127.0.0.1:4173/PRSPRO2/",
   "mode": "public-login-and-shell-only",
   "safety": {
@@ -22,6 +23,8 @@
     "visibleButtonsInventoried": 2,
     "visibleInputsAndControlsInventoried": 2,
     "networkRequestsMeasured": 3,
+    "procurementApiRequestsMeasured": 0,
+    "procurementApiFailedRequests": 0,
     "failedNetworkRequests": 0,
     "consoleErrors": 0,
     "pageErrors": 0,
@@ -91,8 +94,8 @@
       "navigation": [],
       "visibleControlCount": 2,
       "visibleTextLength": 70,
-      "routeReadyMs": 105,
-      "navigationMs": 725,
+      "routeReadyMs": 149,
+      "navigationMs": 767,
       "status": "loaded",
       "mobileLayout": {
         "viewportWidth": 390,
@@ -111,19 +114,19 @@
       "path": "/PRSPRO2/pages/login.html",
       "method": "GET",
       "status": 200,
-      "durationMs": 6
+      "durationMs": 9
     },
     {
       "path": "/PRSPRO2/pages/login.html",
       "method": "GET",
       "status": 200,
-      "durationMs": 2
+      "durationMs": 4
     },
     {
       "path": "/PRSPRO2/pages/login.html",
       "method": "GET",
       "status": 200,
-      "durationMs": 3
+      "durationMs": 5
     }
   ],
   "consoleErrors": [],
@@ -134,8 +137,14 @@
   ],
   "overallStatus": "blocked-no-staging-api",
   "login": {
-    "loginFormReadyMs": 113,
+    "loginFormReadyMs": 136,
     "authenticated": false,
     "note": "Authenticated audit skipped: configure PMS_STAGING_API_BASE_URL to a separate staging Apps Script deployment. Production API will not be used for test login."
+  },
+  "procurementPerformance": {
+    "measuredRequests": 0,
+    "failedRequests": 0,
+    "endpoints": [],
+    "note": "Browser-observed network timings only; repository/Google Sheets operation timings must be read from the backend PMS_PerformanceDiagnostics sheet."
   }
 }
