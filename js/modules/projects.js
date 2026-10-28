@@ -145,9 +145,9 @@
         '.project-list-card:focus-within{border-color:var(--color-primary);box-shadow:0 0 0 3px var(--color-focus-ring),var(--shadow-sm)}',
         '.project-list-card{position:relative;display:flex;flex-direction:column;min-width:0;min-height:176px;border:1px solid var(--color-border);border-radius:16px;background:var(--color-surface);overflow:hidden;box-shadow:0 1px 2px rgba(15,23,42,.04);transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease}',
         '.project-list-card{overflow:visible}',
-        '.project-list-card-menu-button{position:static;z-index:7;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:6px 12px;border:1px solid var(--color-border);border-radius:9px;background:var(--color-surface);color:var(--color-text);font:inherit;font-size:12px;line-height:1.4;cursor:pointer;box-shadow:var(--shadow-sm,0 2px 6px rgba(0,0,0,.08))}',
-        '.project-list-card-menu-button-label{font-size:12px}',
-        '.project-list-card-actions{position:relative}',
+        '.project-list-card-menu-button{position:absolute;left:10px;top:10px;z-index:9;display:flex;align-items:center;justify-content:center;width:36px;height:36px;padding:0;border:1px solid var(--color-border);border-radius:10px;background:var(--color-surface);color:#111827;font-size:25px;font-weight:800;line-height:1;cursor:pointer;box-shadow:var(--shadow-sm,0 2px 6px rgba(0,0,0,.12))}',
+        'html[data-theme="dark"] .project-list-card-menu-button{color:#fff;background:var(--color-surface);border-color:rgba(255,255,255,.35)}',
+        'html[data-theme="light"] .project-list-card-menu-button{color:#111;background:var(--color-surface);border-color:rgba(0,0,0,.18)}',
         '.project-list-card-menu-button:hover,.project-list-card-menu-button[aria-expanded="true"]{background:var(--color-surface-hover);border-color:var(--color-primary)}',
         '.project-list-card-menu-button:focus-visible,.project-list-card-menu button:focus-visible{outline:2px solid var(--color-primary);outline-offset:2px}',
         '.project-list-card-menu{position:absolute;left:10px;top:48px;z-index:8;display:flex;flex-direction:column;gap:2px;width:min(250px,calc(100vw - 36px));max-width:calc(100% - 20px);max-height:min(70vh,420px);overflow:auto;padding:7px;border:1px solid var(--color-border);border-radius:12px;background:var(--color-surface);color:var(--color-text);box-shadow:var(--shadow-md,0 12px 32px rgba(0,0,0,.16));direction:rtl}',
@@ -2470,6 +2470,7 @@
           : '';
         html += `
           <article class="project-list-card">
+              <button type="button" class="project-list-card-menu-button" data-project-menu-toggle="${this.escape(id)}" aria-label="گزینه‌های پروژه ${this.escape(project.ProjectCode || id)}" aria-expanded="false" aria-controls="project-list-menu-${this.escape(id)}" title="گزینه‌های پروژه"><span aria-hidden="true">⋮</span><span class="project-list-card-menu-button-label">عملیات</span></button>
             <div class="project-list-card-menu" id="project-list-menu-${this.escape(id)}" data-project-menu="${this.escape(id)}" role="menu" aria-label="عملیات پروژه" hidden>
               <button type="button" role="menuitem" data-project-menu-action="profile-image" data-project-id="${this.escape(id)}"><span aria-hidden="true">▧</span><span>عکس پروفایل</span></button>
               <button type="button" role="menuitem" data-project-menu-action="sewing-passport" data-project-id="${this.escape(id)}"><span aria-hidden="true">▤</span><span>عکس شناسنامه دوخت</span></button>
@@ -2498,7 +2499,6 @@
               <div class="project-list-card-media" data-project-media="${this.escape(id)}" data-image-state="loading" aria-label="تصویر پروژه"><div class="project-list-card-image-placeholder"><span class="project-list-image-spinner" aria-hidden="true"></span><span class="project-list-card-image-label">در حال بارگذاری تصویر</span></div><img class="project-list-card-thumbnail" data-project-thumbnail="${this.escape(id)}" alt="" hidden loading="lazy" decoding="async" tabindex="0" role="button" aria-label="نمایش تصویر پروژه"></div>
             </div>
             <div class="project-list-card-actions">
-              <button type="button" class="project-list-card-menu-button" data-project-menu-toggle="${this.escape(id)}" aria-label="گزینه‌های پروژه ${this.escape(project.ProjectCode || id)}" aria-expanded="false" aria-controls="project-list-menu-${this.escape(id)}" title="گزینه‌های پروژه"><span aria-hidden="true">⋮</span><span class="project-list-card-menu-button-label">عملیات</span></button>
               <button type="button" class="btn btn-sm btn-light project-view-button" data-project-id="${this.escape(id)}">مشاهده پروژه</button>
               ${this.canEditProjects() ? `
                 <button type="button" class="btn btn-sm btn-secondary project-edit-button" data-project-id="${this.escape(id)}" title="ویرایش اطلاعات پروژه">ویرایش</button>
