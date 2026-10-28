@@ -25,7 +25,10 @@
       }
 
       this.bindEvents();
+      this.bindProjectPassportImageEvents();
+      this.ensureProjectPassportStyles();
       this.load();
+      this.loadProjectPassportImages(false);
       this.loadAuditHistory(false);
     },
 
@@ -513,6 +516,132 @@
             this.detailRow('وضعیت کار در مرحله', project.CurrentStepStatus) +
           '</div>';
       }
+    },
+
+    loadProjectPassportImages: async function (forceRefresh) {
+      const projectId = this.projectId;
+      const types = [
+        { type: 'SEWING_PASSPORT', containerId: 'project-detail-sewing-passport', label: 'شناسنامه دوخت' },
+        { type: 'CUTTING_PASSPORT', containerId: 'project-detail-cutting-passport', label: 'شناسنامه برش' }
+      ];
+      const router = window.PMS && window.PMS.Router;
+      const canViewAttachments = !!(router &&
+        ((typeof router.isAdmin === 'function' && router.isAdmin()) ||
+          (Array.isArray(router.permissions) && router.permissions.indexOf('ATTACHMENT_VIEW') !== -1)));
+
+      types.forEach(function (entry) {
+        const container = document.getElementById(entry.containerId);
+        if (!container) return;
+        container.innerHTML = canViewAttachments
+          ? '<div class="loading-state">در حال دریافت تصاویر...</div>'
+          : '<div class="table-empty">دسترسی مشاهده پیوست‌ها را ندارید.</div>';
+      });
+      if (!canViewAttachments || !projectId) return;
+
+      try {
+        const cacheKey = 'project_attachments_' + String(projectId);
+        const response = forceRefresh
+          ? await window.PMS.Api.getFresh('/projects/' + encodeURIComponent(projectId) + '/attachments', cacheKey)
+          : await window.PMS.Api.getCached('/projects/' + encodeURIComponent(projectId) + '/attachments', cacheKey);
+        const attachments = this.normalizeArray(response, ['attachments', 'items', 'Attachments', 'Items']);
+        types.forEach((entry) => {
+          const container = document.getElementById(entry.containerId);
+          if (!container) return;
+          const items = attachments.filter(function (item) {
+            const mime = String(item.MimeType || item.mimeType || '').toLowerCase();
+            const type = String(item.AttachmentType || item.attachmentType || '').toUpperCase();
+            const status = String(item.Status || 'ACTIVE').toUpperCase();
+            return mime.indexOf('image/') === 0 && type === entry.type &&
+              status !== 'DELETED' && status !== 'VOID';
+          });
+          if (!items.length) {
+            container.innerHTML = '<div class="table-empty">هنوز تصویری برای ' + entry.label + ' ثبت نشده است.</div>';
+            return;
+          }
+          container.innerHTML = '<div class="project-passport-grid">' + items.map((item) => {
+            const id = item.ID || item.Id || item.id || '';
+            const name = item.FileName || item.fileName || entry.label;
+            return '<article class="project-passport-item">' +
+              '<div class="project-passport-file-name">' + this.escape(name) + '</div>' +
+              '<button type="button" class="btn btn-light" data-project-passport-preview="' + this.escape(id) + '" data-project-passport-type="' + entry.type + '">مشاهده تصویر</button>' +
+              '</article>';
+          }).join('') + '</div>';
+        });
+      } catch (error) {
+        types.forEach(function (entry) {
+          const container = document.getElementById(entry.containerId);
+          if (container) {
+            container.innerHTML = '<div class="alert alert-danger">' +
+              ProjectDetail.escape(error && error.message ? error.message : 'دریافت تصاویر شناسنامه ناموفق بود.') +
+              ' <button type="button" class="btn btn-light" data-project-passport-retry>تلاش مجدد</button></div>';
+          }
+        });
+      }
+    },
+
+    previewProjectPassportImage: async function (attachmentId, label) {
+      if (!attachmentId) return;
+      try {
+        const response = await window.PMS.Api.get('/attachments/' + encodeURIComponent(attachmentId) + '/download', { trackSync: false });
+        const data = this.unwrap(response);
+        const base64 = data && (data.Base64 || data.base64);
+        if (!base64) throw new Error('داده تصویر در پاسخ موجود نیست.');
+        const modal = document.createElement('div');
+        modal.className = 'project-passport-preview-overlay';
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('aria-label', label || 'پیش‌نمایش تصویر شناسنامه');
+        modal.innerHTML = '<button type="button" class="project-passport-preview-close">بستن ×</button><img alt="' + this.escape(label || 'تصویر شناسنامه پروژه') + '">';
+        const image = modal.querySelector('img');
+        image.src = 'data:' + String(data.MimeType || data.mimeType || 'image/jpeg') + ';base64,' + base64;
+        const close = function () { modal.remove(); document.removeEventListener('keydown', onKey); };
+        const onKey = function (event) { if (event.key === 'Escape') close(); };
+        modal.addEventListener('click', function (event) {
+          if (event.target === modal || event.target.closest('.project-passport-preview-close')) close();
+        });
+        document.addEventListener('keydown', onKey);
+        document.body.appendChild(modal);
+        modal.querySelector('.project-passport-preview-close').focus();
+      } catch (error) {
+        window.alert(error && error.message ? error.message : 'نمایش تصویر ناموفق بود.');
+      }
+    },
+
+    bindProjectPassportImageEvents: function () {
+      const content = document.getElementById('project-detail-content');
+      if (!content || content.dataset.passportEventsBound) return;
+      content.dataset.passportEventsBound = '1';
+      content.addEventListener('click', function (event) {
+        const preview = event.target.closest('[data-project-passport-preview]');
+        if (preview) {
+          const type = preview.getAttribute('data-project-passport-type');
+          ProjectDetail.previewProjectPassportImage(
+            preview.getAttribute('data-project-passport-preview'),
+            type === 'SEWING_PASSPORT' ? 'شناسنامه دوخت' : 'شناسنامه برش'
+          );
+          return;
+        }
+        if (event.target.closest('[data-project-passport-retry]')) {
+          ProjectDetail.loadProjectPassportImages(true);
+        }
+      });
+    },
+
+    ensureProjectPassportStyles: function () {
+      if (document.getElementById('project-passport-styles')) return;
+      const style = document.createElement('style');
+      style.id = 'project-passport-styles';
+      style.textContent = [
+        '.project-passport-intro{margin:0 0 12px;color:var(--color-text-secondary);font-size:12px}',
+        '.project-passport-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}',
+        '.project-passport-item{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border:1px solid var(--color-border);border-radius:8px;padding:12px;min-width:0}',
+        '.project-passport-file-name{font-size:12px;overflow-wrap:anywhere;min-width:0}',
+        '.project-passport-preview-overlay{position:fixed;inset:0;z-index:30000;background:#000d;display:flex;align-items:center;justify-content:center;padding:18px}',
+        '.project-passport-preview-overlay img{display:block;max-width:100%;max-height:88vh;object-fit:contain}',
+        '.project-passport-preview-close{position:absolute;top:12px;right:12px;border:0;border-radius:8px;padding:8px 12px;cursor:pointer}',
+        '@media(max-width:600px){.project-passport-item{align-items:flex-start;flex-direction:column}.project-passport-item button{width:100%}}'
+      ].join('\n');
+      document.head.appendChild(style);
     },
 
     detailRow: function (label, value) {
