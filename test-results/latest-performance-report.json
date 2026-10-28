@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "suite": "PMS Comprehensive UI and Performance Audit",
   "scope": "all",
-  "generatedAt": "2026-10-28T16:00:23.449Z",
+  "generatedAt": "2026-10-28T16:02:54.374Z",
   "baseURL": "http://127.0.0.1:4173/PRSPRO2/",
   "mode": "public-login-and-shell-only",
   "safety": {
@@ -25,6 +25,7 @@
     "networkRequestsMeasured": 3,
     "procurementApiRequestsMeasured": 0,
     "procurementApiFailedRequests": 0,
+    "procurementDiagnosticEndpointsMeasured": 0,
     "failedNetworkRequests": 0,
     "consoleErrors": 0,
     "pageErrors": 0,
@@ -94,8 +95,8 @@
       "navigation": [],
       "visibleControlCount": 2,
       "visibleTextLength": 70,
-      "routeReadyMs": 159,
-      "navigationMs": 771,
+      "routeReadyMs": 127,
+      "navigationMs": 745,
       "status": "loaded",
       "mobileLayout": {
         "viewportWidth": 390,
@@ -114,19 +115,19 @@
       "path": "/PRSPRO2/pages/login.html",
       "method": "GET",
       "status": 200,
-      "durationMs": 13
+      "durationMs": 9
     },
     {
       "path": "/PRSPRO2/pages/login.html",
       "method": "GET",
       "status": 200,
-      "durationMs": 1
+      "durationMs": 2
     },
     {
       "path": "/PRSPRO2/pages/login.html",
       "method": "GET",
       "status": 200,
-      "durationMs": 6
+      "durationMs": 7
     }
   ],
   "consoleErrors": [],
@@ -137,7 +138,7 @@
   ],
   "overallStatus": "blocked-no-staging-api",
   "login": {
-    "loginFormReadyMs": 223,
+    "loginFormReadyMs": 133,
     "authenticated": false,
     "note": "Authenticated audit skipped: configure PMS_STAGING_API_BASE_URL to a separate staging Apps Script deployment. Production API will not be used for test login."
   },
@@ -145,6 +146,6 @@
     "measuredRequests": 0,
     "failedRequests": 0,
     "endpoints": [],
-    "note": "Browser-observed network timings only; repository/Google Sheets operation timings must be read from the backend PMS_PerformanceDiagnostics sheet."
+    "note": "Browser and admin-only backend repository timings are captured in procurementDiagnostics."
   }
 }
