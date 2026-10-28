@@ -394,6 +394,112 @@
 
 
 
+    shareProject: async function (projectId) {
+      const id = String(projectId || '').trim();
+      if (!id) {
+        alert('شناسه پروژه برای اشتراک‌گذاری مشخص نیست.');
+        return;
+      }
+
+      const unwrapProject = (value) => {
+        let project = value;
+        for (let i = 0; i < 3 && project && project.data !== undefined; i += 1) {
+          project = project.data;
+        }
+        if (project && project.project) project = project.project;
+        if (Array.isArray(project)) project = project[0];
+        return project && typeof project === 'object' ? project : null;
+      };
+
+      let project = (this.projects || []).find((item) =>
+        String(item.ID || item.Id || item.id || '') === id
+      );
+
+      try {
+        if (!project) {
+          if (!window.PMS || !window.PMS.Api || typeof window.PMS.Api.get !== 'function') {
+            throw new Error('سرویس دریافت اطلاعات پروژه در دسترس نیست.');
+          }
+          project = unwrapProject(await window.PMS.Api.get('/projects/' + encodeURIComponent(id)));
+        }
+        if (!project) throw new Error('اطلاعات پروژه دریافت نشد.');
+
+        const statusValue = String(project.StatusName || project.StatusLabel || project.Status || '').trim();
+        const statusLabels = {
+          ACTIVE: 'فعال',
+          ON_HOLD: 'متوقف',
+          COMPLETED: 'تکمیل‌شده',
+          CANCELLED: 'لغوشده'
+        };
+        const status = statusLabels[statusValue.toUpperCase()] || statusValue || 'نامشخص';
+        const stage = String(
+          project.CurrentStepName || project.CurrentStepTitle ||
+          project.CurrentStageName || project.CurrentStageTitle ||
+          project.CurrentStep || project.CurrentStageCode || 'نامشخص'
+        ).trim();
+        const title = String(project.Title || project.Name || 'بدون عنوان').trim();
+        const code = String(project.ProjectCode || id).trim();
+        const quantity = project.Quantity !== undefined && project.Quantity !== null && String(project.Quantity).trim() !== ''
+          ? String(project.Quantity).trim()
+          : 'نامشخص';
+        const projectUrl = window.location.origin + window.location.pathname + '#project-detail/' + encodeURIComponent(id);
+        const shareText = [
+          'اطلاعات پروژه — سامانه مدیریت تولید',
+          'کد پروژه: ' + code,
+          'عنوان: ' + title,
+          'وضعیت: ' + status,
+          'مرحله فعلی: ' + stage,
+          'تعداد: ' + quantity,
+          'مشاهده پروژه: ' + projectUrl
+        ].join('\n');
+
+        if (navigator.share) {
+          try {
+            await navigator.share({
+              title: 'پروژه ' + code + ' — ' + title,
+              text: shareText,
+              url: projectUrl
+            });
+          } catch (shareError) {
+            if (shareError && shareError.name === 'AbortError') return;
+            throw shareError;
+          }
+          return;
+        }
+
+        let copied = false;
+        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+          try {
+            await navigator.clipboard.writeText(shareText);
+            copied = true;
+          } catch (clipboardError) {}
+        }
+
+        if (!copied) {
+          const textarea = document.createElement('textarea');
+          textarea.value = shareText;
+          textarea.setAttribute('readonly', '');
+          textarea.style.position = 'fixed';
+          textarea.style.opacity = '0';
+          textarea.style.pointerEvents = 'none';
+          document.body.appendChild(textarea);
+          textarea.select();
+          try {
+            copied = Boolean(document.execCommand && document.execCommand('copy'));
+          } catch (copyError) {}
+          textarea.remove();
+        }
+
+        if (copied) {
+          alert('اطلاعات پروژه کپی شد. می‌توانید آن را در پیام‌رسان یا برنامه دلخواه ارسال کنید.');
+        } else {
+          window.prompt('متن اشتراک‌گذاری پروژه را کپی کنید:', shareText);
+        }
+      } catch (error) {
+        alert((error && error.message) || 'اشتراک‌گذاری پروژه انجام نشد. لطفاً دوباره تلاش کنید.');
+      }
+    },
+
     openProjectEditForm: async function (projectId, options) {
       if (!this.canEditProjects()) {
         alert('دسترسی ویرایش پروژه را ندارید.');
@@ -2728,6 +2834,14 @@
         window.PMS.Projects.openProjectColorSizeForm(projectId);
       } else {
         alert('فرم رنگ‌بندی و سایزبندی هنوز آماده نیست. صفحه را دوباره بارگذاری کنید.');
+      }
+      return;
+    }
+    if (detail.action === 'share') {
+      if (window.PMS.Projects && typeof window.PMS.Projects.shareProject === 'function') {
+        window.PMS.Projects.shareProject(projectId);
+      } else {
+        alert('قابلیت اشتراک‌گذاری پروژه هنوز آماده نیست. صفحه را دوباره بارگذاری کنید.');
       }
       return;
     }
