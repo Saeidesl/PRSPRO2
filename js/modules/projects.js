@@ -2527,9 +2527,6 @@
               <button type="button" class="btn btn-sm btn-light project-view-button" data-project-id="${this.escape(id)}">مشاهده پروژه</button>
               ${this.canEditProjects() ? `
                 <button type="button" class="btn btn-sm btn-secondary project-edit-button" data-project-id="${this.escape(id)}" title="ویرایش اطلاعات پروژه">ویرایش</button>
-              ` : ''}              ${this.canEditProjects() ? `
-                <button type="button" class="btn btn-sm btn-secondary project-material-specs-button" data-project-id="${this.escape(id)}" title="تعریف مصرف هر واحد و درصد ضایعات">مصرف ملزومات</button>
-                <button type="button" class="btn btn-sm btn-secondary project-color-size-button" data-project-id="${this.escape(id)}" title="تعریف یا ویرایش رنگ‌بندی و سایزبندی">رنگ‌بندی و سایز</button>
               ` : ''}
             </div>
           </article>
@@ -2690,5 +2687,25 @@
 
   window.PMS.Projects = Projects;
   window.PMS.Modules.Projects = Projects;
+
+  // Route shared project-menu actions to existing forms on both pages.
+  document.addEventListener('pms:project-menu-action', function (event) {
+    const detail = event && event.detail || {};
+    const projectId = detail.projectId;
+    if (!projectId) return;
+    if (detail.action === 'material-specs') {
+      const planner = window.PMS && window.PMS.MaterialPlanning;
+      if (planner && typeof planner.open === 'function') planner.open(projectId);
+      else alert('فرم مصرف ملزومات هنوز آماده نیست. صفحه را دوباره بارگذاری کنید.');
+      return;
+    }
+    if (detail.action === 'color-size') {
+      if (window.PMS.Projects && typeof window.PMS.Projects.openProjectColorSizeForm === 'function') {
+        window.PMS.Projects.openProjectColorSizeForm(projectId);
+      } else {
+        alert('فرم رنگ‌بندی و سایزبندی هنوز آماده نیست. صفحه را دوباره بارگذاری کنید.');
+      }
+    }
+  });
 
 })();
