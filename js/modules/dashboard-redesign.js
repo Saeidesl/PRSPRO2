@@ -375,6 +375,7 @@
           var actionMenu = actionCard && actionCard.querySelector('[data-project-menu]');
           var actionToggle = actionCard && actionCard.querySelector('[data-project-menu-toggle]');
           if (actionMenu) actionMenu.hidden = true;
+          if (actionCard) actionCard.classList.remove('has-open-menu');
           if (actionToggle) actionToggle.setAttribute('aria-expanded', 'false');
           root.dispatchEvent(new CustomEvent('pms:project-menu-action', {
             bubbles: true,
@@ -471,7 +472,12 @@
 
       document.addEventListener('click', function (event) {
         if (event.target.closest('#dashboard-project-explorer [data-project-menu-toggle], #dashboard-project-explorer [data-project-menu]')) return;
-        root.querySelectorAll('[data-project-menu]').forEach(function (menu) { menu.hidden = true; });
+        root.querySelectorAll('[data-project-menu]').forEach(function (menu) {
+          menu.hidden = true;
+          menu.classList.remove('is-open-up');
+          var ownerCard = menu.closest('[data-project-card]');
+          if (ownerCard) ownerCard.classList.remove('has-open-menu');
+        });
         root.querySelectorAll('[data-project-menu-toggle]').forEach(function (button) { button.setAttribute('aria-expanded', 'false'); });
       });
 
