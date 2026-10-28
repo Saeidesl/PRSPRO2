@@ -150,7 +150,9 @@
         'html[data-theme="light"] .project-list-card-menu-button{color:#111;background:var(--color-surface);border-color:rgba(0,0,0,.18)}',
         '.project-list-card-menu-button:hover,.project-list-card-menu-button[aria-expanded="true"]{background:var(--color-surface-hover);border-color:var(--color-primary)}',
         '.project-list-card-menu-button:focus-visible,.project-list-card-menu button:focus-visible{outline:2px solid var(--color-primary);outline-offset:2px}',
-        '.project-list-card-menu{position:absolute;left:10px;top:48px;z-index:8;display:flex;flex-direction:column;gap:2px;width:min(250px,calc(100vw - 36px));max-width:calc(100% - 20px);max-height:min(70vh,420px);overflow:auto;padding:7px;border:1px solid var(--color-border);border-radius:12px;background:var(--color-surface);color:var(--color-text);box-shadow:var(--shadow-md,0 12px 32px rgba(0,0,0,.16));direction:rtl}',
+        '.project-list-card-menu{position:absolute;left:10px;top:48px;z-index:1000;display:flex;flex-direction:column;gap:2px;width:min(250px,calc(100vw - 36px));max-width:calc(100% - 20px);max-height:min(70vh,420px);overflow:auto;padding:7px;border:1px solid var(--color-border);border-radius:12px;background:var(--color-surface);color:var(--color-text);box-shadow:var(--shadow-md,0 12px 32px rgba(0,0,0,.16));direction:rtl}',
+        '.project-list-card-menu.is-open-up{top:auto;bottom:48px}',
+        '.project-list-card.has-open-menu{z-index:1000}',
         '.project-list-card-menu[hidden]{display:none!important}',
         '.project-list-card-menu button{display:flex;align-items:center;gap:10px;width:100%;min-height:40px;padding:8px 10px;border:0;border-radius:8px;background:transparent;color:inherit;text-align:right;font:inherit;font-size:12px;cursor:pointer}',
         '.project-list-card-menu button:hover,.project-list-card-menu button:focus-visible{background:var(--color-surface-hover)}',
@@ -277,9 +279,24 @@
             const card = menuToggle.closest('.project-list-card');
             const menu = card && card.querySelector('[data-project-menu]');
             const willOpen = !!(menu && menu.hidden);
-            tableContainer.querySelectorAll('[data-project-menu]').forEach((item) => { item.hidden = true; });
+            tableContainer.querySelectorAll('[data-project-menu]').forEach((item) => {
+              item.hidden = true;
+              item.classList.remove('is-open-up');
+              const owner = item.closest('.project-list-card');
+              if (owner) owner.classList.remove('has-open-menu');
+            });
             tableContainer.querySelectorAll('[data-project-menu-toggle]').forEach((item) => item.setAttribute('aria-expanded', 'false'));
-            if (menu) menu.hidden = !willOpen;
+            if (menu) {
+              menu.hidden = !willOpen;
+              if (willOpen) {
+                const cardRect = card.getBoundingClientRect();
+                const menuHeight = Math.min(menu.scrollHeight || 360, Math.min(window.innerHeight * 0.7, 420));
+                const below = window.innerHeight - cardRect.top - 48;
+                const above = cardRect.bottom - 48;
+                menu.classList.toggle('is-open-up', below < menuHeight && above > below);
+                card.classList.add('has-open-menu');
+              }
+            }
             menuToggle.setAttribute('aria-expanded', String(willOpen));
             if (willOpen && menu) { const first = menu.querySelector('[role="menuitem"]'); if (first) first.focus(); }
             return;
