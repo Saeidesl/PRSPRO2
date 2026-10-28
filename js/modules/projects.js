@@ -394,7 +394,7 @@
 
 
 
-    openProjectEditForm: async function (projectId) {
+    openProjectEditForm: async function (projectId, options) {
       if (!this.canEditProjects()) {
         alert('دسترسی ویرایش پروژه را ندارید.');
         return;
@@ -432,7 +432,7 @@
         }
 
         // فرم ویرایش از همان فرم ایجاد پروژه استفاده می‌کند تا اعتبارسنجی و فیلدها یکسان بمانند.
-        this.openCreateForm(project);
+        await this.openCreateForm(project, options || {});
       } catch (error) {
         alert('دریافت اطلاعات پروژه برای ویرایش ناموفق بود: ' + (this.getErrorMessage(error) || 'خطای نامشخص'));
       } finally {
@@ -958,7 +958,7 @@
     // فرم ایجاد پروژه
     // ========================================================
 
-    openCreateForm: async function (editProject) {
+    openCreateForm: async function (editProject, options) {
       if (this.modal) {
         this.modal.remove();
       }
@@ -970,6 +970,7 @@
       modal.id = isEditMode ? 'project-edit-modal' : 'project-create-modal';
       modal.dataset.editMode = isEditMode ? 'true' : 'false';
       if (isEditMode) modal.dataset.projectId = editProjectId;
+      if (options && options.settingsOnly && isEditMode) modal.dataset.settingsOnly = 'true';
 
       modal.style.cssText = [
         'position:fixed',
@@ -1249,6 +1250,11 @@
       let settingsModalKeyboard = null;
       const openSettings = () => {
         if (settingsModalKeyboard) settingsModalKeyboard.destroy();
+        if (modal.dataset.settingsOnly === 'true') {
+          const formDialog = modal.firstElementChild;
+          if (formDialog) formDialog.hidden = true;
+          modal.style.background = 'transparent';
+        }
         settingsModal.style.display = 'flex';
         settingsModalKeyboard = bindProjectModalKeyboard(settingsModal, () => { settingsModal.style.display = 'none'; });
         settingsModalKeyboard.focusFirst();
@@ -1259,6 +1265,10 @@
           settingsModalKeyboard = null;
           keyboard.close();
         } else settingsModal.style.display = 'none';
+        if (modal.dataset.settingsOnly === 'true') {
+          modal.remove();
+          if (this.modal === modal) this.modal = null;
+        }
       };
       const settingsOpenButton = modal.querySelector('#project-settings-open');
       if (settingsOpenButton) settingsOpenButton.addEventListener('click', openSettings);
@@ -1280,6 +1290,11 @@
         }
         saveProjectSettings();
         error.hidden = true;
+        if (modal.dataset.settingsOnly === 'true' && isEditMode) {
+          const projectForm = modal.querySelector('#project-create-form');
+          if (projectForm) projectForm.requestSubmit();
+          return;
+        }
         closeSettings();
       });
       settingsContent.addEventListener('change', saveProjectSettings);
@@ -2708,7 +2723,7 @@
     }
     if (detail.action === 'settings') {
       if (window.PMS.Projects && typeof window.PMS.Projects.openProjectEditForm === 'function') {
-        window.PMS.Projects.openProjectEditForm(projectId);
+        window.PMS.Projects.openProjectEditForm(projectId, { settingsOnly: true });
       } else {
         alert('فرم تنظیمات پروژه هنوز آماده نیست. صفحه را دوباره بارگذاری کنید.');
       }
