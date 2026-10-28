@@ -115,8 +115,8 @@
 - در `Saeidesl/PRSPRO2BACKEND/Router.js` مسیر `GET /project-card-images` به `AttachmentService.listProjectImages(params)` وصل است و `PROJECT_VIEW` و `ATTACHMENT_VIEW` می‌خواهد.
 - مسیر `GET /projects/:projectId/attachments` به `AttachmentService.listByEntity('PROJECT', projectId, params)` وصل است و `ATTACHMENT_VIEW` می‌خواهد.
 - مسیرهای `/projects/:projectId/material-specifications` و `/projects/:projectId/material-calculations` به `MaterialPlanningService` وصل هستند.
-- جست‌وجوی فایل‌های پیاده‌سازی سرویس‌های بک‌اند در این بررسی از طریق جست‌وجوی فایل GitHub نتیجه قابل اتکایی نداد؛ پیش از هر تغییر بک‌اند، مسیر دقیق فایل‌های سرویس و قراردادهای نوع پیوست باید از درخت/کد مخزن تأیید شود.
-- نوع پیوست برای «عکس پروفایل»، «شناسنامه دوخت» و «شناسنامه برش» هنوز قرارداد مستقلی در فرانت‌اند تأیید نشده است؛ تسک مربوطه باید ابتدا راه موجود برای metadata/category/type را بررسی کند و از فرض‌کردن نام فیلد API خودداری کند.
+- مسیر دقیق سرویس‌ها اکنون از روی فایل‌های مخزن تأیید شده است: `AttachmentService.js` و `AttachmentRepository.js` در ریشه مخزن بک‌اند؛ تعریف سرستون شیت پیوست‌ها در `DatabaseSetup.js` و بخش `ATTACHMENTS` قرار دارد.
+- شیت فعلی `15_Attachments` این سرستون‌ها را دارد: `ID`, `TenantID`, `EntityType`, `EntityID`, `FileName`, `MimeType`, `FileSize`, `StorageProvider`, `StorageKey`, `UploadedBy`, `UploadedAt`, `Status`. هیچ فیلد `AttachmentType` یا `Category` در قرارداد ذخیره فعلی وجود ندارد؛ بنابراین نوع تصویر را نباید صرفاً از نام فایل یا ترتیب تاریخ آپلود استنباط کرد.
 
 ### 7) نیازمندی‌های رفتاری و معیار پذیرش
 
@@ -130,6 +130,33 @@
 - چاپ از قالب اختصاصی فارسی/RTL با ابعاد A4، حاشیه مناسب، بدون کنترل‌های رابط کاربری و با امکان چاپ یا Save as PDF انجام شود.
 - هیچ اطلاعات پروژه یا پیوستی بدون مجوز نمایش داده نشود و خطاهای API قابل فهم نمایش داده شوند.
 - آزمون‌های ایستا/DOM و بررسی مرورگر برای منو، فرم‌ها، بارگذاری فایل، چاپ، اشتراک‌گذاری و حالت موبایل انجام شود.
+
+### 8) تصمیم‌های نهایی تسک ۲ — قرارداد پیوست و یکپارچگی منو
+
+#### قرارداد نوع تصویر (Source of Truth)
+- منبع حقیقت نوع تصویر باید فیلد صریح و پایدار `AttachmentType` در رکورد پیوست باشد؛ مقدارهای مجاز برای این قابلیت:
+  - `PROFILE`: تنها نوع مجاز برای تصویر کارت پروژه.
+  - `SEWING_PASSPORT`: تصویر شناسنامه دوخت؛ فقط در جزئیات پروژه نمایش داده شود.
+  - `CUTTING_PASSPORT`: تصویر شناسنامه برش؛ فقط در جزئیات پروژه نمایش داده شود.
+- این فیلد در نسخه فعلی قرارداد ذخیره/پاسخ وجود ندارد. پیاده‌سازی باید آن را به شیت `15_Attachments` و مسیرهای upload/list اضافه کند؛ تا آن زمان، هیچ نوعی را از روی اسم فایل یا زمان آپلود تشخیص ندهیم.
+- برای سازگاری با تصاویر قدیمی، در مرحله پیاده‌سازی باید رفتار legacy صریح باشد: پیوست تصویری قدیمی فاقد `AttachmentType` فقط با یک قاعده سازگاری مشخص به `PROFILE` نگاشت شود؛ نگاشت باید در بک‌اند واحد باشد و در فرانت‌اند تکرار نشود. پیش از فعال‌کردن آن، تست شود که یک تصویر قدیمی به اشتباه به‌عنوان شناسنامه نمایش داده نمی‌شود.
+- payload بارگذاری فعلی `{ FileName, MimeType, Base64 }` است و Router مقدارهای `EntityType='PROJECT'` و `EntityID` را اضافه می‌کند. قرارداد جدید باید `AttachmentType` را نیز از فرانت‌اند بپذیرد و اعتبارسنجی سمت بک‌اند انجام دهد.
+- `GET /project-card-images` باید فقط پیوست‌های `AttachmentType='PROFILE'` را برگرداند؛ انتخاب آخرین تصویر از میان همه تصاویر پروژه بدون تفکیک نوع، دیگر معتبر نیست.
+- `GET /projects/:projectId/attachments` برای فهرست کامل پیوست‌های پروژه باقی می‌ماند و باید `AttachmentType` را در metadata بازگرداند. دانلود/حذف از مسیرهای فعلی استفاده می‌کنند و مجوزهای فعلی همچنان اجباری‌اند.
+
+#### مسیرها و فایل‌های بک‌اند تأییدشده
+- `Router.js`: `GET /project-card-images` به `AttachmentService.listProjectImages(params)` وصل است؛ `GET /projects/:projectId/attachments` به `AttachmentService.listByEntity('PROJECT', projectId, params)` وصل است؛ `POST /projects/:projectId/attachments` با قراردادن `EntityType='PROJECT'` و `EntityID`، `AttachmentService.upload(body, params)` را فراخوانی می‌کند؛ `GET /attachments/:attachmentId/download` به `AttachmentService.download` و حذف به `AttachmentService.delete` می‌رسد.
+- `AttachmentService.js`: `listProjectImages`, `upload`, `listByEntity`, `download`, `delete`; کنترل tenant و دسترسی پروژه در سرویس انجام می‌شود.
+- `AttachmentRepository.js`: `SHEET_NAME='15_Attachments'`, توابع `getAll`, `findById`, `findByEntity`, `insert`, `update`.
+- `DatabaseSetup.js`: تعریف `ATTACHMENTS.headers`؛ برای اضافه‌کردن `AttachmentType` باید مسیر ارتقای سرستون‌های موجود بررسی شود تا داده‌های قبلی/ترتیب ستون‌ها خراب نشود.
+- `AttachmentValidator.js` (مسیر ریشه باید در تسک پیاده‌سازی بررسی شود): `AttachmentService.upload` ابتدا `AttachmentValidator.validateCreate(data)` را اجرا می‌کند؛ اعتبارسنجی نوع جدید باید آنجا یا در یک لایه دامنه واحد اضافه شود. مسیر دقیق این فایل در این بررسی هنوز fetch نشده است.
+
+#### تصمیم یکپارچگی منوی سه‌نقطه
+- منو باید از نظر هشت گزینه، عنوان‌ها، مجوزهای نمایش، قرارداد `data-action` و رفتار دسترس‌پذیری یکسان باشد؛ اما دو نقطه رندر فعلی جدا هستند: `Projects.render()` در `js/modules/projects.js` و `Dashboard.renderProjectCard(project)` در `js/modules/dashboard-redesign.js`.
+- در تسک ۳، منطق مشترک منو تا حد امکان در helper/module مشترک پیاده می‌شود و هر دو کارت آن را مصرف می‌کنند؛ از کپی‌کردن دو مجموعه handler مستقل و ناسازگار خودداری می‌شود. اگر ساختار بارگذاری ماژول‌ها اجازه helper مشترک ندهد، قرارداد markup/attribute و handlerها دقیقاً همسان می‌مانند و محدودیت در log ثبت می‌شود.
+- هر منو باید به شناسه پروژه خودش متصل باشد، در هر لحظه فقط یک منو باز بماند، با کلیک بیرون و Escape بسته شود، `aria-expanded` و `aria-controls` را به‌روز کند و در صفحه‌کلید قابل استفاده باشد.
+- منوی داشبورد فعلی placeholder است؛ منوی صفحه پروژه‌ها نیز باید به همان قرارداد وصل شود. عملیات فعلی «مصرف ملزومات» و «رنگ‌بندی و سایز» باید به توابع موجود منتقل شوند، نه اینکه منطق فرم دوباره‌نویسی شود.
+- این تسک صرفاً قرارداد و نقشه را نهایی می‌کند؛ هنوز هیچ فایل کد اصلی تغییر نمی‌کند. پیاده‌سازی از تسک ۳ به بعد انجام می‌شود.
 
 ## فهرست تسک‌ها
 
