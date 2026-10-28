@@ -242,21 +242,28 @@ async function main() {
         await benchmarkButton.waitFor({ state: 'visible', timeout: 5000 });
         await benchmarkButton.click();
         await page.waitForFunction(() => {
-          const button = document.querySelector('#pms-performance-diagnostics button:not([aria-label])');
-          return !!button && String(button.textContent || '').indexOf('سنجش دوباره') !== -1;
+          return Array.from(document.querySelectorAll('#pms-performance-diagnostics button')).some(button =>
+            String(button.textContent || '').indexOf('سنجش دوباره') !== -1
+          );
         }, null, { timeout: 60000 });
         const tableRows = await page.locator('#pms-performance-diagnostics-table tr').evaluateAll(rows =>
           rows.map(row => Array.from(row.cells).map(cell => String(cell.textContent || '').trim()))
         );
+        const seenEndpoints = new Set();
+        const benchmarkEndpoints = (tableRows.slice(1) || []).map(row => ({
+          endpoint: row[0] || '',
+          browserMs: row[1] || '',
+          backendMs: row[2] || '',
+          details: row[3] || ''
+        })).filter(row => {
+          if (row.endpoint.indexOf('/procurement/') !== 0 || seenEndpoints.has(row.endpoint)) return false;
+          seenEndpoints.add(row.endpoint);
+          return true;
+        });
         results.procurementDiagnostics = {
           measuredAt: new Date().toISOString(),
           headers: tableRows[0] || [],
-          endpoints: (tableRows.slice(1) || []).map(row => ({
-            endpoint: row[0] || '',
-            browserMs: row[1] || '',
-            backendMs: row[2] || '',
-            details: row[3] || ''
-          })).filter(row => row.endpoint.indexOf('/procurement/') === 0)
+          endpoints: benchmarkEndpoints
         };
         if (results.procurementDiagnostics.endpoints.length < 5) {
           results.coverageGaps.push('Procurement diagnostics ran but fewer than five endpoint rows were captured.');
