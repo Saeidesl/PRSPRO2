@@ -352,6 +352,23 @@
           }
           return;
         }
+        var menuAction = event.target.closest('[data-project-menu-action]');
+        if (menuAction) {
+          var actionCard = menuAction.closest('[data-project-card]');
+          var actionMenu = actionCard && actionCard.querySelector('[data-project-menu]');
+          var actionToggle = actionCard && actionCard.querySelector('[data-project-menu-toggle]');
+          if (actionMenu) actionMenu.hidden = true;
+          if (actionToggle) actionToggle.setAttribute('aria-expanded', 'false');
+          root.dispatchEvent(new CustomEvent('pms:project-menu-action', {
+            bubbles: true,
+            detail: {
+              action: menuAction.getAttribute('data-project-menu-action'),
+              projectId: menuAction.getAttribute('data-project-id'),
+              source: 'dashboard'
+            }
+          }));
+          return;
+        }
         var button = event.target.closest('button');
         if (!button) return;
         if (button.id === 'dash-awaiting-action-button') {
