@@ -175,6 +175,10 @@
     }
   }
 
+  window.PMS = window.PMS || {};
+  window.PMS.MaterialPlanning = window.PMS.MaterialPlanning || {};
+  window.PMS.MaterialPlanning.open = open;
+
   document.addEventListener('click', function (event) {
     const button = event.target.closest('.project-material-specs-button');
     if (button && button.getAttribute('data-project-id')) {
