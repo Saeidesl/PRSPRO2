@@ -144,6 +144,16 @@
         '#project-search:focus-visible,#project-status-filter:focus-visible{outline:2px solid var(--color-primary);outline-offset:2px}',
         '.project-list-card:focus-within{border-color:var(--color-primary);box-shadow:0 0 0 3px var(--color-focus-ring),var(--shadow-sm)}',
         '.project-list-card{position:relative;display:flex;flex-direction:column;min-width:0;min-height:176px;border:1px solid var(--color-border);border-radius:16px;background:var(--color-surface);overflow:hidden;box-shadow:0 1px 2px rgba(15,23,42,.04);transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease}',
+        '.project-list-card{overflow:visible}',
+        '.project-list-card-menu-button{position:absolute;left:10px;top:10px;z-index:7;display:flex;align-items:center;justify-content:center;width:34px;height:34px;border:1px solid var(--color-border);border-radius:9px;background:var(--color-surface);color:var(--color-text);font-size:22px;line-height:1;cursor:pointer;box-shadow:var(--shadow-sm,0 2px 6px rgba(0,0,0,.08))}',
+        '.project-list-card-menu-button:hover,.project-list-card-menu-button[aria-expanded="true"]{background:var(--color-surface-hover);border-color:var(--color-primary)}',
+        '.project-list-card-menu-button:focus-visible,.project-list-card-menu button:focus-visible{outline:2px solid var(--color-primary);outline-offset:2px}',
+        '.project-list-card-menu{position:absolute;left:10px;top:48px;z-index:8;display:flex;flex-direction:column;gap:2px;width:min(250px,calc(100vw - 36px));max-width:calc(100% - 20px);max-height:min(70vh,420px);overflow:auto;padding:7px;border:1px solid var(--color-border);border-radius:12px;background:var(--color-surface);color:var(--color-text);box-shadow:var(--shadow-md,0 12px 32px rgba(0,0,0,.16));direction:rtl}',
+        '.project-list-card-menu[hidden]{display:none!important}',
+        '.project-list-card-menu button{display:flex;align-items:center;gap:10px;width:100%;min-height:40px;padding:8px 10px;border:0;border-radius:8px;background:transparent;color:inherit;text-align:right;font:inherit;font-size:12px;cursor:pointer}',
+        '.project-list-card-menu button:hover,.project-list-card-menu button:focus-visible{background:var(--color-surface-hover)}',
+        '.project-list-card-menu button span:first-child{display:inline-flex;align-items:center;justify-content:center;width:22px;flex:0 0 22px;color:var(--color-primary);font-size:16px}',
+        '.project-list-card-menu-separator{display:block;height:1px;margin:4px 3px;background:var(--color-border)}',
         '.project-list-card:hover{border-color:color-mix(in srgb,var(--color-primary) 45%,var(--color-border));box-shadow:0 8px 24px rgba(15,23,42,.09);transform:translateY(-1px)}',
         '.project-list-card-main{display:block;flex:1;min-width:0;position:relative;padding:17px 17px 13px}',
         '.project-list-card-main.has-thumbnail .project-list-card-content{padding-right:112px}',
@@ -258,6 +268,20 @@
       const tableContainer = document.getElementById('projects-table-container');
       if (tableContainer) {
         tableContainer.addEventListener('click', (event) => {
+          const menuToggle = event.target.closest('[data-project-menu-toggle]');
+          if (menuToggle) {
+            event.preventDefault();
+            event.stopPropagation();
+            const card = menuToggle.closest('.project-list-card');
+            const menu = card && card.querySelector('[data-project-menu]');
+            const willOpen = !!(menu && menu.hidden);
+            tableContainer.querySelectorAll('[data-project-menu]').forEach((item) => { item.hidden = true; });
+            tableContainer.querySelectorAll('[data-project-menu-toggle]').forEach((item) => item.setAttribute('aria-expanded', 'false'));
+            if (menu) menu.hidden = !willOpen;
+            menuToggle.setAttribute('aria-expanded', String(willOpen));
+            if (willOpen && menu) { const first = menu.querySelector('[role="menuitem"]'); if (first) first.focus(); }
+            return;
+          }
           const editButton = event.target.closest('.project-edit-button');
           const variantsButton = event.target.closest('.project-color-size-button');
           const projectId = (editButton || variantsButton) &&
@@ -266,7 +290,44 @@
           if (editButton) this.openProjectEditForm(projectId);
           else if (variantsButton) this.openProjectColorSizeForm(projectId);
         });
+        tableContainer.addEventListener('keydown', (event) => {
+          const menu = event.target.closest('[data-project-menu]');
+          if (!menu) return;
+          const items = Array.from(menu.querySelectorAll('[role="menuitem"]:not(:disabled)'));
+          if (!items.length) return;
+          const index = items.indexOf(document.activeElement);
+          if (event.key === 'Escape') {
+            event.preventDefault(); menu.hidden = true;
+            const card = menu.closest('.project-list-card');
+            const toggle = card && card.querySelector('[data-project-menu-toggle]');
+            if (toggle) { toggle.setAttribute('aria-expanded', 'false'); toggle.focus(); }
+            return;
+          }
+          if (['ArrowDown','ArrowUp','Home','End'].includes(event.key)) {
+            event.preventDefault();
+            const next = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1 :
+              (index + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+            items[next].focus();
+          }
+        });
       }
+      document.addEventListener('click', (event) => {
+        if (event.target.closest('#projects-table-container [data-project-menu-toggle], #projects-table-container [data-project-menu]')) return;
+        const container = document.getElementById('projects-table-container');
+        if (!container) return;
+        container.querySelectorAll('[data-project-menu]').forEach((menu) => { menu.hidden = true; });
+        container.querySelectorAll('[data-project-menu-toggle]').forEach((button) => button.setAttribute('aria-expanded', 'false'));
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape') return;
+        const container = document.getElementById('projects-table-container');
+        const menu = container && container.querySelector('[data-project-menu]:not([hidden])');
+        if (!menu) return;
+        menu.hidden = true;
+        const card = menu.closest('.project-list-card');
+        const toggle = card && card.querySelector('[data-project-menu-toggle]');
+        if (toggle) { toggle.setAttribute('aria-expanded', 'false'); toggle.focus(); }
+      });
     },
 
     canEditProjects: function () {
@@ -2390,6 +2451,19 @@
           : '';
         html += `
           <article class="project-list-card">
+            <button type="button" class="project-list-card-menu-button" data-project-menu-toggle="${this.escape(id)}" aria-label="گزینه‌های پروژه ${this.escape(project.ProjectCode || id)}" aria-expanded="false" aria-controls="project-list-menu-${this.escape(id)}" title="گزینه‌های پروژه"><span aria-hidden="true">⋮</span></button>
+            <div class="project-list-card-menu" id="project-list-menu-${this.escape(id)}" data-project-menu="${this.escape(id)}" role="menu" aria-label="عملیات پروژه" hidden>
+              <button type="button" role="menuitem" data-project-menu-action="profile-image" data-project-id="${this.escape(id)}"><span aria-hidden="true">▧</span><span>عکس پروفایل</span></button>
+              <button type="button" role="menuitem" data-project-menu-action="sewing-passport" data-project-id="${this.escape(id)}"><span aria-hidden="true">▤</span><span>عکس شناسنامه دوخت</span></button>
+              <button type="button" role="menuitem" data-project-menu-action="cutting-passport" data-project-id="${this.escape(id)}"><span aria-hidden="true">▥</span><span>عکس شناسنامه برش</span></button>
+              <span class="project-list-card-menu-separator" role="separator"></span>
+              <button type="button" role="menuitem" data-project-menu-action="material-specs" data-project-id="${this.escape(id)}"><span aria-hidden="true">◫</span><span>مصرف ملزومات</span></button>
+              <button type="button" role="menuitem" data-project-menu-action="color-size" data-project-id="${this.escape(id)}"><span aria-hidden="true">◈</span><span>رنگ‌بندی و سایزبندی</span></button>
+              <span class="project-list-card-menu-separator" role="separator"></span>
+              <button type="button" role="menuitem" data-project-menu-action="share" data-project-id="${this.escape(id)}"><span aria-hidden="true">↗</span><span>اشتراک‌گذاری</span></button>
+              <button type="button" role="menuitem" data-project-menu-action="print" data-project-id="${this.escape(id)}"><span aria-hidden="true">▣</span><span>ذخیره و چاپ</span></button>
+              <button type="button" role="menuitem" data-project-menu-action="settings" data-project-id="${this.escape(id)}"><span aria-hidden="true">⚙</span><span>تنظیمات</span></button>
+            </div>
             <div class="project-list-card-main has-thumbnail">
               <span class="project-list-card-indicator ${stateClass}" aria-hidden="true"></span>
               <div class="project-list-card-content">
