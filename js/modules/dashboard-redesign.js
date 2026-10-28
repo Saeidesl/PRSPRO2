@@ -1247,8 +1247,7 @@
         '<button type="button" class="dash-project-menu-button" data-project-menu-toggle="' + this.escape(id) + '" aria-label="گزینه‌های پروژه ' + this.escape(project.ProjectCode || id) + '" aria-expanded="false" aria-controls="dash-project-menu-' + this.escape(id) + '" title="گزینه‌های پروژه">⋮</button>' +
         '<div class="dash-project-menu" id="dash-project-menu-' + this.escape(id) + '" data-project-menu="' + this.escape(id) + '" role="menu" aria-label="عملیات پروژه" hidden>' +
           '<button type="button" role="menuitem" data-project-menu-action="profile-image" data-project-id="' + this.escape(id) + '"><span aria-hidden="true">▧</span><span>عکس پروفایل</span></button>' +
-          '<button type="button" role="menuitem" data-project-menu-action="sewing-passport" data-project-id="' + this.escape(id) + '"><span aria-hidden="true">▤</span><span>عکس شناسنامه دوخت</span></button>' +
-          '<button type="button" role="menuitem" data-project-menu-action="cutting-passport" data-project-id="' + this.escape(id) + '"><span aria-hidden="true">▥</span><span>عکس شناسنامه برش</span></button>' +
+          '<button type="button" role="menuitem" data-project-menu-action="project-files" data-project-id="' + this.escape(id) + '"><span aria-hidden="true">▤</span><span>فایل‌ها</span></button>' +
           '<span class="dash-project-menu-separator" role="separator"></span>' +
           '<button type="button" role="menuitem" data-project-menu-action="material-specs" data-project-id="' + this.escape(id) + '"><span aria-hidden="true">◫</span><span>مصرف ملزومات</span></button>' +
           '<button type="button" role="menuitem" data-project-menu-action="color-size" data-project-id="' + this.escape(id) + '"><span aria-hidden="true">◈</span><span>رنگ‌بندی و سایزبندی</span></button>' +
