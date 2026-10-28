@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "suite": "PMS Procurement Performance Audit",
   "scope": "procurement",
-  "generatedAt": "2026-10-28T17:01:03.897Z",
+  "generatedAt": "2026-10-28T17:11:19.726Z",
   "baseURL": "http://127.0.0.1:4173/PRSPRO2/",
   "mode": "authenticated-read-only",
   "safety": {
@@ -186,8 +186,8 @@
       ],
       "visibleControlCount": 0,
       "visibleTextLength": 500,
-      "routeReadyMs": 3928,
-      "navigationMs": 40215,
+      "routeReadyMs": 4434,
+      "navigationMs": 39272,
       "status": "loaded",
       "mobileLayout": {
         "viewportWidth": 390,
@@ -232,7 +232,7 @@
                   "disabled": false
                 },
                 {
-                  "id": "pms-date-pmp9e1c-jalali",
+                  "id": "pms-date-h04ax2r-jalali",
                   "name": "",
                   "type": "text",
                   "label": "تاریخ سفارش (اختیاری)\n▦",
@@ -240,7 +240,7 @@
                   "disabled": false
                 },
                 {
-                  "id": "pms-date-pmp9e1c",
+                  "id": "pms-date-h04ax2r",
                   "name": "OrderDate",
                   "type": "hidden",
                   "label": "۱۴۰۵/۰۷/۲۷",
@@ -248,7 +248,7 @@
                   "disabled": false
                 },
                 {
-                  "id": "pms-date-afaqqd8-jalali",
+                  "id": "pms-date-7qzapr0-jalali",
                   "name": "",
                   "type": "text",
                   "label": "تاریخ تحویل مورد انتظار\n▦",
@@ -256,7 +256,7 @@
                   "disabled": false
                 },
                 {
-                  "id": "pms-date-afaqqd8",
+                  "id": "pms-date-7qzapr0",
                   "name": "ExpectedDeliveryDate",
                   "type": "hidden",
                   "label": "۱۴۰۵/۰۷/۲۷",
@@ -356,7 +356,7 @@
                   "disabled": false
                 },
                 {
-                  "id": "pms-date-e495zep-jalali",
+                  "id": "pms-date-zdanwpo-jalali",
                   "name": "",
                   "type": "text",
                   "label": "تاریخ سفارش (اختیاری)\n▦",
@@ -364,7 +364,7 @@
                   "disabled": false
                 },
                 {
-                  "id": "pms-date-e495zep",
+                  "id": "pms-date-zdanwpo",
                   "name": "OrderDate",
                   "type": "hidden",
                   "label": "۱۴۰۵/۰۷/۲۷",
@@ -372,7 +372,7 @@
                   "disabled": false
                 },
                 {
-                  "id": "pms-date-g2mdyka-jalali",
+                  "id": "pms-date-cwwo22h-jalali",
                   "name": "",
                   "type": "text",
                   "label": "تاریخ تحویل مورد انتظار\n▦",
@@ -380,7 +380,7 @@
                   "disabled": false
                 },
                 {
-                  "id": "pms-date-g2mdyka",
+                  "id": "pms-date-cwwo22h",
                   "name": "ExpectedDeliveryDate",
                   "type": "hidden",
                   "label": "۱۴۰۵/۰۷/۲۷",
@@ -480,7 +480,7 @@
                   "disabled": false
                 },
                 {
-                  "id": "pms-date-czquw2f-jalali",
+                  "id": "pms-date-ijviqtf-jalali",
                   "name": "",
                   "type": "text",
                   "label": "تاریخ دریافت\n▦",
@@ -488,7 +488,7 @@
                   "disabled": false
                 },
                 {
-                  "id": "pms-date-czquw2f",
+                  "id": "pms-date-ijviqtf",
                   "name": "ReceivedAt",
                   "type": "hidden",
                   "label": "۱۴۰۵/۰۷/۲۷",
@@ -535,67 +535,43 @@
       "path": "/PRSPRO2/pages/login.html",
       "method": "GET",
       "status": 200,
-      "durationMs": 14
+      "durationMs": 8
     },
     {
       "path": "/api/auth/login",
       "method": "POST",
       "status": 302,
-      "durationMs": 3612
+      "durationMs": 3045
     },
     {
       "path": "/macros/echo",
       "method": "GET",
       "status": 200,
-      "durationMs": 265
+      "durationMs": 304
     },
     {
       "path": "/api/auth/me/permissions",
       "method": "GET",
       "status": 302,
-      "durationMs": 2798
+      "durationMs": 2427
     },
     {
       "path": "/macros/echo",
       "method": "GET",
       "status": 200,
-      "durationMs": 88
+      "durationMs": 109
     },
     {
       "path": "/PRSPRO2/pages/dashboard.html",
       "method": "GET",
       "status": 200,
-      "durationMs": 20
+      "durationMs": 19
     },
     {
       "path": "/api/auth/me/permissions",
       "method": "GET",
       "status": 302,
-      "durationMs": 3596
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 92
-    },
-    {
-      "path": "/PRSPRO2/pages/dashboard.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 6
-    },
-    {
-      "path": "/PRSPRO2/pages/procurement.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 8
-    },
-    {
-      "path": "/api/projects",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3823
+      "durationMs": 3779
     },
     {
       "path": "/macros/echo",
@@ -604,208 +580,34 @@
       "durationMs": 101
     },
     {
-      "path": "/api/procurement/workspace",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 5510
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 110
-    },
-    {
-      "path": "/api/project-dashboard/lookups",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 6109
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 100
-    },
-    {
-      "path": "/api/procurement/workspace",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 9560
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 115
-    },
-    {
-      "path": "/api/procurement/dashboard",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3821
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 114
-    },
-    {
-      "path": "/api/procurement/needs",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 5576
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 116
-    },
-    {
-      "path": "/api/procurement/orders",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 5423
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 117
-    },
-    {
-      "path": "/api/procurement/reports",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 7300
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 154
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2497
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 149
-    },
-    {
-      "path": "/PRSPRO2/pages/procurement.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 7
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2712
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 90
-    },
-    {
-      "path": "/PRSPRO2/pages/procurement.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 4
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 5232
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 92
-    },
-    {
-      "path": "/PRSPRO2/pages/procurement.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 4
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3426
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 110
-    },
-    {
-      "path": "/PRSPRO2/pages/procurement.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 5
-    },
-    {
-      "path": "/PRSPRO2/pages/procurement.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 5
-    },
-    {
-      "path": "/api/projects",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 4570
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 95
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2611
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 67
-    },
-    {
-      "path": "/PRSPRO2/pages/procurement.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 5
-    },
-    {
-      "path": "/PRSPRO2/pages/procurement.html",
+      "path": "/PRSPRO2/pages/dashboard.html",
       "method": "GET",
       "status": 200,
       "durationMs": 6
     },
     {
+      "path": "/PRSPRO2/pages/procurement.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
       "path": "/api/projects",
       "method": "GET",
       "status": 302,
-      "durationMs": 3049
+      "durationMs": 4469
+    },
+    {
+      "path": "/api/project-dashboard/lookups",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 4552
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 89
     },
     {
       "path": "/macros/echo",
@@ -814,22 +616,184 @@
       "durationMs": 91
     },
     {
-      "path": "/api/auth/me/permissions",
+      "path": "/api/procurement/workspace",
       "method": "GET",
       "status": 302,
-      "durationMs": 2268
+      "durationMs": 6661
     },
     {
       "path": "/macros/echo",
       "method": "GET",
       "status": 200,
-      "durationMs": 124
+      "durationMs": 112
+    },
+    {
+      "path": "/api/procurement/workspace",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 7291
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 121
+    },
+    {
+      "path": "/api/procurement/dashboard",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 5458
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 105
+    },
+    {
+      "path": "/api/procurement/needs",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 6267
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 93
+    },
+    {
+      "path": "/api/procurement/orders",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 4804
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 131
+    },
+    {
+      "path": "/api/procurement/reports",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 5969
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 106
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 4218
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 88
+    },
+    {
+      "path": "/PRSPRO2/pages/procurement.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3454
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 110
     },
     {
       "path": "/PRSPRO2/pages/procurement.html",
       "method": "GET",
       "status": 200,
       "durationMs": 5
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2546
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 88
+    },
+    {
+      "path": "/PRSPRO2/pages/procurement.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3038
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 121
+    },
+    {
+      "path": "/PRSPRO2/pages/procurement.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3
+    },
+    {
+      "path": "/PRSPRO2/pages/procurement.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/api/projects",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 4154
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 96
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 4591
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 107
+    },
+    {
+      "path": "/PRSPRO2/pages/procurement.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
     },
     {
       "path": "/PRSPRO2/pages/procurement.html",
@@ -841,13 +805,49 @@
       "path": "/api/projects",
       "method": "GET",
       "status": 302,
-      "durationMs": 4274
+      "durationMs": 2478
     },
     {
       "path": "/macros/echo",
       "method": "GET",
       "status": 200,
-      "durationMs": 128
+      "durationMs": 98
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3371
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 445
+    },
+    {
+      "path": "/PRSPRO2/pages/procurement.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/PRSPRO2/pages/procurement.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3
+    },
+    {
+      "path": "/api/projects",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3886
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 98
     }
   ],
   "consoleErrors": [],
@@ -855,13 +855,13 @@
   "coverageGaps": [],
   "overallStatus": "needs-attention",
   "login": {
-    "loginFormReadyMs": 188,
-    "loginAttemptMs": 6848,
+    "loginFormReadyMs": 130,
+    "loginAttemptMs": 5959,
     "authenticated": true,
     "errorMessage": ""
   },
   "procurementDiagnostics": {
-    "measuredAt": "2026-10-28T17:01:51.307Z",
+    "measuredAt": "2026-10-28T17:12:05.223Z",
     "headers": [
       "مسیر",
       "زمان مرورگر",
@@ -871,33 +871,33 @@
     "endpoints": [
       {
         "endpoint": "/procurement/reports",
-        "browserMs": "7456 ms",
-        "backendMs": "5016 ms",
-        "details": "دسترسی 1705 / روتر 3311 / Sheets: findById:895ms×1, getSheet:677ms×2, getAll:465ms×1"
+        "browserMs": "6076 ms",
+        "backendMs": "4975 ms",
+        "details": "دسترسی 1385 / روتر 3589 / Sheets: findById:712ms×1, getAll:656ms×1, getHeaders:552ms×1"
       },
       {
         "endpoint": "/procurement/orders",
-        "browserMs": "5540 ms",
-        "backendMs": "4175 ms",
-        "details": "دسترسی 1438 / روتر 2737 / Sheets: findById:878ms×2, getHeaders:802ms×2, getAll:537ms×1"
+        "browserMs": "4936 ms",
+        "backendMs": "3774 ms",
+        "details": "دسترسی 1547 / روتر 2227 / Sheets: findById:606ms×1, findById:333ms×1, getHeaders:327ms×1"
       },
       {
         "endpoint": "/procurement/needs",
-        "browserMs": "5692 ms",
-        "backendMs": "4021 ms",
-        "details": "دسترسی 1844 / روتر 2177 / Sheets: getAll:898ms×1, getHeaders:787ms×1, getAll:484ms×1"
+        "browserMs": "6361 ms",
+        "backendMs": "4769 ms",
+        "details": "دسترسی 1691 / روتر 3078 / Sheets: getAll:770ms×1, findById:604ms×1, getAll:565ms×1"
       },
       {
         "endpoint": "/procurement/dashboard",
-        "browserMs": "3935 ms",
-        "backendMs": "2652 ms",
-        "details": "دسترسی 1077 / روتر 1574 / Sheets: findById:398ms×1, findById:221ms×2, getAll:220ms×1"
+        "browserMs": "5564 ms",
+        "backendMs": "4309 ms",
+        "details": "دسترسی 1593 / روتر 2715 / Sheets: getAll:718ms×1, getHeaders:657ms×1, findById:457ms×2"
       },
       {
         "endpoint": "/procurement/workspace",
-        "browserMs": "9676 ms",
-        "backendMs": "6718 ms",
-        "details": "دسترسی 3182 / روتر 3536 / Sheets: findById:1410ms×1, findById:653ms×1, getHeaders:650ms×1"
+        "browserMs": "7414 ms",
+        "backendMs": "4292 ms",
+        "details": "دسترسی 2200 / روتر 2092 / Sheets: findById:1057ms×1, findById:553ms×1, getHeaders:311ms×1"
       }
     ]
   },
@@ -909,46 +909,46 @@
         "endpoint": "GET /api/procurement/workspace",
         "requests": 2,
         "failedRequests": 0,
-        "averageMs": 7535,
-        "medianMs": 5510,
-        "p95Ms": 9560,
-        "maxMs": 9560
+        "averageMs": 6976,
+        "medianMs": 6661,
+        "p95Ms": 7291,
+        "maxMs": 7291
       },
       {
         "endpoint": "GET /api/procurement/dashboard",
         "requests": 1,
         "failedRequests": 0,
-        "averageMs": 3821,
-        "medianMs": 3821,
-        "p95Ms": 3821,
-        "maxMs": 3821
+        "averageMs": 5458,
+        "medianMs": 5458,
+        "p95Ms": 5458,
+        "maxMs": 5458
       },
       {
         "endpoint": "GET /api/procurement/needs",
         "requests": 1,
         "failedRequests": 0,
-        "averageMs": 5576,
-        "medianMs": 5576,
-        "p95Ms": 5576,
-        "maxMs": 5576
+        "averageMs": 6267,
+        "medianMs": 6267,
+        "p95Ms": 6267,
+        "maxMs": 6267
       },
       {
         "endpoint": "GET /api/procurement/orders",
         "requests": 1,
         "failedRequests": 0,
-        "averageMs": 5423,
-        "medianMs": 5423,
-        "p95Ms": 5423,
-        "maxMs": 5423
+        "averageMs": 4804,
+        "medianMs": 4804,
+        "p95Ms": 4804,
+        "maxMs": 4804
       },
       {
         "endpoint": "GET /api/procurement/reports",
         "requests": 1,
         "failedRequests": 0,
-        "averageMs": 7300,
-        "medianMs": 7300,
-        "p95Ms": 7300,
-        "maxMs": 7300
+        "averageMs": 5969,
+        "medianMs": 5969,
+        "p95Ms": 5969,
+        "maxMs": 5969
       }
     ],
     "note": "Browser and admin-only backend repository timings are captured in procurementDiagnostics."
