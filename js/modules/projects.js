@@ -307,6 +307,7 @@
             const menu = card && card.querySelector('[data-project-menu]');
             const toggle = card && card.querySelector('[data-project-menu-toggle]');
             if (menu) menu.hidden = true;
+            if (card) card.classList.remove('has-open-menu');
             if (toggle) toggle.setAttribute('aria-expanded', 'false');
             tableContainer.dispatchEvent(new CustomEvent('pms:project-menu-action', {
               bubbles: true,
@@ -351,7 +352,12 @@
         if (event.target.closest('#projects-table-container [data-project-menu-toggle], #projects-table-container [data-project-menu]')) return;
         const container = document.getElementById('projects-table-container');
         if (!container) return;
-        container.querySelectorAll('[data-project-menu]').forEach((menu) => { menu.hidden = true; });
+        container.querySelectorAll('[data-project-menu]').forEach((menu) => {
+          menu.hidden = true;
+          menu.classList.remove('is-open-up');
+          const card = menu.closest('.project-list-card');
+          if (card) card.classList.remove('has-open-menu');
+        });
         container.querySelectorAll('[data-project-menu-toggle]').forEach((button) => button.setAttribute('aria-expanded', 'false'));
       });
       document.addEventListener('keydown', (event) => {
@@ -360,7 +366,9 @@
         const menu = container && container.querySelector('[data-project-menu]:not([hidden])');
         if (!menu) return;
         menu.hidden = true;
+        menu.classList.remove('is-open-up');
         const card = menu.closest('.project-list-card');
+        if (card) card.classList.remove('has-open-menu');
         const toggle = card && card.querySelector('[data-project-menu-toggle]');
         if (toggle) { toggle.setAttribute('aria-expanded', 'false'); toggle.focus(); }
       });
