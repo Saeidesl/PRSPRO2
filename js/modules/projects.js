@@ -791,8 +791,10 @@
           const type = String(item.EntityType || item.entityType || '').toUpperCase();
           const id = String(item.EntityID || item.entityID || item.EntityId || '');
           const mime = String(item.MimeType || item.mimeType || '').toLowerCase();
+          const attachmentType = String(item.AttachmentType || item.attachmentType || '').toUpperCase();
           const status = String(item.Status || item.status || 'ACTIVE').toUpperCase();
           return type === 'PROJECT' && visibleProjectIds.has(id) && mime.indexOf('image/') === 0 &&
+            (!attachmentType || attachmentType === 'PROFILE') &&
             status !== 'DELETED' && status !== 'VOID';
         }).sort(function (a, b) {
           return new Date(b.UploadedAt || b.uploadedAt || b.CreatedAt || 0).getTime() -
