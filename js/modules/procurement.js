@@ -84,6 +84,26 @@
       .replace(/</g, '&lt;').replace(/>/g, '&gt;');
     return '<option value="' + rawValue + '"' + (selected ? ' selected' : '') + '>' + escape(label) + '</option>';
   }
+
+  const STANDARD_MATERIAL_UNITS = [
+    'عدد', 'متر', 'سانتی‌متر', 'میلی‌متر', 'مترمربع',
+    'کیلوگرم', 'گرم', 'لیتر', 'میلی‌لیتر', 'رول',
+    'بسته', 'جفت', 'دست', 'یارد'
+  ];
+
+  function unitOptions(currentUnit) {
+    const current = String(currentUnit == null ? '' : currentUnit).trim();
+    const isStandard = STANDARD_MATERIAL_UNITS.indexOf(current) !== -1;
+    let html = option('', 'انتخاب واحد', !current);
+    html += STANDARD_MATERIAL_UNITS.map(function (unit) {
+      return option(unit, unit, unit === current);
+    }).join('');
+    if (current && !isStandard) {
+      html += option(current, current + ' (واحد فعلی)', true);
+    }
+    return html;
+  }
+
   function clearMessage() {
     const root = $('procurement-modal-root');
     const message = root && root.querySelector('.procurement-inline-message');
@@ -615,7 +635,7 @@
       '<input type="hidden" name="MaterialNeedID" value="' + (need.ID ? escapeField(need.ID) : '') + '">' +
       '<div class="procurement-order-fields">' +
       '<label class="form-group procurement-field-name"><span>نام ملزوم *</span><input name="ItemName" required maxlength="200" value="' + escapeField(need.ItemName) + '"></label>' +
-      '<label class="form-group"><span>واحد اندازه‌گیری *</span><input name="Unit" required maxlength="100" value="' + escapeField(need.Unit) + '"></label>' +
+      '<label class="form-group"><span>واحد اندازه‌گیری *</span><select name="Unit" required>' + unitOptions(need.Unit) + '</select></label>' +
       '<label class="form-group"><span>نیاز اصلی</span><input type="text" readonly value="' + escapeField(need.ID ? number(need.RequestedQuantity) : 'قلم جدید') + '"></label>' +
       '<label class="form-group"><span>مقدار سفارش *</span><input name="OrderedQuantity" type="number" min="0.001" step="any" required value="' + (quantity === '' ? '' : escapeField(quantity)) + '"></label>' +
       '<label class="form-group"><span>قیمت واحد (اختیاری)</span><input name="UnitPrice" type="number" min="0" step="any"></label>' +
