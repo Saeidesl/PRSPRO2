@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "suite": "PMS Comprehensive UI and Performance Audit",
   "scope": "all",
-  "generatedAt": "2026-10-28T18:17:55.058Z",
+  "generatedAt": "2026-10-28T18:36:50.204Z",
   "baseURL": "http://127.0.0.1:4173/PRSPRO2/",
   "mode": "authenticated-read-only",
   "safety": {
@@ -20,17 +20,17 @@
     "visibleFormsInventoried": 10,
     "dynamicFormsInventoried": 10,
     "formOpenersChecked": 12,
-    "visibleButtonsInventoried": 116,
+    "visibleButtonsInventoried": 201,
     "visibleInputsAndControlsInventoried": 32,
-    "networkRequestsMeasured": 341,
+    "networkRequestsMeasured": 366,
     "procurementApiRequestsMeasured": 7,
     "procurementApiFailedRequests": 0,
     "procurementDiagnosticEndpointsMeasured": 5,
     "failedNetworkRequests": 0,
     "consoleErrors": 0,
     "pageErrors": 0,
-    "safeButtonChecks": 20,
-    "failedSafeButtonChecks": 6,
+    "safeButtonChecks": 21,
+    "failedSafeButtonChecks": 5,
     "formSubmissionsExecuted": 0
   },
   "routes": [
@@ -72,14 +72,6 @@
           "index": 3,
           "id": "dash-event-order",
           "label": "رویدادها: جدید به قدیم",
-          "type": "button",
-          "disabled": false,
-          "inForm": false
-        },
-        {
-          "index": 4,
-          "id": "",
-          "label": "dynamic-button",
           "type": "button",
           "disabled": false,
           "inForm": false
@@ -153,9 +145,9 @@
         }
       ],
       "visibleControlCount": 2,
-      "visibleTextLength": 327,
-      "routeReadyMs": 2886,
-      "navigationMs": 5543,
+      "visibleTextLength": 238,
+      "routeReadyMs": 4509,
+      "navigationMs": 7169,
       "status": "loaded",
       "mobileLayout": {
         "viewportWidth": 390,
@@ -163,7 +155,7 @@
         "bodyWidth": 390,
         "horizontalOverflow": false,
         "visibleForms": 0,
-        "visibleButtons": 5,
+        "visibleButtons": 4,
         "visibleControls": 2
       },
       "dynamicFormInventory": [],
@@ -282,8 +274,8 @@
       ],
       "visibleControlCount": 2,
       "visibleTextLength": 134,
-      "routeReadyMs": 3384,
-      "navigationMs": 6039,
+      "routeReadyMs": 5912,
+      "navigationMs": 8566,
       "status": "loaded",
       "mobileLayout": {
         "viewportWidth": 390,
@@ -493,8 +485,8 @@
       ],
       "visibleControlCount": 0,
       "visibleTextLength": 62,
-      "routeReadyMs": 2866,
-      "navigationMs": 5524,
+      "routeReadyMs": 3904,
+      "navigationMs": 6560,
       "status": "loaded",
       "mobileLayout": {
         "viewportWidth": 390,
@@ -544,7 +536,7 @@
         {
           "index": 2,
           "id": "event-tab-pending",
-          "label": "!\nدر انتظار اقدام\n۰",
+          "label": "!\nدر انتظار اقدام\n۱",
           "type": "button",
           "disabled": false,
           "inForm": false
@@ -561,6 +553,14 @@
           "index": 4,
           "id": "event-tab-completed",
           "label": "✓\nتکمیل‌شده\n۰",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 5,
+          "id": "",
+          "label": "dynamic-button",
           "type": "button",
           "disabled": false,
           "inForm": false
@@ -634,9 +634,9 @@
         }
       ],
       "visibleControlCount": 1,
-      "visibleTextLength": 477,
-      "routeReadyMs": 2875,
-      "navigationMs": 5533,
+      "visibleTextLength": 500,
+      "routeReadyMs": 3905,
+      "navigationMs": 6561,
       "status": "loaded",
       "mobileLayout": {
         "viewportWidth": 390,
@@ -644,7 +644,7 @@
         "bodyWidth": 390,
         "horizontalOverflow": false,
         "visibleForms": 0,
-        "visibleButtons": 5,
+        "visibleButtons": 6,
         "visibleControls": 1
       },
       "dynamicFormInventory": [
@@ -718,9 +718,9 @@
         },
         {
           "id": "event-tab-pending",
-          "label": "!\nدر انتظار اقدام\n۰",
+          "label": "!\nدر انتظار اقدام\n۱",
           "clickCompleted": true,
-          "visibleContentChanged": false
+          "visibleContentChanged": true
         },
         {
           "id": "event-tab-progress",
@@ -731,8 +731,8 @@
         {
           "id": "event-tab-completed",
           "label": "✓\nتکمیل‌شده\n۰",
-          "clickCompleted": false,
-          "error": "locator.waitFor: Timeout 10000ms exceeded.\nCall log:\n  - waiting for locator('#page-content') to be visible\n"
+          "clickCompleted": true,
+          "visibleContentChanged": true
         }
       ]
     },
@@ -750,6 +750,22 @@
           "index": 0,
           "id": "workflow-create-button",
           "label": "+ ثبت Workflow",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 1,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 2,
+          "id": "",
+          "label": "dynamic-button",
           "type": "button",
           "disabled": false,
           "inForm": false
@@ -823,9 +839,9 @@
         }
       ],
       "visibleControlCount": 2,
-      "visibleTextLength": 225,
-      "routeReadyMs": 3896,
-      "navigationMs": 6551,
+      "visibleTextLength": 385,
+      "routeReadyMs": 3409,
+      "navigationMs": 6064,
       "status": "loaded",
       "mobileLayout": {
         "viewportWidth": 390,
@@ -841,7 +857,7 @@
           "openerId": "workflow-create-button",
           "opened": true,
           "baselineFormCount": 0,
-          "baselineVisibleControls": 2,
+          "baselineVisibleControls": 4,
           "visibleControls": 2,
           "forms": [
             {
@@ -889,70 +905,6 @@
           "index": 0,
           "id": "project-status-create",
           "label": "+ وضعیت جدید",
-          "type": "button",
-          "disabled": false,
-          "inForm": false
-        },
-        {
-          "index": 1,
-          "id": "",
-          "label": "dynamic-button",
-          "type": "button",
-          "disabled": false,
-          "inForm": false
-        },
-        {
-          "index": 2,
-          "id": "",
-          "label": "dynamic-button",
-          "type": "button",
-          "disabled": false,
-          "inForm": false
-        },
-        {
-          "index": 3,
-          "id": "",
-          "label": "dynamic-button",
-          "type": "button",
-          "disabled": false,
-          "inForm": false
-        },
-        {
-          "index": 4,
-          "id": "",
-          "label": "dynamic-button",
-          "type": "button",
-          "disabled": false,
-          "inForm": false
-        },
-        {
-          "index": 5,
-          "id": "",
-          "label": "dynamic-button",
-          "type": "button",
-          "disabled": false,
-          "inForm": false
-        },
-        {
-          "index": 6,
-          "id": "",
-          "label": "dynamic-button",
-          "type": "button",
-          "disabled": false,
-          "inForm": false
-        },
-        {
-          "index": 7,
-          "id": "",
-          "label": "dynamic-button",
-          "type": "button",
-          "disabled": false,
-          "inForm": false
-        },
-        {
-          "index": 8,
-          "id": "",
-          "label": "dynamic-button",
           "type": "button",
           "disabled": false,
           "inForm": false
@@ -1026,9 +978,9 @@
         }
       ],
       "visibleControlCount": 1,
-      "visibleTextLength": 270,
-      "routeReadyMs": 2393,
-      "navigationMs": 5049,
+      "visibleTextLength": 109,
+      "routeReadyMs": 2383,
+      "navigationMs": 5039,
       "status": "loaded",
       "mobileLayout": {
         "viewportWidth": 390,
@@ -1036,7 +988,7 @@
         "bodyWidth": 390,
         "horizontalOverflow": false,
         "visibleForms": 0,
-        "visibleButtons": 9,
+        "visibleButtons": 1,
         "visibleControls": 1
       },
       "dynamicFormInventory": [
@@ -1502,8 +1454,8 @@
       ],
       "visibleControlCount": 1,
       "visibleTextLength": 500,
-      "routeReadyMs": 2885,
-      "navigationMs": 5543,
+      "routeReadyMs": 3408,
+      "navigationMs": 6068,
       "status": "loaded",
       "mobileLayout": {
         "viewportWidth": 390,
@@ -1677,8 +1629,8 @@
       ],
       "visibleControlCount": 0,
       "visibleTextLength": 500,
-      "routeReadyMs": 3873,
-      "navigationMs": 33974,
+      "routeReadyMs": 2890,
+      "navigationMs": 34548,
       "status": "loaded",
       "mobileLayout": {
         "viewportWidth": 390,
@@ -1723,7 +1675,7 @@
                   "disabled": false
                 },
                 {
-                  "id": "pms-date-yd2kbyx-jalali",
+                  "id": "pms-date-gwmoda4-jalali",
                   "name": "",
                   "type": "text",
                   "label": "تاریخ سفارش (اختیاری)\n▦",
@@ -1731,7 +1683,7 @@
                   "disabled": false
                 },
                 {
-                  "id": "pms-date-yd2kbyx",
+                  "id": "pms-date-gwmoda4",
                   "name": "OrderDate",
                   "type": "hidden",
                   "label": "۱۴۰۵/۰۷/۲۷",
@@ -1739,7 +1691,7 @@
                   "disabled": false
                 },
                 {
-                  "id": "pms-date-yma93yj-jalali",
+                  "id": "pms-date-spnlz2s-jalali",
                   "name": "",
                   "type": "text",
                   "label": "تاریخ تحویل مورد انتظار\n▦",
@@ -1747,7 +1699,7 @@
                   "disabled": false
                 },
                 {
-                  "id": "pms-date-yma93yj",
+                  "id": "pms-date-spnlz2s",
                   "name": "ExpectedDeliveryDate",
                   "type": "hidden",
                   "label": "۱۴۰۵/۰۷/۲۷",
@@ -1847,7 +1799,7 @@
                   "disabled": false
                 },
                 {
-                  "id": "pms-date-ci3bxu8-jalali",
+                  "id": "pms-date-w8jrm5e-jalali",
                   "name": "",
                   "type": "text",
                   "label": "تاریخ سفارش (اختیاری)\n▦",
@@ -1855,7 +1807,7 @@
                   "disabled": false
                 },
                 {
-                  "id": "pms-date-ci3bxu8",
+                  "id": "pms-date-w8jrm5e",
                   "name": "OrderDate",
                   "type": "hidden",
                   "label": "۱۴۰۵/۰۷/۲۷",
@@ -1863,7 +1815,7 @@
                   "disabled": false
                 },
                 {
-                  "id": "pms-date-aswuwd6-jalali",
+                  "id": "pms-date-6i7h01n-jalali",
                   "name": "",
                   "type": "text",
                   "label": "تاریخ تحویل مورد انتظار\n▦",
@@ -1871,7 +1823,7 @@
                   "disabled": false
                 },
                 {
-                  "id": "pms-date-aswuwd6",
+                  "id": "pms-date-6i7h01n",
                   "name": "ExpectedDeliveryDate",
                   "type": "hidden",
                   "label": "۱۴۰۵/۰۷/۲۷",
@@ -1971,7 +1923,7 @@
                   "disabled": false
                 },
                 {
-                  "id": "pms-date-6io4wwc-jalali",
+                  "id": "pms-date-lto3ayl-jalali",
                   "name": "",
                   "type": "text",
                   "label": "تاریخ دریافت\n▦",
@@ -1979,7 +1931,7 @@
                   "disabled": false
                 },
                 {
-                  "id": "pms-date-6io4wwc",
+                  "id": "pms-date-lto3ayl",
                   "name": "ReceivedAt",
                   "type": "hidden",
                   "label": "۱۴۰۵/۰۷/۲۷",
@@ -2108,8 +2060,8 @@
       ],
       "visibleControlCount": 2,
       "visibleTextLength": 142,
-      "routeReadyMs": 3369,
-      "navigationMs": 6025,
+      "routeReadyMs": 3398,
+      "navigationMs": 6055,
       "status": "loaded",
       "mobileLayout": {
         "viewportWidth": 390,
@@ -2319,8 +2271,8 @@
       ],
       "visibleControlCount": 12,
       "visibleTextLength": 222,
-      "routeReadyMs": 4395,
-      "navigationMs": 7053,
+      "routeReadyMs": 4927,
+      "navigationMs": 7587,
       "status": "loaded",
       "mobileLayout": {
         "viewportWidth": 390,
@@ -2373,6 +2325,166 @@
           "index": 0,
           "id": "user-create-button",
           "label": "+ ثبت کاربر",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 1,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 2,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 3,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 4,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 5,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 6,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 7,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 8,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 9,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 10,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 11,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 12,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 13,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 14,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 15,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 16,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 17,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 18,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 19,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 20,
+          "id": "",
+          "label": "dynamic-button",
           "type": "button",
           "disabled": false,
           "inForm": false
@@ -2446,9 +2558,9 @@
         }
       ],
       "visibleControlCount": 1,
-      "visibleTextLength": 95,
-      "routeReadyMs": 4876,
-      "navigationMs": 7531,
+      "visibleTextLength": 500,
+      "routeReadyMs": 3418,
+      "navigationMs": 6074,
       "status": "loaded",
       "mobileLayout": {
         "viewportWidth": 390,
@@ -2456,7 +2568,7 @@
         "bodyWidth": 390,
         "horizontalOverflow": false,
         "visibleForms": 0,
-        "visibleButtons": 1,
+        "visibleButtons": 21,
         "visibleControls": 1
       },
       "dynamicFormInventory": [
@@ -2614,8 +2726,8 @@
       ],
       "visibleControlCount": 1,
       "visibleTextLength": 419,
-      "routeReadyMs": 3366,
-      "navigationMs": 6023,
+      "routeReadyMs": 3388,
+      "navigationMs": 6043,
       "status": "loaded",
       "mobileLayout": {
         "viewportWidth": 390,
@@ -2690,19 +2802,462 @@
           "type": "button",
           "disabled": false,
           "inForm": false
+        }
+      ],
+      "linkCount": 0,
+      "navigation": [
+        {
+          "label": "navigation-link",
+          "route": "dashboard"
         },
         {
-          "index": 1,
-          "id": "",
-          "label": "dynamic-button",
+          "label": "navigation-link",
+          "route": "projects"
+        },
+        {
+          "label": "navigation-link",
+          "route": "events"
+        },
+        {
+          "label": "navigation-link",
+          "route": "workflows"
+        },
+        {
+          "label": "navigation-link",
+          "route": "project-statuses"
+        },
+        {
+          "label": "navigation-link",
+          "route": "event-types"
+        },
+        {
+          "label": "navigation-link",
+          "route": "procurement"
+        },
+        {
+          "label": "navigation-link",
+          "route": "attachments"
+        },
+        {
+          "label": "navigation-link",
+          "route": "reports"
+        },
+        {
+          "label": "navigation-link",
+          "route": "users"
+        },
+        {
+          "label": "navigation-link",
+          "route": "departments"
+        },
+        {
+          "label": "navigation-link",
+          "route": "roles"
+        },
+        {
+          "label": "navigation-link",
+          "route": "permissions"
+        },
+        {
+          "label": "navigation-link",
+          "route": "audit"
+        },
+        {
+          "label": "navigation-link",
+          "route": "settings"
+        },
+        {
+          "label": "navigation-link",
+          "route": "admin"
+        }
+      ],
+      "visibleControlCount": 1,
+      "visibleTextLength": 91,
+      "routeReadyMs": 2415,
+      "navigationMs": 5071,
+      "status": "loaded",
+      "mobileLayout": {
+        "viewportWidth": 390,
+        "documentWidth": 390,
+        "bodyWidth": 390,
+        "horizontalOverflow": false,
+        "visibleForms": 0,
+        "visibleButtons": 1,
+        "visibleControls": 1
+      },
+      "dynamicFormInventory": [
+        {
+          "openerId": "role-create-button",
+          "opened": true,
+          "baselineFormCount": 0,
+          "baselineVisibleControls": 1,
+          "visibleControls": 3,
+          "forms": [
+            {
+              "index": 0,
+              "id": "role-form",
+              "name": "",
+              "method": "GET",
+              "fieldCount": 3,
+              "requiredCount": 2,
+              "submitCount": 0,
+              "fields": [
+                {
+                  "id": "role-name",
+                  "name": "Name",
+                  "type": "text",
+                  "label": "نام نقش *",
+                  "required": true,
+                  "disabled": false
+                },
+                {
+                  "id": "role-code",
+                  "name": "Code",
+                  "type": "text",
+                  "label": "کد نقش *",
+                  "required": true,
+                  "disabled": false
+                },
+                {
+                  "id": "role-status",
+                  "name": "Status",
+                  "type": "select-one",
+                  "label": "وضعیت",
+                  "required": false,
+                  "disabled": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "requestedRoute": "permissions",
+      "currentHash": "permissions",
+      "urlChanged": false,
+      "title": "مدیریت تولید",
+      "contentVisible": true,
+      "denied": false,
+      "errorVisible": false,
+      "forms": [],
+      "buttons": [],
+      "linkCount": 0,
+      "navigation": [
+        {
+          "label": "navigation-link",
+          "route": "dashboard"
+        },
+        {
+          "label": "navigation-link",
+          "route": "projects"
+        },
+        {
+          "label": "navigation-link",
+          "route": "events"
+        },
+        {
+          "label": "navigation-link",
+          "route": "workflows"
+        },
+        {
+          "label": "navigation-link",
+          "route": "project-statuses"
+        },
+        {
+          "label": "navigation-link",
+          "route": "event-types"
+        },
+        {
+          "label": "navigation-link",
+          "route": "procurement"
+        },
+        {
+          "label": "navigation-link",
+          "route": "attachments"
+        },
+        {
+          "label": "navigation-link",
+          "route": "reports"
+        },
+        {
+          "label": "navigation-link",
+          "route": "users"
+        },
+        {
+          "label": "navigation-link",
+          "route": "departments"
+        },
+        {
+          "label": "navigation-link",
+          "route": "roles"
+        },
+        {
+          "label": "navigation-link",
+          "route": "permissions"
+        },
+        {
+          "label": "navigation-link",
+          "route": "audit"
+        },
+        {
+          "label": "navigation-link",
+          "route": "settings"
+        },
+        {
+          "label": "navigation-link",
+          "route": "admin"
+        }
+      ],
+      "visibleControlCount": 1,
+      "visibleTextLength": 500,
+      "routeReadyMs": 3917,
+      "navigationMs": 6572,
+      "status": "loaded",
+      "mobileLayout": {
+        "viewportWidth": 390,
+        "documentWidth": 390,
+        "bodyWidth": 390,
+        "horizontalOverflow": false,
+        "visibleForms": 0,
+        "visibleButtons": 0,
+        "visibleControls": 1
+      },
+      "dynamicFormInventory": []
+    },
+    {
+      "requestedRoute": "audit",
+      "currentHash": "audit",
+      "urlChanged": false,
+      "title": "مدیریت تولید",
+      "contentVisible": true,
+      "denied": false,
+      "errorVisible": false,
+      "forms": [],
+      "buttons": [
+        {
+          "index": 0,
+          "id": "audit-refresh",
+          "label": "بروزرسانی",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        }
+      ],
+      "linkCount": 0,
+      "navigation": [
+        {
+          "label": "navigation-link",
+          "route": "dashboard"
+        },
+        {
+          "label": "navigation-link",
+          "route": "projects"
+        },
+        {
+          "label": "navigation-link",
+          "route": "events"
+        },
+        {
+          "label": "navigation-link",
+          "route": "workflows"
+        },
+        {
+          "label": "navigation-link",
+          "route": "project-statuses"
+        },
+        {
+          "label": "navigation-link",
+          "route": "event-types"
+        },
+        {
+          "label": "navigation-link",
+          "route": "procurement"
+        },
+        {
+          "label": "navigation-link",
+          "route": "attachments"
+        },
+        {
+          "label": "navigation-link",
+          "route": "reports"
+        },
+        {
+          "label": "navigation-link",
+          "route": "users"
+        },
+        {
+          "label": "navigation-link",
+          "route": "departments"
+        },
+        {
+          "label": "navigation-link",
+          "route": "roles"
+        },
+        {
+          "label": "navigation-link",
+          "route": "permissions"
+        },
+        {
+          "label": "navigation-link",
+          "route": "audit"
+        },
+        {
+          "label": "navigation-link",
+          "route": "settings"
+        },
+        {
+          "label": "navigation-link",
+          "route": "admin"
+        }
+      ],
+      "visibleControlCount": 1,
+      "visibleTextLength": 500,
+      "routeReadyMs": 3430,
+      "navigationMs": 6087,
+      "status": "loaded",
+      "mobileLayout": {
+        "viewportWidth": 390,
+        "documentWidth": 390,
+        "bodyWidth": 390,
+        "horizontalOverflow": false,
+        "visibleForms": 0,
+        "visibleButtons": 1,
+        "visibleControls": 1
+      },
+      "dynamicFormInventory": [],
+      "safeButtonChecks": [
+        {
+          "id": "audit-refresh",
+          "label": "بروزرسانی",
+          "clickCompleted": true,
+          "visibleContentChanged": false
+        }
+      ]
+    },
+    {
+      "requestedRoute": "settings",
+      "currentHash": "settings",
+      "urlChanged": false,
+      "title": "مدیریت تولید",
+      "contentVisible": true,
+      "denied": false,
+      "errorVisible": false,
+      "forms": [],
+      "buttons": [],
+      "linkCount": 0,
+      "navigation": [
+        {
+          "label": "navigation-link",
+          "route": "dashboard"
+        },
+        {
+          "label": "navigation-link",
+          "route": "projects"
+        },
+        {
+          "label": "navigation-link",
+          "route": "events"
+        },
+        {
+          "label": "navigation-link",
+          "route": "workflows"
+        },
+        {
+          "label": "navigation-link",
+          "route": "project-statuses"
+        },
+        {
+          "label": "navigation-link",
+          "route": "event-types"
+        },
+        {
+          "label": "navigation-link",
+          "route": "procurement"
+        },
+        {
+          "label": "navigation-link",
+          "route": "attachments"
+        },
+        {
+          "label": "navigation-link",
+          "route": "reports"
+        },
+        {
+          "label": "navigation-link",
+          "route": "users"
+        },
+        {
+          "label": "navigation-link",
+          "route": "departments"
+        },
+        {
+          "label": "navigation-link",
+          "route": "roles"
+        },
+        {
+          "label": "navigation-link",
+          "route": "permissions"
+        },
+        {
+          "label": "navigation-link",
+          "route": "audit"
+        },
+        {
+          "label": "navigation-link",
+          "route": "settings"
+        },
+        {
+          "label": "navigation-link",
+          "route": "admin"
+        }
+      ],
+      "visibleControlCount": 2,
+      "visibleTextLength": 194,
+      "routeReadyMs": 3414,
+      "navigationMs": 6068,
+      "status": "loaded",
+      "mobileLayout": {
+        "viewportWidth": 390,
+        "documentWidth": 390,
+        "bodyWidth": 390,
+        "horizontalOverflow": false,
+        "visibleForms": 0,
+        "visibleButtons": 0,
+        "visibleControls": 2
+      },
+      "dynamicFormInventory": []
+    },
+    {
+      "requestedRoute": "admin",
+      "currentHash": "admin",
+      "urlChanged": false,
+      "title": "مدیریت تولید",
+      "contentVisible": true,
+      "denied": false,
+      "errorVisible": false,
+      "forms": [],
+      "buttons": [
+        {
+          "index": 0,
+          "id": "admin-delete-project-preview",
+          "label": "بررسی اطلاعات وابسته",
           "type": "button",
           "disabled": false,
           "inForm": false
         },
         {
+          "index": 1,
+          "id": "admin-delete-project-confirm",
+          "label": "حذف پروژه و اطلاعات وابسته",
+          "type": "button",
+          "disabled": true,
+          "inForm": false
+        },
+        {
           "index": 2,
-          "id": "",
-          "label": "dynamic-button",
+          "id": "admin-sessions-refresh",
+          "label": "به‌روزرسانی",
           "type": "button",
           "disabled": false,
           "inForm": false
@@ -2834,349 +3389,592 @@
           "type": "button",
           "disabled": false,
           "inForm": false
-        }
-      ],
-      "linkCount": 0,
-      "navigation": [
-        {
-          "label": "navigation-link",
-          "route": "dashboard"
         },
         {
-          "label": "navigation-link",
-          "route": "projects"
+          "index": 19,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
         },
         {
-          "label": "navigation-link",
-          "route": "events"
+          "index": 20,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
         },
         {
-          "label": "navigation-link",
-          "route": "workflows"
+          "index": 21,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
         },
         {
-          "label": "navigation-link",
-          "route": "project-statuses"
+          "index": 22,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
         },
         {
-          "label": "navigation-link",
-          "route": "event-types"
+          "index": 23,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
         },
         {
-          "label": "navigation-link",
-          "route": "procurement"
+          "index": 24,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
         },
         {
-          "label": "navigation-link",
-          "route": "attachments"
+          "index": 25,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
         },
         {
-          "label": "navigation-link",
-          "route": "reports"
+          "index": 26,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
         },
         {
-          "label": "navigation-link",
-          "route": "users"
+          "index": 27,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
         },
         {
-          "label": "navigation-link",
-          "route": "departments"
+          "index": 28,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
         },
         {
-          "label": "navigation-link",
-          "route": "roles"
+          "index": 29,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
         },
         {
-          "label": "navigation-link",
-          "route": "permissions"
+          "index": 30,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
         },
         {
-          "label": "navigation-link",
-          "route": "audit"
+          "index": 31,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
         },
         {
-          "label": "navigation-link",
-          "route": "settings"
+          "index": 32,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
         },
         {
-          "label": "navigation-link",
-          "route": "admin"
-        }
-      ],
-      "visibleControlCount": 1,
-      "visibleTextLength": 500,
-      "routeReadyMs": 2381,
-      "navigationMs": 5036,
-      "status": "loaded",
-      "mobileLayout": {
-        "viewportWidth": 390,
-        "documentWidth": 390,
-        "bodyWidth": 390,
-        "horizontalOverflow": false,
-        "visibleForms": 0,
-        "visibleButtons": 19,
-        "visibleControls": 1
-      },
-      "dynamicFormInventory": [
-        {
-          "openerId": "role-create-button",
-          "opened": true,
-          "baselineFormCount": 0,
-          "baselineVisibleControls": 1,
-          "visibleControls": 3,
-          "forms": [
-            {
-              "index": 0,
-              "id": "role-form",
-              "name": "",
-              "method": "GET",
-              "fieldCount": 3,
-              "requiredCount": 2,
-              "submitCount": 0,
-              "fields": [
-                {
-                  "id": "role-name",
-                  "name": "Name",
-                  "type": "text",
-                  "label": "نام نقش *",
-                  "required": true,
-                  "disabled": false
-                },
-                {
-                  "id": "role-code",
-                  "name": "Code",
-                  "type": "text",
-                  "label": "کد نقش *",
-                  "required": true,
-                  "disabled": false
-                },
-                {
-                  "id": "role-status",
-                  "name": "Status",
-                  "type": "select-one",
-                  "label": "وضعیت",
-                  "required": false,
-                  "disabled": false
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "requestedRoute": "permissions",
-      "currentHash": "permissions",
-      "urlChanged": false,
-      "title": "مدیریت تولید",
-      "contentVisible": true,
-      "denied": false,
-      "errorVisible": false,
-      "forms": [],
-      "buttons": [],
-      "linkCount": 0,
-      "navigation": [
-        {
-          "label": "navigation-link",
-          "route": "dashboard"
+          "index": 33,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
         },
         {
-          "label": "navigation-link",
-          "route": "projects"
+          "index": 34,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
         },
         {
-          "label": "navigation-link",
-          "route": "events"
+          "index": 35,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
         },
         {
-          "label": "navigation-link",
-          "route": "workflows"
+          "index": 36,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
         },
         {
-          "label": "navigation-link",
-          "route": "project-statuses"
+          "index": 37,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
         },
         {
-          "label": "navigation-link",
-          "route": "event-types"
+          "index": 38,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
         },
         {
-          "label": "navigation-link",
-          "route": "procurement"
+          "index": 39,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
         },
         {
-          "label": "navigation-link",
-          "route": "attachments"
+          "index": 40,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
         },
         {
-          "label": "navigation-link",
-          "route": "reports"
+          "index": 41,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
         },
         {
-          "label": "navigation-link",
-          "route": "users"
+          "index": 42,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
         },
         {
-          "label": "navigation-link",
-          "route": "departments"
+          "index": 43,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
         },
         {
-          "label": "navigation-link",
-          "route": "roles"
+          "index": 44,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
         },
         {
-          "label": "navigation-link",
-          "route": "permissions"
+          "index": 45,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
         },
         {
-          "label": "navigation-link",
-          "route": "audit"
+          "index": 46,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
         },
         {
-          "label": "navigation-link",
-          "route": "settings"
+          "index": 47,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
         },
         {
-          "label": "navigation-link",
-          "route": "admin"
-        }
-      ],
-      "visibleControlCount": 1,
-      "visibleTextLength": 81,
-      "routeReadyMs": 3887,
-      "navigationMs": 6543,
-      "status": "loaded",
-      "mobileLayout": {
-        "viewportWidth": 390,
-        "documentWidth": 390,
-        "bodyWidth": 390,
-        "horizontalOverflow": false,
-        "visibleForms": 0,
-        "visibleButtons": 0,
-        "visibleControls": 1
-      },
-      "dynamicFormInventory": []
-    },
-    {
-      "requestedRoute": "audit",
-      "currentHash": "audit",
-      "urlChanged": false,
-      "title": "مدیریت تولید",
-      "contentVisible": true,
-      "denied": false,
-      "errorVisible": false,
-      "forms": [],
-      "buttons": [
+          "index": 48,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
         {
-          "index": 0,
-          "id": "audit-refresh",
-          "label": "بروزرسانی",
+          "index": 49,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 50,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 51,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 52,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 53,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 54,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 55,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 56,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 57,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 58,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 59,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 60,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 61,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 62,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 63,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 64,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 65,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 66,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 67,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 68,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 69,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 70,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 71,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 72,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 73,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 74,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 75,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 76,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 77,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 78,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 79,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 80,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 81,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 82,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 83,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 84,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 85,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 86,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 87,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 88,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 89,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 90,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 91,
+          "id": "",
+          "label": "dynamic-button",
           "type": "button",
           "disabled": false,
           "inForm": false
         }
       ],
-      "linkCount": 0,
-      "navigation": [
-        {
-          "label": "navigation-link",
-          "route": "dashboard"
-        },
-        {
-          "label": "navigation-link",
-          "route": "projects"
-        },
-        {
-          "label": "navigation-link",
-          "route": "events"
-        },
-        {
-          "label": "navigation-link",
-          "route": "workflows"
-        },
-        {
-          "label": "navigation-link",
-          "route": "project-statuses"
-        },
-        {
-          "label": "navigation-link",
-          "route": "event-types"
-        },
-        {
-          "label": "navigation-link",
-          "route": "procurement"
-        },
-        {
-          "label": "navigation-link",
-          "route": "attachments"
-        },
-        {
-          "label": "navigation-link",
-          "route": "reports"
-        },
-        {
-          "label": "navigation-link",
-          "route": "users"
-        },
-        {
-          "label": "navigation-link",
-          "route": "departments"
-        },
-        {
-          "label": "navigation-link",
-          "route": "roles"
-        },
-        {
-          "label": "navigation-link",
-          "route": "permissions"
-        },
-        {
-          "label": "navigation-link",
-          "route": "audit"
-        },
-        {
-          "label": "navigation-link",
-          "route": "settings"
-        },
-        {
-          "label": "navigation-link",
-          "route": "admin"
-        }
-      ],
-      "visibleControlCount": 1,
-      "visibleTextLength": 132,
-      "routeReadyMs": 3882,
-      "navigationMs": 6537,
-      "status": "loaded",
-      "mobileLayout": {
-        "viewportWidth": 390,
-        "documentWidth": 390,
-        "bodyWidth": 390,
-        "horizontalOverflow": false,
-        "visibleForms": 0,
-        "visibleButtons": 1,
-        "visibleControls": 1
-      },
-      "dynamicFormInventory": [],
-      "safeButtonChecks": [
-        {
-          "id": "audit-refresh",
-          "label": "بروزرسانی",
-          "clickCompleted": true,
-          "visibleContentChanged": false
-        }
-      ]
-    },
-    {
-      "requestedRoute": "settings",
-      "currentHash": "settings",
-      "urlChanged": false,
-      "title": "مدیریت تولید",
-      "contentVisible": true,
-      "denied": false,
-      "errorVisible": false,
-      "forms": [],
-      "buttons": [],
       "linkCount": 0,
       "navigation": [
         {
@@ -3245,9 +4043,9 @@
         }
       ],
       "visibleControlCount": 2,
-      "visibleTextLength": 194,
-      "routeReadyMs": 3375,
-      "navigationMs": 6028,
+      "visibleTextLength": 500,
+      "routeReadyMs": 4401,
+      "navigationMs": 7066,
       "status": "loaded",
       "mobileLayout": {
         "viewportWidth": 390,
@@ -3255,132 +4053,20 @@
         "bodyWidth": 390,
         "horizontalOverflow": false,
         "visibleForms": 0,
-        "visibleButtons": 0,
+        "visibleButtons": 92,
         "visibleControls": 2
       },
-      "dynamicFormInventory": []
-    },
-    {
-      "requestedRoute": "admin",
-      "currentHash": "admin",
-      "urlChanged": false,
-      "title": "مدیریت تولید",
-      "contentVisible": true,
-      "denied": false,
-      "errorVisible": false,
-      "forms": [],
-      "buttons": [
+      "dynamicFormInventory": [],
+      "safeButtonChecks": [
         {
-          "index": 0,
           "id": "admin-delete-project-preview",
           "label": "بررسی اطلاعات وابسته",
-          "type": "button",
-          "disabled": false,
-          "inForm": false
+          "clickCompleted": true,
+          "visibleContentChanged": true
         },
         {
-          "index": 1,
-          "id": "admin-delete-project-confirm",
-          "label": "حذف پروژه و اطلاعات وابسته",
-          "type": "button",
-          "disabled": true,
-          "inForm": false
-        },
-        {
-          "index": 2,
           "id": "admin-sessions-refresh",
           "label": "به‌روزرسانی",
-          "type": "button",
-          "disabled": true,
-          "inForm": false
-        }
-      ],
-      "linkCount": 0,
-      "navigation": [
-        {
-          "label": "navigation-link",
-          "route": "dashboard"
-        },
-        {
-          "label": "navigation-link",
-          "route": "projects"
-        },
-        {
-          "label": "navigation-link",
-          "route": "events"
-        },
-        {
-          "label": "navigation-link",
-          "route": "workflows"
-        },
-        {
-          "label": "navigation-link",
-          "route": "project-statuses"
-        },
-        {
-          "label": "navigation-link",
-          "route": "event-types"
-        },
-        {
-          "label": "navigation-link",
-          "route": "procurement"
-        },
-        {
-          "label": "navigation-link",
-          "route": "attachments"
-        },
-        {
-          "label": "navigation-link",
-          "route": "reports"
-        },
-        {
-          "label": "navigation-link",
-          "route": "users"
-        },
-        {
-          "label": "navigation-link",
-          "route": "departments"
-        },
-        {
-          "label": "navigation-link",
-          "route": "roles"
-        },
-        {
-          "label": "navigation-link",
-          "route": "permissions"
-        },
-        {
-          "label": "navigation-link",
-          "route": "audit"
-        },
-        {
-          "label": "navigation-link",
-          "route": "settings"
-        },
-        {
-          "label": "navigation-link",
-          "route": "admin"
-        }
-      ],
-      "visibleControlCount": 2,
-      "visibleTextLength": 500,
-      "routeReadyMs": 3370,
-      "navigationMs": 6024,
-      "status": "loaded",
-      "mobileLayout": {
-        "viewportWidth": 390,
-        "documentWidth": 390,
-        "bodyWidth": 390,
-        "horizontalOverflow": false,
-        "visibleForms": 0,
-        "visibleButtons": 3,
-        "visibleControls": 2
-      },
-      "dynamicFormInventory": [],
-      "safeButtonChecks": [
-        {
-          "id": "admin-delete-project-preview",
-          "label": "بررسی اطلاعات وابسته",
           "clickCompleted": true,
           "visibleContentChanged": true
         }
@@ -3392,79 +4078,49 @@
       "path": "/PRSPRO2/pages/login.html",
       "method": "GET",
       "status": 200,
-      "durationMs": 10
+      "durationMs": 13
     },
     {
       "path": "/api/auth/login",
       "method": "POST",
       "status": 302,
-      "durationMs": 2190
+      "durationMs": 3505
     },
     {
       "path": "/macros/echo",
       "method": "GET",
       "status": 200,
-      "durationMs": 267
+      "durationMs": 250
     },
     {
       "path": "/api/auth/me/permissions",
       "method": "GET",
       "status": 302,
-      "durationMs": 2537
+      "durationMs": 2844
     },
     {
       "path": "/macros/echo",
       "method": "GET",
       "status": 200,
-      "durationMs": 269
+      "durationMs": 167
     },
     {
       "path": "/PRSPRO2/pages/dashboard.html",
       "method": "GET",
       "status": 200,
-      "durationMs": 14
+      "durationMs": 22
     },
     {
       "path": "/api/auth/me/permissions",
       "method": "GET",
       "status": 302,
-      "durationMs": 2527
+      "durationMs": 4168
     },
     {
       "path": "/macros/echo",
       "method": "GET",
       "status": 200,
-      "durationMs": 129
-    },
-    {
-      "path": "/PRSPRO2/pages/dashboard.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 4
-    },
-    {
-      "path": "/api/projects",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2375
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 113
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2843
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 165
+      "durationMs": 141
     },
     {
       "path": "/PRSPRO2/pages/dashboard.html",
@@ -3473,850 +4129,112 @@
       "durationMs": 4
     },
     {
-      "path": "/PRSPRO2/pages/projects.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 5
-    },
-    {
       "path": "/api/auth/me/permissions",
       "method": "GET",
       "status": 302,
-      "durationMs": 2385
+      "durationMs": 5606
     },
     {
       "path": "/macros/echo",
       "method": "GET",
       "status": 200,
-      "durationMs": 116
+      "durationMs": 128
     },
     {
-      "path": "/PRSPRO2/pages/projects.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 5
-    },
-    {
-      "path": "/api/project-dashboard/lookups",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2229
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 124
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2564
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 117
-    },
-    {
-      "path": "/PRSPRO2/pages/projects.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 3
-    },
-    {
-      "path": "/PRSPRO2/pages/project-detail.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 4
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2550
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 115
-    },
-    {
-      "path": "/PRSPRO2/pages/project-detail.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 4
-    },
-    {
-      "path": "/PRSPRO2/pages/events.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 0
-    },
-    {
-      "path": "/api/projects",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2653
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 158
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2727
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 118
-    },
-    {
-      "path": "/PRSPRO2/pages/events.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 4
-    },
-    {
-      "path": "/api/projects",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2220
-    },
-    {
-      "path": "/api/event-types",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2363
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 159
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 117
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3344
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 112
-    },
-    {
-      "path": "/PRSPRO2/pages/events.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 3
-    },
-    {
-      "path": "/PRSPRO2/pages/workflows.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 5
-    },
-    {
-      "path": "/api/projects",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2598
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 150
-    },
-    {
-      "path": "/api/workflow-management/bootstrap",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2904
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 117
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2271
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 112
-    },
-    {
-      "path": "/PRSPRO2/pages/workflows.html",
+      "path": "/PRSPRO2/pages/dashboard.html",
       "method": "GET",
       "status": 200,
       "durationMs": 6
     },
     {
-      "path": "/api/workflow-management/bootstrap",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2794
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 105
-    },
-    {
-      "path": "/api/workflows/:id/management-data",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3117
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2084
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 114
-    },
-    {
-      "path": "/PRSPRO2/pages/workflows.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 3
-    },
-    {
-      "path": "/PRSPRO2/pages/project-statuses.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 2
-    },
-    {
-      "path": "/api/project-statuses",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2233
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 115
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2835
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 114
-    },
-    {
-      "path": "/PRSPRO2/pages/project-statuses.html",
+      "path": "/PRSPRO2/pages/projects.html",
       "method": "GET",
       "status": 200,
       "durationMs": 4
     },
     {
-      "path": "/api/project-statuses",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2503
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 111
-    },
-    {
       "path": "/api/auth/me/permissions",
       "method": "GET",
       "status": 302,
-      "durationMs": 2621
+      "durationMs": 2251
     },
     {
       "path": "/macros/echo",
       "method": "GET",
       "status": 200,
-      "durationMs": 178
+      "durationMs": 94
     },
     {
-      "path": "/PRSPRO2/pages/project-statuses.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 3
-    },
-    {
-      "path": "/PRSPRO2/pages/event-types.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 2
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3173
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 110
-    },
-    {
-      "path": "/PRSPRO2/pages/event-types.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 3
-    },
-    {
-      "path": "/api/event-types",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2665
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 148
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3288
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 136
-    },
-    {
-      "path": "/PRSPRO2/pages/event-types.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 3
-    },
-    {
-      "path": "/PRSPRO2/pages/procurement.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 4
-    },
-    {
-      "path": "/api/event-types",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2573
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 108
-    },
-    {
-      "path": "/api/projects",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3190
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 119
-    },
-    {
-      "path": "/api/procurement/workspace",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 6338
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 109
-    },
-    {
-      "path": "/api/procurement/workspace",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 8164
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 117
-    },
-    {
-      "path": "/api/procurement/dashboard",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 4869
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 117
-    },
-    {
-      "path": "/api/procurement/needs",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 4200
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 209
-    },
-    {
-      "path": "/api/procurement/orders",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 4487
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 113
-    },
-    {
-      "path": "/api/procurement/reports",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 4727
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 110
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2402
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 191
-    },
-    {
-      "path": "/PRSPRO2/pages/procurement.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 5
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3788
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 132
-    },
-    {
-      "path": "/PRSPRO2/pages/procurement.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 4
-    },
-    {
-      "path": "/api/projects",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2852
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 108
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2360
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 110
-    },
-    {
-      "path": "/PRSPRO2/pages/procurement.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 3
-    },
-    {
-      "path": "/api/projects",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2517
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 108
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3119
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 116
-    },
-    {
-      "path": "/PRSPRO2/pages/procurement.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 4
-    },
-    {
-      "path": "/PRSPRO2/pages/attachments.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 1
-    },
-    {
-      "path": "/api/projects",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2006
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 111
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3016
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 218
-    },
-    {
-      "path": "/PRSPRO2/pages/attachments.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 3
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3870
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 116
-    },
-    {
-      "path": "/PRSPRO2/pages/attachments.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 4
-    },
-    {
-      "path": "/PRSPRO2/pages/reports.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 4
-    },
-    {
-      "path": "/api/attachments",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2391
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 115
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 4552
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 158
-    },
-    {
-      "path": "/PRSPRO2/pages/reports.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 3
-    },
-    {
-      "path": "/PRSPRO2/pages/users.html",
+      "path": "/PRSPRO2/pages/projects.html",
       "method": "GET",
       "status": 200,
       "durationMs": 7
     },
     {
-      "path": "/api/departments",
+      "path": "/api/auth/me/permissions",
       "method": "GET",
       "status": 302,
-      "durationMs": 2058
+      "durationMs": 3413
     },
     {
       "path": "/macros/echo",
       "method": "GET",
       "status": 200,
-      "durationMs": 105
+      "durationMs": 142
+    },
+    {
+      "path": "/PRSPRO2/pages/projects.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 5
+    },
+    {
+      "path": "/PRSPRO2/pages/project-detail.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2
+    },
+    {
+      "path": "/api/projects",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2052
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 102
     },
     {
       "path": "/api/auth/me/permissions",
       "method": "GET",
       "status": 302,
-      "durationMs": 4753
+      "durationMs": 3312
     },
     {
       "path": "/macros/echo",
       "method": "GET",
       "status": 200,
-      "durationMs": 120
+      "durationMs": 99
     },
     {
-      "path": "/PRSPRO2/pages/users.html",
+      "path": "/PRSPRO2/pages/project-detail.html",
       "method": "GET",
       "status": 200,
-      "durationMs": 6
+      "durationMs": 5
     },
     {
-      "path": "/api/departments",
+      "path": "/PRSPRO2/pages/events.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2
+    },
+    {
+      "path": "/api/projects",
       "method": "GET",
       "status": 302,
-      "durationMs": 3125
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 119
-    },
-    {
-      "path": "/api/users",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3484
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 105
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2917
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 116
-    },
-    {
-      "path": "/PRSPRO2/pages/users.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 3
-    },
-    {
-      "path": "/PRSPRO2/pages/departments.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 9
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 1941
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 114
-    },
-    {
-      "path": "/PRSPRO2/pages/departments.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 4
-    },
-    {
-      "path": "/api/departments",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2206
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 157
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 1988
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 109
-    },
-    {
-      "path": "/PRSPRO2/pages/departments.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 3
-    },
-    {
-      "path": "/PRSPRO2/pages/roles.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 3
-    },
-    {
-      "path": "/api/roles",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2224
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 106
-    },
-    {
-      "path": "/api/departments",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2386
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 159
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3839
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 131
-    },
-    {
-      "path": "/PRSPRO2/pages/roles.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 4
-    },
-    {
-      "path": "/api/roles",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2340
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 110
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3427
+      "durationMs": 2017
     },
     {
       "path": "/macros/echo",
@@ -4325,106 +4243,82 @@
       "durationMs": 118
     },
     {
-      "path": "/PRSPRO2/pages/roles.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 3
-    },
-    {
-      "path": "/PRSPRO2/pages/permissions.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 3
-    },
-    {
-      "path": "/api/roles",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2154
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 110
-    },
-    {
       "path": "/api/auth/me/permissions",
       "method": "GET",
       "status": 302,
-      "durationMs": 3683
+      "durationMs": 3501
     },
     {
       "path": "/macros/echo",
       "method": "GET",
       "status": 200,
-      "durationMs": 107
+      "durationMs": 94
     },
     {
-      "path": "/PRSPRO2/pages/permissions.html",
+      "path": "/PRSPRO2/pages/events.html",
       "method": "GET",
       "status": 200,
       "durationMs": 4
     },
     {
-      "path": "/PRSPRO2/pages/audit.html",
+      "path": "/api/projects",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2501
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 80
+    },
+    {
+      "path": "/api/event-types",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3027
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2797
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 96
+    },
+    {
+      "path": "/PRSPRO2/pages/events.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 7
+    },
+    {
+      "path": "/PRSPRO2/pages/workflows.html",
       "method": "GET",
       "status": 200,
       "durationMs": 5
     },
     {
-      "path": "/api/auth/me/permissions",
+      "path": "/api/projects",
       "method": "GET",
       "status": 302,
-      "durationMs": 2796
+      "durationMs": 2423
     },
     {
       "path": "/macros/echo",
       "method": "GET",
       "status": 200,
-      "durationMs": 111
+      "durationMs": 70
     },
     {
-      "path": "/PRSPRO2/pages/audit.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 4
-    },
-    {
-      "path": "/PRSPRO2/pages/settings.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 5
-    },
-    {
-      "path": "/api/auth/me/permissions",
+      "path": "/api/workflow-management/bootstrap",
       "method": "GET",
       "status": 302,
-      "durationMs": 2836
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 124
-    },
-    {
-      "path": "/PRSPRO2/pages/settings.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 4
-    },
-    {
-      "path": "/PRSPRO2/pages/admin.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 1
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3574
+      "durationMs": 2763
     },
     {
       "path": "/macros/echo",
@@ -4433,28 +4327,88 @@
       "durationMs": 125
     },
     {
-      "path": "/PRSPRO2/pages/admin.html",
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 1845
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 124
+    },
+    {
+      "path": "/PRSPRO2/pages/workflows.html",
       "method": "GET",
       "status": 200,
       "durationMs": 4
     },
     {
-      "path": "/PRSPRO2/pages/dashboard.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 3
-    },
-    {
-      "path": "/PRSPRO2/pages/dashboard.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 9
-    },
-    {
-      "path": "/api/projects",
+      "path": "/api/workflows/:id/management-data",
       "method": "GET",
       "status": 302,
-      "durationMs": 3155
+      "durationMs": 2464
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 104
+    },
+    {
+      "path": "/api/workflow-management/bootstrap",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2921
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 115
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2030
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 111
+    },
+    {
+      "path": "/PRSPRO2/pages/workflows.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/PRSPRO2/pages/project-statuses.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1
+    },
+    {
+      "path": "/api/workflow-management/bootstrap",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2211
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 97
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3327
     },
     {
       "path": "/macros/echo",
@@ -4463,22 +4417,586 @@
       "durationMs": 116
     },
     {
-      "path": "/api/admin/sessions",
+      "path": "/PRSPRO2/pages/project-statuses.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/api/auth/me/permissions",
       "method": "GET",
       "status": 302,
-      "durationMs": 3694
+      "durationMs": 2916
     },
     {
       "path": "/macros/echo",
       "method": "GET",
       "status": 200,
-      "durationMs": 126
+      "durationMs": 68
     },
     {
-      "path": "/api/project-dashboard/lookups",
+      "path": "/PRSPRO2/pages/project-statuses.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/PRSPRO2/pages/event-types.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 6
+    },
+    {
+      "path": "/api/event-types",
       "method": "GET",
       "status": 302,
-      "durationMs": 3885
+      "durationMs": 2412
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 72
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2305
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 80
+    },
+    {
+      "path": "/PRSPRO2/pages/event-types.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 5
+    },
+    {
+      "path": "/api/event-types",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3876
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 94
+    },
+    {
+      "path": "/api/users",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 1755
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 100
+    },
+    {
+      "path": "/api/departments",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2182
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 104
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2288
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 112
+    },
+    {
+      "path": "/PRSPRO2/pages/event-types.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 5
+    },
+    {
+      "path": "/PRSPRO2/pages/procurement.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 11
+    },
+    {
+      "path": "/api/projects",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2734
+    },
+    {
+      "path": "/api/event-types",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2764
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 96
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 190
+    },
+    {
+      "path": "/api/procurement/workspace",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 6876
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 117
+    },
+    {
+      "path": "/api/procurement/workspace",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 10144
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 110
+    },
+    {
+      "path": "/api/procurement/dashboard",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 4917
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 112
+    },
+    {
+      "path": "/api/procurement/needs",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 4175
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 101
+    },
+    {
+      "path": "/api/procurement/orders",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3800
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 103
+    },
+    {
+      "path": "/api/procurement/reports",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 5395
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 113
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3074
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 117
+    },
+    {
+      "path": "/PRSPRO2/pages/procurement.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 5
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2698
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 118
+    },
+    {
+      "path": "/PRSPRO2/pages/procurement.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 7
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3665
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 534
+    },
+    {
+      "path": "/PRSPRO2/pages/procurement.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/api/projects",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2424
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 64
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2753
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 105
+    },
+    {
+      "path": "/PRSPRO2/pages/procurement.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 7
+    },
+    {
+      "path": "/PRSPRO2/pages/attachments.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 0
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2687
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 72
+    },
+    {
+      "path": "/PRSPRO2/pages/attachments.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/api/attachments",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2739
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 4586
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 121
+    },
+    {
+      "path": "/PRSPRO2/pages/attachments.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 5
+    },
+    {
+      "path": "/PRSPRO2/pages/reports.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 6
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2894
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 98
+    },
+    {
+      "path": "/PRSPRO2/pages/reports.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/PRSPRO2/pages/users.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/api/users",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2323
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 99
+    },
+    {
+      "path": "/api/reports/projects",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2592
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 82
+    },
+    {
+      "path": "/api/departments",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2695
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 93
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 4364
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 92
+    },
+    {
+      "path": "/PRSPRO2/pages/users.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 7
+    },
+    {
+      "path": "/api/users",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2073
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 92
+    },
+    {
+      "path": "/api/departments",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2362
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 98
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2969
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 97
+    },
+    {
+      "path": "/PRSPRO2/pages/users.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/PRSPRO2/pages/departments.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 7
+    },
+    {
+      "path": "/api/users",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 1922
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 104
+    },
+    {
+      "path": "/api/departments",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2259
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 109
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2789
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 112
+    },
+    {
+      "path": "/PRSPRO2/pages/departments.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 5
+    },
+    {
+      "path": "/api/departments",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3048
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 92
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 1931
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 133
+    },
+    {
+      "path": "/PRSPRO2/pages/departments.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/PRSPRO2/pages/roles.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2692
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 108
+    },
+    {
+      "path": "/PRSPRO2/pages/roles.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 5
+    },
+    {
+      "path": "/api/roles",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2091
     },
     {
       "path": "/macros/echo",
@@ -4490,37 +5008,775 @@
       "path": "/api/auth/me/permissions",
       "method": "GET",
       "status": 302,
-      "durationMs": 2498
+      "durationMs": 3240
     },
     {
       "path": "/macros/echo",
       "method": "GET",
       "status": 200,
-      "durationMs": 175
+      "durationMs": 98
     },
     {
-      "path": "/PRSPRO2/pages/dashboard.html",
+      "path": "/PRSPRO2/pages/roles.html",
       "method": "GET",
       "status": 200,
-      "durationMs": 3
+      "durationMs": 4
     },
     {
-      "path": "/PRSPRO2/pages/dashboard.html",
+      "path": "/PRSPRO2/pages/permissions.html",
       "method": "GET",
       "status": 200,
-      "durationMs": 3
+      "durationMs": 4
     },
     {
-      "path": "/api/project-dashboard/lookups",
+      "path": "/api/permissions",
       "method": "GET",
       "status": 302,
-      "durationMs": 2410
+      "durationMs": 2896
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 119
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2909
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 72
+    },
+    {
+      "path": "/PRSPRO2/pages/permissions.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3
+    },
+    {
+      "path": "/PRSPRO2/pages/audit.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 10
+    },
+    {
+      "path": "/api/audit",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2282
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 113
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3095
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 95
+    },
+    {
+      "path": "/PRSPRO2/pages/audit.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 5
+    },
+    {
+      "path": "/PRSPRO2/pages/settings.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 4014
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 126
+    },
+    {
+      "path": "/PRSPRO2/pages/settings.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/PRSPRO2/pages/admin.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3
+    },
+    {
+      "path": "/api/admin/sessions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2549
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 99
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3070
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 110
+    },
+    {
+      "path": "/PRSPRO2/pages/admin.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 6
+    },
+    {
+      "path": "/PRSPRO2/pages/dashboard.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/PRSPRO2/pages/dashboard.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 16
     },
     {
       "path": "/api/projects",
       "method": "GET",
       "status": 302,
-      "durationMs": 2477
+      "durationMs": 1913
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 114
+    },
+    {
+      "path": "/api/project-dashboard/lookups",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2861
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 106
+    },
+    {
+      "path": "/api/admin/sessions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3322
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 106
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3018
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 102
+    },
+    {
+      "path": "/PRSPRO2/pages/dashboard.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/PRSPRO2/pages/dashboard.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3
+    },
+    {
+      "path": "/api/projects",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2630
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 96
+    },
+    {
+      "path": "/api/project-dashboard/lookups",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 4043
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 89
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 4211
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 79
+    },
+    {
+      "path": "/PRSPRO2/pages/dashboard.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 5
+    },
+    {
+      "path": "/PRSPRO2/pages/dashboard.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3
+    },
+    {
+      "path": "/api/projects",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3044
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 131
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 4686
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 126
+    },
+    {
+      "path": "/PRSPRO2/pages/dashboard.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/PRSPRO2/pages/dashboard.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/api/projects",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2784
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 71
+    },
+    {
+      "path": "/api/project-dashboard/lookups",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 4944
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 106
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2325
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 108
+    },
+    {
+      "path": "/PRSPRO2/pages/dashboard.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/PRSPRO2/pages/projects.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3
+    },
+    {
+      "path": "/PRSPRO2/pages/projects.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 16
+    },
+    {
+      "path": "/api/projects",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2071
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 105
+    },
+    {
+      "path": "/api/project-card-images",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 1981
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 120
+    },
+    {
+      "path": "/api/workflows/:id/steps",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2347
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 110
+    },
+    {
+      "path": "/api/project-dashboard/lookups",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3240
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 115
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3422
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 113
+    },
+    {
+      "path": "/PRSPRO2/pages/projects.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 8
+    },
+    {
+      "path": "/PRSPRO2/pages/project-detail.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/PRSPRO2/pages/project-detail.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 0
+    },
+    {
+      "path": "/api/projects",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2932
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 84
+    },
+    {
+      "path": "/api/project-dashboard/lookups",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3184
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 84
+    },
+    {
+      "path": "/api/workflows/:id/steps",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3944
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 100
+    },
+    {
+      "path": "/api/attachments/:id/download",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 4212
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 160
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3364
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 114
+    },
+    {
+      "path": "/PRSPRO2/pages/project-detail.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 5
+    },
+    {
+      "path": "/PRSPRO2/pages/events.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/PRSPRO2/pages/events.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 20
+    },
+    {
+      "path": "/api/projects",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2638
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 70
+    },
+    {
+      "path": "/api/event-types",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 4474
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 103
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3417
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 108
+    },
+    {
+      "path": "/PRSPRO2/pages/events.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 7
+    },
+    {
+      "path": "/PRSPRO2/pages/events.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/api/event-types",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2888
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 103
+    },
+    {
+      "path": "/api/projects",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3317
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 96
+    },
+    {
+      "path": "/api/events",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 4594
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 104
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 4523
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 128
+    },
+    {
+      "path": "/PRSPRO2/pages/events.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/PRSPRO2/pages/events.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3
+    },
+    {
+      "path": "/api/projects",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3184
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 224
+    },
+    {
+      "path": "/api/events",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3617
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 122
+    },
+    {
+      "path": "/api/event-types",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3777
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 152
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3795
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 94
+    },
+    {
+      "path": "/PRSPRO2/pages/events.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/PRSPRO2/pages/events.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3
+    },
+    {
+      "path": "/api/event-types",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2835
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 102
+    },
+    {
+      "path": "/api/events",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3241
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 145
+    },
+    {
+      "path": "/api/projects",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3496
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 120
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3044
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 102
+    },
+    {
+      "path": "/PRSPRO2/pages/events.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 7
+    },
+    {
+      "path": "/PRSPRO2/pages/project-statuses.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3
+    },
+    {
+      "path": "/PRSPRO2/pages/project-statuses.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 0
+    },
+    {
+      "path": "/api/projects",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2407
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 114
+    },
+    {
+      "path": "/api/event-types",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3029
+    },
+    {
+      "path": "/api/events",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3050
     },
     {
       "path": "/macros/echo",
@@ -4532,37 +5788,79 @@
       "path": "/macros/echo",
       "method": "GET",
       "status": 200,
-      "durationMs": 128
+      "durationMs": 98
     },
     {
-      "path": "/api/auth/me/permissions",
+      "path": "/api/project-statuses",
       "method": "GET",
       "status": 302,
-      "durationMs": 1964
+      "durationMs": 3040
     },
     {
       "path": "/macros/echo",
       "method": "GET",
       "status": 200,
-      "durationMs": 107
+      "durationMs": 102
     },
     {
-      "path": "/PRSPRO2/pages/dashboard.html",
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2073
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 106
+    },
+    {
+      "path": "/PRSPRO2/pages/project-statuses.html",
       "method": "GET",
       "status": 200,
       "durationMs": 3
     },
     {
-      "path": "/PRSPRO2/pages/dashboard.html",
+      "path": "/PRSPRO2/pages/procurement.html",
       "method": "GET",
       "status": 200,
-      "durationMs": 3
+      "durationMs": 5
+    },
+    {
+      "path": "/PRSPRO2/pages/procurement.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 10
+    },
+    {
+      "path": "/api/project-statuses",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2413
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 102
     },
     {
       "path": "/api/projects",
       "method": "GET",
       "status": 302,
-      "durationMs": 2928
+      "durationMs": 3234
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 102
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3327
     },
     {
       "path": "/macros/echo",
@@ -4571,37 +5869,13 @@
       "durationMs": 114
     },
     {
-      "path": "/api/project-dashboard/lookups",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 4523
-    },
-    {
-      "path": "/macros/echo",
+      "path": "/PRSPRO2/pages/procurement.html",
       "method": "GET",
       "status": 200,
-      "durationMs": 231
+      "durationMs": 5
     },
     {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 1975
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 105
-    },
-    {
-      "path": "/PRSPRO2/pages/dashboard.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 4
-    },
-    {
-      "path": "/PRSPRO2/pages/dashboard.html",
+      "path": "/PRSPRO2/pages/procurement.html",
       "method": "GET",
       "status": 200,
       "durationMs": 3
@@ -4610,31 +5884,259 @@
       "path": "/api/projects",
       "method": "GET",
       "status": 302,
-      "durationMs": 3892
+      "durationMs": 2650
     },
     {
       "path": "/macros/echo",
       "method": "GET",
       "status": 200,
-      "durationMs": 108
+      "durationMs": 93
     },
     {
-      "path": "/api/project-dashboard/lookups",
+      "path": "/api/procurement/workspace",
       "method": "GET",
       "status": 302,
-      "durationMs": 4473
+      "durationMs": 4661
     },
     {
       "path": "/macros/echo",
       "method": "GET",
       "status": 200,
-      "durationMs": 172
+      "durationMs": 98
     },
     {
       "path": "/api/auth/me/permissions",
       "method": "GET",
       "status": 302,
-      "durationMs": 1681
+      "durationMs": 3967
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 95
+    },
+    {
+      "path": "/PRSPRO2/pages/procurement.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/PRSPRO2/pages/procurement.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3
+    },
+    {
+      "path": "/api/projects",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2792
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 102
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 4396
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 104
+    },
+    {
+      "path": "/PRSPRO2/pages/procurement.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 5
+    },
+    {
+      "path": "/PRSPRO2/pages/reports.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2
+    },
+    {
+      "path": "/PRSPRO2/pages/reports.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 15
+    },
+    {
+      "path": "/api/projects",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3457
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 102
+    },
+    {
+      "path": "/api/reports/projects",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3536
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 80
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2791
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 106
+    },
+    {
+      "path": "/PRSPRO2/pages/reports.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 5
+    },
+    {
+      "path": "/PRSPRO2/pages/reports.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3
+    },
+    {
+      "path": "/api/reports/projects",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3098
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 97
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3034
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 105
+    },
+    {
+      "path": "/PRSPRO2/pages/reports.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 7
+    },
+    {
+      "path": "/PRSPRO2/pages/reports.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3
+    },
+    {
+      "path": "/api/reports/projects",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3855
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 98
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3088
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 105
+    },
+    {
+      "path": "/PRSPRO2/pages/reports.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/PRSPRO2/pages/reports.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/api/reports/projects",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3135
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 68
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2131
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 104
+    },
+    {
+      "path": "/PRSPRO2/pages/reports.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 5
+    },
+    {
+      "path": "/PRSPRO2/pages/audit.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 6
+    },
+    {
+      "path": "/PRSPRO2/pages/audit.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 14
+    },
+    {
+      "path": "/api/audit",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2050
     },
     {
       "path": "/macros/echo",
@@ -4643,40 +6145,76 @@
       "durationMs": 112
     },
     {
-      "path": "/PRSPRO2/pages/dashboard.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 5
-    },
-    {
-      "path": "/PRSPRO2/pages/projects.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 8
-    },
-    {
-      "path": "/PRSPRO2/pages/projects.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 7
-    },
-    {
-      "path": "/api/workflows/:id/steps",
+      "path": "/api/reports/projects",
       "method": "GET",
       "status": 302,
-      "durationMs": 2406
+      "durationMs": 2719
     },
     {
       "path": "/macros/echo",
       "method": "GET",
       "status": 200,
-      "durationMs": 145
+      "durationMs": 102
     },
     {
-      "path": "/api/project-card-images",
+      "path": "/api/auth/me/permissions",
       "method": "GET",
       "status": 302,
-      "durationMs": 2656
+      "durationMs": 3448
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 158
+    },
+    {
+      "path": "/PRSPRO2/pages/audit.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 5
+    },
+    {
+      "path": "/PRSPRO2/pages/admin.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3
+    },
+    {
+      "path": "/PRSPRO2/pages/admin.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/api/projects",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2204
+    },
+    {
+      "path": "/api/audit",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2420
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 96
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 119
+    },
+    {
+      "path": "/api/admin/sessions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3861
     },
     {
       "path": "/macros/echo",
@@ -4685,220 +6223,10 @@
       "durationMs": 122
     },
     {
-      "path": "/api/projects",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3609
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 109
-    },
-    {
-      "path": "/api/project-dashboard/lookups",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 4642
-    },
-    {
       "path": "/api/auth/me/permissions",
       "method": "GET",
       "status": 302,
-      "durationMs": 4094
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 106
-    },
-    {
-      "path": "/PRSPRO2/pages/projects.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 6
-    },
-    {
-      "path": "/PRSPRO2/pages/project-detail.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 2
-    },
-    {
-      "path": "/PRSPRO2/pages/project-detail.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 2
-    },
-    {
-      "path": "/api/projects",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 1985
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 108
-    },
-    {
-      "path": "/api/workflows/:id/steps",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2446
-    },
-    {
-      "path": "/api/project-dashboard/lookups",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2520
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 170
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 106
-    },
-    {
-      "path": "/api/attachments/:id/download",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3807
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 188
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2668
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 113
-    },
-    {
-      "path": "/PRSPRO2/pages/project-detail.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 4
-    },
-    {
-      "path": "/PRSPRO2/pages/events.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 4
-    },
-    {
-      "path": "/PRSPRO2/pages/events.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 9
-    },
-    {
-      "path": "/api/events",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3065
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 112
-    },
-    {
-      "path": "/api/event-types",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3268
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 139
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3841
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 116
-    },
-    {
-      "path": "/PRSPRO2/pages/events.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 4
-    },
-    {
-      "path": "/PRSPRO2/pages/events.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 2
-    },
-    {
-      "path": "/api/events",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2535
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 111
-    },
-    {
-      "path": "/api/event-types",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2823
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 124
-    },
-    {
-      "path": "/api/projects",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 4233
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 150
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2458
+      "durationMs": 2326
     },
     {
       "path": "/macros/echo",
@@ -4907,211 +6235,13 @@
       "durationMs": 120
     },
     {
-      "path": "/PRSPRO2/pages/events.html",
+      "path": "/PRSPRO2/pages/admin.html",
       "method": "GET",
       "status": 200,
-      "durationMs": 4
+      "durationMs": 5
     },
     {
-      "path": "/PRSPRO2/pages/events.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 3
-    },
-    {
-      "path": "/api/events",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2612
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 106
-    },
-    {
-      "path": "/api/projects",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3009
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 106
-    },
-    {
-      "path": "/api/event-types",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3163
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 111
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3481
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 200
-    },
-    {
-      "path": "/PRSPRO2/pages/events.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 6
-    },
-    {
-      "path": "/PRSPRO2/pages/project-statuses.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 3
-    },
-    {
-      "path": "/PRSPRO2/pages/project-statuses.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 3
-    },
-    {
-      "path": "/api/event-types",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2009
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 184
-    },
-    {
-      "path": "/api/project-statuses",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2492
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 111
-    },
-    {
-      "path": "/api/projects",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3089
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 110
-    },
-    {
-      "path": "/api/events",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 4697
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2842
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 109
-    },
-    {
-      "path": "/PRSPRO2/pages/project-statuses.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 8
-    },
-    {
-      "path": "/PRSPRO2/pages/procurement.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 4
-    },
-    {
-      "path": "/PRSPRO2/pages/procurement.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 0
-    },
-    {
-      "path": "/api/project-statuses",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2118
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 116
-    },
-    {
-      "path": "/api/projects",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2971
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 108
-    },
-    {
-      "path": "/api/procurement/workspace",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3660
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 118
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2977
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 108
-    },
-    {
-      "path": "/PRSPRO2/pages/procurement.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 4
-    },
-    {
-      "path": "/PRSPRO2/pages/procurement.html",
+      "path": "/PRSPRO2/pages/admin.html",
       "method": "GET",
       "status": 200,
       "durationMs": 2
@@ -5120,319 +6250,25 @@
       "path": "/api/projects",
       "method": "GET",
       "status": 302,
-      "durationMs": 2490
+      "durationMs": 3349
     },
     {
       "path": "/macros/echo",
       "method": "GET",
       "status": 200,
-      "durationMs": 108
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2750
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 107
-    },
-    {
-      "path": "/PRSPRO2/pages/procurement.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 4
-    },
-    {
-      "path": "/PRSPRO2/pages/procurement.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 3
-    },
-    {
-      "path": "/api/projects",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3615
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 136
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3562
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 120
-    },
-    {
-      "path": "/PRSPRO2/pages/procurement.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 3
-    },
-    {
-      "path": "/PRSPRO2/pages/reports.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 3
-    },
-    {
-      "path": "/PRSPRO2/pages/reports.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 10
-    },
-    {
-      "path": "/api/reports/projects",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3076
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 111
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2683
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 116
-    },
-    {
-      "path": "/PRSPRO2/pages/reports.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 7
-    },
-    {
-      "path": "/PRSPRO2/pages/reports.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 7
-    },
-    {
-      "path": "/api/reports/projects",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2197
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 110
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3702
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 116
-    },
-    {
-      "path": "/PRSPRO2/pages/reports.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 4
-    },
-    {
-      "path": "/PRSPRO2/pages/reports.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 3
-    },
-    {
-      "path": "/api/reports/projects",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3969
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 108
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2856
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 121
-    },
-    {
-      "path": "/PRSPRO2/pages/reports.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 3
-    },
-    {
-      "path": "/PRSPRO2/pages/reports.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 3
-    },
-    {
-      "path": "/api/reports/projects",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3363
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 111
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2283
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 155
-    },
-    {
-      "path": "/PRSPRO2/pages/reports.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 3
-    },
-    {
-      "path": "/PRSPRO2/pages/audit.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 3
-    },
-    {
-      "path": "/PRSPRO2/pages/audit.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 3
-    },
-    {
-      "path": "/api/audit",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3035
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 118
-    },
-    {
-      "path": "/api/reports/projects",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 4294
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 105
-    },
-    {
-      "path": "/api/auth/me/permissions",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 3146
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 108
-    },
-    {
-      "path": "/PRSPRO2/pages/audit.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 3
-    },
-    {
-      "path": "/PRSPRO2/pages/admin.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 3
-    },
-    {
-      "path": "/PRSPRO2/pages/admin.html",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 1
-    },
-    {
-      "path": "/api/projects",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2296
-    },
-    {
-      "path": "/api/audit",
-      "method": "GET",
-      "status": 302,
-      "durationMs": 2452
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 114
-    },
-    {
-      "path": "/macros/echo",
-      "method": "GET",
-      "status": 200,
-      "durationMs": 114
+      "durationMs": 104
     },
     {
       "path": "/api/admin/sessions",
       "method": "GET",
       "status": 302,
-      "durationMs": 3738
+      "durationMs": 4755
     },
     {
       "path": "/macros/echo",
       "method": "GET",
       "status": 200,
-      "durationMs": 123
+      "durationMs": 118
     }
   ],
   "consoleErrors": [],
@@ -5440,13 +6276,13 @@
   "coverageGaps": [],
   "overallStatus": "needs-attention",
   "login": {
-    "loginFormReadyMs": 130,
-    "loginAttemptMs": 5335,
+    "loginFormReadyMs": 178,
+    "loginAttemptMs": 6851,
     "authenticated": true,
     "errorMessage": ""
   },
   "procurementDiagnostics": {
-    "measuredAt": "2026-10-28T18:19:46.819Z",
+    "measuredAt": "2026-10-28T18:38:50.565Z",
     "headers": [
       "مسیر",
       "زمان مرورگر",
@@ -5456,33 +6292,33 @@
     "endpoints": [
       {
         "endpoint": "/procurement/reports",
-        "browserMs": "4838 ms",
-        "backendMs": "3341 ms",
-        "details": "دسترسی 914 / روتر 2426 / Sheets: getAll:578ms×1, getAll:518ms×1, getHeaders:437ms×1"
+        "browserMs": "5509 ms",
+        "backendMs": "4069 ms",
+        "details": "دسترسی 1214 / روتر 2855 / Sheets: getAll:599ms×1, findById:485ms×1, getAll:344ms×1"
       },
       {
         "endpoint": "/procurement/orders",
-        "browserMs": "4601 ms",
-        "backendMs": "3316 ms",
-        "details": "دسترسی 1935 / روتر 1381 / Sheets: findById:1019ms×1, getAll:381ms×1, getSheet:318ms×2"
+        "browserMs": "3903 ms",
+        "backendMs": "2504 ms",
+        "details": "دسترسی 1028 / روتر 1476 / Sheets: findById:375ms×1, findById:236ms×1, findById:215ms×2"
       },
       {
         "endpoint": "/procurement/needs",
-        "browserMs": "4409 ms",
-        "backendMs": "2903 ms",
-        "details": "دسترسی 1567 / روتر 1335 / Sheets: findById:847ms×1, getHeaders:767ms×1, findById:340ms×1"
+        "browserMs": "4276 ms",
+        "backendMs": "3214 ms",
+        "details": "دسترسی 1290 / روتر 1924 / Sheets: getAll:602ms×1, getHeaders:536ms×1, getAll:413ms×1"
       },
       {
         "endpoint": "/procurement/dashboard",
-        "browserMs": "4985 ms",
-        "backendMs": "3735 ms",
-        "details": "دسترسی 1877 / روتر 1857 / Sheets: findById:893ms×1, getAll:690ms×1, getHeaders:637ms×1"
+        "browserMs": "5030 ms",
+        "backendMs": "3653 ms",
+        "details": "دسترسی 1406 / روتر 2247 / Sheets: getAll:615ms×1, getAll:581ms×1, findById:363ms×1"
       },
       {
         "endpoint": "/procurement/workspace",
-        "browserMs": "8281 ms",
-        "backendMs": "3998 ms",
-        "details": "دسترسی 1500 / روتر 2498 / Sheets: getAll:953ms×1, findById:560ms×1, getHeaders:483ms×1"
+        "browserMs": "10256 ms",
+        "backendMs": "5133 ms",
+        "details": "دسترسی 1081 / روتر 4051 / Sheets: getAll:2217ms×1, findById:396ms×1, getAll:239ms×1"
       }
     ]
   },
@@ -5494,46 +6330,46 @@
         "endpoint": "GET /api/procurement/workspace",
         "requests": 3,
         "failedRequests": 0,
-        "averageMs": 6054,
-        "medianMs": 6338,
-        "p95Ms": 8164,
-        "maxMs": 8164
+        "averageMs": 7227,
+        "medianMs": 6876,
+        "p95Ms": 10144,
+        "maxMs": 10144
       },
       {
         "endpoint": "GET /api/procurement/dashboard",
         "requests": 1,
         "failedRequests": 0,
-        "averageMs": 4869,
-        "medianMs": 4869,
-        "p95Ms": 4869,
-        "maxMs": 4869
+        "averageMs": 4917,
+        "medianMs": 4917,
+        "p95Ms": 4917,
+        "maxMs": 4917
       },
       {
         "endpoint": "GET /api/procurement/needs",
         "requests": 1,
         "failedRequests": 0,
-        "averageMs": 4200,
-        "medianMs": 4200,
-        "p95Ms": 4200,
-        "maxMs": 4200
+        "averageMs": 4175,
+        "medianMs": 4175,
+        "p95Ms": 4175,
+        "maxMs": 4175
       },
       {
         "endpoint": "GET /api/procurement/orders",
         "requests": 1,
         "failedRequests": 0,
-        "averageMs": 4487,
-        "medianMs": 4487,
-        "p95Ms": 4487,
-        "maxMs": 4487
+        "averageMs": 3800,
+        "medianMs": 3800,
+        "p95Ms": 3800,
+        "maxMs": 3800
       },
       {
         "endpoint": "GET /api/procurement/reports",
         "requests": 1,
         "failedRequests": 0,
-        "averageMs": 4727,
-        "medianMs": 4727,
-        "p95Ms": 4727,
-        "maxMs": 4727
+        "averageMs": 5395,
+        "medianMs": 5395,
+        "p95Ms": 5395,
+        "maxMs": 5395
       }
     ],
     "note": "Browser and admin-only backend repository timings are captured in procurementDiagnostics."
