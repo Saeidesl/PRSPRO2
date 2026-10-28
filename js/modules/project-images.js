@@ -207,7 +207,7 @@
           });
           setStatus(items.length + ' فایل ثبت‌شده');
           if (!items.length) {
-            list.innerHTML = '<div style="padding:18px;text-align:center;border:1px dashed var(--color-border,#ccc);border-radius:10px">هنوز فایلی برای این پروژه ثبت نشده است.</div>';
+            list.innerHTML = '<div class="pms-project-files-empty">هنوز فایلی برای این پروژه ثبت نشده است.</div>';
             return;
           }
           list.innerHTML = items.map(function (item) {
@@ -229,7 +229,7 @@
           }).join('');
         } catch (error) {
           setStatus((error && error.message) || 'دریافت فایل‌های پروژه ناموفق بود.');
-          list.innerHTML = '<p>دریافت فهرست فایل‌ها انجام نشد. دوباره فرم را باز کنید یا اتصال را بررسی کنید.</p>';
+          list.innerHTML = '<div class="pms-project-files-empty is-error">دریافت فهرست فایل‌ها انجام نشد. اتصال را بررسی و دوباره تلاش کنید.</div>';
         }
       }
       async function getFileData(id) {
