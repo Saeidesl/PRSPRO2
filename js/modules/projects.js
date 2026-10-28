@@ -394,6 +394,102 @@
 
 
 
+    printProject: async function (projectId) {
+      const id = String(projectId || '').trim();
+      if (!id) {
+        alert('شناسه پروژه برای چاپ مشخص نیست.');
+        return;
+      }
+
+      // پنجره چاپ باید پیش از اولین await باز شود تا مسدودکننده popup مانع نشود.
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        alert('مرورگر پنجره چاپ را مسدود کرد. اجازه بازشدن پنجره برای این سایت را فعال کنید و دوباره تلاش کنید.');
+        return;
+      }
+
+      const unwrapProject = (value) => {
+        let project = value;
+        for (let i = 0; i < 3 && project && project.data !== undefined; i += 1) project = project.data;
+        if (project && project.project) project = project.project;
+        if (Array.isArray(project)) project = project[0];
+        return project && typeof project === 'object' ? project : null;
+      };
+      const escapeHtml = (value) => String(value === null || value === undefined || value === '' ? '—' : value)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+      const labelStatus = (value) => {
+        const labels = { ACTIVE: 'فعال', ON_HOLD: 'متوقف', COMPLETED: 'تکمیل‌شده', CANCELLED: 'لغوشده' };
+        const key = String(value || '').trim().toUpperCase();
+        return labels[key] || String(value || 'نامشخص');
+      };
+      const formatDate = (value) => {
+        if (!value) return '—';
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString('fa-IR');
+      };
+
+      try {
+        let project = (this.projects || []).find((item) =>
+          String(item.ID || item.Id || item.id || '') === id
+        );
+        if (!project) {
+          const response = await window.PMS.Api.get('/projects/' + encodeURIComponent(id));
+          if (response && response.success === false) throw new Error(response.message || 'دریافت اطلاعات پروژه ناموفق بود.');
+          project = unwrapProject(response);
+        }
+        if (!project) throw new Error('اطلاعات پروژه دریافت نشد.');
+
+        let colors = [];
+        let sizes = [];
+        const rawColorSize = project.ColorSizeJSON || project.colorSizeJSON || project.color_size_json;
+        if (rawColorSize) {
+          try {
+            const parsed = typeof rawColorSize === 'string' ? JSON.parse(rawColorSize) : rawColorSize;
+            colors = Array.isArray(parsed && parsed.colors) ? parsed.colors : [];
+            sizes = Array.isArray(parsed && parsed.sizes) ? parsed.sizes : [];
+          } catch (error) {}
+        }
+
+        const title = String(project.Title || project.Name || 'بدون عنوان');
+        const code = String(project.ProjectCode || id);
+        const currentStep = project.CurrentStepName || project.CurrentStepTitle ||
+          project.CurrentStageName || project.CurrentStageTitle || project.CurrentStep ||
+          project.CurrentStageCode || 'نامشخص';
+        const details = [
+          ['کد پروژه', code],
+          ['عنوان پروژه', title],
+          ['وضعیت', labelStatus(project.StatusName || project.StatusLabel || project.Status)],
+          ['مرحله فعلی', currentStep],
+          ['تعداد اولیه', project.Quantity],
+          ['تاریخ ایجاد', formatDate(project.CreatedAt)],
+          ['آخرین به‌روزرسانی', formatDate(project.UpdatedAt)],
+          ['رنگ‌بندی', colors.length ? colors.join('، ') : 'تعریف نشده'],
+          ['سایزبندی', sizes.length ? sizes.join('، ') : 'تعریف نشده'],
+          ['توضیحات', project.Description]
+        ];
+        const rows = details.map(([label, value]) =>
+          '<tr><th>' + escapeHtml(label) + '</th><td>' + escapeHtml(value) + '</td></tr>'
+        ).join('');
+        const printedAt = new Date().toLocaleString('fa-IR');
+        const detailUrl = window.location.origin + window.location.pathname + '#project-detail/' + encodeURIComponent(id);
+
+        printWindow.document.open();
+        printWindow.document.write('<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>گزارش پروژه ' + escapeHtml(code) + '</title><style>' +
+          '@page{size:A4;margin:15mm}*{box-sizing:border-box}body{margin:0;color:#172033;background:#fff;font-family:Tahoma,Arial,sans-serif;font-size:12px;line-height:1.9;direction:rtl;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+          '.sheet{width:100%;max-width:180mm;margin:0 auto}.header{border-bottom:2px solid #334155;padding-bottom:12px;margin-bottom:18px}.eyebrow{font-size:10px;color:#64748b}.header h1{font-size:21px;margin:4px 0}.subtitle{color:#475569;font-size:12px}.section-title{font-size:14px;margin:18px 0 8px;page-break-after:avoid;break-after:avoid}.details{width:100%;border-collapse:collapse;table-layout:fixed}.details tr{page-break-inside:avoid;break-inside:avoid}.details th,.details td{border:1px solid #cbd5e1;padding:7px 9px;text-align:right;vertical-align:top;overflow-wrap:anywhere}.details th{width:29%;background:#f1f5f9;font-weight:700}.details td{white-space:pre-wrap}.footer{border-top:1px solid #cbd5e1;margin-top:20px;padding-top:8px;font-size:9px;color:#64748b;overflow-wrap:anywhere}.toolbar{display:flex;gap:8px;margin-bottom:14px}.toolbar button{border:1px solid #cbd5e1;border-radius:6px;padding:7px 12px;background:#f8fafc;font:inherit;cursor:pointer}.link{direction:ltr;text-align:left;overflow-wrap:anywhere}@media print{.toolbar{display:none!important}.sheet{max-width:none}.header,.section-title{break-after:avoid}.details tr{break-inside:avoid}}@media screen{body{background:#e2e8f0;padding:20px}.sheet{background:#fff;padding:18mm;box-shadow:0 2px 14px #0001}.toolbar{justify-content:flex-start}}' +
+          '</style></head><body><main class="sheet"><div class="toolbar"><button type="button" onclick="window.print()">چاپ / ذخیره PDF</button><button type="button" onclick="window.close()">بستن</button></div>' +
+          '<header class="header"><div class="eyebrow">سامانه مدیریت تولید</div><h1>گزارش مشخصات پروژه</h1><div class="subtitle">' + escapeHtml(title) + ' — کد ' + escapeHtml(code) + '</div></header>' +
+          '<h2 class="section-title">اطلاعات اصلی پروژه</h2><table class="details"><tbody>' + rows + '</tbody></table>' +
+          '<footer class="footer"><div>زمان تهیه گزارش: ' + escapeHtml(printedAt) + '</div><div class="link">لینک پروژه: ' + escapeHtml(detailUrl) + '</div></footer></main>' +
+          '<script>window.addEventListener("load",function(){window.setTimeout(function(){window.print();},250);});<\/script></body></html>');
+        printWindow.document.close();
+      } catch (error) {
+        printWindow.close();
+        alert((error && error.message) || 'آماده‌سازی گزارش چاپی ناموفق بود.');
+      }
+    },
+
     shareProject: async function (projectId) {
       const id = String(projectId || '').trim();
       if (!id) {
@@ -2834,6 +2930,14 @@
         window.PMS.Projects.openProjectColorSizeForm(projectId);
       } else {
         alert('فرم رنگ‌بندی و سایزبندی هنوز آماده نیست. صفحه را دوباره بارگذاری کنید.');
+      }
+      return;
+    }
+    if (detail.action === 'print') {
+      if (window.PMS.Projects && typeof window.PMS.Projects.printProject === 'function') {
+        window.PMS.Projects.printProject(projectId);
+      } else {
+        alert('قابلیت چاپ پروژه هنوز آماده نیست. صفحه را دوباره بارگذاری کنید.');
       }
       return;
     }
