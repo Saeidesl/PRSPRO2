@@ -1044,16 +1044,6 @@
           </div>
 
           <form id="project-create-form">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:10px 12px;margin-bottom:16px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-surface-hover,var(--color-surface))">
-              <div>
-                <strong style="display:block;font-size:13px">تنظیمات و دسترسی پروژه</strong>
-                <small style="display:block;color:var(--color-text-secondary);line-height:1.8">واحدها، کاربران مجاز، وضعیت و اطلاع‌رسانی</small>
-              </div>
-              <button type="button" id="project-settings-open" class="btn btn-light" aria-label="باز کردن تنظیمات پروژه" style="display:inline-flex;align-items:center;gap:7px">
-                <span aria-hidden="true" style="font-size:18px;line-height:1">⚙</span>
-                <span>تنظیمات</span>
-              </button>
-            </div>
             <div class="filter-group form-group project-form-field" style="margin-bottom:16px;">
               <label for="new-project-code">کد پروژه <span style="color:var(--color-danger);">*</span></label>
               <input type="text" id="new-project-code" name="ProjectCode" required maxlength="100" autocomplete="off" placeholder="کد پروژه را وارد کنید" style="width:100%;box-sizing:border-box;" ${isEditMode ? "readonly aria-readonly=\"true\"" : ""}>
@@ -1270,7 +1260,8 @@
           keyboard.close();
         } else settingsModal.style.display = 'none';
       };
-      modal.querySelector('#project-settings-open').addEventListener('click', openSettings);
+      const settingsOpenButton = modal.querySelector('#project-settings-open');
+      if (settingsOpenButton) settingsOpenButton.addEventListener('click', openSettings);
       settingsModal.querySelector('[data-settings-close]').addEventListener('click', closeSettings);
       settingsModal.querySelector('[data-settings-cancel]').addEventListener('click', closeSettings);
       settingsModal.addEventListener('click', (event) => { if (event.target === settingsModal) closeSettings(); });
