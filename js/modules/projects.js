@@ -1013,10 +1013,6 @@
             </h3>
 
             <div style="display:flex;align-items:center;gap:8px">
-              <button type="button" id="project-settings-open" class="btn btn-light" aria-label="تنظیمات فرم پروژه" title="تنظیمات فرم" style="display:inline-flex;align-items:center;gap:7px">
-                <span aria-hidden="true" style="font-size:18px;line-height:1">⚙</span>
-                <span>تنظیمات</span>
-              </button>
               <button type="button" id="project-create-close" class="btn btn-light" aria-label="بستن">✕</button>
             </div>
           </div>
@@ -1048,6 +1044,16 @@
           </div>
 
           <form id="project-create-form">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:10px 12px;margin-bottom:16px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-surface-hover,var(--color-surface))">
+              <div>
+                <strong style="display:block;font-size:13px">تنظیمات و دسترسی پروژه</strong>
+                <small style="display:block;color:var(--color-text-secondary);line-height:1.8">واحدها، کاربران مجاز، وضعیت و اطلاع‌رسانی</small>
+              </div>
+              <button type="button" id="project-settings-open" class="btn btn-light" aria-label="باز کردن تنظیمات پروژه" style="display:inline-flex;align-items:center;gap:7px">
+                <span aria-hidden="true" style="font-size:18px;line-height:1">⚙</span>
+                <span>تنظیمات</span>
+              </button>
+            </div>
             <div class="filter-group form-group project-form-field" style="margin-bottom:16px;">
               <label for="new-project-code">کد پروژه <span style="color:var(--color-danger);">*</span></label>
               <input type="text" id="new-project-code" name="ProjectCode" required maxlength="100" autocomplete="off" placeholder="کد پروژه را وارد کنید" style="width:100%;box-sizing:border-box;" ${isEditMode ? "readonly aria-readonly=\"true\"" : ""}>
@@ -2706,6 +2712,14 @@
         window.PMS.Projects.openProjectColorSizeForm(projectId);
       } else {
         alert('فرم رنگ‌بندی و سایزبندی هنوز آماده نیست. صفحه را دوباره بارگذاری کنید.');
+      }
+      return;
+    }
+    if (detail.action === 'settings') {
+      if (window.PMS.Projects && typeof window.PMS.Projects.openProjectEditForm === 'function') {
+        window.PMS.Projects.openProjectEditForm(projectId);
+      } else {
+        alert('فرم تنظیمات پروژه هنوز آماده نیست. صفحه را دوباره بارگذاری کنید.');
       }
     }
   });
