@@ -433,6 +433,9 @@
 
         // فرم ویرایش از همان فرم ایجاد پروژه استفاده می‌کند تا اعتبارسنجی و فیلدها یکسان بمانند.
         await this.openCreateForm(project, options || {});
+        if (options && options.settingsOnly && this.modal && typeof this.modal._openProjectSettings === 'function') {
+          this.modal._openProjectSettings();
+        }
       } catch (error) {
         alert('دریافت اطلاعات پروژه برای ویرایش ناموفق بود: ' + (this.getErrorMessage(error) || 'خطای نامشخص'));
       } finally {
@@ -1276,6 +1279,7 @@
           if (this.modal === modal) this.modal = null;
         }
       };
+      modal._openProjectSettings = openSettings;
       const settingsOpenButton = modal.querySelector('#project-settings-open');
       if (settingsOpenButton) settingsOpenButton.addEventListener('click', openSettings);
       settingsModal.querySelector('[data-settings-close]').addEventListener('click', closeSettings);
