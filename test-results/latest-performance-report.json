@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "suite": "PMS Comprehensive UI and Performance Audit",
-  "scope": "all",
-  "generatedAt": "2026-10-28T16:02:54.374Z",
+  "suite": "PMS Procurement Performance Audit",
+  "scope": "procurement",
+  "generatedAt": "2026-10-28T16:15:13.198Z",
   "baseURL": "http://127.0.0.1:4173/PRSPRO2/",
-  "mode": "public-login-and-shell-only",
+  "mode": "authenticated-read-only",
   "safety": {
     "formSubmission": "disabled",
     "destructiveActions": "never-clicked",
@@ -17,65 +17,67 @@
     "permissionDeniedRoutes": 0,
     "failedRoutes": 0,
     "mobileRoutesWithHorizontalOverflow": 0,
-    "visibleFormsInventoried": 1,
-    "dynamicFormsInventoried": 0,
-    "formOpenersChecked": 0,
-    "visibleButtonsInventoried": 2,
-    "visibleInputsAndControlsInventoried": 2,
-    "networkRequestsMeasured": 3,
-    "procurementApiRequestsMeasured": 0,
+    "visibleFormsInventoried": 3,
+    "dynamicFormsInventoried": 3,
+    "formOpenersChecked": 3,
+    "visibleButtonsInventoried": 9,
+    "visibleInputsAndControlsInventoried": 0,
+    "networkRequestsMeasured": 55,
+    "procurementApiRequestsMeasured": 6,
     "procurementApiFailedRequests": 0,
-    "procurementDiagnosticEndpointsMeasured": 0,
+    "procurementDiagnosticEndpointsMeasured": 5,
     "failedNetworkRequests": 0,
     "consoleErrors": 0,
     "pageErrors": 0,
-    "safeButtonChecks": 0,
-    "failedSafeButtonChecks": 0,
+    "safeButtonChecks": 3,
+    "failedSafeButtonChecks": 1,
     "formSubmissionsExecuted": 0
   },
   "routes": [
     {
-      "requestedRoute": "login",
-      "currentHash": "login",
+      "requestedRoute": "procurement",
+      "currentHash": "procurement",
       "urlChanged": false,
       "title": "مدیریت تولید",
       "contentVisible": true,
       "denied": false,
       "errorVisible": false,
-      "forms": [
-        {
-          "index": 0,
-          "id": "login-form",
-          "name": "",
-          "action": "",
-          "method": "GET",
-          "fieldCount": 2,
-          "requiredCount": 2,
-          "submitCount": 1,
-          "nativeValidity": false,
-          "fields": [
-            {
-              "id": "login-username",
-              "name": "username",
-              "type": "text",
-              "label": "نام کاربری",
-              "required": true,
-              "disabled": false
-            },
-            {
-              "id": "login-password",
-              "name": "password",
-              "type": "password",
-              "label": "رمز عبور",
-              "required": true,
-              "disabled": false
-            }
-          ]
-        }
-      ],
+      "forms": [],
       "buttons": [
         {
           "index": 0,
+          "id": "procurement-create-project-order",
+          "label": "+ سفارش مرتبط با پروژه",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 1,
+          "id": "procurement-create-general-order",
+          "label": "+ سفارش عمومی",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 2,
+          "id": "procurement-create-receipt",
+          "label": "+ ثبت دریافت انبار",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 3,
+          "id": "procurement-refresh",
+          "label": "↻ بروزرسانی",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 4,
           "id": "",
           "label": "dynamic-button",
           "type": "button",
@@ -83,31 +85,449 @@
           "inForm": false
         },
         {
-          "index": 1,
-          "id": "login-button",
-          "label": "ورود",
-          "type": "submit",
+          "index": 5,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
           "disabled": false,
-          "inForm": true
+          "inForm": false
+        },
+        {
+          "index": 6,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 7,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
+        },
+        {
+          "index": 8,
+          "id": "",
+          "label": "dynamic-button",
+          "type": "button",
+          "disabled": false,
+          "inForm": false
         }
       ],
       "linkCount": 0,
-      "navigation": [],
-      "visibleControlCount": 2,
-      "visibleTextLength": 70,
-      "routeReadyMs": 127,
-      "navigationMs": 745,
+      "navigation": [
+        {
+          "label": "navigation-link",
+          "route": "dashboard"
+        },
+        {
+          "label": "navigation-link",
+          "route": "projects"
+        },
+        {
+          "label": "navigation-link",
+          "route": "events"
+        },
+        {
+          "label": "navigation-link",
+          "route": "workflows"
+        },
+        {
+          "label": "navigation-link",
+          "route": "project-statuses"
+        },
+        {
+          "label": "navigation-link",
+          "route": "event-types"
+        },
+        {
+          "label": "navigation-link",
+          "route": "procurement"
+        },
+        {
+          "label": "navigation-link",
+          "route": "attachments"
+        },
+        {
+          "label": "navigation-link",
+          "route": "reports"
+        },
+        {
+          "label": "navigation-link",
+          "route": "users"
+        },
+        {
+          "label": "navigation-link",
+          "route": "departments"
+        },
+        {
+          "label": "navigation-link",
+          "route": "roles"
+        },
+        {
+          "label": "navigation-link",
+          "route": "permissions"
+        },
+        {
+          "label": "navigation-link",
+          "route": "audit"
+        },
+        {
+          "label": "navigation-link",
+          "route": "settings"
+        },
+        {
+          "label": "navigation-link",
+          "route": "admin"
+        }
+      ],
+      "visibleControlCount": 0,
+      "visibleTextLength": 500,
+      "routeReadyMs": 4495,
+      "navigationMs": 49533,
       "status": "loaded",
       "mobileLayout": {
         "viewportWidth": 390,
         "documentWidth": 390,
         "bodyWidth": 390,
         "horizontalOverflow": false,
-        "visibleForms": 1,
-        "visibleButtons": 2,
-        "visibleControls": 2
+        "visibleForms": 0,
+        "visibleButtons": 9,
+        "visibleControls": 0
       },
-      "dynamicFormInventory": []
+      "dynamicFormInventory": [
+        {
+          "openerId": "procurement-create-project-order",
+          "opened": true,
+          "baselineFormCount": 0,
+          "baselineVisibleControls": 0,
+          "visibleControls": 11,
+          "forms": [
+            {
+              "index": 0,
+              "id": "procurement-order-form",
+              "name": "",
+              "method": "GET",
+              "fieldCount": 14,
+              "requiredCount": 4,
+              "submitCount": 1,
+              "fields": [
+                {
+                  "id": "",
+                  "name": "ProjectID",
+                  "type": "select-one",
+                  "label": "کد پروژه *\nانتخاب پروژه\n3108 — ست کامل پاراشوت",
+                  "required": true,
+                  "disabled": false
+                },
+                {
+                  "id": "",
+                  "name": "SupplierName",
+                  "type": "text",
+                  "label": "تأمین‌کننده",
+                  "required": false,
+                  "disabled": false
+                },
+                {
+                  "id": "pms-date-8td5mj4-jalali",
+                  "name": "",
+                  "type": "text",
+                  "label": "تاریخ سفارش (اختیاری)\n▦",
+                  "required": false,
+                  "disabled": false
+                },
+                {
+                  "id": "pms-date-8td5mj4",
+                  "name": "OrderDate",
+                  "type": "hidden",
+                  "label": "۱۴۰۵/۰۷/۲۷",
+                  "required": false,
+                  "disabled": false
+                },
+                {
+                  "id": "pms-date-min7dsp-jalali",
+                  "name": "",
+                  "type": "text",
+                  "label": "تاریخ تحویل مورد انتظار\n▦",
+                  "required": false,
+                  "disabled": false
+                },
+                {
+                  "id": "pms-date-min7dsp",
+                  "name": "ExpectedDeliveryDate",
+                  "type": "hidden",
+                  "label": "۱۴۰۵/۰۷/۲۷",
+                  "required": false,
+                  "disabled": false
+                },
+                {
+                  "id": "",
+                  "name": "Notes",
+                  "type": "text",
+                  "label": "توضیحات سفارش",
+                  "required": false,
+                  "disabled": false
+                },
+                {
+                  "id": "",
+                  "name": "MaterialNeedID",
+                  "type": "hidden",
+                  "label": "MaterialNeedID",
+                  "required": false,
+                  "disabled": false
+                },
+                {
+                  "id": "",
+                  "name": "ItemName",
+                  "type": "text",
+                  "label": "نام ملزوم *",
+                  "required": true,
+                  "disabled": false
+                },
+                {
+                  "id": "",
+                  "name": "Unit",
+                  "type": "text",
+                  "label": "واحد اندازه‌گیری *",
+                  "required": true,
+                  "disabled": false
+                },
+                {
+                  "id": "",
+                  "name": "",
+                  "type": "text",
+                  "label": "نیاز اصلی",
+                  "required": false,
+                  "disabled": false
+                },
+                {
+                  "id": "",
+                  "name": "OrderedQuantity",
+                  "type": "number",
+                  "label": "مقدار سفارش *",
+                  "required": true,
+                  "disabled": false
+                },
+                {
+                  "id": "",
+                  "name": "UnitPrice",
+                  "type": "number",
+                  "label": "قیمت واحد (اختیاری)",
+                  "required": false,
+                  "disabled": false
+                },
+                {
+                  "id": "",
+                  "name": "Notes",
+                  "type": "text",
+                  "label": "توضیحات قلم",
+                  "required": false,
+                  "disabled": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "openerId": "procurement-create-general-order",
+          "opened": true,
+          "baselineFormCount": 0,
+          "baselineVisibleControls": 0,
+          "visibleControls": 10,
+          "forms": [
+            {
+              "index": 0,
+              "id": "procurement-order-form",
+              "name": "",
+              "method": "GET",
+              "fieldCount": 13,
+              "requiredCount": 3,
+              "submitCount": 1,
+              "fields": [
+                {
+                  "id": "",
+                  "name": "SupplierName",
+                  "type": "text",
+                  "label": "تأمین‌کننده",
+                  "required": false,
+                  "disabled": false
+                },
+                {
+                  "id": "pms-date-cc2j3d5-jalali",
+                  "name": "",
+                  "type": "text",
+                  "label": "تاریخ سفارش (اختیاری)\n▦",
+                  "required": false,
+                  "disabled": false
+                },
+                {
+                  "id": "pms-date-cc2j3d5",
+                  "name": "OrderDate",
+                  "type": "hidden",
+                  "label": "۱۴۰۵/۰۷/۲۷",
+                  "required": false,
+                  "disabled": false
+                },
+                {
+                  "id": "pms-date-lzl7iw5-jalali",
+                  "name": "",
+                  "type": "text",
+                  "label": "تاریخ تحویل مورد انتظار\n▦",
+                  "required": false,
+                  "disabled": false
+                },
+                {
+                  "id": "pms-date-lzl7iw5",
+                  "name": "ExpectedDeliveryDate",
+                  "type": "hidden",
+                  "label": "۱۴۰۵/۰۷/۲۷",
+                  "required": false,
+                  "disabled": false
+                },
+                {
+                  "id": "",
+                  "name": "Notes",
+                  "type": "text",
+                  "label": "توضیحات سفارش",
+                  "required": false,
+                  "disabled": false
+                },
+                {
+                  "id": "",
+                  "name": "MaterialNeedID",
+                  "type": "hidden",
+                  "label": "MaterialNeedID",
+                  "required": false,
+                  "disabled": false
+                },
+                {
+                  "id": "",
+                  "name": "ItemName",
+                  "type": "text",
+                  "label": "نام ملزوم *",
+                  "required": true,
+                  "disabled": false
+                },
+                {
+                  "id": "",
+                  "name": "Unit",
+                  "type": "text",
+                  "label": "واحد اندازه‌گیری *",
+                  "required": true,
+                  "disabled": false
+                },
+                {
+                  "id": "",
+                  "name": "",
+                  "type": "text",
+                  "label": "نیاز اصلی",
+                  "required": false,
+                  "disabled": false
+                },
+                {
+                  "id": "",
+                  "name": "OrderedQuantity",
+                  "type": "number",
+                  "label": "مقدار سفارش *",
+                  "required": true,
+                  "disabled": false
+                },
+                {
+                  "id": "",
+                  "name": "UnitPrice",
+                  "type": "number",
+                  "label": "قیمت واحد (اختیاری)",
+                  "required": false,
+                  "disabled": false
+                },
+                {
+                  "id": "",
+                  "name": "Notes",
+                  "type": "text",
+                  "label": "توضیحات قلم",
+                  "required": false,
+                  "disabled": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "openerId": "procurement-create-receipt",
+          "opened": true,
+          "baselineFormCount": 0,
+          "baselineVisibleControls": 0,
+          "visibleControls": 3,
+          "forms": [
+            {
+              "index": 0,
+              "id": "procurement-receipt-form",
+              "name": "",
+              "method": "GET",
+              "fieldCount": 4,
+              "requiredCount": 1,
+              "submitCount": 1,
+              "fields": [
+                {
+                  "id": "",
+                  "name": "ProjectID",
+                  "type": "select-one",
+                  "label": "پروژه / نوع سفارش *\nانتخاب پروژه یا سفارش عمومی\nسفارش عمومی\n3108 — ست کامل پاراشوت",
+                  "required": true,
+                  "disabled": false
+                },
+                {
+                  "id": "pms-date-sj0sv7l-jalali",
+                  "name": "",
+                  "type": "text",
+                  "label": "تاریخ دریافت\n▦",
+                  "required": false,
+                  "disabled": false
+                },
+                {
+                  "id": "pms-date-sj0sv7l",
+                  "name": "ReceivedAt",
+                  "type": "hidden",
+                  "label": "۱۴۰۵/۰۷/۲۷",
+                  "required": false,
+                  "disabled": false
+                },
+                {
+                  "id": "",
+                  "name": "Notes",
+                  "type": "text",
+                  "label": "توضیحات دریافت",
+                  "required": false,
+                  "disabled": false
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "safeButtonChecks": [
+        {
+          "id": "procurement-create-project-order",
+          "label": "+ سفارش مرتبط با پروژه",
+          "clickCompleted": true,
+          "visibleContentChanged": true
+        },
+        {
+          "id": "procurement-create-general-order",
+          "label": "+ سفارش عمومی",
+          "clickCompleted": true,
+          "visibleContentChanged": true
+        },
+        {
+          "id": "procurement-refresh",
+          "label": "↻ بروزرسانی",
+          "clickCompleted": false,
+          "error": "Button was not visible and enabled after clean route navigation."
+        }
+      ]
     }
   ],
   "network": [
@@ -115,37 +535,434 @@
       "path": "/PRSPRO2/pages/login.html",
       "method": "GET",
       "status": 200,
-      "durationMs": 9
+      "durationMs": 11
     },
     {
-      "path": "/PRSPRO2/pages/login.html",
+      "path": "/api/auth/login",
+      "method": "POST",
+      "status": 302,
+      "durationMs": 4574
+    },
+    {
+      "path": "/macros/echo",
       "method": "GET",
       "status": 200,
-      "durationMs": 2
+      "durationMs": 131
     },
     {
-      "path": "/PRSPRO2/pages/login.html",
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 4021
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 93
+    },
+    {
+      "path": "/PRSPRO2/pages/dashboard.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 23
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 4193
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 89
+    },
+    {
+      "path": "/PRSPRO2/pages/dashboard.html",
       "method": "GET",
       "status": 200,
       "durationMs": 7
+    },
+    {
+      "path": "/PRSPRO2/pages/procurement.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 7
+    },
+    {
+      "path": "/api/projects",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3711
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 83
+    },
+    {
+      "path": "/api/project-dashboard/lookups",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 4929
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 84
+    },
+    {
+      "path": "/api/procurement/workspace",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 9367
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 54
+    },
+    {
+      "path": "/api/procurement/workspace",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 10826
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 82
+    },
+    {
+      "path": "/api/procurement/dashboard",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 8496
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 62
+    },
+    {
+      "path": "/api/procurement/needs",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 5389
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 139
+    },
+    {
+      "path": "/api/procurement/orders",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 8956
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 89
+    },
+    {
+      "path": "/api/procurement/reports",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 6924
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 76
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 4313
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 91
+    },
+    {
+      "path": "/PRSPRO2/pages/procurement.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 5
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2539
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 70
+    },
+    {
+      "path": "/PRSPRO2/pages/procurement.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4
+    },
+    {
+      "path": "/api/projects",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2570
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 88
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 5525
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 83
+    },
+    {
+      "path": "/PRSPRO2/pages/procurement.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 7
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 4552
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 75
+    },
+    {
+      "path": "/PRSPRO2/pages/procurement.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 5
+    },
+    {
+      "path": "/PRSPRO2/pages/procurement.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 5
+    },
+    {
+      "path": "/api/projects",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2956
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 89
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2843
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 115
+    },
+    {
+      "path": "/PRSPRO2/pages/procurement.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 5
+    },
+    {
+      "path": "/PRSPRO2/pages/procurement.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3
+    },
+    {
+      "path": "/api/projects",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 2761
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 75
+    },
+    {
+      "path": "/api/auth/me/permissions",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 4067
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 69
+    },
+    {
+      "path": "/PRSPRO2/pages/procurement.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 5
+    },
+    {
+      "path": "/PRSPRO2/pages/procurement.html",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3
+    },
+    {
+      "path": "/api/projects",
+      "method": "GET",
+      "status": 302,
+      "durationMs": 3421
+    },
+    {
+      "path": "/macros/echo",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 140
     }
   ],
   "consoleErrors": [],
   "pageErrors": [],
-  "coverageGaps": [
-    "Authenticated audit skipped: configure PMS_STAGING_API_BASE_URL to a separate staging Apps Script deployment. Production API will not be used for test login.",
-    "login: 1 submit control(s) inventoried but not submitted by the safe audit."
-  ],
-  "overallStatus": "blocked-no-staging-api",
+  "coverageGaps": [],
+  "overallStatus": "needs-attention",
   "login": {
-    "loginFormReadyMs": 133,
-    "authenticated": false,
-    "note": "Authenticated audit skipped: configure PMS_STAGING_API_BASE_URL to a separate staging Apps Script deployment. Production API will not be used for test login."
+    "loginFormReadyMs": 181,
+    "loginAttemptMs": 8905,
+    "authenticated": true,
+    "errorMessage": ""
+  },
+  "procurementDiagnostics": {
+    "measuredAt": "2026-10-28T16:16:12.017Z",
+    "headers": [
+      "مسیر",
+      "زمان مرورگر",
+      "کل بک‌اند",
+      "خواندن/پردازش بک‌اند"
+    ],
+    "endpoints": [
+      {
+        "endpoint": "/procurement/reports",
+        "browserMs": "7001 ms",
+        "backendMs": "5584 ms",
+        "details": "دسترسی 2338 / روتر 3246 / Sheets: getAll:1211ms×1, getHeaders:655ms×1, getAll:536ms×2"
+      },
+      {
+        "endpoint": "/procurement/orders",
+        "browserMs": "9045 ms",
+        "backendMs": "7957 ms",
+        "details": "دسترسی 3377 / روتر 4579 / Sheets: findById:1902ms×1, getAll:1305ms×1, getHeaders:1179ms×1"
+      },
+      {
+        "endpoint": "/procurement/needs",
+        "browserMs": "5528 ms",
+        "backendMs": "4269 ms",
+        "details": "دسترسی 1621 / روتر 2647 / Sheets: getAll:749ms×1, findById:656ms×2, getHeaders:579ms×2"
+      },
+      {
+        "endpoint": "/procurement/dashboard",
+        "browserMs": "8560 ms",
+        "backendMs": "6924 ms",
+        "details": "دسترسی 2499 / روتر 4424 / Sheets: getAll:1168ms×2, findById:1045ms×1, findById:922ms×1"
+      },
+      {
+        "endpoint": "/procurement/workspace",
+        "browserMs": "10910 ms",
+        "backendMs": "4175 ms",
+        "details": "دسترسی 2098 / روتر 2077 / Sheets: findById:893ms×1, getAll:636ms×1, getHeaders:544ms×1"
+      }
+    ]
   },
   "procurementPerformance": {
-    "measuredRequests": 0,
+    "measuredRequests": 6,
     "failedRequests": 0,
-    "endpoints": [],
+    "endpoints": [
+      {
+        "endpoint": "GET /api/procurement/workspace",
+        "requests": 2,
+        "failedRequests": 0,
+        "averageMs": 10097,
+        "medianMs": 9367,
+        "p95Ms": 10826,
+        "maxMs": 10826
+      },
+      {
+        "endpoint": "GET /api/procurement/dashboard",
+        "requests": 1,
+        "failedRequests": 0,
+        "averageMs": 8496,
+        "medianMs": 8496,
+        "p95Ms": 8496,
+        "maxMs": 8496
+      },
+      {
+        "endpoint": "GET /api/procurement/needs",
+        "requests": 1,
+        "failedRequests": 0,
+        "averageMs": 5389,
+        "medianMs": 5389,
+        "p95Ms": 5389,
+        "maxMs": 5389
+      },
+      {
+        "endpoint": "GET /api/procurement/orders",
+        "requests": 1,
+        "failedRequests": 0,
+        "averageMs": 8956,
+        "medianMs": 8956,
+        "p95Ms": 8956,
+        "maxMs": 8956
+      },
+      {
+        "endpoint": "GET /api/procurement/reports",
+        "requests": 1,
+        "failedRequests": 0,
+        "averageMs": 6924,
+        "medianMs": 6924,
+        "p95Ms": 6924,
+        "maxMs": 6924
+      }
+    ],
     "note": "Browser and admin-only backend repository timings are captured in procurementDiagnostics."
   }
 }
