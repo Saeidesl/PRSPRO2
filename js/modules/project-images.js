@@ -71,33 +71,37 @@
         return;
       }
       const initialType = String(options.initialType || 'PROJECT_DOCUMENT').toUpperCase();
+      ensureStyles();
       const overlay = document.createElement('div');
-      overlay.style.cssText = 'position:fixed;inset:0;z-index:25000;background:#0009;display:flex;align-items:center;justify-content:center;padding:12px;direction:rtl';
+      overlay.className = 'pms-project-files-overlay';
       const dialog = document.createElement('section');
+      dialog.className = 'pms-project-files-dialog';
       dialog.setAttribute('role', 'dialog');
       dialog.setAttribute('aria-modal', 'true');
       dialog.setAttribute('aria-labelledby', 'pms-project-files-title');
-      dialog.style.cssText = 'width:min(820px,100%);max-height:92vh;overflow:auto;background:var(--color-surface,#fff);color:var(--color-text,#111);border:1px solid var(--color-border, #ddd);border-radius:14px;padding:18px;box-shadow:0 20px 60px #0003';
       dialog.innerHTML =
-        '<button type="button" data-close style="float:left">بستن ×</button>' +
-        '<h2 id="pms-project-files-title" style="margin:0 0 8px">فایل‌های پروژه</h2>' +
-        '<p style="margin:0 0 16px;color:var(--color-text-secondary,#666)">تصاویر، شناسنامه‌ها، PDF، فایل‌های Excel و Word را از این بخش مدیریت کنید. تصویر پروفایل همچنان تنها تصویر بندانگشتی کارت پروژه است.</p>' +
-        '<p data-status role="status" aria-live="polite">در حال دریافت فایل‌ها…</p>' +
-        '<div data-list style="display:grid;gap:10px"></div>';
+        '<header class="pms-project-files-header">' +
+          '<div><span class="pms-project-files-eyebrow">مدیریت پروژه</span><h2 id="pms-project-files-title">فایل‌های پروژه</h2></div>' +
+          '<button type="button" data-close class="pms-project-files-close" aria-label="بستن پنجره">×</button>' +
+        '</header>' +
+        '<p class="pms-project-files-description">شناسنامه‌ها، تصاویر، PDF و فایل‌های Word و Excel را در یک محل مدیریت کنید. تصویر پروفایل تنها تصویر بندانگشتی کارت پروژه است.</p>' +
+        '<p data-status class="pms-project-files-status" role="status" aria-live="polite">در حال دریافت فایل‌ها…</p>' +
+        '<div data-list class="pms-project-files-list"></div>';
       const canUpload = permission('ATTACHMENT_UPLOAD');
       if (canUpload) {
         const form = document.createElement('form');
         form.setAttribute('aria-label', 'افزودن فایل پروژه');
-        form.style.cssText = 'display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) auto;align-items:end;gap:12px;padding:14px;margin:14px 0 18px;border:1px solid var(--color-border,#ddd);border-radius:12px';
+        form.className = 'pms-project-files-upload';
         form.innerHTML =
-          '<label style="display:grid;gap:6px;font-size:13px">نوع فایل' +
-          '<select name="AttachmentType" required style="width:100%;min-height:40px;padding:8px;border:1px solid var(--color-border,#ccc);border-radius:8px;background:var(--color-surface,#fff);color:inherit">' +
+          '<div class="pms-project-files-form-title"><span class="pms-project-files-form-icon" aria-hidden="true">＋</span><div><h3>افزودن فایل جدید</h3><p>نوع فایل را مشخص کنید و فایل را بارگذاری کنید.</p></div></div>' +
+          '<label class="pms-project-files-field"><span>نوع فایل</span>' +
+          '<select name="AttachmentType" required>' +
           fileTypes.map(function (entry) { return '<option value="' + entry.value + '">' + escapeHtml(entry.label) + '</option>'; }).join('') +
           '</select></label>' +
-          '<label style="display:grid;gap:6px;font-size:13px">انتخاب فایل (تصویر، PDF، Word یا Excel؛ حداکثر ۵ مگابایت)' +
-          '<input name="file" type="file" accept=".jpg,.jpeg,.png,.webp,.gif,.pdf,.doc,.docx,.xls,.xlsx,image/jpeg,image/png,image/webp,image/gif,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required style="width:100%;min-width:0"></label>' +
-          '<button type="submit" style="min-height:40px;padding:8px 16px;border:0;border-radius:8px;background:var(--color-primary,#2563eb);color:white;cursor:pointer">بارگذاری فایل</button>' +
-          '<p data-form-hint style="grid-column:1/-1;margin:0;font-size:12px;color:var(--color-text-secondary,#666)">نام فایل هنگام ذخیره در سرور با کد پروژه و نوع فایل ترکیب می‌شود.</p>';
+          '<label class="pms-project-files-field"><span>انتخاب فایل <small>تصویر، PDF، Word یا Excel · حداکثر ۵ مگابایت</small></span>' +
+          '<input name="file" type="file" accept=".jpg,.jpeg,.png,.webp,.gif,.pdf,.doc,.docx,.xls,.xlsx,image/jpeg,image/png,image/webp,image/gif,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required></label>' +
+          '<button type="submit" class="pms-project-files-upload-button">بارگذاری فایل</button>' +
+          '<p data-form-hint class="pms-project-files-hint">نام ذخیره‌شده فایل به‌صورت خودکار با کد پروژه و نوع فایل ساخته می‌شود.</p>';
         dialog.appendChild(form);
         const typeSelect = form.querySelector('[name="AttachmentType"]');
         const fileInput = form.querySelector('[name="file"]');
@@ -158,8 +162,8 @@
         });
       } else {
         const note = document.createElement('p');
+        note.className = 'pms-project-files-permission-note';
         note.textContent = 'برای افزودن فایل، مجوز بارگذاری پیوست لازم است.';
-        note.style.cssText = 'color:var(--color-text-secondary,#666);font-size:12px';
         dialog.appendChild(note);
       }
       overlay.appendChild(dialog);
@@ -219,13 +223,14 @@
             const isPdf = mime === 'application/pdf' || /\.pdf$/i.test(name);
             const badge = isImage ? 'تصویر' : (isPdf ? 'PDF' : (/\.(doc|docx)$/i.test(name) ? 'Word' : (/\.(xls|xlsx)$/i.test(name) ? 'Excel' : 'فایل')));
             const canDelete = permission('ATTACHMENT_DELETE');
-            return '<article style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px;border:1px solid var(--color-border,#ddd);border-radius:10px;min-width:0">' +
-              '<span aria-hidden="true" style="display:grid;place-items:center;flex:0 0 42px;height:42px;border-radius:9px;background:var(--color-surface-hover,#f2f2f2);font-size:11px;font-weight:700">' + badge + '</span>' +
-              '<div style="flex:1;min-width:150px;overflow-wrap:anywhere"><strong style="display:block;font-size:13px">' + escapeHtml(name) + '</strong><span style="display:block;margin-top:4px;color:var(--color-text-secondary,#666);font-size:12px">' + escapeHtml(typeLabel(type)) + (item.FileSize || item.fileSize ? ' · ' + formatSize(item.FileSize || item.fileSize) : '') + '</span></div>' +
-              (isImage ? '<button type="button" data-file-action="preview" data-file-id="' + escapeHtml(id) + '">پیش‌نمایش</button>' : '') +
-              '<button type="button" data-file-action="download" data-file-id="' + escapeHtml(id) + '">دریافت</button>' +
-              (canDelete ? '<button type="button" data-file-action="delete" data-file-id="' + escapeHtml(id) + '" style="color:#b42318">حذف</button>' : '') +
-              '</article>';
+            return '<article class="pms-project-file-card">' +
+              '<span aria-hidden="true" class="pms-project-file-type">' + badge + '</span>' +
+              '<div class="pms-project-file-info"><strong>' + escapeHtml(name) + '</strong><span>' + escapeHtml(typeLabel(type)) + (item.FileSize || item.fileSize ? ' · ' + formatSize(item.FileSize || item.fileSize) : '') + '</span></div>' +
+              '<div class="pms-project-file-actions">' +
+              (isImage ? '<button type="button" class="pms-project-file-action" data-file-action="preview" data-file-id="' + escapeHtml(id) + '">پیش‌نمایش</button>' : '') +
+              '<button type="button" class="pms-project-file-action" data-file-action="download" data-file-id="' + escapeHtml(id) + '">دریافت</button>' +
+              (canDelete ? '<button type="button" class="pms-project-file-action is-danger" data-file-action="delete" data-file-id="' + escapeHtml(id) + '">حذف</button>' : '') +
+              '</div></article>';
           }).join('');
         } catch (error) {
           setStatus((error && error.message) || 'دریافت فایل‌های پروژه ناموفق بود.');
@@ -284,6 +289,55 @@
       loadFiles();
     }
   };
+
+  function ensureStyles() {
+    if (document.getElementById('pms-project-files-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'pms-project-files-styles';
+    style.textContent = `
+      .pms-project-files-overlay{position:fixed;inset:0;z-index:25000;background:rgba(15,23,42,.58);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:20px;direction:rtl}
+      .pms-project-files-dialog{width:min(850px,100%);max-height:92vh;overflow:auto;background:var(--color-surface);color:var(--color-text);border:1px solid var(--color-border);border-radius:16px;padding:clamp(16px,3vw,26px);box-shadow:0 24px 70px rgba(0,0,0,.24)}
+      .pms-project-files-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding-bottom:16px;border-bottom:1px solid var(--color-border)}
+      .pms-project-files-eyebrow{display:block;margin-bottom:5px;color:var(--color-primary);font-size:11px;font-weight:700}
+      .pms-project-files-header h2{margin:0;font-size:clamp(19px,2.5vw,24px);font-weight:750;line-height:1.5}
+      .pms-project-files-close{width:36px;height:36px;flex:0 0 36px;border:1px solid var(--color-border);border-radius:9px;background:var(--color-surface);color:var(--color-text);font-size:24px;line-height:1;cursor:pointer}
+      .pms-project-files-close:hover{background:var(--color-surface-hover)}
+      .pms-project-files-description{margin:14px 0 18px;color:var(--color-text-secondary);font-size:13px;line-height:1.9}
+      .pms-project-files-status{margin:0 0 12px;padding:10px 12px;border-radius:9px;background:var(--color-surface-alt);color:var(--color-text-secondary);font-size:12px}
+      .pms-project-files-upload{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr) auto;align-items:end;gap:14px;padding:18px;margin:0 0 20px;border:1px solid var(--color-border);border-radius:13px;background:var(--color-surface-alt)}
+      .pms-project-files-form-title{grid-column:1/-1;display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--color-border)}
+      .pms-project-files-form-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--color-primary-light);color:var(--color-primary);font-size:22px}
+      .pms-project-files-form-title h3{margin:0;font-size:15px;font-weight:700}
+      .pms-project-files-form-title p{margin:3px 0 0;color:var(--color-text-secondary);font-size:12px}
+      .pms-project-files-field{display:grid;gap:7px;min-width:0;color:var(--color-text);font-size:12px;font-weight:650}
+      .pms-project-files-field small{display:block;margin-top:4px;color:var(--color-text-muted);font-size:11px;font-weight:400;line-height:1.6}
+      .pms-project-files-field select,.pms-project-files-field input[type=file]{box-sizing:border-box;width:100%;min-width:0;min-height:42px;padding:9px;border:1px solid var(--color-border);border-radius:9px;background:var(--color-surface);color:var(--color-text);font:inherit;font-weight:400}
+      .pms-project-files-field input[type=file]{font-size:11px}
+      .pms-project-files-field select:focus,.pms-project-files-field input:focus{outline:2px solid color-mix(in srgb,var(--color-primary) 25%,transparent);border-color:var(--color-primary)}
+      .pms-project-files-upload-button{min-height:42px;padding:9px 16px;border:1px solid var(--color-primary);border-radius:9px;background:var(--color-primary);color:#fff;font:inherit;font-size:12px;font-weight:700;white-space:nowrap;cursor:pointer}
+      .pms-project-files-upload-button:hover:not(:disabled){background:var(--color-primary-hover)}
+      .pms-project-files-upload-button:disabled{opacity:.65;cursor:wait}
+      .pms-project-files-hint{grid-column:1/-1;margin:0;color:var(--color-text-muted);font-size:11px;line-height:1.7}
+      .pms-project-files-permission-note{padding:12px;border-radius:9px;background:var(--color-surface-alt);color:var(--color-text-secondary);font-size:12px}
+      .pms-project-files-list{display:grid;gap:9px}
+      .pms-project-file-card{display:flex;align-items:center;gap:12px;min-width:0;padding:12px;border:1px solid var(--color-border);border-radius:11px;background:var(--color-surface);transition:border-color .15s ease,background .15s ease}
+      .pms-project-file-card:hover{border-color:color-mix(in srgb,var(--color-primary) 45%,var(--color-border));background:var(--color-surface-hover)}
+      .pms-project-file-type{display:grid;place-items:center;flex:0 0 44px;min-height:44px;padding:4px;border-radius:10px;background:var(--color-primary-light);color:var(--color-primary);font-size:10px;font-weight:800}
+      .pms-project-file-info{flex:1;min-width:0;overflow-wrap:anywhere}
+      .pms-project-file-info strong{display:block;color:var(--color-text);font-size:12px;font-weight:700;line-height:1.8}
+      .pms-project-file-info span{display:block;margin-top:3px;color:var(--color-text-secondary);font-size:11px;line-height:1.7}
+      .pms-project-file-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+      .pms-project-file-action{min-height:32px;padding:6px 10px;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface);color:var(--color-text);font:inherit;font-size:11px;font-weight:600;cursor:pointer}
+      .pms-project-file-action:hover{border-color:var(--color-primary);color:var(--color-primary)}
+      .pms-project-file-action.is-danger{color:var(--color-danger,#cf222e)}
+      .pms-project-file-action.is-danger:hover{border-color:var(--color-danger,#cf222e);background:color-mix(in srgb,var(--color-danger,#cf222e) 7%,var(--color-surface))}
+      .pms-project-files-empty{padding:24px 16px;border:1px dashed var(--color-border);border-radius:11px;text-align:center;color:var(--color-text-secondary);font-size:12px;line-height:1.9}
+      .pms-project-files-empty.is-error{border-color:var(--color-danger,#cf222e);color:var(--color-danger,#cf222e)}
+      @media(max-width:640px){.pms-project-files-overlay{padding:8px;align-items:flex-end}.pms-project-files-dialog{max-height:94vh;padding:15px;border-radius:16px 16px 10px 10px}.pms-project-files-upload{grid-template-columns:1fr;gap:12px;padding:13px}.pms-project-files-form-title,.pms-project-files-hint{grid-column:auto}.pms-project-files-upload-button{width:100%}.pms-project-file-card{align-items:flex-start;gap:9px;flex-wrap:wrap}.pms-project-file-type{flex-basis:38px;min-height:38px}.pms-project-file-info{flex-basis:calc(100% - 55px)}.pms-project-file-actions{width:100%;padding-right:47px}.pms-project-file-action{flex:1}.pms-project-files-description{font-size:12px}}
+      @media(prefers-reduced-motion:reduce){.pms-project-file-card{transition:none}}
+    `;
+    document.head.appendChild(style);
+  }
 
   function mimeFromExtension(extension) {
     const types = {
