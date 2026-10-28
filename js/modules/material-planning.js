@@ -49,7 +49,7 @@
           <h4 id="material-specs-form-title">افزودن ملزوم</h4>
           <div class="form-row">
             <div class="form-group"><label for="ms-item-name">نام ملزوم</label><input id="ms-item-name" name="ItemName" maxlength="160" required></div>
-            <div class="form-group"><label for="ms-unit">واحد اندازه‌گیری</label><input id="ms-unit" name="Unit" maxlength="40" placeholder="متر، عدد، کیلوگرم..." required></div>
+            <div class="form-group"><label for="ms-unit">واحد اندازه‌گیری</label><select id="ms-unit" name="Unit" required><option value="عدد">عدد</option><option value="متر">متر</option><option value="سانتی‌متر">سانتی‌متر</option><option value="میلی‌متر">میلی‌متر</option><option value="مترمربع">مترمربع</option><option value="کیلوگرم">کیلوگرم</option><option value="گرم">گرم</option><option value="لیتر">لیتر</option><option value="میلی‌لیتر">میلی‌لیتر</option><option value="رول">رول</option><option value="بسته">بسته</option><option value="جفت">جفت</option><option value="دست">دست</option><option value="یارد">یارد</option></select></div>
           </div>
           <div class="form-row">
             <div class="form-group"><label for="ms-consumption">مصرف برای هر واحد محصول</label><input id="ms-consumption" name="ConsumptionPerUnit" type="number" min="0.0001" step="0.0001" required></div>
@@ -75,6 +75,7 @@
       error.hidden = false;
     }
     function resetForm() {
+      Array.from(form.elements.Unit.options).filter((option) => option.dataset.legacyUnit === '1').forEach((option) => option.remove());
       form.reset();
       form.elements.specId.value = '';
       form.elements.WastagePercent.value = '0';
@@ -107,6 +108,13 @@
         if (!spec) return;
         form.elements.specId.value = spec.ID;
         form.elements.ItemName.value = spec.ItemName || '';
+        const unitOption = Array.from(form.elements.Unit.options).find((option) => option.value === String(spec.Unit || ''));
+        if (!unitOption && spec.Unit) {
+          const legacyOption = document.createElement('option');
+          legacyOption.value = spec.Unit; legacyOption.textContent = spec.Unit + ' (واحد قدیمی)';
+          legacyOption.dataset.legacyUnit = '1'; legacyOption.defaultSelected = true;
+          form.elements.Unit.appendChild(legacyOption);
+        }
         form.elements.Unit.value = spec.Unit || '';
         form.elements.ConsumptionPerUnit.value = spec.ConsumptionPerUnit ?? '';
         form.elements.WastagePercent.value = spec.WastagePercent ?? 0;
@@ -123,11 +131,14 @@
       error.hidden = true;
       const payload = {
         ItemName: form.elements.ItemName.value.trim(),
-        Unit: form.elements.Unit.value.trim(),
         ConsumptionPerUnit: Number(form.elements.ConsumptionPerUnit.value),
         WastagePercent: Number(form.elements.WastagePercent.value || 0),
         Notes: form.elements.Notes.value.trim()
       };
+      const selectedUnit = form.elements.Unit.options[form.elements.Unit.selectedIndex];
+      if (!(selectedUnit && selectedUnit.dataset.legacyUnit === '1' && form.elements.specId.value)) {
+        payload.Unit = form.elements.Unit.value.trim();
+      }
       const button = modal.querySelector('#ms-save');
       form.dataset.saving = '1'; button.disabled = true; button.textContent = 'در حال ذخیره...';
       try {
