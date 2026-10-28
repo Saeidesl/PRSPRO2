@@ -205,6 +205,12 @@
         '#dashboard-project-explorer .dash-event-hit small{display:block;color:var(--color-text-secondary);margin-top:3px;font-size:11px}',
         '#dashboard-project-explorer .dash-project-list{display:flex;flex-direction:column;gap:9px;min-width:0}',
         '#dashboard-project-explorer .dash-project-card{min-width:0;border:1px solid var(--color-border);border-radius:13px;background:var(--color-surface);overflow:hidden;transition:border-color .16s ease,box-shadow .16s ease}',
+        '#dashboard-project-explorer .dash-project-card{position:relative}',
+        '#dashboard-project-explorer .dash-project-card-head{padding-left:48px}',
+        '#dashboard-project-explorer .dash-project-menu-button{position:absolute;left:8px;top:8px;z-index:3;display:flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface);color:var(--color-text-secondary);font-size:20px;line-height:1;cursor:pointer}',
+        '#dashboard-project-explorer .dash-project-menu-button:hover,#dashboard-project-explorer .dash-project-menu-button[aria-expanded="true"]{background:var(--color-surface-hover);color:var(--color-text);border-color:var(--color-primary)}',
+        '#dashboard-project-explorer .dash-project-menu-button:focus-visible{outline:2px solid var(--color-primary);outline-offset:2px}',
+        '#dashboard-project-explorer .dash-project-menu{position:absolute;left:8px;top:44px;z-index:5;min-width:190px;max-width:calc(100% - 16px);padding:10px 12px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-surface);color:var(--color-text);box-shadow:var(--shadow-md,0 8px 24px rgba(0,0,0,.14));font-size:12px;line-height:1.8}',
         '#dashboard-project-explorer .dash-project-card:hover{border-color:color-mix(in srgb,var(--color-primary) 35%,var(--color-border))}',
         '#dashboard-project-explorer .dash-project-card.is-expanded{border-color:color-mix(in srgb,var(--color-primary) 42%,var(--color-border));box-shadow:var(--shadow-sm,0 3px 12px rgba(0,0,0,.08))}',
         '#dashboard-project-explorer .dash-project-card-head{width:100%;display:flex;align-items:center;gap:12px;text-align:right;padding:13px 15px;border:0;background:transparent;color:var(--color-text);cursor:pointer;font:inherit}',
@@ -323,6 +329,19 @@
       });
 
       root.addEventListener('click', function (event) {
+        var menuToggle = event.target.closest('[data-project-menu-toggle]');
+        if (menuToggle) {
+          event.preventDefault();
+          event.stopPropagation();
+          var card = menuToggle.closest('[data-project-card]');
+          var menu = card && card.querySelector('[data-project-menu]');
+          var willOpen = !!(menu && menu.hidden);
+          root.querySelectorAll('[data-project-menu]').forEach(function (otherMenu) { otherMenu.hidden = true; });
+          root.querySelectorAll('[data-project-menu-toggle]').forEach(function (otherButton) { otherButton.setAttribute('aria-expanded', 'false'); });
+          if (menu) menu.hidden = !willOpen;
+          menuToggle.setAttribute('aria-expanded', String(willOpen));
+          return;
+        }
         var button = event.target.closest('button');
         if (!button) return;
         if (button.id === 'dash-awaiting-action-button') {
@@ -404,6 +423,12 @@
         if (button.classList.contains('dash-attachment')) {
           self.openAttachment(button.getAttribute('data-attachment-id'));
         }
+      });
+
+      document.addEventListener('click', function (event) {
+        if (event.target.closest('#dashboard-project-explorer [data-project-menu-toggle], #dashboard-project-explorer [data-project-menu]')) return;
+        root.querySelectorAll('[data-project-menu]').forEach(function (menu) { menu.hidden = true; });
+        root.querySelectorAll('[data-project-menu-toggle]').forEach(function (button) { button.setAttribute('aria-expanded', 'false'); });
       });
 
       window.addEventListener('scroll', function () {
@@ -1137,6 +1162,8 @@
         ((typeof router.isAdmin === 'function' && router.isAdmin()) ||
          (Array.isArray(router.permissions) && router.permissions.indexOf('PROCUREMENT_MANAGE') !== -1)));
       var html = '<article class="dash-project-card' + (expanded ? ' is-expanded' : '') + '" data-project-card="' + this.escape(id) + '">' +
+        '<button type="button" class="dash-project-menu-button" data-project-menu-toggle="' + this.escape(id) + '" aria-label="گزینه‌های پروژه ' + this.escape(project.ProjectCode || id) + '" aria-expanded="false" aria-controls="dash-project-menu-' + this.escape(id) + '" title="گزینه‌های پروژه">⋮</button>' +
+        '<div class="dash-project-menu" id="dash-project-menu-' + this.escape(id) + '" data-project-menu="' + this.escape(id) + '" hidden>تنظیمات و گزینه‌های مدیریتی پروژه در این قسمت قرار می‌گیرند.</div>' +
         '<button type="button" class="dash-project-card-head" data-project-id="' + this.escape(id) + '" aria-expanded="' + String(expanded) + '">' +
           '<div class="dash-project-main">' +
             '<div class="dash-project-code">' + this.escape(project.ProjectCode || 'بدون کد') + '</div>' +
