@@ -27,8 +27,11 @@ jobs:
         with:
           ref: feature/design-case-preproduction
 
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
+      - name: Verify static app entry point
+        run: |
+          test -f index.html
+          test -f js/core/api.js
+          echo "Static frontend entry point and API configuration found."
 
       - name: Upload frontend files
         uses: actions/upload-pages-artifact@v3
