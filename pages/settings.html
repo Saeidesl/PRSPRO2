@@ -6,7 +6,22 @@
     </div>
   </div>
 
-  <div id="settings-message"></div>
+  <div id="settings-message" role="status" aria-live="polite"></div>
+
+  <div class="card">
+    <div class="card-body">
+      <h3>تنظیمات گردش کار پروژه‌ها</h3>
+      <p>گردش کار پیش‌فرض برای پروژه‌های جدید را انتخاب کنید. در فرم ایجاد و ویرایش پروژه، این فیلد نمایش داده نمی‌شود.</p>
+      <div class="form-group">
+        <label for="settings-default-workflow">گردش کار پیش‌فرض</label>
+        <select id="settings-default-workflow" class="form-control" style="width:100%;min-height:42px;">
+          <option value="">در حال دریافت گردش کارها...</option>
+        </select>
+        <small style="display:block;margin-top:6px;color:var(--color-text-secondary);">این انتخاب در همین مرورگر ذخیره می‌شود و روی مرورگر یا دستگاه دیگر به‌صورت خودکار همگام نیست.</small>
+      </div>
+      <button type="button" id="settings-save-workflow" class="btn btn-primary">ذخیره گردش کار پیش‌فرض</button>
+    </div>
+  </div>
 
   <div class="card">
     <div class="card-body">
