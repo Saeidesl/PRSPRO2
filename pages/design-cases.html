@@ -1,0 +1,42 @@
+<section class="page-section design-cases-page" aria-labelledby="design-cases-title">
+  <header class="page-header">
+    <div>
+      <span class="design-cases-eyebrow">طراحی و پیش‌تولید</span>
+      <h2 id="design-cases-title">پرونده‌های طرح</h2>
+      <p>ثبت و پیگیری طرح‌ها پیش از ورود به تولید</p>
+    </div>
+    <button type="button" class="btn btn-primary" id="design-case-create">+ پرونده جدید</button>
+  </header>
+
+  <section class="card design-cases-toolbar" aria-label="جستجو و فیلتر پرونده‌ها">
+    <div class="card-body design-cases-toolbar-grid">
+      <div class="form-group">
+        <label for="design-case-search">جستجو</label>
+        <input id="design-case-search" type="search" placeholder="نام یا شناسه پرونده..." autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label for="design-case-status-filter">وضعیت پرونده</label>
+        <select id="design-case-status-filter">
+          <option value="">همه وضعیت‌ها</option>
+          <option value="DRAFT">پیش‌نویس</option>
+          <option value="IN_DESIGN">در حال طراحی</option>
+          <option value="PATTERN_MAKING">الگوسازی</option>
+          <option value="MATERIALS_PENDING">در انتظار ملزومات</option>
+          <option value="SAMPLE_SEWING">دوخت نمونه</option>
+          <option value="REVISION_REQUIRED">نیازمند اصلاح</option>
+          <option value="READY_FOR_APPROVAL">آماده تأیید</option>
+          <option value="REJECTED">ردشده</option>
+          <option value="APPROVED">تأییدشده / وارد تولید</option>
+          <option value="ARCHIVED">بایگانی</option>
+        </select>
+      </div>
+      <button type="button" class="btn btn-secondary" id="design-case-refresh">تازه‌سازی</button>
+    </div>
+  </section>
+
+  <div id="design-case-feedback" class="design-case-feedback" role="status" aria-live="polite"></div>
+  <section id="design-case-list" class="design-case-list" aria-live="polite">
+    <div class="card"><div class="card-body">در حال بارگذاری پرونده‌ها...</div></div>
+  </section>
+  <div id="design-case-modal-root"></div>
+</section>
