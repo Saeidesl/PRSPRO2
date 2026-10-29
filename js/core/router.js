@@ -10,6 +10,7 @@
       login: 'pages/login.html',
       dashboard: 'pages/dashboard.html',
       projects: 'pages/projects.html',
+      'design-cases': 'pages/design-cases.html',
       'project-detail': 'pages/project-detail.html',
       events: 'pages/events.html',
       workflows: 'pages/workflows.html',
@@ -41,6 +42,7 @@
     routePermissions: {
       dashboard: ['REPORT_VIEW'],
       projects: ['PROJECT_VIEW', 'PROJECT_CREATE'],
+      'design-cases': ['PROJECT_VIEW', 'PROJECT_CREATE'],
       'project-detail': ['PROJECT_VIEW'],
       events: ['EVENT_VIEW', 'EVENT_CREATE'],
       workflows: ['WORKFLOW_MANAGE'],
@@ -526,6 +528,7 @@ getBaseUrl: function () {
       const moduleMap = {
         dashboard: 'Dashboard',
         projects: 'Projects',
+        'design-cases': 'DesignCases',
         'project-detail': 'ProjectDetail',
         events: 'Events',
         workflows: 'Workflows',
