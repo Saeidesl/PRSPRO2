@@ -3,7 +3,7 @@
   'use strict';
 
  const DEFAULT_API_BASE_URL =
-  'https://script.google.com/macros/s/AKfycbzHlLF_UuVZu6VIbl59EyIi4ZnLeJfssrBmo0jkn4BvrCPpqYyJ5qP71WdALtyalOKv_A/exec';
+  'https://script.google.com/macros/s/AKfycbw-o15vVNFbnfqhVYV6PtpDOTt4jURF5QKEahvnENkZp2hOPlek1Hj55T2tBnypfPCb/exec';
   // Explicitly injected only by controlled staging tests. Normal users keep the production default.
   const configuredApiBase = String(window.PMS_API_BASE_URL || '').trim();
   const API_BASE_URL = configuredApiBase || DEFAULT_API_BASE_URL;
