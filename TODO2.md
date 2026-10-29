@@ -1,15 +1,20 @@
 # TODO2 — پرونده طرح و پیش‌تولید
 
+## 🌿 شاخه کاری
+- شاخه فعال هر دو مخزن از این پس `main` است: `Saeidesl/PRSPRO2` و `Saeidesl/PRSPRO2BACKEND`.
+- شاخه `feature/design-case-preproduction` ادغام شده؛ تغییرات جدید فقط روی `main` انجام شوند.
+- برای بررسی‌های داده‌ای و تست رفتاری، از محیط و دیتابیس آزمایشی استفاده شود؛ بدون تأیید صریح، داده‌های اصلی یا عملیات مخرب اجرا نشود.
+
 ## 🎯 Current Objective
 آماده‌سازی رابط کاربری مستقل پرونده طرح برای تست در محیط آزمایشی.
 
 ## 🗺️ Technical Spec & Architecture Map (DO NOT DELETE)
-- مخزن: Saeidesl/PRSPRO2، شاخه feature/design-case-preproduction.
+- مخزن: Saeidesl/PRSPRO2، شاخه فعال `main` (ادغام شاخه feature/design-case-preproduction انجام شده است).
 - Frontend: index.html؛ js/core/router.js؛ js/components/layout.js؛ js/core/api.js؛ css/unified-theme.css.
 - صفحه/ماژول جدید: pages/design-cases.html و js/modules/design-cases.js.
-- Backend: Saeidesl/PRSPRO2BACKEND، شاخه feature/design-case-preproduction.
+- Backend: Saeidesl/PRSPRO2BACKEND، شاخه فعال `main`.
 - API: GET /design-cases، GET /design-cases/:id، POST /design-cases، PUT /design-cases/:id، POST /design-cases/:id/approve، GET/POST /design-cases/:id/events، GET/POST /design-cases/:id/attachments.
-- درخواست‌ها باید از PMS.Api عبور کنند؛ پروژه‌های تولیدی فعلی و main دست‌نخورده بمانند؛ فقط staging مجاز است.
+- درخواست‌های فرانت‌اند باید از PMS.Api عبور کنند. توسعه از این پس روی main انجام می‌شود؛ برای آزمون‌های داده‌ای فقط از محیط آزمایشی استفاده شود و انتشار به محیط تولید مطابق کنترل‌های انتشار موجود انجام گیرد.
 - مدل ایجاد: Title، Description، RequiredMaterials[{ItemName,Unit,RequiredQuantity,Description}]، IdempotencyKey.
 - تأیید تولید فقط در READY_FOR_APPROVAL و با ProjectCode، Quantity و IdempotencyKey انجام می‌شود.
 
