@@ -191,6 +191,8 @@ getBaseUrl: function () {
         return false;
       }
 
+      if (mainRoute === 'design-cases') return true;
+
       const required = Router.routePermissions[mainRoute] || [];
 
       return required.some(function (permission) {
