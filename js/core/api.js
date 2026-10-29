@@ -3,10 +3,13 @@
   'use strict';
 
  const DEFAULT_API_BASE_URL =
+  'https://script.google.com/macros/s/PRODUCTION_API_ENDPOINT_PLACEHOLDER/exec';
+  const STAGING_API_BASE_URL =
   'https://script.google.com/macros/s/AKfycbw-o15vVNFbnfqhVYV6PtpDOTt4jURF5QKEahvnENkZp2hOPlek1Hj55T2tBnypfPCb/exec';
-  // Explicitly injected only by controlled staging tests. Normal users keep the production default.
+  // Explicit override is supported for controlled tests. The isolated /staging/ site must never call production.
   const configuredApiBase = String(window.PMS_API_BASE_URL || '').trim();
-  const API_BASE_URL = configuredApiBase || DEFAULT_API_BASE_URL;
+  const isStagingPath = /(?:^|\/)staging(?:\/|$)/i.test(String(window.location.pathname || ''));
+  const API_BASE_URL = configuredApiBase || (isStagingPath ? STAGING_API_BASE_URL : DEFAULT_API_BASE_URL);
   const TOKEN_KEY = 'pms_api_token';
 
   let memoryToken = null;
