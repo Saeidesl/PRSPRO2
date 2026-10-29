@@ -1191,6 +1191,7 @@
 
       modal.innerHTML = `
         <div
+          class="project-form-dialog"
           role="dialog"
           aria-modal="true"
           aria-labelledby="project-create-title"
@@ -1207,7 +1208,7 @@
             color:var(--color-text);
           "
         >
-          <div style="
+          <div class="project-form-dialog-header" style="
             display:flex;
             align-items:center;
             justify-content:space-between;
@@ -1249,7 +1250,7 @@
             </div>
           </div>
 
-          <form id="project-create-form">
+          <form id="project-create-form" class="project-form-layout">
             <div class="filter-group form-group project-form-field" style="margin-bottom:16px;">
               <label for="new-project-code">کد پروژه <span style="color:var(--color-danger);">*</span></label>
               <input type="text" id="new-project-code" name="ProjectCode" required maxlength="100" autocomplete="off" placeholder="کد پروژه را وارد کنید" style="width:100%;box-sizing:border-box;" ${isEditMode ? "readonly aria-readonly=\"true\"" : ""}>
@@ -1367,14 +1368,14 @@
               <small style="display:block;margin-top:5px;color:var(--color-text-secondary);">این گزینه به‌صورت پیش‌فرض فعال است.</small>
             </div>
 
-            <div style="display:flex;gap:10px;flex-wrap:wrap;margin:4px 0 16px;">
+            <div class="project-form-tools" style="display:flex;gap:10px;flex-wrap:wrap;margin:4px 0 16px;">
               <button type="button" id="new-project-material-specs-button" class="btn btn-secondary">تعریف مصرف ملزومات</button>
               <button type="button" id="new-project-color-size-button" class="btn btn-secondary">تعریف رنگ‌بندی و سایزبندی</button>
             </div>
             <div id="new-project-material-specs-summary" style="font-size:12px;color:var(--color-text-secondary);margin:-8px 0 14px;">مصرف ملزومات اختیاری است و هنوز تعریف نشده است.</div>
             <div id="new-project-color-size-summary" style="font-size:12px;color:var(--color-text-secondary);margin:-8px 0 16px;">رنگ‌بندی و سایزبندی اختیاری است و هنوز تعریف نشده است.</div>
 
-            <div style="
+            <div class="project-form-actions" style="
               display:flex;
               justify-content:flex-start;
               gap:10px;
