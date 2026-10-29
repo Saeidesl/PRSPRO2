@@ -45,7 +45,7 @@
         <div id="material-specs-error" class="alert alert-danger" hidden></div>
         <section><h4>ملزومات تعریف‌شده</h4><p style="font-size:12px;color:var(--color-text-secondary)">مصرف کل پس از ثبت تعداد قطعی تولید، با احتساب ضایعات محاسبه می‌شود.</p><div id="material-specs-list"></div></section>
         <form id="material-specs-form" class="form" style="margin-top:18px;border-top:1px solid var(--color-border);padding-top:16px">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><h4 style="margin:0">تعریف چندتایی ملزومات</h4><button type="button" class="btn btn-secondary" id="ms-add-row">+ افزودن ردیف</button></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><h4 style="margin:0">تعریف چندتایی ملزومات</h4></div>
           <p style="font-size:12px;color:var(--color-text-secondary);line-height:1.8">هر ردیف یک ملزوم است. می‌توانید چند ردیف را هم‌زمان ثبت کنید یا با «ویرایش / نسخه جدید» یک مشخصه قبلی را برای ایجاد نسخه جدید به ردیف‌ها اضافه کنید.</p>
           <div id="ms-rows" style="display:grid;gap:12px;margin-top:12px"></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn btn-primary" id="ms-save" type="submit">ذخیره همه ملزومات</button><button class="btn btn-light" id="ms-reset" type="button">پاک‌کردن ردیف‌ها</button></div>
@@ -87,7 +87,8 @@
         '<div class="form-group"><label>واحد اندازه‌گیری *</label><select name="Unit" required><option value="عدد">عدد</option><option value="متر">متر</option><option value="سانتی‌متر">سانتی‌متر</option><option value="میلی‌متر">میلی‌متر</option><option value="مترمربع">مترمربع</option><option value="کیلوگرم">کیلوگرم</option><option value="گرم">گرم</option><option value="لیتر">لیتر</option><option value="میلی‌لیتر">میلی‌لیتر</option><option value="رول">رول</option><option value="بسته">بسته</option><option value="جفت">جفت</option><option value="دست">دست</option><option value="یارد">یارد</option></select></div></div>' +
         '<div class="form-row"><div class="form-group"><label>مصرف برای هر واحد محصول *</label><input name="ConsumptionPerUnit" type="number" min="0.0001" step="0.0001" required></div>' +
         '<div class="form-group"><label>ضایعات مجاز (%)</label><input name="WastagePercent" type="number" min="0" max="100" step="0.1" value="0"></div></div>' +
-        '<div class="form-group"><label>توضیحات</label><textarea name="Notes" rows="2" maxlength="500"></textarea></div>';
+        '<div class="form-group"><label>توضیحات</label><textarea name="Notes" rows="2" maxlength="500"></textarea></div>' +
+        '<div style="display:flex;justify-content:flex-start;margin-top:8px"><button type="button" class="btn btn-secondary" data-add-next>+ افزودن ردیف بعدی</button></div>';
       const value = (name) => row.querySelector('[name="' + name + '"]');
       value('specId').value = item.ID || item.specId || '';
       value('ItemName').value = item.ItemName || '';
@@ -107,6 +108,11 @@
           return;
         }
         row.remove(); renumberRows();
+      });
+      row.querySelector('[data-add-next]').addEventListener('click', () => {
+        const nextRow = addRow({});
+        nextRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        nextRow.querySelector('[name="ItemName"]').focus();
       });
       rowsRoot.appendChild(row);
       renumberRows();
@@ -146,7 +152,6 @@
         row.querySelector('[name="ItemName"]').focus();
       }
     });
-    modal.querySelector('#ms-add-row').addEventListener('click', () => addRow({}));
     addRow({});
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
@@ -183,8 +188,7 @@
       }
       const button = modal.querySelector('#ms-save');
       form.dataset.saving = '1'; button.disabled = true;
-      modal.querySelector('#ms-add-row').disabled = true;
-      form.querySelectorAll('[data-ms-remove]').forEach((control) => { control.disabled = true; });
+      form.querySelectorAll('[data-ms-remove], [data-add-next]').forEach((control) => { control.disabled = true; });
       let savedCount = 0;
       try {
         for (let i = 0; i < entries.length; i += 1) {
@@ -205,8 +209,7 @@
         showError('ذخیره ' + savedCount + ' از ' + entries.length + ' ردیف انجام شد؛ ذخیره بقیه ناموفق بود: ' + String(saveError && saveError.message || saveError) + '. ردیف‌ها را بررسی کنید و دوباره تلاش کنید.');
       } finally {
         delete form.dataset.saving; button.disabled = false;
-        modal.querySelector('#ms-add-row').disabled = false;
-        form.querySelectorAll('[data-ms-remove]').forEach((control) => { control.disabled = false; });
+        form.querySelectorAll('[data-ms-remove], [data-add-next]').forEach((control) => { control.disabled = false; });
         button.textContent = 'ذخیره همه ملزومات';
         renumberRows();
       }
