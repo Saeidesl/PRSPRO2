@@ -171,3 +171,17 @@ test('project dialogs are wired to the shared keyboard controller', () => {
   assert.match(source, /projectModalKeyboard = bindProjectModalKeyboard\(modal/);
   assert.match(source, /projectModalKeyboard\.destroy\(\)/);
 });
+
+test('settings-only save sends only project settings through the API', () => {
+  const saveHandler = source.slice(
+    source.indexOf("const settingsSaveButton = settingsModal.querySelector('[data-settings-save]');"),
+    source.indexOf("settingsContent.addEventListener('change', saveProjectSettings);")
+  );
+  assert.match(saveHandler, /AvailableDepartmentIDs:\s*settings\.departmentIds/);
+  assert.match(saveHandler, /AllowedUserIDs:\s*settings\.userIds/);
+  assert.match(saveHandler, /NotifyEnabled:\s*settings\.notifyEnabled/);
+  assert.match(saveHandler, /Status:\s*settings\.status/);
+  assert.match(saveHandler, /window\.PMS\.Api\.put\('\/projects\/' \+ encodeURIComponent\(projectId\), payload\)/);
+  assert.match(saveHandler, /ذخیره تنظیمات ناموفق بود:/);
+  assert.doesNotMatch(saveHandler, /this\.createProject\(modal\)|requestSubmit\(\)/);
+});
