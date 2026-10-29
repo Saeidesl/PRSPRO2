@@ -1437,19 +1437,42 @@
         return settings;
       };
       const applySavedProjectSettings = () => {
-        let saved = null;
-        try { saved = JSON.parse(localStorage.getItem(projectSettingsKey) || 'null'); } catch (error) {}
+        // Fixed defaults for every new project; do not inherit stale per-user choices.
         const checks = Array.from(modal.querySelectorAll('input[name="AvailableDepartmentIDs"]'));
-        if (saved && Array.isArray(saved.departmentIds)) checks.forEach((input) => { input.checked = saved.departmentIds.map(String).includes(String(input.value)); });
+        const departments = Array.isArray(this._projectFormDepartments) ? this._projectFormDepartments : [];
+        const wantedDepartmentIds = departments.filter((department) => {
+          const code = String(department.Code || department.DepartmentCode || '').trim().toUpperCase();
+          const name = String(department.Name || department.Title || '').trim();
+          return code === 'SYSTEM_MANAGEMENT' || code === 'MANAGEMENT_SYSTEM' || code === 'SYSTEM_ADMINISTRATION' ||
+            name.includes('مدیریت سیستم') ||
+            name.includes('طراحی و الگوسازی') ||
+            (name.includes('طراحی') && name.includes('الگوسازی'));
+        }).map((department) => String(department.ID || department.Id || department.id || '')).filter(Boolean);
+        checks.forEach((input) => { input.checked = wantedDepartmentIds.includes(String(input.value)); });
+
         const userSelect = modal.querySelector('#new-project-users');
-        if (saved && Array.isArray(saved.userIds)) Array.from(userSelect.options).forEach((option) => { option.selected = saved.userIds.map(String).includes(String(option.value)); });
+        if (userSelect) Array.from(userSelect.options).forEach((option) => { option.selected = false; });
+
         const notify = modal.querySelector('#new-project-notify');
-        if (saved && typeof saved.notifyEnabled === 'boolean') notify.checked = saved.notifyEnabled;
+        if (notify) notify.checked = true;
+
         const statusSelect = modal.querySelector('#new-project-status');
-        if (statusSelect && saved && saved.status && Array.from(statusSelect.options).some((option) => option.value === saved.status)) statusSelect.value = saved.status;
-        else if (statusSelect && statusSelect.options.length > 1) {
-          const awaiting = Array.from(statusSelect.options).find((option) => /در\s*انتظار\s*اقدام/.test(option.textContent));
-          statusSelect.value = awaiting ? awaiting.value : statusSelect.options[1].value;
+        if (statusSelect) {
+          const activeStatus = (Array.isArray(this._projectFormStatuses) ? this._projectFormStatuses : []).find((status) => {
+            const code = String(status.Code || status.StatusCode || '').trim().toUpperCase();
+            const name = String(status.Name || status.Title || '').trim();
+            const value = String(status.ID || status.Id || status.id || '');
+            return code === 'ACTIVE' || value.toUpperCase() === 'ACTIVE' || name === 'فعال';
+          });
+          const activeValue = activeStatus && String(activeStatus.Code || activeStatus.StatusCode || activeStatus.ID || activeStatus.Id || activeStatus.id || '');
+          if (activeValue && Array.from(statusSelect.options).some((option) => option.value === activeValue)) {
+            statusSelect.value = activeValue;
+          } else {
+            const activeOption = Array.from(statusSelect.options).find((option) =>
+              String(option.value || '').toUpperCase() === 'ACTIVE' || String(option.textContent || '').trim() === 'فعال'
+            );
+            statusSelect.value = activeOption ? activeOption.value : '';
+          }
         }
       };
       let settingsModalKeyboard = null;
@@ -1666,6 +1689,8 @@
         const departments = Array.isArray(lookupData.departments) ? lookupData.departments : [];
         const users = Array.isArray(lookupData.users) ? lookupData.users : [];
         const projectStatuses = Array.isArray(lookupData.projectStatuses) ? lookupData.projectStatuses.slice() : [];
+        this._projectFormDepartments = departments;
+        this._projectFormStatuses = projectStatuses;
         if (isEditMode && editProject.Status) {
           const currentStatus = String(editProject.Status);
           const hasCurrentStatus = projectStatuses.some((item) =>
@@ -1692,7 +1717,10 @@
               return '<option value="' + this.escape(id) + '">' + this.escape(name) + '</option>';
             }).join('')
           : '<option value="">گردش کار فعالی پیدا نشد</option>';
-        workflowSelect.value = '';
+        // New projects always start with the first available workflow.
+        workflowSelect.value = workflows.length
+          ? String(workflows[0].ID || workflows[0].Id || workflows[0].id || '')
+          : '';
 
         departmentsSelect.innerHTML = departments.map((department) => {
           const id = department.ID || department.Id || department.id;
