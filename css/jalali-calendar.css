@@ -2,7 +2,7 @@
 .pms-jalali-date-wrap>.pms-jalali-date-input{flex:1;min-width:0;width:100%;direction:ltr;text-align:center;font-variant-numeric:tabular-nums}
 .pms-jalali-date-wrap>.pms-jalali-date-input[aria-invalid="true"],.pms-jalali-date-wrap>.pms-jalali-date-input:invalid{border-color:var(--danger,#dc3545)}
 .pms-jalali-date-wrap>.pms-date-iso-value{display:none!important}
-.pms-jalali-calendar-trigger{flex:0 0 42px;min-width:42px;border:1px solid var(--border-color,#d0d7de);border-radius:8px;background:var(--surface,#fff);color:var(--text-color,inherit);font-size:19px;cursor:pointer}
+.pms-jalali-calendar-trigger{flex:0 0 42px;min-width:42px;min-height:42px;border:1px solid var(--color-border,#d1d9e0);border-radius:8px;background:var(--color-surface,#fff);color:var(--color-text,#1f2328);font-size:19px;cursor:pointer;transition:background-color .15s ease,border-color .15s ease,color .15s ease,box-shadow .15s ease}.pms-jalali-calendar-trigger:hover{border-color:var(--color-primary,#0969da);background:var(--color-surface-hover,#eef2f6)}.pms-jalali-calendar-trigger:focus-visible{outline:2px solid var(--color-primary,#0969da);outline-offset:2px}.pms-jalali-calendar-trigger:disabled{opacity:.55;cursor:not-allowed}
 .pms-jalali-calendar{position:absolute;z-index:10000;top:calc(100% + 5px);inset-inline-start:0;width:min(300px,calc(100vw - 36px));padding:12px;border:1px solid var(--border-color,#d0d7de);border-radius:12px;background:var(--card-bg,#fff);color:var(--text-color,#24292f);box-shadow:0 8px 28px rgba(0,0,0,.18);direction:rtl}
 .pms-jalali-calendar[hidden]{display:none!important}
 .pms-jalali-cal-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
