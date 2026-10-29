@@ -45,18 +45,10 @@
         <div id="material-specs-error" class="alert alert-danger" hidden></div>
         <section><h4>ملزومات تعریف‌شده</h4><p style="font-size:12px;color:var(--color-text-secondary)">مصرف کل پس از ثبت تعداد قطعی تولید، با احتساب ضایعات محاسبه می‌شود.</p><div id="material-specs-list"></div></section>
         <form id="material-specs-form" class="form" style="margin-top:18px;border-top:1px solid var(--color-border);padding-top:16px">
-          <input type="hidden" name="specId">
-          <h4 id="material-specs-form-title">افزودن ملزوم</h4>
-          <div class="form-row">
-            <div class="form-group"><label for="ms-item-name">نام ملزوم</label><input id="ms-item-name" name="ItemName" maxlength="160" required></div>
-            <div class="form-group"><label for="ms-unit">واحد اندازه‌گیری</label><select id="ms-unit" name="Unit" required><option value="عدد">عدد</option><option value="متر">متر</option><option value="سانتی‌متر">سانتی‌متر</option><option value="میلی‌متر">میلی‌متر</option><option value="مترمربع">مترمربع</option><option value="کیلوگرم">کیلوگرم</option><option value="گرم">گرم</option><option value="لیتر">لیتر</option><option value="میلی‌لیتر">میلی‌لیتر</option><option value="رول">رول</option><option value="بسته">بسته</option><option value="جفت">جفت</option><option value="دست">دست</option><option value="یارد">یارد</option></select></div>
-          </div>
-          <div class="form-row">
-            <div class="form-group"><label for="ms-consumption">مصرف برای هر واحد محصول</label><input id="ms-consumption" name="ConsumptionPerUnit" type="number" min="0.0001" step="0.0001" required></div>
-            <div class="form-group"><label for="ms-wastage">ضایعات مجاز (%)</label><input id="ms-wastage" name="WastagePercent" type="number" min="0" max="100" step="0.1" value="0"></div>
-          </div>
-          <div class="form-group"><label for="ms-notes">توضیحات</label><textarea id="ms-notes" name="Notes" rows="2"></textarea></div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary" id="ms-save" type="submit">ذخیره مشخصات</button><button class="btn btn-light" id="ms-reset" type="button">پاک‌کردن فرم</button></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><h4 style="margin:0">تعریف چندتایی ملزومات</h4><button type="button" class="btn btn-secondary" id="ms-add-row">+ افزودن ردیف</button></div>
+          <p style="font-size:12px;color:var(--color-text-secondary);line-height:1.8">هر ردیف یک ملزوم است. می‌توانید چند ردیف را هم‌زمان ثبت کنید یا با «ویرایش / نسخه جدید» یک مشخصه قبلی را برای ایجاد نسخه جدید به ردیف‌ها اضافه کنید.</p>
+          <div id="ms-rows" style="display:grid;gap:12px;margin-top:12px"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn btn-primary" id="ms-save" type="submit">ذخیره همه ملزومات</button><button class="btn btn-light" id="ms-reset" type="button">پاک‌کردن ردیف‌ها</button></div>
         </form>
         <section style="margin-top:22px"><h4>تاریخچه محاسبات نیاز قطعی</h4><div id="material-specs-history"></div></section>
       </div>`;
@@ -67,6 +59,7 @@
     const list = modal.querySelector('#material-specs-list');
     const historyRoot = modal.querySelector('#material-specs-history');
     const form = modal.querySelector('#material-specs-form');
+    const rowsRoot = modal.querySelector('#ms-rows');
     let specs = [];
     let history = [];
 
@@ -74,13 +67,55 @@
       error.textContent = message;
       error.hidden = false;
     }
+    function renumberRows() {
+      const allRows = Array.from(rowsRoot.querySelectorAll('[data-ms-row]'));
+      allRows.forEach((row, index) => {
+        const title = row.querySelector('[data-ms-row-title]');
+        if (title) title.textContent = 'ملزوم ' + (index + 1);
+        const remove = row.querySelector('[data-ms-remove]');
+        if (remove) remove.disabled = allRows.length <= 1;
+      });
+    }
+    function addRow(item) {
+      item = item || {};
+      const row = document.createElement('article');
+      row.setAttribute('data-ms-row', '1');
+      row.style.cssText = 'border:1px solid var(--color-border);border-radius:10px;padding:14px;background:var(--color-surface-alt,var(--color-surface));';
+      row.innerHTML = '<input type="hidden" name="specId">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px"><strong data-ms-row-title>ملزوم</strong><button type="button" class="btn btn-light" data-ms-remove>حذف ردیف</button></div>' +
+        '<div class="form-row"><div class="form-group"><label>نام ملزوم *</label><input name="ItemName" maxlength="160" required></div>' +
+        '<div class="form-group"><label>واحد اندازه‌گیری *</label><select name="Unit" required><option value="عدد">عدد</option><option value="متر">متر</option><option value="سانتی‌متر">سانتی‌متر</option><option value="میلی‌متر">میلی‌متر</option><option value="مترمربع">مترمربع</option><option value="کیلوگرم">کیلوگرم</option><option value="گرم">گرم</option><option value="لیتر">لیتر</option><option value="میلی‌لیتر">میلی‌لیتر</option><option value="رول">رول</option><option value="بسته">بسته</option><option value="جفت">جفت</option><option value="دست">دست</option><option value="یارد">یارد</option></select></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>مصرف برای هر واحد محصول *</label><input name="ConsumptionPerUnit" type="number" min="0.0001" step="0.0001" required></div>' +
+        '<div class="form-group"><label>ضایعات مجاز (%)</label><input name="WastagePercent" type="number" min="0" max="100" step="0.1" value="0"></div></div>' +
+        '<div class="form-group"><label>توضیحات</label><textarea name="Notes" rows="2" maxlength="500"></textarea></div>';
+      const value = (name) => row.querySelector('[name="' + name + '"]');
+      value('specId').value = item.ID || item.specId || '';
+      value('ItemName').value = item.ItemName || '';
+      const unit = value('Unit');
+      if (item.Unit && !Array.from(unit.options).some((option) => option.value === String(item.Unit))) {
+        const legacy = document.createElement('option');
+        legacy.value = item.Unit; legacy.textContent = item.Unit + ' (واحد قدیمی)'; legacy.dataset.legacyUnit = '1';
+        unit.appendChild(legacy);
+      }
+      unit.value = item.Unit || 'عدد';
+      value('ConsumptionPerUnit').value = item.ConsumptionPerUnit == null ? '' : item.ConsumptionPerUnit;
+      value('WastagePercent').value = item.WastagePercent == null ? 0 : item.WastagePercent;
+      value('Notes').value = item.Notes || '';
+      row.querySelector('[data-ms-remove]').addEventListener('click', () => {
+        if (rowsRoot.querySelectorAll('[data-ms-row]').length <= 1) {
+          showError('حداقل یک ردیف باید باقی بماند.');
+          return;
+        }
+        row.remove(); renumberRows();
+      });
+      rowsRoot.appendChild(row);
+      renumberRows();
+      return row;
+    }
     function resetForm() {
-      Array.from(form.elements.Unit.options).filter((option) => option.dataset.legacyUnit === '1').forEach((option) => option.remove());
-      form.reset();
-      form.elements.specId.value = '';
-      form.elements.WastagePercent.value = '0';
-      modal.querySelector('#material-specs-form-title').textContent = 'افزودن ملزوم';
-      modal.querySelector('#ms-save').textContent = 'ذخیره مشخصات';
+      rowsRoot.innerHTML = '';
+      addRow({});
+      modal.querySelector('#ms-save').textContent = 'ذخیره همه ملزومات';
       error.hidden = true;
     }
     function renderSpecs() {
@@ -106,45 +141,59 @@
       if (edit) {
         const spec = specs.find((item) => String(item.ID) === String(edit.getAttribute('data-edit')));
         if (!spec) return;
-        form.elements.specId.value = spec.ID;
-        form.elements.ItemName.value = spec.ItemName || '';
-        const unitOption = Array.from(form.elements.Unit.options).find((option) => option.value === String(spec.Unit || ''));
-        if (!unitOption && spec.Unit) {
-          const legacyOption = document.createElement('option');
-          legacyOption.value = spec.Unit; legacyOption.textContent = spec.Unit + ' (واحد قدیمی)';
-          legacyOption.dataset.legacyUnit = '1'; legacyOption.defaultSelected = true;
-          form.elements.Unit.appendChild(legacyOption);
-        }
-        form.elements.Unit.value = spec.Unit || '';
-        form.elements.ConsumptionPerUnit.value = spec.ConsumptionPerUnit ?? '';
-        form.elements.WastagePercent.value = spec.WastagePercent ?? 0;
-        form.elements.Notes.value = spec.Notes || '';
-        modal.querySelector('#material-specs-form-title').textContent = 'ایجاد نسخه جدید از مشخصات';
-        modal.querySelector('#ms-save').textContent = 'ثبت نسخه جدید';
-        updatePolicy();
-        form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const row = addRow(spec);
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        row.querySelector('[name="ItemName"]').focus();
       }
     });
+    modal.querySelector('#ms-add-row').addEventListener('click', () => addRow({}));
+    addRow({});
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
       if (form.dataset.saving === '1') return;
       error.hidden = true;
-      const payload = {
-        ItemName: form.elements.ItemName.value.trim(),
-        ConsumptionPerUnit: Number(form.elements.ConsumptionPerUnit.value),
-        WastagePercent: Number(form.elements.WastagePercent.value || 0),
-        Notes: form.elements.Notes.value.trim()
-      };
-      const selectedUnit = form.elements.Unit.options[form.elements.Unit.selectedIndex];
-      if (!(selectedUnit && selectedUnit.dataset.legacyUnit === '1' && form.elements.specId.value)) {
-        payload.Unit = form.elements.Unit.value.trim();
+      const rowNodes = Array.from(rowsRoot.querySelectorAll('[data-ms-row]'));
+      const entries = rowNodes.map((row) => {
+        const get = (name) => row.querySelector('[name="' + name + '"]').value.trim();
+        const unitSelect = row.querySelector('[name="Unit"]');
+        const payload = {
+          ItemName: get('ItemName'),
+          ConsumptionPerUnit: Number(get('ConsumptionPerUnit')),
+          WastagePercent: Number(get('WastagePercent') || 0),
+          Notes: get('Notes')
+        };
+        const selectedOption = unitSelect.options[unitSelect.selectedIndex];
+        if (!(selectedOption && selectedOption.dataset.legacyUnit === '1' && get('specId'))) payload.Unit = unitSelect.value.trim();
+        return { row, id: get('specId'), payload };
+      });
+      const seen = new Set();
+      for (let i = 0; i < entries.length; i += 1) {
+        const entry = entries[i], p = entry.payload;
+        if (!p.ItemName || !p.Unit || !Number.isFinite(p.ConsumptionPerUnit) || p.ConsumptionPerUnit <= 0 ||
+            !Number.isFinite(p.WastagePercent) || p.WastagePercent < 0 || p.WastagePercent > 100) {
+          showError('ردیف ' + (i + 1) + ': نام، واحد، مصرف مثبت و درصد ضایعات بین صفر تا ۱۰۰ را بررسی کنید.');
+          entry.row.scrollIntoView({ behavior: 'smooth', block: 'center' }); return;
+        }
+        const key = (p.ItemName + '|' + p.Unit).toLocaleLowerCase('fa');
+        if (seen.has(key)) {
+          showError('نام و واحد اندازه‌گیری یکسان را در چند ردیف تکرار نکنید.');
+          entry.row.scrollIntoView({ behavior: 'smooth', block: 'center' }); return;
+        }
+        seen.add(key);
       }
       const button = modal.querySelector('#ms-save');
-      form.dataset.saving = '1'; button.disabled = true; button.textContent = 'در حال ذخیره...';
+      form.dataset.saving = '1'; button.disabled = true;
+      modal.querySelector('#ms-add-row').disabled = true;
+      form.querySelectorAll('[data-ms-remove]').forEach((control) => { control.disabled = true; });
+      let savedCount = 0;
       try {
-        const id = form.elements.specId.value;
-        if (id) await window.PMS.Api.put('/material-specifications/' + encodeURIComponent(id), payload);
-        else await window.PMS.Api.post('/projects/' + encodeURIComponent(projectId) + '/material-specifications', payload);
+        for (let i = 0; i < entries.length; i += 1) {
+          const entry = entries[i];
+          button.textContent = 'در حال ذخیره ' + (i + 1) + ' از ' + entries.length + '...';
+          if (entry.id) await window.PMS.Api.put('/material-specifications/' + encodeURIComponent(entry.id), entry.payload);
+          else await window.PMS.Api.post('/projects/' + encodeURIComponent(projectId) + '/material-specifications', entry.payload);
+          savedCount += 1;
+        }
         const refreshed = await Promise.all([
           window.PMS.Api.get('/projects/' + encodeURIComponent(projectId) + '/material-specifications'),
           window.PMS.Api.get('/projects/' + encodeURIComponent(projectId) + '/material-calculations').catch(() => ({ data: { items: [] } }))
@@ -153,10 +202,13 @@
         history = unwrap(refreshed[1]); history = Array.isArray(history) ? history : [];
         renderSpecs(); renderHistory(); resetForm();
       } catch (saveError) {
-        showError('ذخیره مشخصات ناموفق بود: ' + String(saveError && saveError.message || saveError));
+        showError('ذخیره ' + savedCount + ' از ' + entries.length + ' ردیف انجام شد؛ ذخیره بقیه ناموفق بود: ' + String(saveError && saveError.message || saveError) + '. ردیف‌ها را بررسی کنید و دوباره تلاش کنید.');
       } finally {
         delete form.dataset.saving; button.disabled = false;
-        button.textContent = form.elements.specId.value ? 'ثبت نسخه جدید' : 'ذخیره مشخصات';
+        modal.querySelector('#ms-add-row').disabled = false;
+        form.querySelectorAll('[data-ms-remove]').forEach((control) => { control.disabled = false; });
+        button.textContent = 'ذخیره همه ملزومات';
+        renumberRows();
       }
     });
 
