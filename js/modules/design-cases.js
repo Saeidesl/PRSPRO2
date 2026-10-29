@@ -204,14 +204,155 @@
           '<li><strong>' + this.esc(item.Action || 'تغییر') + '</strong><span>' + this.esc(this.statusLabels[item.ToStatus] || item.ToStatus || '') +
           '</span><small>' + this.esc(item.CreatedAt || '') + '</small></li>').join('') + '</ol>' :
           '<p class="design-case-muted">سابقه‌ای ثبت نشده است.</p>';
+        let eventsHtml = '<p class="design-case-muted">در حال دریافت رویدادها...</p>';
+        try {
+          const eventsResponse = await window.PMS.Api.get('/design-cases/' + encodeURIComponent(id) + '/events', { retry: false });
+          const eventsData = this.data(eventsResponse) || {};
+          const events = Array.isArray(eventsData.events) ? eventsData.events : [];
+          eventsHtml = events.length ? '<ol class="design-case-history">' + events.map((item) =>
+            '<li><strong>' + this.esc(item.EventTypeName || item.EventTypeID || 'رویداد') + '</strong><span>' +
+            this.esc(item.Description || '') + '</span><small>' +
+            this.esc(item.OccurredAt || item.CreatedAt || '') + '</small></li>').join('') + '</ol>' :
+            '<p class="design-case-muted">هنوز رویدادی ثبت نشده است.</p>';
+        } catch (eventError) {
+          eventsHtml = '<p class="design-case-muted">دریافت رویدادها ممکن نشد: ' + this.esc(eventError && eventError.message || '') + '</p>';
+        }
+        const actionButtons = status !== 'APPROVED' && status !== 'ARCHIVED'
+          ? '<div class="design-case-form-actions"><button type="button" class="btn btn-secondary" id="design-case-add-event">ثبت رویداد</button>' +
+            (status === 'READY_FOR_APPROVAL' ? '<button type="button" class="btn btn-primary" id="design-case-approve">تأیید و ورود به تولید</button>' : '') + '</div>'
+          : '';
         this.modal('<div class="design-case-detail-summary"><span class="design-case-status status-' + this.esc(status.toLowerCase()) + '">' +
           this.esc(this.statusLabels[status] || status) + '</span><h4>' + this.esc(row.Title || 'بدون عنوان') + '</h4><p>' +
           this.esc(row.Description || 'توضیحی ثبت نشده است.') + '</p><div class="design-case-detail-id">شناسه: <bdi>' + this.esc(row.ID || id) + '</bdi></div></div>' +
-          '<h4>ملزومات</h4>' + materialsHtml + '<h4>تاریخچه</h4>' + historyHtml +
-          (status === 'READY_FOR_APPROVAL' ? '<div class="design-case-note">این پرونده آماده تأیید است؛ فرم اتصال به تولید در مرحله بعدی تکمیل می‌شود.</div>' : ''),
+          '<h4>ملزومات</h4>' + materialsHtml + '<h4>رویدادهای پرونده</h4>' + eventsHtml +
+          '<h4>تاریخچه تغییرات</h4>' + historyHtml + actionButtons,
           'جزئیات پرونده طرح');
+        const root = document.getElementById('design-case-modal-root');
+        const eventButton = root && root.querySelector('#design-case-add-event');
+        if (eventButton) eventButton.addEventListener('click', () => this.openEventForm(id));
+        const approveButton = root && root.querySelector('#design-case-approve');
+        if (approveButton) approveButton.addEventListener('click', () => this.openApprovalForm(row));
       } catch (error) {
         this.modal('<div class="alert alert-danger">' + this.esc(error && error.message ? error.message : 'دریافت جزئیات انجام نشد.') + '</div>', 'جزئیات پرونده طرح');
+      }
+    },
+    openEventForm: async function (id) {
+      this.modal('<p>در حال دریافت انواع رویداد...</p>', 'ثبت رویداد پرونده');
+      const root = document.getElementById('design-case-modal-root');
+      try {
+        const [typesResponse, meResponse] = await Promise.all([
+          window.PMS.Api.get('/event-types', { retry: false }),
+          window.PMS.Api.get('/auth/me', { retry: false })
+        ]);
+        const typesData = this.data(typesResponse) || {};
+        const allTypes = Array.isArray(typesData) ? typesData : (typesData.items || []);
+        const types = allTypes.filter((item) =>
+          String(item.ConnectionType || '').toUpperCase() === 'DESIGN_CASE' &&
+          String(item.Status || 'ACTIVE').toUpperCase() === 'ACTIVE');
+        const me = this.data(meResponse) || {};
+        const user = me.user || me;
+        if (!types.length) {
+          this.modal('<p>هیچ نوع رویداد فعالی برای پرونده طرح تعریف نشده است. ابتدا در تنظیمات نوع رویداد، اتصال را روی «پرونده طرح» قرار دهید.</p>', 'ثبت رویداد پرونده');
+          return;
+        }
+        this.modal('<form id="design-case-event-form"><div class="form-group"><label for="design-case-event-type">نوع رویداد *</label><select id="design-case-event-type" required>' +
+          types.map((item) => '<option value="' + this.esc(item.ID) + '">' + this.esc(item.Name || item.Code || item.ID) + '</option>').join('') +
+          '</select></div><div class="form-group"><label for="design-case-event-description">توضیحات</label><textarea id="design-case-event-description" rows="3" maxlength="2000"></textarea></div>' +
+          '<div id="design-case-event-feedback" role="alert" class="design-case-form-feedback"></div><div class="design-case-form-actions"><button type="button" class="btn btn-secondary" data-design-case-close>انصراف</button><button type="submit" id="design-case-event-save" class="btn btn-primary">ثبت رویداد</button></div></form>',
+          'ثبت رویداد پرونده');
+        const formRoot = document.getElementById('design-case-modal-root');
+        formRoot.querySelectorAll('[data-design-case-close]').forEach((button) => button.addEventListener('click', () => { formRoot.innerHTML = ''; }));
+        formRoot.querySelector('#design-case-event-form').addEventListener('submit', async (event) => {
+          event.preventDefault();
+          if (this.busy) return;
+          const save = formRoot.querySelector('#design-case-event-save');
+          const feedback = formRoot.querySelector('#design-case-event-feedback');
+          this.busy = true; save.disabled = true; save.textContent = 'در حال ثبت...';
+          try {
+            const body = {
+              EventTypeID: formRoot.querySelector('#design-case-event-type').value,
+              Description: formRoot.querySelector('#design-case-event-description').value.trim(),
+              PerformedBy: user.ID || user.Id || user.UserID || '',
+              IdempotencyKey: this.uuid()
+            };
+            if (!body.PerformedBy) throw new Error('شناسه کاربر جاری دریافت نشد؛ دوباره وارد سامانه شوید.');
+            await window.PMS.Api.post('/design-cases/' + encodeURIComponent(id) + '/events', body, { retry: false });
+            formRoot.innerHTML = '';
+            this.feedback('رویداد با موفقیت ثبت شد.', 'success');
+            await this.load(true);
+            await this.openDetails(id);
+          } catch (error) {
+            feedback.textContent = error && error.message || 'ثبت رویداد انجام نشد.';
+            save.disabled = false; save.textContent = 'تلاش دوباره';
+          } finally { this.busy = false; }
+        });
+      } catch (error) {
+        this.modal('<p class="design-case-form-feedback">' + this.esc(error && error.message || 'دریافت اطلاعات ثبت رویداد انجام نشد.') + '</p>', 'ثبت رویداد پرونده');
+      }
+    },
+    openApprovalForm: async function (row) {
+      const id = row.ID || row.Id || row.id;
+      if (!id || String(row.Status || '') !== 'READY_FOR_APPROVAL') return;
+      this.modal('<p>در حال دریافت گردش‌کارها و واحدها...</p>', 'تأیید و ورود به تولید');
+      try {
+        const [workflowResponse, departmentResponse] = await Promise.all([
+          window.PMS.Api.get('/workflows', { retry: false }),
+          window.PMS.Api.get('/departments', { retry: false })
+        ]);
+        const workflowData = this.data(workflowResponse) || {};
+        const departmentData = this.data(departmentResponse) || {};
+        const workflows = (Array.isArray(workflowData) ? workflowData : (workflowData.items || []))
+          .filter((item) => String(item.Status || 'ACTIVE').toUpperCase() === 'ACTIVE');
+        const departments = (Array.isArray(departmentData) ? departmentData : (departmentData.items || []))
+          .filter((item) => String(item.Status || 'ACTIVE').toUpperCase() === 'ACTIVE');
+        if (!workflows.length || !departments.length) {
+          this.modal('<p>برای ورود به تولید، ابتدا حداقل یک گردش‌کار و یک واحد فعال تعریف کنید.</p>', 'تأیید و ورود به تولید');
+          return;
+        }
+        this.modal('<form id="design-case-approval-form"><div class="design-case-form-grid">' +
+          '<div class="form-group"><label for="design-case-project-code">کد پروژه تولید *</label><input id="design-case-project-code" required maxlength="100"></div>' +
+          '<div class="form-group"><label for="design-case-quantity">تعداد تولید *</label><input id="design-case-quantity" type="number" min="1" step="1" required></div>' +
+          '<div class="form-group full"><label for="design-case-workflow">گردش‌کار *</label><select id="design-case-workflow" required>' +
+          workflows.map((item) => '<option value="' + this.esc(item.ID) + '">' + this.esc(item.Name || item.Title || item.ID) + '</option>').join('') +
+          '</select></div><div class="form-group full"><label for="design-case-departments">واحدهای مجاز *</label><select id="design-case-departments" multiple required size="4">' +
+          departments.map((item) => '<option value="' + this.esc(item.ID) + '">' + this.esc(item.Name || item.Title || item.ID) + '</option>').join('') +
+          '</select><small>برای انتخاب چند واحد، در رایانه Ctrl و در موبایل لمس گزینه‌ها را استفاده کنید.</small></div></div>' +
+          '<div id="design-case-approval-feedback" role="alert" class="design-case-form-feedback"></div><div class="design-case-form-actions">' +
+          '<button type="button" class="btn btn-secondary" data-design-case-close>انصراف</button><button type="submit" id="design-case-approval-save" class="btn btn-primary">تأیید و ایجاد پروژه</button></div></form>',
+          'تأیید و ورود به تولید');
+        const root = document.getElementById('design-case-modal-root');
+        root.querySelectorAll('[data-design-case-close]').forEach((button) => button.addEventListener('click', () => { root.innerHTML = ''; }));
+        root.querySelector('#design-case-approval-form').addEventListener('submit', async (event) => {
+          event.preventDefault();
+          if (this.busy) return;
+          const save = root.querySelector('#design-case-approval-save');
+          const feedback = root.querySelector('#design-case-approval-feedback');
+          const selectedDepartments = Array.from(root.querySelector('#design-case-departments').selectedOptions).map((option) => option.value);
+          if (!selectedDepartments.length) { feedback.textContent = 'حداقل یک واحد مجاز انتخاب کنید.'; return; }
+          this.busy = true; save.disabled = true; save.textContent = 'در حال ایجاد پروژه...';
+          try {
+            const body = {
+              ProjectCode: root.querySelector('#design-case-project-code').value.trim(),
+              Title: row.Title || '',
+              Description: row.Description || '',
+              Quantity: Number(root.querySelector('#design-case-quantity').value),
+              WorkflowID: root.querySelector('#design-case-workflow').value,
+              AvailableDepartmentIDs: selectedDepartments,
+              IdempotencyKey: this.uuid()
+            };
+            const response = await window.PMS.Api.post('/design-cases/' + encodeURIComponent(id) + '/approve', body, { retry: false });
+            const result = this.data(response) || {};
+            root.innerHTML = '';
+            this.feedback('پرونده تأیید و به تولید متصل شد. کد پروژه: ' + this.esc(result.project && result.project.ProjectCode || body.ProjectCode), 'success');
+            await this.load(true);
+            await this.openDetails(id);
+          } catch (error) {
+            feedback.textContent = error && error.message || 'تأیید پرونده انجام نشد.';
+            save.disabled = false; save.textContent = 'تلاش دوباره';
+          } finally { this.busy = false; }
+        });
+      } catch (error) {
+        this.modal('<p class="design-case-form-feedback">' + this.esc(error && error.message || 'دریافت اطلاعات تولید انجام نشد.') + '</p>', 'تأیید و ورود به تولید');
       }
     }
   };
