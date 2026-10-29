@@ -111,7 +111,7 @@
         '<form id="design-case-create-form">' +
           '<div class="design-case-form-grid"><div class="form-group full"><label for="design-case-title-input">نام طرح <span aria-hidden="true">*</span></label><input id="design-case-title-input" name="Title" maxlength="200" required placeholder="مثلاً مانتو مدل بهار"></div>' +
           '<div class="form-group full"><label for="design-case-description-input">توضیحات</label><textarea id="design-case-description-input" name="Description" rows="3" maxlength="2000" placeholder="توضیحات اولیه طرح و نیازمندی‌ها"></textarea></div></div>' +
-          '<div class="design-case-materials-heading"><div><h4>ملزومات اولیه</h4><p>در صورت نیاز اقلام را اضافه کنید.</p></div><button type="button" class="btn btn-secondary" id="design-case-add-material">+ افزودن قلم</button></div>' +
+          '<div id="design-case-form-feedback" class="design-case-form-feedback" role="alert"></div><div class="design-case-materials-heading"><div><h4>ملزومات اولیه</h4><p>در صورت نیاز اقلام را اضافه کنید.</p></div><button type="button" class="btn btn-secondary" id="design-case-add-material">+ افزودن قلم</button></div>' +
           '<div id="design-case-material-rows"></div><div class="design-case-form-actions"><button type="button" class="btn btn-secondary" data-design-case-close>انصراف</button><button type="submit" class="btn btn-primary" id="design-case-save">ثبت پرونده</button></div></form>',
         'ایجاد پرونده طرح'
       );
@@ -151,7 +151,8 @@
         materials.push({ ItemName: name, Unit: unit, RequiredQuantity: quantity, Description: description });
       });
       if (invalid) {
-        this.feedback('برای هر قلم ملزومات، نام، واحد و مقدار مثبت را کامل کنید.', 'error');
+        const inlineFeedback = root.querySelector('#design-case-form-feedback');
+        if (inlineFeedback) inlineFeedback.textContent = 'برای هر قلم ملزومات، نام، واحد و مقدار مثبت را کامل کنید.';
         return;
       }
       const body = {
@@ -173,7 +174,8 @@
         const id = created && (created.ID || created.Id || created.id);
         if (id) await this.openDetails(id);
       } catch (error) {
-        this.feedback(error && error.message ? error.message : 'ثبت پرونده انجام نشد.', 'error');
+        const inlineFeedback = root.querySelector('#design-case-form-feedback');
+        if (inlineFeedback) inlineFeedback.textContent = error && error.message ? error.message : 'ثبت پرونده انجام نشد.';
         save.disabled = false;
         save.textContent = 'تلاش دوباره';
       } finally {
