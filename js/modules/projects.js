@@ -1443,7 +1443,7 @@
         const wantedDepartmentIds = departments.filter((department) => {
           const code = String(department.Code || department.DepartmentCode || '').trim().toUpperCase();
           const name = String(department.Name || department.Title || '').trim();
-          return code === 'SYSTEM' || code === 'SYSTEM_ADMIN' || code === 'ADMIN' ||
+          return code === 'SYSTEM_MANAGEMENT' || code === 'MANAGEMENT_SYSTEM' || code === 'SYSTEM_ADMINISTRATION' ||
             name.includes('مدیریت سیستم') ||
             name.includes('طراحی و الگوسازی') ||
             (name.includes('طراحی') && name.includes('الگوسازی'));
