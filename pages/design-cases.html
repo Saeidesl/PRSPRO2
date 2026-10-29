@@ -1,0 +1,44 @@
+<section class="page-section design-cases-page" aria-labelledby="design-cases-title">
+  <header class="page-header">
+    <div><span class="projects-page-eyebrow">طراحی و پیش‌تولید</span><h2 id="design-cases-title">پرونده‌های طرح و نمونه‌گیری</h2><p>پیگیری طراحی، الگوسازی، ملزومات و نمونه‌دوزی پیش از ایجاد پروژه تولید</p></div>
+    <div class="page-header-actions"><button type="button" class="btn btn-primary" id="design-case-create">+ پرونده طرح جدید</button></div>
+  </header>
+  <section class="card"><div class="card-body">
+    <div class="filter-bar">
+      <div class="filter-group"><label for="design-case-search">جستجو</label><input id="design-case-search" type="search" placeholder="عنوان یا کد داخلی طرح"></div>
+      <div class="filter-group"><label for="design-case-status-filter">وضعیت</label><select id="design-case-status-filter"><option value="">همه وضعیت‌ها</option><option value="DRAFT">پیش‌نویس</option><option value="IN_DESIGN">در حال طراحی</option><option value="PATTERN_MAKING">الگوسازی</option><option value="MATERIALS_PENDING">در انتظار ملزومات</option><option value="SAMPLE_SEWING">نمونه‌دوزی</option><option value="REVISION_REQUIRED">نیازمند اصلاح</option><option value="READY_FOR_APPROVAL">آماده بررسی</option><option value="REJECTED">رد شده</option><option value="APPROVED">تأیید شده</option><option value="ARCHIVED">بایگانی</option></select></div>
+    </div>
+    <div id="design-case-message" class="alert" role="status" hidden></div><div id="design-case-loading" class="loading-state">در حال بارگذاری پرونده‌ها...</div><div id="design-case-list" class="design-case-grid" aria-live="polite"></div><div id="design-case-empty" class="table-empty" hidden>پرونده‌ای برای نمایش وجود ندارد.</div>
+  </div></section>
+</section>
+<div id="design-case-modal" class="design-case-modal" hidden>
+  <div class="design-case-modal-backdrop" data-design-close></div>
+  <section class="design-case-modal-panel card" role="dialog" aria-modal="true" aria-labelledby="design-case-modal-title">
+    <header class="card-header"><h3 id="design-case-modal-title">پرونده طرح جدید</h3><button type="button" class="btn btn-light btn-sm" data-design-close aria-label="بستن">×</button></header>
+    <div class="card-body">
+      <form id="design-case-form"><input type="hidden" id="design-case-id">
+        <div class="design-case-form-grid">
+          <div class="form-group"><label for="design-case-title">عنوان طرح *</label><input id="design-case-title" required maxlength="180"></div>
+          <div class="form-group"><label for="design-case-code">کد داخلی طرح</label><input id="design-case-code" maxlength="60" placeholder="در صورت خالی بودن خودکار ساخته می‌شود"></div>
+          <div class="form-group"><label for="design-case-requester">درخواست‌کننده</label><input id="design-case-requester" maxlength="160"></div>
+          <div class="form-group"><label for="design-case-quantity">تعداد پیشنهادی</label><input id="design-case-quantity" type="number" min="0" step="1" value="0"></div>
+          <div class="form-group"><label for="design-case-priority">اولویت</label><select id="design-case-priority"><option value="NORMAL">عادی</option><option value="HIGH">بالا</option><option value="URGENT">فوری</option></select></div>
+          <div class="form-group"><label for="design-case-image">نشانی تصویر طرح</label><input id="design-case-image" type="url" maxlength="1500" placeholder="https://..."></div>
+          <div class="form-group design-case-wide"><label for="design-case-description">توضیحات</label><textarea id="design-case-description" rows="3" maxlength="3000"></textarea></div>
+          <div class="form-group"><label for="design-case-colors">رنگ‌ها (با ویرگول جدا کنید)</label><input id="design-case-colors" placeholder="مشکی، سرمه‌ای"></div>
+          <div class="form-group"><label for="design-case-sizes">سایزها (با ویرگول جدا کنید)</label><input id="design-case-sizes" placeholder="S، M، L، XL"></div>
+        </div>
+        <div id="design-case-image-preview" class="design-case-image-preview" hidden></div>
+        <div class="design-case-form-actions"><button type="submit" class="btn btn-primary" id="design-case-save">ذخیره پرونده</button><button type="button" class="btn btn-light" data-design-close>انصراف</button></div>
+      </form>
+      <section id="design-case-workflow" class="design-case-workflow" hidden><h4>گردش پیش‌تولید و نمونه‌گیری</h4>
+        <div class="design-case-action-grid"><button type="button" data-design-action="START_DESIGN">شروع طراحی</button><button type="button" data-design-action="START_PATTERN">شروع الگوسازی</button><button type="button" data-design-action="REQUEST_MATERIALS">درخواست ملزومات</button><button type="button" data-design-action="START_SAMPLE">شروع نمونه‌دوزی</button><button type="button" data-design-action="REQUEST_REVISION">درخواست اصلاح</button><button type="button" data-design-action="RESUBMIT_SAMPLE">ارسال مجدد نمونه</button><button type="button" data-design-action="READY_FOR_APPROVAL">آماده بررسی نهایی</button></div>
+        <label for="design-case-event-description">شرح اقدام *</label><textarea id="design-case-event-description" rows="2" placeholder="شرح کار انجام‌شده یا علت تغییر مرحله"></textarea>
+        <h4>تاریخچه پرونده</h4><ol id="design-case-history" class="design-case-history"></ol>
+      </section>
+    </div>
+  </section>
+</div>
+<style>
+.design-case-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:16px}.design-case-card{border:1px solid var(--color-border);background:var(--color-surface);border-radius:14px;padding:16px;min-width:0}.design-case-card h3{margin:0 0 8px;font-size:16px}.design-case-meta{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0;color:var(--color-text-secondary);font-size:12px}.design-case-status{display:inline-flex;border-radius:999px;background:var(--color-surface-hover);padding:4px 9px;font-size:11px}.design-case-card-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.design-case-card-actions button,.design-case-action-grid button{border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface);color:var(--color-text);padding:8px 10px;cursor:pointer}.design-case-thumb{width:72px;height:84px;object-fit:cover;border-radius:9px;float:left;margin:0 0 8px 12px}.design-case-modal[hidden]{display:none}.design-case-modal{position:fixed;inset:0;z-index:30000;display:flex;align-items:center;justify-content:center;padding:14px}.design-case-modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.58)}.design-case-modal-panel{position:relative;width:min(900px,100%);max-height:92vh;overflow:auto;box-shadow:var(--shadow-md)}.design-case-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.design-case-form-grid .form-group{min-width:0}.design-case-form-grid input,.design-case-form-grid textarea,.design-case-form-grid select,.design-case-workflow textarea{width:100%;box-sizing:border-box}.design-case-wide{grid-column:1/-1}.design-case-form-actions{display:flex;gap:8px;margin-top:16px}.design-case-workflow{border-top:1px solid var(--color-border);margin-top:20px;padding-top:16px}.design-case-action-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}.design-case-history{padding-right:22px}.design-case-history li{margin:8px 0;line-height:1.7}.design-case-image-preview img{max-width:100%;max-height:220px;object-fit:contain;border-radius:10px;margin:10px 0}@media(max-width:680px){.design-case-grid,.design-case-form-grid{grid-template-columns:1fr}.design-case-wide{grid-column:auto}.design-case-action-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.design-case-modal{padding:6px}.design-case-modal-panel{max-height:96vh}}
+</style>
