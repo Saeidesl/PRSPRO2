@@ -1332,15 +1332,24 @@
               <small style="display:block;margin-top:5px;color:var(--color-text-secondary);">وضعیتی که انتخاب می‌کنید هنگام ثبت پروژه اعمال می‌شود.</small>
             </div>
 
-            <div class="filter-group form-group project-form-field" style="margin-bottom:16px;">
-              <label for="new-project-file">افزودن فایل <span style="color:var(--color-text-secondary);font-size:12px;">(اختیاری)</span></label>
-              <input type="file" id="new-project-file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" style="width:100%;box-sizing:border-box;">
-              <div id="new-project-filename-wrap" class="filter-group" style="margin-top:10px;" hidden>
-                <label for="new-project-filename">نام فایل</label>
-                <input type="text" id="new-project-filename" maxlength="180" autocomplete="off" placeholder="نام دلخواه فایل را وارد کنید" style="width:100%;box-sizing:border-box;min-height:42px;padding:9px 12px;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface);color:var(--color-text);font:inherit;">
-                <small id="new-project-filename-preview" style="display:block;margin-top:5px;color:var(--color-text-secondary);overflow-wrap:anywhere;">نام نهایی فایل با کد پروژه ترکیب می‌شود.</small>
+            <div class="filter-group form-group project-form-field" style="margin-bottom:16px;padding:16px;border:1px solid var(--color-border);border-radius:12px;background:var(--color-surface-alt,var(--color-surface));">
+              <label for="new-project-attachment-type">نوع فایل <span style="color:var(--color-text-secondary);font-size:12px;">(اختیاری)</span></label>
+              <select id="new-project-attachment-type" name="AttachmentType" style="width:100%;box-sizing:border-box;min-height:42px;padding:9px 12px;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface);color:var(--color-text);font:inherit;margin-bottom:12px;">
+                <option value="PROJECT_DOCUMENT" selected>مدارک پروژه</option>
+                <option value="SEWING_PASSPORT">شناسنامه دوخت</option>
+                <option value="CUTTING_PASSPORT">شناسنامه برش</option>
+                <option value="TECHNICAL_SPEC">مشخصات فنی</option>
+                <option value="QUALITY_DOCUMENT">مدارک کنترل کیفیت</option>
+                <option value="OTHER">سایر فایل‌ها</option>
+                <option value="PROFILE">عکس پروفایل پروژه (فقط تصویر)</option>
+              </select>
+              <label for="new-project-file">انتخاب فایل <span style="color:var(--color-text-secondary);font-size:12px;">(اختیاری)</span></label>
+              <input type="file" id="new-project-file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" style="width:100%;box-sizing:border-box;min-height:42px;padding:8px;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface);color:var(--color-text);">
+              <div id="new-project-filename-wrap" class="filter-group" style="display:none;" hidden>
+                <input type="text" id="new-project-filename" maxlength="180" autocomplete="off">
+                <small id="new-project-filename-preview"></small>
               </div>
-              <small id="new-project-file-help" style="display:block;margin-top:5px;color:var(--color-text-secondary);">پس از انتخاب فایل، نام آن را بررسی یا ویرایش کنید. نام نهایی با کد پروژه ترکیب می‌شود.</small>
+              <small id="new-project-file-help" style="display:block;margin-top:8px;color:var(--color-text-secondary);line-height:1.8;">نوع فایل را انتخاب کنید. نام فایل در سرور با کد پروژه و نوع فایل ساخته می‌شود؛ فایل‌های فعلی در فرم ویرایش حفظ می‌شوند.</small>
               <div id="project-edit-attachments" ${isEditMode ? '' : 'hidden'} style="margin-top:14px;padding:12px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-surface-hover, var(--color-surface));">
                 <div style="font-weight:700;margin-bottom:8px;">فایل‌های فعلی پروژه</div>
                 <div id="project-edit-attachments-list" aria-live="polite" style="display:flex;flex-direction:column;gap:8px;">
@@ -1548,19 +1557,18 @@
       const fileNameInput = modal.querySelector('#new-project-filename');
       const fileNameWrap = modal.querySelector('#new-project-filename-wrap');
       const fileNamePreview = modal.querySelector('#new-project-filename-preview');
+      const attachmentTypeInput = modal.querySelector('#new-project-attachment-type');
       const updateFileNamePreview = () => {
         if (!fileNamePreview) return;
-        const projectCode = String((modal.querySelector('#new-project-code') || {}).value || '').trim().replace(/[\\/:*?"<>|]/g, '_');
-        const enteredName = String(fileNameInput && fileNameInput.value || '').trim();
-        fileNamePreview.textContent = projectCode && enteredName ? 'نام نهایی: ' + projectCode + '_' + enteredName : 'نام نهایی فایل با کد پروژه ترکیب می‌شود.';
+        const selected = fileInput && fileInput.files && fileInput.files[0];
+        fileNamePreview.textContent = selected ? 'فایل انتخاب‌شده: ' + selected.name : 'نام فایل در سرور با کد پروژه و نوع فایل ساخته می‌شود.';
       };
       if (fileInput) fileInput.addEventListener('change', () => {
         const selected = fileInput.files && fileInput.files[0];
         if (fileNameWrap) fileNameWrap.hidden = !selected;
-        if (selected && fileNameInput) {
-          const lastDot = selected.name.lastIndexOf('.');
-          fileNameInput.value = lastDot > 0 ? selected.name.slice(0, lastDot) : selected.name;
-        } else if (fileNameInput) fileNameInput.value = '';
+        if (selected && fileNameInput) fileNameInput.value = selected.name;
+        else if (fileNameInput) fileNameInput.value = '';
+        if (fileHelp && selected) fileHelp.textContent = 'فایل انتخاب شد: ' + selected.name + '؛ نام نهایی در سرور ساخته می‌شود.';
         updateFileNamePreview();
       });
       if (fileNameInput) fileNameInput.addEventListener('input', updateFileNamePreview);
@@ -2332,6 +2340,7 @@
       const usersSelect = modal.querySelector('#new-project-users');
       const fileInput = modal.querySelector('#new-project-file');
       const fileNameInput = modal.querySelector('#new-project-filename');
+      const attachmentTypeInput = modal.querySelector('#new-project-attachment-type');
       const notifyInput = modal.querySelector('#new-project-notify');
       const selectedDepartments = Array.from(modal.querySelectorAll('input[name="AvailableDepartmentIDs"]:checked')).map((input) => input.value).filter(Boolean);
       const selectedUsers = Array.from(usersSelect.selectedOptions).map((option) => option.value).filter(Boolean);
@@ -2437,22 +2446,15 @@
         fileInput.focus();
         return;
       }
-      const requestedFileName = String(fileNameInput && fileNameInput.value || '').trim();
-      if (selectedFile && !requestedFileName) {
-        this.showFormError(modal, 'لطفاً نام دلخواه فایل را وارد کنید.');
-        if (fileNameInput) fileNameInput.focus();
+      const selectedAttachmentType = String(attachmentTypeInput && attachmentTypeInput.value || 'PROJECT_DOCUMENT').toUpperCase();
+      if (selectedFile && selectedAttachmentType === 'PROFILE' &&
+          !(/^image\/(jpeg|png|webp|gif)$/i.test(String(selectedFile.type || '')) ||
+            /\.(jpe?g|png|webp|gif)$/i.test(selectedFile.name || ''))) {
+        this.showFormError(modal, 'برای نوع «عکس پروفایل پروژه» فقط فایل تصویری انتخاب کنید.');
+        fileInput.focus();
         return;
       }
-      const buildProjectAttachmentName = (projectCode, originalFile, requestedName) => {
-        const originalName = String(originalFile && originalFile.name || '');
-        const dot = originalName.lastIndexOf('.');
-        const extension = dot > 0 ? originalName.slice(dot) : '';
-        let cleanName = String(requestedName || '').trim().replace(/[\\/:*?"<>|]/g, '_');
-        if (!cleanName) cleanName = dot > 0 ? originalName.slice(0, dot) : originalName;
-        if (extension && !cleanName.toLowerCase().endsWith(extension.toLowerCase())) cleanName += extension;
-        const cleanCode = String(projectCode || 'PROJECT').trim().replace(/[\\/:*?"<>|]/g, '_');
-        return cleanCode + '_' + cleanName;
-      };
+      const buildProjectAttachmentName = (projectCode, originalFile) => String(originalFile && originalFile.name || 'project-file');
 
       this.isSaving = true;
       submitButton.disabled = true;
@@ -2484,9 +2486,10 @@
               reader.readAsDataURL(selectedFile);
             });
             await window.PMS.Api.post('/projects/' + encodeURIComponent(projectId) + '/attachments', {
-              FileName: buildProjectAttachmentName(project.ProjectCode, selectedFile, requestedFileName),
+              FileName: buildProjectAttachmentName(project.ProjectCode, selectedFile),
               MimeType: selectedFile.type || 'application/octet-stream',
-              Base64: base64
+              Base64: base64,
+              AttachmentType: selectedAttachmentType
             });
             this.invalidateProjectCardAttachmentMetadata(projectId);
           }
@@ -2544,9 +2547,10 @@
               reader.readAsDataURL(selectedFile);
             });
             await window.PMS.Api.post('/projects/' + encodeURIComponent(createdId) + '/attachments', {
-              FileName: buildProjectAttachmentName(project.ProjectCode, selectedFile, requestedFileName),
+              FileName: buildProjectAttachmentName(project.ProjectCode, selectedFile),
               MimeType: selectedFile.type || 'application/octet-stream',
-              Base64: base64
+              Base64: base64,
+              AttachmentType: selectedAttachmentType
             });
             this.invalidateProjectCardAttachmentMetadata(createdId);
           } catch (attachmentError) {
