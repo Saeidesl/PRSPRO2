@@ -49,7 +49,7 @@
         const name = workflow.name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         return '<option value="' + id + '">' + name + '</option>';
       }).join('');
-      select.value = options.some(function (workflow) { return workflow.id === saved; }) ? saved : '';
+      select.value = options.some(function (workflow) { return workflow.id === saved; }) ? saved : (options.length ? options[0].id : '');
       saveButton.disabled = !options.length;
       saveButton.addEventListener('click', function () {
         const value = String(select.value || '');
