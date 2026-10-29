@@ -1520,7 +1520,8 @@
       settingsModal.querySelector('[data-settings-close]').addEventListener('click', closeSettings);
       settingsModal.querySelector('[data-settings-cancel]').addEventListener('click', closeSettings);
       settingsModal.addEventListener('click', (event) => { if (event.target === settingsModal) closeSettings(); });
-      settingsModal.querySelector('[data-settings-save]').addEventListener('click', () => {
+      const settingsSaveButton = settingsModal.querySelector('[data-settings-save]');
+      settingsSaveButton.addEventListener('click', async () => {
         const error = settingsModal.querySelector('#project-settings-error');
         if (!getSelectedDepartmentIds().length) {
           error.textContent = 'حداقل یک واحد مجاز انتخاب کنید.';
@@ -1529,19 +1530,63 @@
         }
         const statusSelect = modal.querySelector('#new-project-status');
         if (statusSelect && statusSelect.options.length > 1 && !statusSelect.value) {
-          error.textContent = 'وضعیت پروژه پس از ایجاد را انتخاب کنید.';
+          error.textContent = 'وضعیت پروژه را انتخاب کنید.';
           error.hidden = false;
           return;
         }
-        saveProjectSettings();
+
+        const settings = saveProjectSettings();
         error.hidden = true;
+
         if (modal.dataset.settingsOnly === 'true' && isEditMode) {
-          // Bypass native form constraint validation in settings-only mode:
-          // the main form is intentionally hidden while the settings dialog is open.
-          // createProject performs the existing application-level validation and API save.
-          this.createProject(modal);
+          const projectId = String(modal.dataset.projectId || '');
+          if (!projectId) {
+            error.textContent = 'شناسه پروژه برای ذخیره تنظیمات مشخص نیست.';
+            error.hidden = false;
+            return;
+          }
+
+          const previousLabel = settingsSaveButton.textContent;
+          settingsSaveButton.disabled = true;
+          settingsSaveButton.textContent = 'در حال ذخیره…';
+          try {
+            // Settings are a partial project update. Do not submit the hidden
+            // create/edit form, whose unrelated required fields can block or
+            // obscure validation errors in settings-only mode.
+            const payload = {
+              AvailableDepartmentIDs: settings.departmentIds,
+              AllowedUserIDs: settings.userIds,
+              NotifyEnabled: settings.notifyEnabled,
+              Status: settings.status
+            };
+            const response = await window.PMS.Api.put('/projects/' + encodeURIComponent(projectId), payload);
+            if (response && response.success === false) {
+              throw new Error(this.getErrorMessage(response) || 'ذخیره تنظیمات ناموفق بود.');
+            }
+
+            const updated = this.extractCreatedProject(response) ||
+              (response && response.data && typeof response.data === 'object' ? response.data : {});
+            const existingProject = this.projects.find((item) =>
+              String(item.ID || item.Id || item.id) === projectId
+            );
+            if (existingProject) Object.assign(existingProject, payload, updated);
+
+            closeSettings();
+            alert('تنظیمات پروژه با موفقیت ذخیره شد.');
+            this.loadProjects();
+          } catch (saveError) {
+            error.textContent = 'ذخیره تنظیمات ناموفق بود: ' +
+              (this.getErrorMessage(saveError) || saveError.message || 'خطای نامشخص');
+            error.hidden = false;
+          } finally {
+            if (settingsSaveButton.isConnected) {
+              settingsSaveButton.disabled = false;
+              settingsSaveButton.textContent = previousLabel;
+            }
+          }
           return;
         }
+
         closeSettings();
       });
       settingsContent.addEventListener('change', saveProjectSettings);
