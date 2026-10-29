@@ -316,3 +316,16 @@
   #project-color-size-modal *,
   #project-draft-material-specs-modal * { scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }
+
+/* Shared create/edit form structure */
+#project-create-modal > .project-form-dialog,
+#project-edit-modal > .project-form-dialog { display:flex; flex-direction:column; gap:0; }
+.project-form-dialog-header { padding-bottom:14px; border-bottom:1px solid var(--color-border); }
+.project-form-dialog-header #project-create-title { min-width:0; overflow-wrap:anywhere; }
+#project-create-form.project-form-layout { padding-top:18px; }
+#project-create-form > .project-form-tools,
+#project-create-form > .project-form-actions { grid-column:1 / -1; }
+@media (max-width:680px) {
+  .project-form-dialog-header { gap:8px; margin-bottom:14px !important; padding-bottom:12px; }
+  #project-create-form.project-form-layout { padding-top:12px; }
+}
