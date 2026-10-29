@@ -1,8 +1,9 @@
-<section class="page-section">
+<section class="page-section projects-page" aria-labelledby="projects-page-title">
 
-  <div class="page-header">
-    <div>
-      <h2>پروژه‌ها</h2>
+  <header class="page-header projects-page-header">
+    <div class="projects-page-heading">
+      <span class="projects-page-eyebrow">مدیریت تولید</span>
+      <h2 id="projects-page-title">پروژه‌ها</h2>
       <p>مدیریت و پیگیری پروژه‌های تولید</p>
     </div>
 
@@ -12,22 +13,19 @@
         class="btn btn-primary"
         id="project-create-button"
       >
-        + پروژه جدید
+        <span aria-hidden="true">+</span>
+        پروژه جدید
       </button>
     </div>
-  </div>
+  </header>
 
-  <div class="card">
+  <section class="card projects-list-panel" aria-label="فهرست و جستجوی پروژه‌ها">
     <div class="card-body">
 
-      <div class="filter-bar">
-
+      <div class="filter-bar projects-filter-bar">
         <div class="filter-group">
-          <label for="project-status-filter">
-            وضعیت
-          </label>
-
-          <select id="project-status-filter">
+          <label for="project-status-filter">فیلتر بر اساس وضعیت</label>
+          <select id="project-status-filter" aria-label="فیلتر پروژه‌ها بر اساس وضعیت">
             <option value="">همه وضعیت‌ها</option>
             <option value="ACTIVE">فعال</option>
             <option value="ON_HOLD">متوقف</option>
@@ -37,22 +35,22 @@
         </div>
 
         <div class="filter-group">
-          <label for="project-search">
-            جستجو
-          </label>
-
+          <label for="project-search">جستجوی پروژه</label>
           <input
-            type="text"
+            type="search"
             id="project-search"
-            placeholder="کد یا عنوان پروژه..."
+            placeholder="جستجو با کد یا عنوان پروژه..."
+            autocomplete="off"
+            aria-label="جستجو در کد یا عنوان پروژه"
           >
         </div>
-
       </div>
 
       <div
         id="projects-loading"
         class="loading-state"
+        role="status"
+        aria-live="polite"
       >
         در حال بارگذاری پروژه‌ها...
       </div>
@@ -60,25 +58,29 @@
       <div
         id="projects-error"
         class="alert alert-danger"
+        role="alert"
+        aria-live="assertive"
         hidden
       ></div>
 
       <div
         id="projects-table-container"
         class="table-wrapper"
+        aria-live="polite"
+        aria-busy="false"
         hidden
       ></div>
 
       <div
         id="projects-empty"
         class="table-empty"
+        role="status"
         hidden
       >
         پروژه‌ای برای نمایش وجود ندارد.
       </div>
 
     </div>
-  </div>
+  </section>
 
 </section>
-
