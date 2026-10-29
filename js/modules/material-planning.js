@@ -164,17 +164,17 @@
         };
         const selectedOption = unitSelect.options[unitSelect.selectedIndex];
         if (!(selectedOption && selectedOption.dataset.legacyUnit === '1' && get('specId'))) payload.Unit = unitSelect.value.trim();
-        return { row, id: get('specId'), payload };
+        return { row, id: get('specId'), unitValue: unitSelect.value.trim(), payload };
       });
       const seen = new Set();
       for (let i = 0; i < entries.length; i += 1) {
         const entry = entries[i], p = entry.payload;
-        if (!p.ItemName || !p.Unit || !Number.isFinite(p.ConsumptionPerUnit) || p.ConsumptionPerUnit <= 0 ||
+        if (!p.ItemName || !entry.unitValue || !Number.isFinite(p.ConsumptionPerUnit) || p.ConsumptionPerUnit <= 0 ||
             !Number.isFinite(p.WastagePercent) || p.WastagePercent < 0 || p.WastagePercent > 100) {
           showError('ردیف ' + (i + 1) + ': نام، واحد، مصرف مثبت و درصد ضایعات بین صفر تا ۱۰۰ را بررسی کنید.');
           entry.row.scrollIntoView({ behavior: 'smooth', block: 'center' }); return;
         }
-        const key = (p.ItemName + '|' + p.Unit).toLocaleLowerCase('fa');
+        const key = (p.ItemName + '|' + entry.unitValue).toLocaleLowerCase('fa');
         if (seen.has(key)) {
           showError('نام و واحد اندازه‌گیری یکسان را در چند ردیف تکرار نکنید.');
           entry.row.scrollIntoView({ behavior: 'smooth', block: 'center' }); return;
