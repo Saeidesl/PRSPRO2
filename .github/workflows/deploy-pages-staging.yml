@@ -22,22 +22,30 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout feature branch
+      - name: Checkout production site
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: _site
+
+      - name: Checkout staging frontend into isolated path
         uses: actions/checkout@v4
         with:
           ref: feature/design-case-preproduction
+          path: _site/staging
 
-      - name: Verify static app entry point
+      - name: Verify both app entry points
         run: |
-          test -f index.html
-          test -f js/core/api.js
-          echo "Static frontend entry point and API configuration found."
+          test -f _site/index.html
+          test -f _site/staging/index.html
+          test -f _site/staging/js/core/api.js
+          echo "Production root preserved; staging app prepared under /staging/."
 
-      - name: Upload frontend files
+      - name: Upload combined Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
 
-      - name: Publish staging frontend
+      - name: Publish staging alongside production
         id: deployment
         uses: actions/deploy-pages@v4
