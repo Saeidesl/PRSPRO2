@@ -3,7 +3,7 @@
   'use strict';
 
  const DEFAULT_API_BASE_URL =
-  'https://script.google.com/macros/s/PRODUCTION_API_ENDPOINT_PLACEHOLDER/exec';
+  'https://script.google.com/macros/s/AKfycbzHlLF_UuVZu6VIbl59EyIi4ZnLeJfssrBmo0jkn4BvrCPpqYyJ5qP71WdALtyalOKv_A/exec';
   const STAGING_API_BASE_URL =
   'https://script.google.com/macros/s/AKfycbw-o15vVNFbnfqhVYV6PtpDOTt4jURF5QKEahvnENkZp2hOPlek1Hj55T2tBnypfPCb/exec';
   // Explicit override is supported for controlled tests. The isolated /staging/ site must never call production.
