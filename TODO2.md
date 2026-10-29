@@ -18,7 +18,7 @@
   - *Log:* بررسی ARCHITECTURE2.md، index.html، js/core/router.js، js/components/layout.js، js/core/api.js، pages/projects.html، js/modules/projects.js و DesignCaseService.js؛ route و صفحه مستقل پرونده طرح هنوز پیاده‌سازی نشده‌اند.
 - [ ] Task 2 — ساخت رابط کاربری پایه پرونده طرح (IN PROGRESS).
   - محدوده: صفحه/ماژول مستقل، route و منو، فهرست و جستجو، فرم ایجاد و ملزومات، جزئیات و وضعیت، سازگاری RTL/تم/موبایل.
-  - *Log:* فایل‌های `pages/design-cases.html`، `js/modules/design-cases.js` و `css/design-cases.css` ایجاد شدند. `js/core/router.js` برای route و module، `js/components/layout.js` برای منو و `index.html` برای بارگذاری CSS/JS به‌روزرسانی شدند. UI شامل فهرست، جستجو، فیلتر وضعیت، ایجاد پرونده با ملزومات چندردیفی، نمایش جزئیات و تاریخچه است؛ درخواست‌ها از `PMS.Api` عبور می‌کنند. هنوز انتشار فرانت‌اند و آزمون واقعی API انجام نشده است.
+  - *Log:* فایل‌های `pages/design-cases.html`، `js/modules/design-cases.js` و `css/design-cases.css` ایجاد شدند. `js/core/router.js` برای route/module و مسیر پایه مستقل `/staging/`، `js/components/layout.js` برای منو، `index.html` برای بارگذاری CSS/JS و `js/core/api.js` برای انتخاب API آزمایشی در مسیر `/staging/` به‌روزرسانی شدند. UI شامل فهرست، جستجو، فیلتر وضعیت، ایجاد پرونده با ملزومات چندردیفی، نمایش جزئیات و تاریخچه است؛ درخواست‌ها از `PMS.Api` عبور می‌کنند. فرم خطاهای اعتبارسنجی/ذخیره را داخل مودال نشان می‌دهد. انتشار فرانت‌اند در حال اجراست؛ آزمون واقعی API هنوز انجام نشده است.
 - [ ] Task 3 — اتصال رویدادها و تأیید.
   - محدوده: تاریخچه رویداد، فرم تأیید فقط در وضعیت مجاز، کنترل ارسال تکراری و پیام خطا.
 - [ ] Task 4 — انتشار آزمایشی و بررسی نهایی.
