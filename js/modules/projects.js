@@ -1536,8 +1536,10 @@
         saveProjectSettings();
         error.hidden = true;
         if (modal.dataset.settingsOnly === 'true' && isEditMode) {
-          const projectForm = modal.querySelector('#project-create-form');
-          if (projectForm) projectForm.requestSubmit();
+          // Bypass native form constraint validation in settings-only mode:
+          // the main form is intentionally hidden while the settings dialog is open.
+          // createProject performs the existing application-level validation and API save.
+          this.createProject(modal);
           return;
         }
         closeSettings();
