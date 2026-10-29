@@ -64,10 +64,11 @@ getBaseUrl: function () {
   const parts = window.location.pathname.split('/').filter(Boolean);
   const projectName = 'PRSPRO2';
 
-  if (
-    parts.length &&
-    parts[0].toLowerCase() === projectName.toLowerCase()
-  ) {
+  if (parts.length && parts[0].toLowerCase() === projectName.toLowerCase()) {
+    // The isolated staging frontend is published under /PRSPRO2/staging/.
+    if (parts[1] && parts[1].toLowerCase() === 'staging') {
+      return new URL('/' + parts[0] + '/staging/', window.location.origin);
+    }
     return new URL('/' + parts[0] + '/', window.location.origin);
   }
 
