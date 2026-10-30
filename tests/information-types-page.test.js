@@ -29,6 +29,6 @@ test('central information types and dynamic columns expose active/inactive lifec
   assert.match(moduleSource, /form\.elements\.Status\.value=item&&item\.Status\|\|'ACTIVE'/);
   assert.match(moduleSource, /Status:form\.elements\.Status\.value/);
   assert.match(moduleSource, /<option value="INACTIVE">غیرفعال<\/option>/);
-  assert.match(moduleSource, /function openColumnEdit[\\s\\S]*?name="Status"/);
+  assert.ok(moduleSource.slice(moduleSource.indexOf("function openColumnEdit")).includes('name="Status"'));
   assert.match(moduleSource, /form\.elements\.Status\.value=col\.Status\|\|'ACTIVE'/);
 });
