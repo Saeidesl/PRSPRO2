@@ -319,6 +319,30 @@
 - دستورالعمل مخازن: `AGENTS.md` هر دو مخزن باید رعایت شود. CIهای QA وجود دارند. workflow بک‌اند `sync-apps-script.yml` با تغییرات روی `main` می‌تواند استقرار تولید را فعال کند؛ بنابراین تغییرات بک‌اند باید روی شاخه feature و PR انجام شوند و ادغام/استقرار بدون تأیید کاربر انجام نشود.
 - `TODO1.md` فرانت‌اند همچنان فاز مستقل استانداردسازی ظاهر پروژه‌هاست و تسک ۳ آن (فرم ایجاد/ویرایش پروژه) در حال انجام است؛ این فاز نباید فایل یا تغییرات آن را بازنویسی کند.
 
+### نقشه فنی تسک ۳ — فرم‌ساز قابل استفاده مجدد
+
+**شاخه‌های کاری:** `feature/reusable-event-forms` در هر دو مخزن؛ PR فرانت‌اند #119 و PR بک‌اند #76 (در حال توسعه و هنوز ادغام‌نشده).
+
+**Backend — `Saeidesl/PRSPRO2BACKEND`:**
+- `DatabaseSetup.js`: شیت‌های افزایشی `32_Forms`، `33_FormFields`، `34_EventTypeForms` و `35_EventFormData`؛ پاسخ هر فرم با نسخه و snapshot تعریف هنگام ثبت رویداد ذخیره می‌شود.
+- `FormRepository.js`: خواندن/نوشتن فرم‌ها، فیلدها، اتصال به نوع رویداد و پاسخ‌های ثبت‌شده.
+- `FormValidator.js`: اعتبارسنجی نام/کد فرم، فیلدهای متصل به اطلاعات مرکزی و قواعد نمایش شرطی.
+- `FormService.js`: CRUD فرم و فیلد، اتصال/قطع اتصال به نوع رویداد، tenant isolation، نسخه‌بندی، اعتبارسنجی مقدار با `ProjectInformationService._validate`، اعمال قواعد نمایش و بازیابی snapshot پاسخ.
+- `Router.js`:
+  - `GET/POST /forms`، `GET/PUT /forms/:id`، `POST /forms/:id/fields`، `GET /forms/:id/event-types`
+  - `PUT/DELETE /form-fields/:id`، `GET/POST /event-types/:id/forms`، `DELETE /event-type-forms/:id`
+  - `GET /events/:id/forms` برای خواندن پاسخ‌ها و snapshot.
+- `EventService._createUnlocked_`: پیش از ذخیره رویداد، فرم‌های الزامی و مقادیر ارسالی را اعتبارسنجی می‌کند؛ بعد از ایجاد رویداد، پاسخ‌ها را قبل از تکمیل وضعیت idempotency ذخیره می‌کند. مسیر اصلی `POST /events` و `DynamicData` بدون تغییر باقی می‌مانند.
+- Payload افزوده‌شده به `POST /events`: `FormResponses: [{FormID, FormVersion, Values: {InformationTypeID: value}}]`. مقادیر تکی و چندردیفی با تعریف مرکزی اطلاعات اعتبارسنجی می‌شوند؛ نسخه فرم باید با نسخه فعال برابر باشد.
+
+**Frontend — `Saeidesl/PRSPRO2`:**
+- `pages/forms.html` و `js/modules/forms.js`: صفحه مدیریت فرم، افزودن/ویرایش فیلدهای متصل به اطلاعات مرکزی، ترتیب/گروه/اجباری بودن، قواعد نمایش شرطی و اتصال به انواع رویداد.
+- `js/core/router.js`، `js/components/layout.js`، `index.html` و `css/reusable-forms.css`: ثبت مسیر/منو/asset فرم‌ها با مجوز `SYSTEM_SETTINGS`.
+- `js/modules/events.js`: بارگذاری فرم‌های متصل پس از انتخاب نوع رویداد، نمایش فیلدهای تکی/جدولی و گروه‌بندی، اجرای قواعد نمایش، ارسال `FormResponses` از همان فرم ثبت رویداد و نمایش پاسخ snapshot در جزئیات رویداد.
+- APIهای مصرفی فرانت‌اند: `/forms`، `/information-types`، `/event-types`، `/event-types/:id/forms`، `/forms/:id/event-types`، `/events` و `/events/:id/forms`.
+
+**تست‌ها:** `tests/reusable-forms.test.js` و `tests/forms-api-contract.test.js` در بک‌اند؛ `tests/reusable-forms.test.js` در فرانت‌اند. خروجی نهایی تسک فقط پس از موفقیت تمام CIها و آزمون عملی کاربر تأیید می‌شود.
+
 ## 📋 Macro-Task Queue & Implementation Log
 
 - [x] **تسک ۱ — بررسی معماری و طراحی نقشه اجرایی**
