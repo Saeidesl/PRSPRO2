@@ -1606,7 +1606,13 @@
             add.type = 'button';
             add.className = 'event-modal-button';
             add.textContent = 'افزودن ردیف';
-            add.addEventListener('click', () => this.addConfiguredFormRow(tbody, columns));
+            add.addEventListener('click', () => {
+              if (tbody.querySelectorAll('[data-form-row]').length >= 500) {
+                this.showFormError('حداکثر ۵۰۰ ردیف برای هر جدول مجاز است.');
+                return;
+              }
+              this.addConfiguredFormRow(tbody, columns);
+            });
             wrapper.appendChild(add);
             this.addConfiguredFormRow(tbody, columns);
           } else {
@@ -1693,13 +1699,26 @@
             const rows = table ? Array.from(table.querySelectorAll('[data-form-row]')) : [];
             const valueRows = rows.map((row) => {
               const value = {};
+              let hasAnyValue = false;
               row.querySelectorAll('[data-column-code]').forEach((input) => {
                 let item = input.type === 'checkbox' ? input.checked : input.value;
                 if (input.type === 'number' && String(item).trim() !== '') item = Number(item);
                 value[input.dataset.columnCode] = item;
+                if (item !== '' && item !== null && item !== undefined && item !== false) hasAnyValue = true;
               });
-              return value;
-            }).filter((row) => Object.keys(row).some((key) => row[key] !== '' && row[key] !== null && row[key] !== undefined && row[key] !== false));
+              if (hasAnyValue) {
+                const missing = Array.from(row.querySelectorAll('[data-column-code]')).find((input) =>
+                  input.dataset.columnRequired === 'true' &&
+                  (input.value === '' || input.value === null || input.value === undefined)
+                );
+                if (missing) {
+                  this.showFormError('ستون «' + (missing.getAttribute('aria-label') || missing.dataset.columnCode) + '» الزامی است.');
+                  missing.focus();
+                  return null;
+                }
+              }
+              return hasAnyValue ? value : null;
+            }).filter(Boolean);
             if (required && valueRows.length === 0) {
               this.showFormError('حداقل یک ردیف برای «' + (field.LabelOverride || info.Name) + '» وارد کنید.');
               return null;
@@ -1720,7 +1739,14 @@
             values[typeId] = value;
           }
         }
-        responses.push({ FormID: formId, FormVersion: Number(form.Version || 1), Values: values });
+        const hasAnyValue = Object.keys(values).some((key) => {
+          const value = values[key];
+          return Array.isArray(value) ? value.length > 0 : (value !== '' && value !== null && value !== undefined);
+        });
+        const mappingRequired = mapping.IsRequired === true || String(mapping.IsRequired).toLowerCase() === 'true';
+        if (hasAnyValue || mappingRequired) {
+          responses.push({ FormID: formId, FormVersion: Number(form.Version || 1), Values: values });
+        }
       }
       return responses;
     },
