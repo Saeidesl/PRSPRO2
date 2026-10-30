@@ -1687,9 +1687,16 @@
         if (rule.fieldId) {
           const source = wrappers.find((item) => item.dataset.infoTypeId === String(rule.fieldId));
           let value;
-          if (source) {
-            const control = source.querySelector('[data-form-value], [data-column-code]');
-            if (control) value = control.type === 'checkbox' ? control.checked : control.value;
+          if (source && !source.hidden) {
+            if (source.dataset.cardinality === 'MULTIPLE') {
+              const rows = Array.from(source.querySelectorAll('[data-form-row]'));
+              value = rows.some((row) => Array.from(row.querySelectorAll('[data-column-code]')).some((input) =>
+                input.type === 'checkbox' ? input.checked : input.value !== ''
+              ));
+            } else {
+              const control = source.querySelector('[data-form-value]');
+              if (control) value = control.type === 'checkbox' ? control.checked : control.value;
+            }
           }
           const empty = value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0);
           const operator = String(rule.operator || '').toUpperCase();
