@@ -23,3 +23,10 @@ test('central information UI uses the existing PMS API and supports reusable sca
   assert.match(moduleSource, /Cardinality/);
   assert.match(page, /information-type-create/);
 });
+
+test('central information types and dynamic columns expose active/inactive lifecycle controls', () => {
+  const moduleSource = fs.readFileSync(path.join(root, 'js/modules/information-types.js'), 'utf8');
+  assert.match(moduleSource, /form\.elements\.Status\.value=item&&item\.Status\|\|'ACTIVE'/);
+  assert.match(moduleSource, /Status:form\.elements\.Status\.value/);
+  assert.match(moduleSource, /<option value="INACTIVE">غیرفعال<\/option>/);
+});
