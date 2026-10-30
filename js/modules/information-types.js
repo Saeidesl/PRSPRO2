@@ -81,12 +81,14 @@
       '<div class="form-group"><label>کد انگلیسی یکتا *</label><input name="Code" required maxlength="60" pattern="[A-Za-z][A-Za-z0-9_]{1,59}" value="'+esc(item&&item.Code)+'" '+(editing?'readonly':'')+'></div>'+
       '<div class="form-group form-grid-full"><label>توضیحات</label><textarea name="Description" rows="2">'+esc(item&&item.Description)+'</textarea></div>'+
       '<div class="form-group"><label>ساختار اطلاعات</label><select name="Cardinality"><option value="SINGLE">تک‌مقداری</option><option value="MULTIPLE">چندمقداری (جدولی)</option></select></div>'+
+      '<div class="form-group"><label>وضعیت</label><select name="Status"><option value="ACTIVE">فعال</option><option value="INACTIVE">غیرفعال</option></select></div>'+
       '<div class="form-group"><label>نوع داده</label><select name="DataType"><option value="text">متن</option><option value="textarea">متن چندخطی</option><option value="number">عدد</option><option value="date">تاریخ</option><option value="datetime">تاریخ و زمان</option><option value="boolean">بله/خیر</option><option value="select">فهرست انتخابی</option></select></div>'+
       '<div class="form-group form-grid-full"><label>گزینه‌ها (برای فهرست انتخابی، با ویرگول جدا شوند)</label><input name="Options" placeholder="قرمز، آبی، مشکی"></div>'+
       '<div class="form-group form-grid-full"><label>قواعد اعتبارسنجی (JSON اختیاری)</label><input name="Rules" placeholder="{&quot;min&quot;:1,&quot;max&quot;:100}"></div>'+
       '</div><div class="modal-actions"><button class="btn btn-primary" type="submit">ذخیره</button><button class="btn btn-light" type="button" data-close>انصراف</button></div></form>');
     const form=box.body.querySelector('form');
     form.elements.Cardinality.value=item&&item.Cardinality||'SINGLE';
+    form.elements.Status.value=item&&item.Status||'ACTIVE';
     form.elements.DataType.value=item&&item.DataType||'text';
     form.elements.Options.value='';
     try{const opts=JSON.parse(item&&item.OptionsJSON||'[]');form.elements.Options.value=Array.isArray(opts)?opts.map(x=>typeof x==='object'?x.value:x).join(', '):'';}catch(e){}
@@ -98,7 +100,7 @@
       e.preventDefault();
       let rules={};try{rules=JSON.parse(form.elements.Rules.value||'{}');}catch(err){message('قواعد اعتبارسنجی باید JSON معتبر باشد.',true);return;}
       const options=form.elements.Options.value.split(',').map(x=>x.trim()).filter(Boolean);
-      const payload={Name:form.elements.Name.value.trim(),Code:form.elements.Code.value.trim(),Description:form.elements.Description.value.trim(),Cardinality:form.elements.Cardinality.value,DataType:form.elements.DataType.value,OptionsJSON:JSON.stringify(options),ValidationRuleJSON:JSON.stringify(rules)};
+      const payload={Name:form.elements.Name.value.trim(),Code:form.elements.Code.value.trim(),Description:form.elements.Description.value.trim(),Cardinality:form.elements.Cardinality.value,DataType:form.elements.DataType.value,Status:form.elements.Status.value,OptionsJSON:JSON.stringify(options),ValidationRuleJSON:JSON.stringify(rules)};
       const save=form.querySelector('[type="submit"]');save.disabled=true;
       try{if(editing)await PMS.Api.put('/information-types/'+encodeURIComponent(item.ID),payload);else await PMS.Api.post('/information-types',payload);box.close();message('تعریف اطلاعات ذخیره شد.');await load();}
       catch(err){message(err.message||'ذخیره اطلاعات ناموفق بود.',true);save.disabled=false;}
@@ -117,13 +119,14 @@
         '<div class="form-group"><label>کد ستون *</label><input name="Code" required pattern="[A-Za-z][A-Za-z0-9_]{1,59}"></div>'+
         '<div class="form-group"><label>نوع داده</label><select name="DataType"><option value="text">متن</option><option value="number">عدد</option><option value="date">تاریخ</option><option value="datetime">تاریخ و زمان</option><option value="boolean">بله/خیر</option><option value="select">فهرست انتخابی</option><option value="textarea">متن چندخطی</option></select></div>'+
         '<div class="form-group"><label><input type="checkbox" name="IsRequired"> اجباری</label></div>'+
+        '<div class="form-group"><label>وضعیت</label><select name="Status"><option value="ACTIVE">فعال</option><option value="INACTIVE">غیرفعال</option></select></div>'+
         '<div class="form-group form-grid-full"><label>گزینه‌ها (با ویرگول جدا شوند)</label><input name="Options"></div>'+
         '<div class="form-grid-full modal-actions"><button type="submit" class="btn btn-primary">افزودن ستون</button></div></form>'+
         '<div class="table-wrapper"><table class="data-table"><thead><tr><th>ستون</th><th>کد</th><th>نوع</th><th>اجباری</th><th>عملیات</th></tr></thead><tbody>'+
         columns.map(function(col){return '<tr><td>'+esc(col.Name)+'</td><td><code>'+esc(col.Code)+'</code></td><td>'+esc(col.DataType)+'</td><td>'+(col.IsRequired?'بله':'خیر')+'</td><td><button type="button" class="btn btn-sm btn-light" data-edit-col="'+esc(col.ID)+'">ویرایش</button> <button type="button" class="btn btn-sm btn-danger" data-disable-col="'+esc(col.ID)+'">حذف</button></td></tr>';}).join('')+
         '</tbody></table></div>';
       const form=target.querySelector('form');
-      form.addEventListener('submit',async function(e){e.preventDefault();const payload={Name:form.elements.Name.value.trim(),Code:form.elements.Code.value.trim(),DataType:form.elements.DataType.value,IsRequired:form.elements.IsRequired.checked,OptionsJSON:JSON.stringify(form.elements.Options.value.split(',').map(x=>x.trim()).filter(Boolean)),ColumnOrder:columns.length+1};try{await PMS.Api.post('/information-types/'+id+'/columns',payload);columns=list(await PMS.Api.get('/information-types/'+id+'/columns'));draw();}catch(err){message(err.message||'افزودن ستون ناموفق بود.',true);}});
+      form.addEventListener('submit',async function(e){e.preventDefault();const payload={Name:form.elements.Name.value.trim(),Code:form.elements.Code.value.trim(),DataType:form.elements.DataType.value,IsRequired:form.elements.IsRequired.checked,Status:form.elements.Status.value,OptionsJSON:JSON.stringify(form.elements.Options.value.split(',').map(x=>x.trim()).filter(Boolean)),ColumnOrder:columns.length+1};try{await PMS.Api.post('/information-types/'+id+'/columns',payload);columns=list(await PMS.Api.get('/information-types/'+id+'/columns'));draw();}catch(err){message(err.message||'افزودن ستون ناموفق بود.',true);}});
       target.querySelectorAll('[data-disable-col]').forEach(function(btn){btn.addEventListener('click',async function(){const col=columns.find(x=>String(x.ID)===btn.dataset.disableCol);if(!col||!confirm('این ستون حذف منطقی شود؟'))return;try{await PMS.Api.delete('/information-type-columns/'+encodeURIComponent(col.ID));columns=list(await PMS.Api.get('/information-types/'+id+'/columns'));draw();}catch(err){message(err.message||'حذف ستون ناموفق بود.',true);}});});
       target.querySelectorAll('[data-edit-col]').forEach(function(btn){btn.addEventListener('click',function(){openColumnEdit(item,columns.find(x=>String(x.ID)===btn.dataset.editCol),id,box,async function(){columns=list(await PMS.Api.get('/information-types/'+id+'/columns'));draw();});});});
     }
@@ -133,9 +136,9 @@
     if(!col)return;
     const body='<form id="edit-information-column" class="form-grid"><div class="form-group"><label>نام ستون</label><input name="Name" required value="'+esc(col.Name)+'"></div><div class="form-group"><label>نوع داده</label><select name="DataType"><option value="text">متن</option><option value="number">عدد</option><option value="date">تاریخ</option><option value="datetime">تاریخ و زمان</option><option value="boolean">بله/خیر</option><option value="select">فهرست انتخابی</option><option value="textarea">متن چندخطی</option></select></div><div class="form-group"><label><input type="checkbox" name="IsRequired"> اجباری</label></div><div class="form-group form-grid-full"><label>گزینه‌ها</label><input name="Options"></div><div class="form-grid-full modal-actions"><button type="submit" class="btn btn-primary">ذخیره تغییرات</button></div></form>';
     const edit=modal('ویرایش ستون '+col.Name,'information-column-edit',body),form=edit.body.querySelector('form');
-    form.elements.DataType.value=col.DataType;form.elements.IsRequired.checked=col.IsRequired===true||String(col.IsRequired)==='true';
+    form.elements.DataType.value=col.DataType;form.elements.Status.value=col.Status||'ACTIVE';form.elements.IsRequired.checked=col.IsRequired===true||String(col.IsRequired)==='true';
     try{form.elements.Options.value=JSON.parse(col.OptionsJSON||'[]').join(', ');}catch(e){}
-    form.addEventListener('submit',async function(e){e.preventDefault();const payload={Name:form.elements.Name.value.trim(),DataType:form.elements.DataType.value,IsRequired:form.elements.IsRequired.checked,OptionsJSON:JSON.stringify(form.elements.Options.value.split(',').map(x=>x.trim()).filter(Boolean))};try{await PMS.Api.put('/information-types/'+typeId+'/columns/'+encodeURIComponent(col.ID),payload);edit.close();await refresh();}catch(err){message(err.message||'ویرایش ستون ناموفق بود.',true);}});
+    form.addEventListener('submit',async function(e){e.preventDefault();const payload={Name:form.elements.Name.value.trim(),DataType:form.elements.DataType.value,IsRequired:form.elements.IsRequired.checked,Status:form.elements.Status.value,OptionsJSON:JSON.stringify(form.elements.Options.value.split(',').map(x=>x.trim()).filter(Boolean))};try{await PMS.Api.put('/information-types/'+typeId+'/columns/'+encodeURIComponent(col.ID),payload);edit.close();await refresh();}catch(err){message(err.message||'ویرایش ستون ناموفق بود.',true);}});
   }
   function init() {
     if(!canManage()){message('این بخش فقط برای کاربران دارای دسترسی تنظیمات سامانه در دسترس است.',true);return;}
