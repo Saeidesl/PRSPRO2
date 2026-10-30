@@ -1707,6 +1707,7 @@
             );
             const columns = Array.isArray(info.Columns) ? info.Columns : [];
             const rows = table ? Array.from(table.querySelectorAll('[data-form-row]')) : [];
+            let invalidRow = false;
             const valueRows = rows.map((row) => {
               const value = {};
               let hasAnyValue = false;
@@ -1725,11 +1726,13 @@
                 if (missing) {
                   this.showFormError('ستون «' + (missing.getAttribute('aria-label') || missing.dataset.columnCode) + '» الزامی است.');
                   missing.focus();
+                  invalidRow = true;
                   return null;
                 }
               }
               return hasAnyValue ? value : null;
             }).filter(Boolean);
+            if (invalidRow) return null;
             if (required && valueRows.length === 0) {
               this.showFormError('حداقل یک ردیف برای «' + (field.LabelOverride || info.Name) + '» وارد کنید.');
               return null;
