@@ -4,6 +4,7 @@
   const ProjectDetail = {
     projectId: null,
     project: null,
+    projectInformation: [],
     events: [],
     auditRecords: [],
     auditLoadError: '',
@@ -28,6 +29,7 @@
       this.bindProjectPassportImageEvents();
       this.ensureProjectPassportStyles();
       this.load();
+      this.loadProjectInformation(false);
       this.loadProjectPassportImages(false);
       this.loadAuditHistory(false);
     },
@@ -113,7 +115,235 @@
       if (auditRetry && !auditRetry.dataset.bound) {
         auditRetry.dataset.bound = '1';
         auditRetry.addEventListener('click', function () {
-          ProjectDetail.loadAuditHistory(true);
+          canEditProjectInformation: function () {
+      const router = window.PMS && window.PMS.Router;
+      return !!(router && ((typeof router.isAdmin === 'function' && router.isAdmin()) ||
+        (Array.isArray(router.permissions) && router.permissions.indexOf('PROJECT_EDIT') !== -1)));
+    },
+
+    loadProjectInformation: async function (forceRefresh) {
+      const container = document.getElementById('project-information-list');
+      const loading = document.getElementById('project-information-loading');
+      const error = document.getElementById('project-information-error');
+      const retry = document.getElementById('project-information-retry');
+      if (!container || !this.projectId) return;
+      if (loading) loading.hidden = false;
+      if (error) error.hidden = true;
+      if (retry) retry.hidden = true;
+      try {
+        const key = 'project_information_' + String(this.projectId);
+        const response = forceRefresh
+          ? await window.PMS.Api.getFresh('/projects/' + encodeURIComponent(this.projectId) + '/information', key)
+          : await window.PMS.Api.getCached('/projects/' + encodeURIComponent(this.projectId) + '/information', key);
+        this.projectInformation = this.normalizeArray(response ? response.data : null, ['items', 'Items']);
+        this.renderProjectInformation();
+      } catch (err) {
+        if (error) {
+          error.textContent = err && err.message ? err.message : 'دریافت اطلاعات پرونده ناموفق بود.';
+          error.hidden = false;
+        }
+        if (retry) retry.hidden = false;
+      } finally {
+        if (loading) loading.hidden = true;
+      }
+    },
+
+    renderProjectInformation: function () {
+      const container = document.getElementById('project-information-list');
+      if (!container) return;
+      const canEdit = this.canEditProjectInformation();
+      const rows = this.projectInformation || [];
+      if (!rows.length) {
+        container.innerHTML = '<div class="table-empty">هنوز نوع اطلاعات فعالی برای این پرونده تعریف نشده است.</div>';
+        return;
+      }
+      container.innerHTML = rows.map((record) => {
+        const type = record.InformationType || {};
+        const name = type.Name || type.Code || 'اطلاعات';
+        const multi = String(type.Cardinality || 'SINGLE').toUpperCase() === 'MULTIPLE';
+        const value = record.Value !== undefined ? record.Value : this.parseAuditData(record.ValueJSON);
+        const hasValue = record.Status !== 'EMPTY' && value !== null && value !== '';
+        let content = '<div class="project-information-empty">هنوز مقداری ثبت نشده است.</div>';
+        if (hasValue && multi) {
+          const columns = Array.isArray(record.Columns) ? record.Columns : [];
+          const dataRows = Array.isArray(value) ? value : [];
+          content = dataRows.length
+            ? '<div class="table-wrapper"><table class="data-table"><thead><tr>' + columns.map(col => '<th>' + this.escape(col.Name) + '</th>').join('') + '</tr></thead><tbody>' +
+              dataRows.map(row => '<tr>' + columns.map(col => '<td>' + this.escape(this.informationValue(row[String(col.Code)])) + '</td>').join('') + '</tr>').join('') +
+              '</tbody></table></div>'
+            : '<div class="project-information-empty">جدولی ثبت نشده است.</div>';
+        } else if (hasValue) {
+          content = '<div class="project-information-value">' + this.escape(this.informationValue(value)) + '</div>';
+        }
+        return '<article class="project-information-item">' +
+          '<div class="project-information-item-head"><div><strong>' + this.escape(name) + '</strong><small>' +
+          (multi ? 'جدولی' : 'تک‌مقداری') + (record.Revision ? ' · نسخه ' + this.escape(record.Revision) : '') +
+          '</small></div><div class="project-information-actions">' +
+          (canEdit ? '<button type="button" class="btn btn-sm btn-light" data-project-info-edit="' + this.escape(type.ID || record.InformationTypeID) + '">' + (hasValue ? 'ویرایش' : 'ثبت اطلاعات') + '</button>' : '') +
+          '<button type="button" class="btn btn-sm btn-light" data-project-info-history="' + this.escape(type.ID || record.InformationTypeID) + '">تاریخچه</button>' +
+          (canEdit && hasValue ? '<button type="button" class="btn btn-sm btn-danger" data-project-info-delete="' + this.escape(type.ID || record.InformationTypeID) + '">حذف</button>' : '') +
+          '</div></div><div class="project-information-item-content">' + content + '</div></article>';
+      }).join('');
+      container.querySelectorAll('[data-project-info-edit]').forEach(btn => btn.addEventListener('click', () => {
+        const record = this.projectInformation.find(item => String(item.InformationTypeID) === String(btn.dataset.projectInfoEdit));
+        if (record) this.openProjectInformationForm(record);
+      }));
+      container.querySelectorAll('[data-project-info-history]').forEach(btn => btn.addEventListener('click', () => {
+        const record = this.projectInformation.find(item => String(item.InformationTypeID) === String(btn.dataset.projectInfoHistory));
+        if (record) this.openProjectInformationHistory(record);
+      }));
+      container.querySelectorAll('[data-project-info-delete]').forEach(btn => btn.addEventListener('click', async () => {
+        const record = this.projectInformation.find(item => String(item.InformationTypeID) === String(btn.dataset.projectInfoDelete));
+        if (!record || !confirm('اطلاعات «' + ((record.InformationType || {}).Name || 'این بخش') + '» از اطلاعات جاری حذف شود؟ تاریخچه حفظ خواهد شد.')) return;
+        try {
+          await window.PMS.Api.delete('/projects/' + encodeURIComponent(this.projectId) + '/information/' + encodeURIComponent(record.InformationTypeID));
+          await this.loadProjectInformation(true);
+        } catch (err) {
+          alert(err.message || 'حذف اطلاعات انجام نشد.');
+        }
+      }));
+      this.ensureProjectInformationStyles();
+    },
+
+    informationValue: function (value) {
+      if (value === null || value === undefined || value === '') return '-';
+      if (typeof value === 'boolean') return value ? 'بله' : 'خیر';
+      if (typeof value === 'object') {
+        try { return JSON.stringify(value); } catch (err) { return String(value); }
+      }
+      return String(value);
+    },
+
+    ensureProjectInformationStyles: function () {
+      if (document.getElementById('project-information-styles')) return;
+      const style = document.createElement('style');
+      style.id = 'project-information-styles';
+      style.textContent = '.project-information-item{padding:14px 0;border-bottom:1px solid var(--color-border)}.project-information-item:last-child{border-bottom:0}.project-information-item-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.project-information-item-head strong{display:block;color:var(--color-text);font-size:13px}.project-information-item-head small{display:block;color:var(--color-text-secondary);font-size:11px;margin-top:4px}.project-information-actions{display:flex;gap:6px;flex-wrap:wrap}.project-information-item-content{margin-top:10px}.project-information-value{white-space:pre-wrap;overflow-wrap:anywhere;color:var(--color-text);font-size:13px}.project-information-empty{font-size:12px;color:var(--color-text-secondary)}.project-information-modal .modal{max-width:760px;max-height:90vh;overflow:auto}.project-information-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;padding:12px;margin:10px 0;border:1px solid var(--color-border);border-radius:8px}.project-information-row-actions{display:flex;justify-content:flex-end}.project-information-history-row{padding:12px 0;border-bottom:1px solid var(--color-border);font-size:12px;line-height:1.9}.project-information-history-row strong{color:var(--color-text)}.project-information-history-row pre{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--color-background);padding:8px;border-radius:6px;direction:ltr;text-align:left}@media(max-width:600px){.project-information-item-head{align-items:flex-start;flex-direction:column}.project-information-actions{width:100%}.project-information-actions button{flex:1}}';
+      document.head.appendChild(style);
+    },
+
+    openProjectInformationModal: function (title, body) {
+      const old = document.getElementById('project-information-modal');
+      if (old) old.remove();
+      const overlay = document.createElement('div');
+      overlay.id = 'project-information-modal';
+      overlay.className = 'modal-overlay project-information-modal';
+      overlay.innerHTML = '<div class="modal" role="dialog" aria-modal="true"><div class="modal-header"><h3>' + this.escape(title) + '</h3><button type="button" class="modal-close" aria-label="بستن">×</button></div><div class="modal-body">' + body + '</div></div>';
+      document.body.appendChild(overlay);
+      const close = function () { overlay.remove(); };
+      overlay.querySelector('.modal-close').addEventListener('click', close);
+      overlay.addEventListener('click', event => { if (event.target === overlay) close(); });
+      return { overlay: overlay, body: overlay.querySelector('.modal-body'), close: close };
+    },
+
+    informationInput: function (column, value, fieldName) {
+      const type = String(column.DataType || 'text').toLowerCase();
+      const label = this.escape(column.Name || fieldName);
+      const required = column.IsRequired === true || String(column.IsRequired).toLowerCase() === 'true';
+      const raw = value === null || value === undefined ? '' : value;
+      if (type === 'boolean') {
+        return '<div class="form-group"><label>' + label + '</label><select name="' + this.escape(fieldName) + '"' + (required ? ' required' : '') + '><option value="">انتخاب کنید</option><option value="true"' + (raw === true || String(raw) === 'true' ? ' selected' : '') + '>بله</option><option value="false"' + (raw === false || String(raw) === 'false' ? ' selected' : '') + '>خیر</option></select></div>';
+      }
+      if (type === 'select') {
+        let options = [];
+        try { options = JSON.parse(column.OptionsJSON || '[]'); } catch (err) {}
+        return '<div class="form-group"><label>' + label + '</label><select name="' + this.escape(fieldName) + '"' + (required ? ' required' : '') + '><option value="">انتخاب کنید</option>' + options.map(option => { const v = typeof option === 'object' ? (option.value !== undefined ? option.value : option.Value) : option; return '<option value="' + this.escape(v) + '"' + (String(v) === String(raw) ? ' selected' : '') + '>' + this.escape(typeof option === 'object' ? (option.label || option.Name || v) : option) + '</option>'; }).join('') + '</select></div>';
+      }
+      const inputType = type === 'number' ? 'number' : (type === 'date' ? 'date' : (type === 'datetime' ? 'datetime-local' : 'text'));
+      if (type === 'textarea') return '<div class="form-group"><label>' + label + '</label><textarea name="' + this.escape(fieldName) + '"' + (required ? ' required' : '') + ' rows="3">' + this.escape(raw) + '</textarea></div>';
+      return '<div class="form-group"><label>' + label + '</label><input type="' + inputType + '" name="' + this.escape(fieldName) + '" value="' + this.escape(raw) + '"' + (required ? ' required' : '') + '></div>';
+    },
+
+    openProjectInformationForm: function (record) {
+      if (!this.canEditProjectInformation()) return;
+      const type = record.InformationType || {};
+      const multi = String(type.Cardinality || 'SINGLE').toUpperCase() === 'MULTIPLE';
+      const columns = Array.isArray(record.Columns) ? record.Columns : [];
+      const current = record.Value !== undefined ? record.Value : this.parseAuditData(record.ValueJSON);
+      let body = '<form id="project-information-edit-form">';
+      if (!multi) {
+        body += this.informationInput({ Name: type.Name, DataType: type.DataType, OptionsJSON: type.OptionsJSON }, current, 'Value');
+      } else {
+        const rows = Array.isArray(current) && current.length ? current : [{}];
+        body += '<div id="project-information-rows">' + rows.map((row, index) => '<div class="project-information-row" data-information-row>' +
+          columns.map(col => this.informationInput(col, row[String(col.Code)], 'column_' + col.Code)).join('') +
+          '<div class="project-information-row-actions"><button type="button" class="btn btn-sm btn-danger" data-remove-information-row>حذف ردیف</button></div></div>').join('') + '</div>' +
+          '<button type="button" class="btn btn-light" id="project-information-add-row">+ افزودن ردیف</button>';
+      }
+      body += '<div class="form-group" style="margin-top:14px"><label>توضیح تغییر (اختیاری)</label><textarea name="Reason" rows="2" placeholder="علت ثبت یا اصلاح اطلاعات"></textarea></div>' +
+        '<div class="modal-actions"><button type="submit" class="btn btn-primary">ذخیره اطلاعات</button><button type="button" class="btn btn-light" data-information-cancel>انصراف</button></div></form>';
+      const box = this.openProjectInformationModal((type.Name || 'اطلاعات') + (multi ? ' · جدول اطلاعات' : ''), body);
+      const form = box.body.querySelector('form');
+      const rowsHost = box.body.querySelector('#project-information-rows');
+      const rowTemplate = () => '<div class="project-information-row" data-information-row">' +
+        columns.map(col => this.informationInput(col, '', 'column_' + col.Code)).join('') +
+        '<div class="project-information-row-actions"><button type="button" class="btn btn-sm btn-danger" data-remove-information-row>حذف ردیف</button></div></div>';
+      if (multi) {
+        box.body.querySelector('#project-information-add-row').addEventListener('click', () => rowsHost.insertAdjacentHTML('beforeend', rowTemplate()));
+        rowsHost.addEventListener('click', event => {
+          const remove = event.target.closest('[data-remove-information-row]');
+          if (remove) {
+            const all = rowsHost.querySelectorAll('[data-information-row]');
+            if (all.length > 1) remove.closest('[data-information-row]').remove();
+            else alert('حداقل یک ردیف در فرم باقی بماند؛ برای خالی‌کردن اطلاعات از حذف منطقی استفاده کنید.');
+          }
+        });
+      }
+      form.querySelector('[data-information-cancel]').addEventListener('click', box.close);
+      form.addEventListener('submit', async event => {
+        event.preventDefault();
+        const submit = form.querySelector('[type="submit"]');
+        submit.disabled = true;
+        let value;
+        if (multi) {
+          value = Array.from(rowsHost.querySelectorAll('[data-information-row]')).map(row => {
+            const item = {};
+            columns.forEach(col => {
+              const control = row.querySelector('[name="column_' + CSS.escape(String(col.Code)) + '"]');
+              let v = control ? control.value : '';
+              if (v !== '' && String(col.DataType).toLowerCase() === 'number') v = Number(v);
+              if (v !== '' && String(col.DataType).toLowerCase() === 'boolean') v = v === 'true';
+              item[String(col.Code)] = v;
+            });
+            return item;
+          });
+        } else {
+          const control = form.elements.Value;
+          value = control ? control.value : '';
+          if (value !== '' && String(type.DataType).toLowerCase() === 'number') value = Number(value);
+          if (value !== '' && String(type.DataType).toLowerCase() === 'boolean') value = value === 'true';
+        }
+        try {
+          await window.PMS.Api.post('/projects/' + encodeURIComponent(this.projectId) + '/information/' + encodeURIComponent(record.InformationTypeID), { Value: value, Reason: form.elements.Reason.value });
+          window.PMS.Cache.remove('project_information_' + String(this.projectId));
+          box.close();
+          await this.loadProjectInformation(true);
+        } catch (err) {
+          alert(err.message || 'ذخیره اطلاعات انجام نشد.');
+          submit.disabled = false;
+        }
+      });
+    },
+
+    openProjectInformationHistory: async function (record) {
+      const type = record.InformationType || {};
+      const box = this.openProjectInformationModal('تاریخچه «' + (type.Name || 'اطلاعات') + '»', '<div class="loading-state">در حال دریافت سوابق…</div>');
+      try {
+        const response = await window.PMS.Api.get('/projects/' + encodeURIComponent(this.projectId) + '/information/' + encodeURIComponent(record.InformationTypeID) + '/history');
+        const history = this.normalizeArray(response ? response.data : null, ['items', 'Items']);
+        box.body.innerHTML = history.length ? history.slice().reverse().map(item => {
+          const oldValue = item.OldValue !== undefined ? item.OldValue : this.parseAuditData(item.OldValueJSON);
+          const newValue = item.NewValue !== undefined ? item.NewValue : this.parseAuditData(item.NewValueJSON);
+          return '<article class="project-information-history-row"><strong>نسخه ' + this.escape(item.Revision) + ' · ' + this.escape(item.Action) + '</strong><div>زمان: ' + this.escape(this.formatDate(item.CreatedAt)) + ' · ثبت‌کننده: ' + this.escape(item.ActorUserID || '-') + '</div>' +
+            (item.Reason ? '<div>دلیل: ' + this.escape(item.Reason) + '</div>' : '') +
+            '<details><summary>مشاهده مقدار قبلی و جدید</summary><div>مقدار قبلی:</div><pre>' + this.escape(this.informationValue(oldValue)) + '</pre><div>مقدار جدید:</div><pre>' + this.escape(this.informationValue(newValue)) + '</pre></details></article>';
+        }).join('') : '<div class="table-empty">هنوز تاریخچه‌ای ثبت نشده است.</div>';
+      } catch (err) {
+        box.body.innerHTML = '<div class="alert alert-danger">' + this.escape(err.message || 'دریافت تاریخچه ناموفق بود.') + '</div>';
+      }
+    },
+
+    ProjectDetail.loadAuditHistory(true);
         });
       }
     },
