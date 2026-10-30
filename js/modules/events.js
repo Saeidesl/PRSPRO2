@@ -1633,6 +1633,7 @@
             input.dataset.formValue = 'true';
             input.dataset.formId = String(form.ID || mapping.FormID);
             input.dataset.infoTypeId = typeId;
+            input.dataset.formDataType = inputField.FieldType;
             input.required = required;
             input.id = 'event-form-value-' + String(form.ID || mapping.FormID) + '-' + index;
             labelElement.htmlFor = input.id;
@@ -1740,6 +1741,7 @@
             );
             if (!input) continue;
             let value = input.type === 'checkbox' ? input.checked : input.value;
+            if (input.dataset.formDataType === 'boolean' && value !== '') value = String(value).toLowerCase() === 'true';
             if (input.type === 'number' && String(value).trim() !== '') value = Number(value);
             if (required && (value === '' || value === null || value === undefined)) {
               input.reportValidity();
