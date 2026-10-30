@@ -1557,7 +1557,21 @@
           required.textContent = 'تکمیل این فرم برای ثبت رویداد الزامی است.';
           card.appendChild(required);
         }
+        let activeGroupName = null;
+        let groupContainer = null;
         fields.forEach((field, index) => {
+          const groupName = String(field.GroupName || '').trim();
+          if (groupName !== activeGroupName) {
+            activeGroupName = groupName;
+            groupContainer = document.createElement('div');
+            groupContainer.className = 'event-form-group';
+            if (groupName) {
+              const groupHeading = document.createElement('h6');
+              groupHeading.textContent = groupName;
+              groupContainer.appendChild(groupHeading);
+            }
+            card.appendChild(groupContainer);
+          }
           const info = field.InformationType || {};
           const typeId = String(field.InformationTypeID || info.ID || '');
           const label = field.LabelOverride || info.Name || info.Code || 'اطلاعات';
@@ -1568,6 +1582,8 @@
           wrapper.dataset.formId = String(form.ID || mapping.FormID);
           wrapper.dataset.infoTypeId = typeId;
           wrapper.dataset.cardinality = cardinality;
+          const visibilityRule = field.VisibilityRule || this.parseVisibilityRule(field.VisibilityRuleJSON);
+          wrapper.dataset.visibilityRule = JSON.stringify(visibilityRule || {});
           if (cardinality === 'MULTIPLE') {
             const title = document.createElement('strong');
             title.textContent = label + (required ? ' *' : '');
@@ -1635,6 +1651,7 @@
             input.dataset.infoTypeId = typeId;
             input.dataset.formDataType = inputField.FieldType;
             input.required = required;
+            input.dataset.baseRequired = String(required);
             input.id = 'event-form-value-' + String(form.ID || mapping.FormID) + '-' + index;
             labelElement.htmlFor = input.id;
             wrapper.appendChild(labelElement);
@@ -1646,9 +1663,49 @@
               wrapper.appendChild(help);
             }
           }
-          card.appendChild(wrapper);
+          groupContainer.appendChild(wrapper);
         });
         container.appendChild(card);
+      });
+      container.oninput = () => this.applyConfiguredFormVisibility(container);
+      container.onchange = () => this.applyConfiguredFormVisibility(container);
+      this.applyConfiguredFormVisibility(container);
+    },
+
+    parseVisibilityRule: function (value) {
+      if (!value) return {};
+      if (typeof value === 'object') return value;
+      try { return JSON.parse(String(value)); } catch (error) { return {}; }
+    },
+
+    applyConfiguredFormVisibility: function (container) {
+      if (!container) return;
+      const wrappers = Array.from(container.querySelectorAll('.event-form-value-field'));
+      wrappers.forEach((wrapper) => {
+        const rule = this.parseVisibilityRule(wrapper.dataset.visibilityRule);
+        let visible = true;
+        if (rule.fieldId) {
+          const source = wrappers.find((item) => item.dataset.infoTypeId === String(rule.fieldId));
+          let value;
+          if (source) {
+            const control = source.querySelector('[data-form-value], [data-column-code]');
+            if (control) value = control.type === 'checkbox' ? control.checked : control.value;
+          }
+          const empty = value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0);
+          const operator = String(rule.operator || '').toUpperCase();
+          if (operator === 'FILLED') visible = !empty;
+          else if (operator === 'EMPTY') visible = empty;
+          else if (operator === 'EQUALS') visible = !empty && String(value) === String(rule.value);
+          else if (operator === 'NOT_EQUALS') visible = empty || String(value) !== String(rule.value);
+        }
+        wrapper.hidden = !visible;
+        wrapper.querySelectorAll('[data-form-value]').forEach((input) => {
+          input.required = visible && input.dataset.baseRequired === 'true';
+        });
+      });
+      container.querySelectorAll('.event-form-group').forEach((group) => {
+        const children = Array.from(group.querySelectorAll('.event-form-value-field'));
+        group.hidden = children.length > 0 && children.every((item) => item.hidden);
       });
     },
 
@@ -1701,6 +1758,14 @@
           const typeId = String(field.InformationTypeID || info.ID || '');
           if (!typeId) continue;
           const required = field.IsRequired === true || String(field.IsRequired).toLowerCase() === 'true';
+          const fieldWrapper = Array.from(container.querySelectorAll('.event-form-value-field')).find((node) =>
+            node.dataset.formId === formId && node.dataset.infoTypeId === typeId
+          );
+          const hiddenByRule = !!fieldWrapper && fieldWrapper.hidden;
+          if (hiddenByRule) {
+            values[typeId] = String(info.Cardinality || 'SINGLE').toUpperCase() === 'MULTIPLE' ? [] : '';
+            continue;
+          }
           if (String(info.Cardinality || 'SINGLE').toUpperCase() === 'MULTIPLE') {
             const table = Array.from(container.querySelectorAll('[data-form-table]')).find((node) =>
               node.dataset.formId === formId && node.dataset.infoTypeId === typeId
