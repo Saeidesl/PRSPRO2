@@ -39,7 +39,7 @@ jobs:
           test -f _site/index.html
           test -f _site/staging/index.html
           test -f _site/staging/js/core/api.js
-          grep -q 'AKfycbw-o15vVNFbnfqhYV6PtpDOTt4jURF5QKEahvnENkZp2hOPlek1Hj55T2tBnypfPCb' _site/staging/js/core/api.js
+          grep -q 'AKfycbw-o15vVNFbnfqhVYV6PtpDOTt4jURF5QKEahvnENkZp2hOPlek1Hj55T2tBnypfPCb' _site/staging/js/core/api.js
           echo "Production root preserved; current main frontend prepared under /staging/ with the test API endpoint."
 
       - name: Upload combined Pages artifact
