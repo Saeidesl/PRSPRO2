@@ -111,6 +111,14 @@
         });
       }
 
+      const informationRetry = document.getElementById('project-information-retry');
+      if (informationRetry && !informationRetry.dataset.bound) {
+        informationRetry.dataset.bound = '1';
+        informationRetry.addEventListener('click', function () {
+          ProjectDetail.loadProjectInformation(true);
+        });
+      }
+
       const auditRetry = document.getElementById('project-management-history-retry');
       if (auditRetry && !auditRetry.dataset.bound) {
         auditRetry.dataset.bound = '1';
@@ -135,7 +143,8 @@
         const response = forceRefresh
           ? await window.PMS.Api.getFresh('/projects/' + encodeURIComponent(this.projectId) + '/information', key)
           : await window.PMS.Api.getCached('/projects/' + encodeURIComponent(this.projectId) + '/information', key);
-        this.projectInformation = this.normalizeArray(response ? response.data : null, ['items', 'Items']);
+        const payload = response && response.data !== undefined ? response.data : response;
+        this.projectInformation = this.normalizeArray(payload, ['items', 'Items']);
         this.renderProjectInformation();
       } catch (err) {
         if (error) {
