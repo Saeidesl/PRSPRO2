@@ -1,0 +1,37 @@
+'use strict';
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const test=require('node:test');
+const read=file=>fs.readFileSync(path.join(__dirname,'..',file),'utf8');
+
+test('forms page is registered behind system settings and loaded as a module',()=>{
+  const router=read('js/core/router.js');
+  const layout=read('js/components/layout.js');
+  const index=read('index.html');
+  assert.match(router,/forms:\s*'pages\/forms\.html'/);
+  assert.match(router,/forms:\s*\['SYSTEM_SETTINGS'\]/);
+  assert.match(router,/forms:\s*'Forms'/);
+  assert.match(layout,/route:\s*'forms'.*permission:\s*'SYSTEM_SETTINGS'/);
+  assert.match(index,/js\/modules\/forms\.js/);
+  assert.ok(fs.existsSync(path.join(__dirname,'..','pages/forms.html')));
+});
+
+test('form builder uses central information types and event-type assignments',()=>{
+  const module=read('js/modules/forms.js');
+  assert.match(module,/PMS\.Api\.get\('\/information-types'\)/);
+  assert.match(module,/PMS\.Api\.post\('\/forms'/);
+  assert.match(module,/PMS\.Api\.post\('\/forms\/'\s*\+/);
+  assert.match(module,/PMS\.Api\.post\('\/event-types\/'\s*\+/);
+  assert.match(module,/PMS\.Api\.delete\('\/event-type-forms\/'\s*\+/);
+});
+
+test('event entry loads assigned forms, submits FormResponses and displays saved snapshots',()=>{
+  const events=read('js/modules/events.js');
+  assert.match(events,/\/event-types\/'.*\/forms/);
+  assert.match(events,/FormResponses:\s*formResponses/);
+  assert.match(events,/collectConfiguredFormResponses/);
+  assert.match(events,/\/events\/'.*\/forms/);
+  assert.match(events,/DefinitionSnapshot|response\.Definition/);
+  assert.match(events,/data-form-table/);
+});
