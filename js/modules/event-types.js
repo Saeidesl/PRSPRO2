@@ -589,9 +589,8 @@
               '<select id="et-connection-type" name="ConnectionType">' +
                 '<option value="PROJECT">مرتبط با پروژه</option>' +
                 '<option value="INDEPENDENT">مستقل از پروژه</option>' +
-                '<option value="DESIGN_CASE">مرتبط با پرونده طرح</option>' +
               '</select>' +
-              '<small class="et-muted">برای سفارش پارچه و رویدادهای انبار ملزومات، مستقل را انتخاب کن؛ برای مراحل طراحی و نمونه‌دوزی، پرونده طرح را انتخاب کن.</small>' +
+              '<small class="et-muted">برای سفارش پارچه و رویدادهای انبار ملزومات، مستقل را انتخاب کن؛ برای مراحل طراحی و نمونه‌دوزی نیز پروژه را انتخاب کن.</small>' +
             '</div>' +
 
             '<div class="form-group">' +
@@ -662,31 +661,6 @@
               '<small class="et-muted">فهرست رنگ و سایز از مشخصات همان پروژه خوانده می‌شود. برای ثبت چندمرحله‌ای برش، نوع رویداد را به واحد برش مرتبط کن و گزینه مقدار تولید/تحویل را فعال کن؛ برای نمایش مجموع تجمعی، نام رویدادهای تکمیل را شامل «پایان برش» یا «اتمام برش» بگذار.</small>' +
             '</div>' +
 
-          '</div>' +
-        '</section>' +
-
-        '<section class="et-section" id="et-design-case-settings">' +
-          '<h4>تنظیمات پرونده طرح</h4>' +
-          '<span class="et-section-description">این تنظیمات فقط برای رویدادهایی استفاده می‌شوند که به پرونده طرح متصل هستند.</span>' +
-          '<div class="et-form-grid">' +
-            '<div class="form-group">' +
-              '<label for="et-target-design-case-status">وضعیت پرونده پس از ثبت رویداد</label>' +
-              '<select id="et-target-design-case-status" name="TargetDesignCaseStatus">' +
-                '<option value="">بدون تغییر وضعیت پرونده</option>' +
-                '<option value="DRAFT">پیش‌نویس</option>' +
-                '<option value="IN_DESIGN">در حال طراحی</option>' +
-                '<option value="PATTERN_MAKING">الگوسازی</option>' +
-                '<option value="MATERIALS_PENDING">در انتظار ملزومات</option>' +
-                '<option value="SAMPLE_SEWING">نمونه‌دوزی</option>' +
-                '<option value="REVISION_REQUIRED">نیازمند اصلاح</option>' +
-                '<option value="READY_FOR_APPROVAL">آماده تأیید</option>' +
-                '<option value="REJECTED">ردشده</option>' +
-              '</select>' +
-            '</div>' +
-            '<div class="form-group et-full">' +
-              '<label><input id="et-transitions-to-production" name="TransitionsToProduction" type="checkbox"> این رویداد پرونده را برای تأیید نهایی و ورود به تولید آماده می‌کند</label>' +
-              '<small class="et-muted">با فعال‌کردن این گزینه، وضعیت پرونده به «آماده تأیید» تغییر می‌کند؛ ایجاد پروژه تولیدی جداگانه و از مسیر تأیید پرونده انجام می‌شود.</small>' +
-            '</div>' +
           '</div>' +
         '</section>' +
         '<section class="et-section">' +
@@ -838,9 +812,6 @@
       setFieldValue(form, 'TargetDepartmentID', item.TargetDepartmentID);
       setFieldValue(form, 'TargetProjectStatus', item.TargetProjectStatus);
       setFieldValue(form, 'TargetStepStatus', item.TargetStepStatus);
-      setFieldValue(form, 'TargetDesignCaseStatus', item.TargetDesignCaseStatus);
-
-      setFieldChecked(form, 'TransitionsToProduction', item.TransitionsToProduction);
       setFieldChecked(form, 'AllowAttachments', item.AllowAttachments);
       setFieldChecked(form, 'MovesProjectToStep', item.MovesProjectToStep);
       setFieldChecked(form, 'AllowVoid', item.AllowVoid);
@@ -860,11 +831,8 @@
 
     const connectionTypeField = form.elements.namedItem('ConnectionType');
     const projectSettingsSection = form.querySelector('#et-project-settings');
-    const designCaseSettingsSection = form.querySelector('#et-design-case-settings');
     const refreshConnectionTypeSettings = function () {
-      const isDesignCase = connectionTypeField.value === 'DESIGN_CASE';
-      projectSettingsSection.hidden = isDesignCase;
-      designCaseSettingsSection.hidden = !isDesignCase;
+      projectSettingsSection.hidden = connectionTypeField.value === 'INDEPENDENT';
     };
     connectionTypeField.addEventListener('change', refreshConnectionTypeSettings);
     refreshConnectionTypeSettings();
@@ -927,10 +895,6 @@
         TargetDepartmentID: fieldValue(form, 'TargetDepartmentID'),
         TargetProjectStatus: fieldValue(form, 'TargetProjectStatus'),
         TargetStepStatus: fieldValue(form, 'TargetStepStatus').trim(),
-        TargetDesignCaseStatus: fieldValue(form, 'ConnectionType') === 'DESIGN_CASE'
-          ? fieldValue(form, 'TargetDesignCaseStatus') : '',
-        TransitionsToProduction: fieldValue(form, 'ConnectionType') === 'DESIGN_CASE'
-          ? fieldChecked(form, 'TransitionsToProduction') : false,
         AllowedDepartmentIDs: form.querySelector('[data-check-group="AllowedDepartmentIDs"]')
           ? selectedValues(form, 'AllowedDepartmentIDs')
           : (editing ? normalizeArray(item && item.AllowedDepartmentIDs) : []),
@@ -941,15 +905,11 @@
           ? selectedValues(form, 'AvailableDepartmentIDs')
           : (editing ? normalizeArray(item && item.AvailableDepartmentIDs) : []),
         AllowAttachments: fieldChecked(form, 'AllowAttachments'),
-        MovesProjectToStep: fieldValue(form, 'ConnectionType') === 'DESIGN_CASE'
-          ? false : fieldChecked(form, 'MovesProjectToStep'),
+        MovesProjectToStep: fieldChecked(form, 'MovesProjectToStep'),
         AllowVoid: fieldChecked(form, 'AllowVoid'),
-        UseProjectColors: fieldValue(form, 'ConnectionType') === 'DESIGN_CASE'
-          ? false : fieldChecked(form, 'UseProjectColors'),
-        UseProjectSizes: fieldValue(form, 'ConnectionType') === 'DESIGN_CASE'
-          ? false : fieldChecked(form, 'UseProjectSizes'),
-        TrackVariantQuantity: fieldValue(form, 'ConnectionType') === 'DESIGN_CASE'
-          ? false : fieldChecked(form, 'TrackVariantQuantity'),
+        UseProjectColors: fieldChecked(form, 'UseProjectColors'),
+        UseProjectSizes: fieldChecked(form, 'UseProjectSizes'),
+        TrackVariantQuantity: fieldChecked(form, 'TrackVariantQuantity'),
         IsWorkCompletion: fieldChecked(form, 'IsWorkCompletion')
       };
 
@@ -957,14 +917,6 @@
         showMessage('نام و کد نوع رویداد الزامی است.');
         return;
       }
-
-      if (payload.ConnectionType === 'DESIGN_CASE' &&
-          (payload.TargetProjectStatus || payload.TargetStepStatus || payload.MovesProjectToStep ||
-           payload.UseProjectColors || payload.UseProjectSizes || payload.TrackVariantQuantity)) {
-        showMessage('برای رویداد پرونده طرح، تنظیمات گردش پروژه و رنگ/سایز تولید نباید فعال باشند.');
-        return;
-      }
-
       if (payload.ConnectionType === 'INDEPENDENT' &&
           (payload.UseProjectColors || payload.UseProjectSizes || payload.TrackVariantQuantity)) {
         showMessage('برای رویداد مستقل از پروژه، رنگ‌بندی، سایزبندی و ثبت مقدار ترکیب باید غیرفعال باشند.');
