@@ -34,4 +34,7 @@ test('event entry loads assigned forms, submits FormResponses and displays saved
   assert.match(events,/\/events\/'.*\/forms/);
   assert.match(events,/DefinitionSnapshot|response\.Definition/);
   assert.match(events,/data-form-table/);
+  assert.match(events,/applyConfiguredFormVisibility/);
+  assert.match(events,/VisibilityRule/);
+  assert.match(events,/event-form-group/);
 });
