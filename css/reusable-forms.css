@@ -1,0 +1,19 @@
+.event-configured-form-card{grid-column:1/-1;border:1px solid var(--color-border);border-radius:10px;padding:14px;min-width:0;background:var(--color-surface)}
+.event-configured-form-card h5{margin:0 0 12px;font-size:15px}
+.event-form-value-field{margin:0 0 12px;min-width:0}
+.event-form-value-field>label{display:block;margin-bottom:6px;font-weight:600}
+.event-form-value-field input,.event-form-value-field select,.event-form-value-field textarea{max-width:100%;width:100%}
+.event-form-value-field small{display:block;margin-top:5px}
+.event-form-value-field .event-modal-table-wrap{margin:8px 0;overflow-x:auto}
+.event-form-value-field .event-modal-table{min-width:520px}
+.event-form-response-card{border:1px solid var(--color-border);border-radius:8px;padding:12px;margin:10px 0}
+.event-form-response-card h5{margin:0 0 10px}
+.event-form-response-field{padding:8px 0;border-bottom:1px solid var(--color-border-light)}
+.event-form-response-field:last-child{border-bottom:0}
+.event-form-response-field>strong{display:block;margin-bottom:6px}
+@media(max-width:650px){.event-configured-form-card{padding:10px}.event-form-value-field .event-modal-table{min-width:460px}}
+
+.event-form-group{margin:8px 0 14px;padding:10px;border:1px solid var(--color-border);border-radius:8px;min-width:0}
+.event-form-group h6{margin:0 0 10px;font-size:13px;color:var(--color-text-secondary)}
+.event-form-group .event-form-value-field{margin-bottom:10px}
+.event-form-group .event-form-value-field:last-child{margin-bottom:0}
