@@ -123,7 +123,12 @@
       if (auditRetry && !auditRetry.dataset.bound) {
         auditRetry.dataset.bound = '1';
         auditRetry.addEventListener('click', function () {
-          canEditProjectInformation: function () {
+          ProjectDetail.loadAuditHistory(true);
+        });
+      }
+    },
+
+    canEditProjectInformation: function () {
       const router = window.PMS && window.PMS.Router;
       return !!(router && ((typeof router.isAdmin === 'function' && router.isAdmin()) ||
         (Array.isArray(router.permissions) && router.permissions.indexOf('PROJECT_EDIT') !== -1)));
@@ -349,11 +354,6 @@
         }).join('') : '<div class="table-empty">هنوز تاریخچه‌ای ثبت نشده است.</div>';
       } catch (err) {
         box.body.innerHTML = '<div class="alert alert-danger">' + this.escape(err.message || 'دریافت تاریخچه ناموفق بود.') + '</div>';
-      }
-    },
-
-    ProjectDetail.loadAuditHistory(true);
-        });
       }
     },
 
