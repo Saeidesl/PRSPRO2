@@ -324,7 +324,7 @@
         }
         try {
           await window.PMS.Api.post('/projects/' + encodeURIComponent(this.projectId) + '/information/' + encodeURIComponent(record.InformationTypeID), { Value: value, Reason: form.elements.Reason.value });
-          window.PMS.Cache.remove('project_information_' + String(this.projectId));
+          window.PMS.Api.invalidate('project_information_' + String(this.projectId));
           box.close();
           await this.loadProjectInformation(true);
         } catch (err) {
