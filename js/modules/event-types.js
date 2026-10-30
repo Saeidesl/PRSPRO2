@@ -348,6 +348,9 @@
           escapeAttribute(id) + '" data-name="' + escapeAttribute(name) +
           '">فیلدهای پویا</button> ';
 
+        html += '<button type="button" class="btn btn-sm btn-secondary event-type-forms" data-id="' +
+          escapeAttribute(id) + '" data-name="' + escapeAttribute(name) +
+          '">فرم‌های متصل</button> ';
         html += '<button type="button" class="btn btn-sm btn-secondary event-type-procurement" data-id="' +
           escapeAttribute(id) + '" data-name="' + escapeAttribute(name) +
           '">تنظیمات تأمین</button>';
@@ -372,6 +375,12 @@
     container.querySelectorAll('.event-type-fields').forEach(function (button) {
       button.addEventListener('click', function () {
         loadFields(button.dataset.id, button.dataset.name);
+      });
+    });
+
+    container.querySelectorAll('.event-type-forms').forEach(function (button) {
+      button.addEventListener('click', function () {
+        openEventTypeForms(button.dataset.id, button.dataset.name);
       });
     });
 
@@ -1341,6 +1350,64 @@
         showMessage(error.message || 'دریافت فیلدهای پویا ناموفق بود.');
       }
     }
+  }
+
+  async function openEventTypeForms(eventTypeId, eventTypeName) {
+    const modal = createModal('فرم‌های متصل: ' + (eventTypeName || ''), 'event-type-forms-modal');
+    modal.body.innerHTML = '<div class="table-empty">در حال دریافت فرم‌ها...</div>';
+    function unwrap(value) { return value && value.data !== undefined ? value.data : value; }
+    async function refresh() {
+      const results = await Promise.all([
+        PMS.Api.get('/forms'),
+        PMS.Api.get('/event-types/' + encodeURIComponent(eventTypeId) + '/forms')
+      ]);
+      const formsData = unwrap(results[0]);
+      const mappingData = unwrap(results[1]);
+      const forms = Array.isArray(formsData) ? formsData : [];
+      const mappings = Array.isArray(mappingData) ? mappingData : [];
+      const activeForms = forms.filter(function(form) { return String(form.Status || 'ACTIVE') === 'ACTIVE'; });
+      const available = activeForms.filter(function(form) {
+        return !mappings.some(function(mapping) { return String(mapping.FormID) === String(form.ID); });
+      });
+      modal.body.innerHTML =
+        '<p class="form-help">فرم‌های متصل هنگام ثبت همین نوع رویداد در فرم اصلی ثبت رویداد نمایش داده می‌شوند.</p>' +
+        '<form id="event-type-form-attach" class="form-grid">' +
+        '<label class="form-group"><span>انتخاب فرم</span><select name="FormID" required><option value="">انتخاب کنید</option>' +
+        available.map(function(form) { return '<option value="' + escapeAttribute(form.ID) + '">' + escapeHtml(form.Name || form.Code) + '</option>'; }).join('') +
+        '</select></label><label class="form-group"><span><input type="checkbox" name="IsRequired" checked> تکمیل فرم اجباری باشد</span></label>' +
+        '<div class="modal-actions"><button type="submit" class="btn btn-primary"' + (available.length ? '' : ' disabled') + '>اتصال فرم</button></div></form>' +
+        '<h4>فرم‌های فعلی</h4><div id="event-type-form-mappings"></div>' +
+        (!activeForms.length ? '<p class="form-help">هنوز فرمی تعریف نشده است. <a href="#forms">ایجاد فرم جدید</a></p>' : '');
+      const list = modal.body.querySelector('#event-type-form-mappings');
+      list.innerHTML = mappings.length ? mappings.map(function(mapping) {
+        const form = mapping.Form || {};
+        return '<div class="et-field-row"><span>' + escapeHtml(form.Name || form.Code || mapping.FormID) +
+          ' · ' + ((mapping.IsRequired === true || String(mapping.IsRequired).toLowerCase() === 'true') ? 'اجباری' : 'اختیاری') +
+          '</span><button type="button" class="btn btn-sm btn-secondary" data-unlink="' + escapeAttribute(mapping.ID) + '">قطع اتصال</button></div>';
+      }).join('') : '<p class="form-help">هیچ فرمی به این نوع رویداد متصل نیست.</p>';
+      list.querySelectorAll('[data-unlink]').forEach(function(button) {
+        button.addEventListener('click', async function() {
+          try {
+            await PMS.Api.delete('/event-type-forms/' + encodeURIComponent(button.dataset.unlink));
+            await refresh();
+          } catch(error) { showMessage(error.message || 'قطع اتصال فرم ناموفق بود.'); }
+        });
+      });
+      const attach = modal.body.querySelector('#event-type-form-attach');
+      attach.addEventListener('submit', async function(event) {
+        event.preventDefault();
+        if (!attach.elements.FormID.value) return;
+        try {
+          await PMS.Api.post('/event-types/' + encodeURIComponent(eventTypeId) + '/forms', {
+            FormID: attach.elements.FormID.value,
+            IsRequired: attach.elements.IsRequired.checked
+          });
+          await refresh();
+        } catch(error) { showMessage(error.message || 'اتصال فرم ناموفق بود.'); }
+      });
+    }
+    try { await refresh(); }
+    catch(error) { modal.body.innerHTML = '<div class="alert alert-danger">' + escapeHtml(error.message || 'دریافت فرم‌های متصل ناموفق بود.') + '</div>'; }
   }
 
   async function openProcurementSettings(eventTypeId, eventTypeName) {
