@@ -1785,10 +1785,11 @@
               let hasAnyValue = false;
               row.querySelectorAll('[data-column-code]').forEach((input) => {
                 let item = input.type === 'checkbox' ? input.checked : input.value;
+                const hasRawValue = input.type === 'checkbox' ? input.checked : (item !== '' && item !== null && item !== undefined);
+                if (hasRawValue) hasAnyValue = true;
                 if (input.dataset.columnType === 'boolean' && item !== '') item = String(item).toLowerCase() === 'true';
                 if (input.type === 'number' && String(item).trim() !== '') item = Number(item);
                 value[input.dataset.columnCode] = item;
-                if (item !== '' && item !== null && item !== undefined && item !== false) hasAnyValue = true;
               });
               if (hasAnyValue) {
                 const missing = Array.from(row.querySelectorAll('[data-column-code]')).find((input) =>
