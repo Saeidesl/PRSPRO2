@@ -403,7 +403,10 @@ const visible = el => {
   // Never click buttons inside forms or labels that imply data changes.
   if (authenticated) {
     for (const routeResult of results.routes.filter(item => item.requestedRoute !== 'login' && item.status === 'loaded')) {
-      const safeButtons = routeResult.buttons.filter(button => !button.inForm && !button.disabled && !dangerousAction.test(button.label) && button.type.toLowerCase() !== 'submit' && button.id);
+      // Keep the browser audit bounded: one representative non-mutating utility
+      // interaction per route is enough for a smoke check. Re-loading the whole app
+      // for every button caused audit runs to exceed the 15-minute job timeout.
+      const safeButtons = routeResult.buttons.filter(button => !button.inForm && !button.disabled && !dangerousAction.test(button.label) && button.type.toLowerCase() !== 'submit' && button.id).slice(0, 1);
       for (const button of safeButtons) {
         try {
           // Form inventory opens dialogs intentionally. Reload before each smoke click
