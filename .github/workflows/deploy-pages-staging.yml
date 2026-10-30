@@ -28,18 +28,19 @@ jobs:
           ref: main
           path: _site
 
-      - name: Checkout staging frontend into isolated path
+      - name: Checkout current main frontend into isolated staging path
         uses: actions/checkout@v4
         with:
-          ref: feature/design-case-preproduction
+          ref: main
           path: _site/staging
 
-      - name: Verify both app entry points
+      - name: Verify production and staging entry points
         run: |
           test -f _site/index.html
           test -f _site/staging/index.html
           test -f _site/staging/js/core/api.js
-          echo "Production root preserved; staging app prepared under /staging/."
+          grep -q 'AKfycbw-o15vVNFbnfqhYV6PtpDOTt4jURF5QKEahvnENkZp2hOPlek1Hj55T2tBnypfPCb' _site/staging/js/core/api.js
+          echo "Production root preserved; current main frontend prepared under /staging/ with the test API endpoint."
 
       - name: Upload combined Pages artifact
         uses: actions/upload-pages-artifact@v3
