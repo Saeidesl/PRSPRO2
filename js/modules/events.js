@@ -758,13 +758,15 @@
       try {
         const responses = await Promise.all([
           PMS.Api.get('/events/' + encodeURIComponent(eventId)),
-          PMS.Api.get('/events/' + encodeURIComponent(eventId) + '/data')
+          PMS.Api.get('/events/' + encodeURIComponent(eventId) + '/data'),
+          PMS.Api.get('/events/' + encodeURIComponent(eventId) + '/forms')
         ]);
 
         if (!document.getElementById('event-details-modal')) return;
 
         const event = this.extractObject(responses[0]);
         const dynamicData = this.extractDataObject(responses[1]);
+        const formResponses = this.normalize(responses[2]);
         const project = this.findById(this.projects, event.ProjectID);
         const type = this.findById(this.eventTypes, event.EventTypeID);
         let variantDetails = [];
@@ -838,6 +840,43 @@
           html += '</tbody></table></div>';
         } else {
           html += '<p class="event-muted">اطلاعات اختصاصی برای این رویداد ثبت نشده است.</p>';
+        }
+
+        if (formResponses.length) {
+          html += '<h4 class="event-section-title">فرم‌های اطلاعات ثبت‌شده</h4>';
+          formResponses.forEach(function (response) {
+            const definition = response.Definition || {};
+            html += '<section class="event-form-response-card"><h5>' +
+              Events.escape(definition.Name || definition.Code || 'فرم') + '</h5>';
+            const fields = Array.isArray(definition.Fields) ? definition.Fields : [];
+            fields.forEach(function (field) {
+              const info = field.InformationType || {};
+              const key = String(field.InformationTypeID || info.ID || '');
+              const value = response.Values ? response.Values[key] : null;
+              const label = field.LabelOverride || info.Name || info.Code || 'اطلاعات';
+              html += '<div class="event-form-response-field"><strong>' + Events.escape(label) + '</strong>';
+              if (String(info.Cardinality || 'SINGLE').toUpperCase() === 'MULTIPLE' && Array.isArray(value)) {
+                const columns = Array.isArray(info.Columns) ? info.Columns : [];
+                if (value.length && columns.length) {
+                  html += '<div class="event-modal-table-wrap"><table class="event-modal-table"><thead><tr>';
+                  columns.forEach(function (column) { html += '<th>' + Events.escape(column.Name || column.Code) + '</th>'; });
+                  html += '</tr></thead><tbody>';
+                  value.forEach(function (row) {
+                    html += '<tr>';
+                    columns.forEach(function (column) { html += '<td>' + Events.escape(Events.displayValue(row[String(column.Code)])) + '</td>'; });
+                    html += '</tr>';
+                  });
+                  html += '</tbody></table></div>';
+                } else {
+                  html += '<p class="event-muted">ردیفی ثبت نشده است.</p>';
+                }
+              } else {
+                html += '<div>' + Events.escape(Events.displayValue(value)) + '</div>';
+              }
+              html += '</div>';
+            });
+            html += '</section>';
+          });
         }
 
         const content = document.getElementById('event-details-content');
