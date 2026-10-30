@@ -11,6 +11,9 @@
     projects: [],
     eventTypes: [],
     eventFields: [],
+    formDefinitions: [],
+    formsReady: true,
+    formsRequestId: 0,
     modalOpen: false,
     submitting: false,
     escapeHandlerBound: false,
@@ -951,6 +954,9 @@
 
       this.modalOpen = true;
       this.eventFields = [];
+      this.formDefinitions = [];
+      this.formsReady = true;
+      this.formsRequestId++;
       this.fieldsLoading = false;
       this.fieldsReady = false;
       this.fieldsError = false;
@@ -991,6 +997,8 @@
         '<section class="event-form-section"><h4 class="event-section-title">اطلاعات اختصاصی رویداد</h4>' +
         '<div id="event-dynamic-fields" class="event-dynamic-grid" aria-live="polite">' +
         '<p class="event-muted">ابتدا نوع رویداد را انتخاب کنید.</p></div></section>' +
+        '<section class="event-form-section" id="event-configured-forms-section" hidden><h4 class="event-section-title">فرم‌های اطلاعات تکمیلی</h4>' +
+        '<div id="event-configured-forms" class="event-dynamic-grid" aria-live="polite"></div></section>' +
         '<div id="event-submit-progress" class="event-submit-progress" hidden role="status" aria-live="polite">' +
         '<span class="event-spinner" aria-hidden="true"></span><div><strong>در حال ثبت رویداد</strong>' +
         '<p>اطلاعات در حال ارسال و ذخیره‌سازی است؛ لطفاً این پنجره را نبندید.</p></div></div>' +
@@ -1249,6 +1257,8 @@
       const selectedTypeId = String(eventTypeId || '');
 
       this.eventFields = [];
+      this.formDefinitions = [];
+      this.formsReady = !selectedTypeId;
       this.fieldsLoading = Boolean(selectedTypeId);
       this.fieldsReady = false;
       this.fieldsError = false;
@@ -1277,6 +1287,10 @@
         this.fieldsReady = false;
         this.fieldsError = false;
         this.fieldsLoadedForTypeId = '';
+        this.formDefinitions = [];
+        this.formsReady = true;
+        const formSection = document.getElementById('event-configured-forms-section');
+        if (formSection) formSection.hidden = true;
 
         this.updateSubmitAvailability();
         return;
@@ -1311,6 +1325,7 @@
 
         this.eventFields = fields;
         this.renderDynamicFields(fields);
+        await this.loadConfiguredForms(selectedTypeId);
 
         this.fieldsLoading = false;
         this.fieldsReady = true;
@@ -1380,6 +1395,7 @@
         this.fieldsReady &&
         !this.fieldsLoading &&
         !this.fieldsError &&
+        this.formsReady &&
         typeMatchesLoadedFields;
 
       button.disabled = !canSubmit;
@@ -1447,6 +1463,227 @@
 
         container.appendChild(wrapper);
       });
+    },
+
+    loadConfiguredForms: async function (eventTypeId) {
+      const requestId = ++this.formsRequestId;
+      const section = document.getElementById('event-configured-forms-section');
+      const container = document.getElementById('event-configured-forms');
+      this.formsReady = false;
+      this.updateSubmitAvailability();
+      if (!section || !container) {
+        this.formsReady = true;
+        this.updateSubmitAvailability();
+        return;
+      }
+      section.hidden = false;
+      container.innerHTML = '<p class="event-muted">در حال دریافت فرم‌های متصل…</p>';
+      try {
+        const response = await PMS.Api.get('/event-types/' + encodeURIComponent(eventTypeId) + '/forms');
+        if (requestId !== this.formsRequestId || !document.getElementById('event-create-modal')) return;
+        const data = PMS.Api.extractData(response);
+        this.formDefinitions = Array.isArray(data) ? data : (data && Array.isArray(data.items) ? data.items : []);
+        this.renderConfiguredForms();
+        this.formsReady = true;
+      } catch (error) {
+        if (requestId !== this.formsRequestId) return;
+        this.formDefinitions = [];
+        container.innerHTML = '';
+        this.showFormError('دریافت فرم‌های متصل ناموفق بود: ' + this.errorMessage(error));
+        this.formsReady = false;
+      }
+      this.updateSubmitAvailability();
+    },
+
+    renderConfiguredForms: function () {
+      const section = document.getElementById('event-configured-forms-section');
+      const container = document.getElementById('event-configured-forms');
+      if (!section || !container) return;
+      const definitions = this.formDefinitions || [];
+      section.hidden = definitions.length === 0;
+      container.replaceChildren();
+      definitions.forEach((mapping) => {
+        const form = mapping.Form || {};
+        const fields = Array.isArray(form.Fields) ? form.Fields : [];
+        const card = document.createElement('div');
+        card.className = 'event-configured-form-card';
+        card.dataset.formId = form.ID || mapping.FormID;
+        card.dataset.formVersion = String(form.Version || 1);
+        const heading = document.createElement('h5');
+        heading.textContent = form.Name || form.Code || 'فرم اطلاعات';
+        card.appendChild(heading);
+        if (mapping.IsRequired === true || String(mapping.IsRequired).toLowerCase() === 'true') {
+          const required = document.createElement('p');
+          required.className = 'event-muted';
+          required.textContent = 'تکمیل این فرم برای ثبت رویداد الزامی است.';
+          card.appendChild(required);
+        }
+        fields.forEach((field, index) => {
+          const info = field.InformationType || {};
+          const typeId = String(field.InformationTypeID || info.ID || '');
+          const label = field.LabelOverride || info.Name || info.Code || 'اطلاعات';
+          const cardinality = String(info.Cardinality || 'SINGLE').toUpperCase();
+          const required = field.IsRequired === true || String(field.IsRequired).toLowerCase() === 'true';
+          const wrapper = document.createElement('div');
+          wrapper.className = 'event-field event-form-value-field';
+          wrapper.dataset.formId = String(form.ID || mapping.FormID);
+          wrapper.dataset.infoTypeId = typeId;
+          wrapper.dataset.cardinality = cardinality;
+          if (cardinality === 'MULTIPLE') {
+            const title = document.createElement('strong');
+            title.textContent = label + (required ? ' *' : '');
+            wrapper.appendChild(title);
+            if (field.HelpText) {
+              const help = document.createElement('small');
+              help.className = 'event-muted';
+              help.textContent = field.HelpText;
+              wrapper.appendChild(help);
+            }
+            const columns = Array.isArray(info.Columns) ? info.Columns : [];
+            const tableWrap = document.createElement('div');
+            tableWrap.className = 'event-modal-table-wrap';
+            const table = document.createElement('table');
+            table.className = 'event-modal-table';
+            table.dataset.formTable = 'true';
+            table.dataset.formId = String(form.ID || mapping.FormID);
+            table.dataset.infoTypeId = typeId;
+            const head = document.createElement('thead');
+            const headRow = document.createElement('tr');
+            columns.forEach((column) => {
+              const th = document.createElement('th');
+              th.textContent = column.Name || column.Code;
+              headRow.appendChild(th);
+            });
+            const actionHead = document.createElement('th');
+            actionHead.textContent = 'عملیات';
+            headRow.appendChild(actionHead);
+            head.appendChild(headRow);
+            table.appendChild(head);
+            const tbody = document.createElement('tbody');
+            table.appendChild(tbody);
+            tableWrap.appendChild(table);
+            wrapper.appendChild(tableWrap);
+            const add = document.createElement('button');
+            add.type = 'button';
+            add.className = 'event-modal-button';
+            add.textContent = 'افزودن ردیف';
+            add.addEventListener('click', () => this.addConfiguredFormRow(tbody, columns));
+            wrapper.appendChild(add);
+            this.addConfiguredFormRow(tbody, columns);
+          } else {
+            const labelElement = document.createElement('label');
+            labelElement.textContent = label + (required ? ' *' : '');
+            const inputField = {
+              Code: typeId,
+              FieldType: String(info.DataType || 'text').toLowerCase(),
+              Options: info.OptionsJSON || '[]'
+            };
+            const input = this.createFieldInput(inputField, inputField.FieldType);
+            input.dataset.formValue = 'true';
+            input.dataset.formId = String(form.ID || mapping.FormID);
+            input.dataset.infoTypeId = typeId;
+            input.required = required;
+            input.id = 'event-form-value-' + String(form.ID || mapping.FormID) + '-' + index;
+            labelElement.htmlFor = input.id;
+            wrapper.appendChild(labelElement);
+            wrapper.appendChild(input);
+            if (inputField.FieldType === 'boolean') {
+              input.type = 'checkbox';
+              input.required = false;
+            }
+            if (field.HelpText) {
+              const help = document.createElement('small');
+              help.className = 'event-muted';
+              help.textContent = field.HelpText;
+              wrapper.appendChild(help);
+            }
+          }
+          card.appendChild(wrapper);
+        });
+        container.appendChild(card);
+      });
+    },
+
+    addConfiguredFormRow: function (tbody, columns) {
+      const row = document.createElement('tr');
+      row.dataset.formRow = 'true';
+      columns.forEach((column) => {
+        const cell = document.createElement('td');
+        const type = String(column.DataType || 'text').toLowerCase();
+        const input = this.createFieldInput({
+          Code: column.Code,
+          FieldType: type,
+          Options: column.OptionsJSON || '[]'
+        }, type);
+        input.dataset.columnCode = String(column.Code);
+        input.required = column.IsRequired === true || String(column.IsRequired).toLowerCase() === 'true';
+        input.setAttribute('aria-label', column.Name || column.Code);
+        cell.appendChild(input);
+        row.appendChild(cell);
+      });
+      const actionCell = document.createElement('td');
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'event-modal-button';
+      remove.textContent = 'حذف';
+      remove.addEventListener('click', () => row.remove());
+      actionCell.appendChild(remove);
+      row.appendChild(actionCell);
+      tbody.appendChild(row);
+    },
+
+    collectConfiguredFormResponses: function () {
+      const responses = [];
+      const container = document.getElementById('event-configured-forms');
+      if (!container) return responses;
+      for (const mapping of this.formDefinitions || []) {
+        const form = mapping.Form || {};
+        const formId = String(form.ID || mapping.FormID);
+        const values = {};
+        const fields = Array.isArray(form.Fields) ? form.Fields : [];
+        for (const field of fields) {
+          const info = field.InformationType || {};
+          const typeId = String(field.InformationTypeID || info.ID || '');
+          if (!typeId) continue;
+          const required = field.IsRequired === true || String(field.IsRequired).toLowerCase() === 'true';
+          if (String(info.Cardinality || 'SINGLE').toUpperCase() === 'MULTIPLE') {
+            const table = Array.from(container.querySelectorAll('[data-form-table]')).find((node) =>
+              node.dataset.formId === formId && node.dataset.infoTypeId === typeId
+            );
+            const columns = Array.isArray(info.Columns) ? info.Columns : [];
+            const rows = table ? Array.from(table.querySelectorAll('[data-form-row]')) : [];
+            const valueRows = rows.map((row) => {
+              const value = {};
+              row.querySelectorAll('[data-column-code]').forEach((input) => {
+                let item = input.type === 'checkbox' ? input.checked : input.value;
+                if (input.type === 'number' && String(item).trim() !== '') item = Number(item);
+                value[input.dataset.columnCode] = item;
+              });
+              return value;
+            }).filter((row) => Object.keys(row).some((key) => row[key] !== '' && row[key] !== null && row[key] !== undefined && row[key] !== false));
+            if (required && valueRows.length === 0) {
+              this.showFormError('حداقل یک ردیف برای «' + (field.LabelOverride || info.Name) + '» وارد کنید.');
+              return null;
+            }
+            values[typeId] = valueRows;
+          } else {
+            const input = Array.from(container.querySelectorAll('[data-form-value]')).find((node) =>
+              node.dataset.formId === formId && node.dataset.infoTypeId === typeId
+            );
+            if (!input) continue;
+            let value = input.type === 'checkbox' ? input.checked : input.value;
+            if (input.type === 'number' && String(value).trim() !== '') value = Number(value);
+            if (required && (value === '' || value === null || value === undefined)) {
+              input.reportValidity();
+              input.focus();
+              return null;
+            }
+            values[typeId] = value;
+          }
+        }
+        responses.push({ FormID: formId, FormVersion: Number(form.Version || 1), Values: values });
+      }
+      return responses;
     },
 
     createFieldInput: function (field, type) {
@@ -1607,6 +1844,9 @@
         }
       }
 
+      const formResponses = this.collectConfiguredFormResponses();
+      if (formResponses === null) return;
+
       const type = this.findById(this.eventTypes, typeId);
       const date = new Date(occurredAt);
 
@@ -1624,6 +1864,7 @@
         OccurredAt: date.toISOString(),
         Description: description,
         DynamicData: dynamicData,
+        FormResponses: formResponses,
         VariantDetails: Array.from(form.querySelectorAll('[data-variant-row]')).map((row) => {
           const value = (name) => {
             const input = row.querySelector('[data-variant-field="' + name + '"]');
