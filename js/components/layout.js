@@ -64,7 +64,7 @@
       const self = this;
 
       return this.navItems.filter(function (item) {
-        return item.route === 'design-cases' || self.hasPermission(item.permission);
+        return self.hasPermission(item.permission);
       });
     },
 
