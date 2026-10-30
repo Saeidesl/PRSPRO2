@@ -8,7 +8,7 @@ const root = path.join(__dirname, '..');
 test('central information settings are registered behind system settings access', () => {
   const router = fs.readFileSync(path.join(root, 'js/core/router.js'), 'utf8');
   const layout = fs.readFileSync(path.join(root, 'js/components/layout.js'), 'utf8');
-  assert.match(router, /information-types: 'pages\/information-types\.html'/);
+  assert.match(router, /'information-types': 'pages\\/information-types\\.html'/);
   assert.match(router, /information-types: \['SYSTEM_SETTINGS'\]/);
   assert.match(router, /information-types: 'InformationTypes'/);
   assert.match(layout, /route: 'information-types'.*permission: 'SYSTEM_SETTINGS'/);
