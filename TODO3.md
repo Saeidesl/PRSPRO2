@@ -90,9 +90,9 @@
 
 - ایجاد پروژه از `Projects.openCreateForm` و `POST /projects` تنها نقطه شروع است؛ طراحی، نمونه‌دوزی و سایر اطلاعات در همان پروژه تکمیل می‌شوند.
 - نوع رویدادهای متصل به پروژه و مستقل (در صورت نیاز واقعی) در ساختار فعلی باقی می‌مانند؛ هیچ نوع اتصال DESIGN_CASE یا فرم/endpoint موازی باقی نمی‌ماند.
-- داده‌های تاریخی شیت‌های `26_DesignCases` و `27_DesignCaseHistory` و ستون‌های قدیمی `DesignCaseID` بدون برنامه مهاجرت حذف یا پاک‌سازی نمی‌شوند. آن‌ها فقط به‌عنوان داده آرشیوی/سازگاری نگهداری می‌شوند؛ هیچ مسیر جدیدی برای ایجاد یا ویرایش آن‌ها در برنامه در دسترس نخواهد بود.
-- رویدادها و پیوست‌های قدیمی متصل به پرونده‌های طرح باید در مرحله مهاجرت/سازگاری بررسی شوند تا در صورت وجود پروژه تولیدی مرتبط، تاریخچه آن‌ها به پروژه متصل و قابل مشاهده شود؛ داده‌ای بدون پشتیبان حذف نمی‌شود.
-- تنظیمات قدیمی نوع رویداد با `ConnectionType=DESIGN_CASE` باید به‌صورت امن به مدل پروژه تبدیل یا غیرفعال شوند؛ نباید پس از انتشار امکان ثبت رویداد جدید روی DesignCase وجود داشته باشد.
+- با اعلام کاربر، هنوز هیچ پروژه‌ای در دیتابیس ثبت نشده است؛ بنابراین مهاجرت یا اتصال داده‌های قدیمی پرونده طرح به پروژه‌ها در محدوده این فاز نیست.
+- شیت‌ها و داده‌های فیزیکی قدیمی، در صورت وجود، بدون انتقال یا پاک‌سازی باقی می‌مانند؛ اما هیچ API، صفحه یا مسیر عملیاتی برای استفاده از آن‌ها فعال نخواهد بود.
+- تنظیمات فعال نوع رویداد فقط PROJECT و INDEPENDENT را می‌پذیرند و امکان ثبت رویداد جدید روی DESIGN_CASE وجود نخواهد داشت.
 
 ## 🎯 Current Objective
 
@@ -287,8 +287,8 @@
 
 #### مسیرهای موازی موجود که باید در محدوده این فاز کنترل شوند
 - مسیرهای مستقل `/design-cases`، سرویس‌های `DesignCaseService` و `DesignCaseRepository` و شاخه `EventService.createForDesignCase` در نسخه قبلی شناسایی شدند و در PRهای حذف این قابلیت کنار گذاشته شده‌اند. این مسیرها نباید دوباره فعال یا بازسازی شوند.
-- اطلاعات تاریخی DesignCase فقط در شیت‌ها/ستون‌های فیزیکی قدیمی باقی می‌مانند؛ آن‌ها از schema فعال و APIهای قابل استفاده حذف شده‌اند. پاک‌سازی فیزیکی یا انتقال سوابق فقط با برنامه مهاجرت مجزا انجام می‌شود.
-- مسیرهای مجاز اصلی برای ایجاد و ثبت در این فاز همان `POST /projects` و `POST /events` هستند. endpointهای مدیریتی برای تعریف اطلاعات و فرم‌ها، در صورت نیاز، صرفاً تنظیمات زیرساخت‌اند و نباید مسیر عملیاتی موازی برای ایجاد پروژه یا ثبت رویداد بسازند.
+- شیت‌ها و داده‌های فیزیکی قدیمی DesignCase در این فاز نه منتقل می‌شوند و نه پاک‌سازی؛ صرفاً از schema فعال و APIهای قابل استفاده حذف می‌شوند.
+- مسیرهای مجاز اصلی برای ایجاد و ثبت همان `POST /projects` و `POST /events` هستند. endpointهای مدیریتی اطلاعات و فرم‌ها صرفاً تنظیمات زیرساخت‌اند و مسیر موازی برای ایجاد پروژه یا ثبت رویداد نمی‌سازند.
 
 #### محدوده حذف جریان مستقل پرونده طرح — کشف در بازبینی 2026-10-30
 
@@ -324,7 +324,7 @@
 - [x] **تسک ۱ — بررسی معماری و طراحی نقشه اجرایی**
   - *Log:* فایل‌های `TODO3.md`، `ARCHITECTURE.md` و `ARCHITECTURE2.md`، دستورالعمل‌های `AGENTS.md` و `PMS-AGENTS.md` در هر دو مخزن، و وضعیت `TODO1.md` بررسی شدند. مسیر واقعی ایجاد پروژه از `Projects.openCreateForm` به `POST /projects`، `Router.get/post` و `ProjectService.create/ProjectValidator.validateCreate/ProjectRepository.insert` ردیابی شد. مسیر واقعی ثبت رویداد از `Events.openForm/loadDynamicFields/renderDynamicFields/submitForm` به `POST /events`، `EventService.create/_createUnlocked_` و `EventDataService.validateDynamicData/EventDataRepository` ردیابی شد. شیت‌های اصلی، لایه کش/قفل `GoogleSheetsRepository`، audit، مجوزها، تست‌های موجود و خطر استقرار خودکار بک‌اند روی `main` بررسی و یافته‌ها در Technical Spec ثبت شدند. مسیرهای موجود `/design-cases` نیز شناسایی شدند تا در این فاز مسیر موازی تازه یا جایگزین برای ایجاد پروژه/ثبت رویداد ساخته نشود. هیچ فایل اجرایی تغییر نکرد.
 - [ ] **تسک ۲ — تثبیت زیرساخت اطلاعات مرکزی و حذف کامل مسیر مستقل پرونده طرح (IN PROGRESS)**
-  - *Log (پیاده‌سازی در انتظار ادغام):* فرانت‌اند در PR #118، صفحه/ماژول/CSS پرونده طرح را حذف کرد، route و منو و بارگذاری assetها را پاک کرد و تنظیمات نوع رویداد را به PROJECT/INDEPENDENT محدود کرد؛ تست single-project-entry.test.js مسیر واحد را تثبیت می‌کند. بک‌اند در PR #75، routeها و DesignCaseService.js/DesignCaseRepository.js را حذف کرد؛ شاخه‌های DesignCase از EventService.js، EventTypeService.js، EventTypeValidator.js، AttachmentService.js و AttachmentValidator.js حذف شدند؛ sheet/columnهای DesignCase از schema فعال خارج شدند، بدون حذف فیزیکی داده‌های قدیمی. تست single-project-entry.test.js اضافه شد. CIهای backend source checks، backend agent suite، frontend checks، frontend agent suite و cross-repository QA موفق‌اند؛ audit مرورگر هنوز در حال اجراست. هیچ PR ادغام یا نسخه‌ای منتشر نشده است.
+  - *Log (پیاده‌سازی در انتظار ادغام):* فرانت‌اند در PR #118، صفحه/ماژول/CSS پرونده طرح را حذف کرد، route و منو و بارگذاری assetها را پاک کرد و تنظیمات نوع رویداد را به PROJECT/INDEPENDENT محدود کرد؛ تست single-project-entry.test.js مسیر واحد را تثبیت می‌کند. بک‌اند در PR #75، routeها و DesignCaseService.js/DesignCaseRepository.js را حذف کرد؛ شاخه‌های DesignCase از EventService.js، EventTypeService.js، EventTypeValidator.js، AttachmentService.js و AttachmentValidator.js حذف شدند؛ sheet/columnهای DesignCase از schema فعال خارج شدند، بدون حذف فیزیکی داده‌های قدیمی. تست single-project-entry.test.js اضافه شد. CIهای backend source checks، backend agent suite، frontend checks، frontend agent suite و cross-repository QA موفق‌اند؛ آزمون مرورگر/عملکرد رابط نیز موفق است. هیچ PR ادغام یا نسخه‌ای منتشر نشده است.
   - تعریف مرکزی انواع اطلاعات مستقل از فرم و رویداد، شامل نوع داده، اعتبارسنجی، تک‌مقداری/چندمقداری، ساختار ستون‌های جدول، وضعیت فعال/غیرفعال و شناسه پایدار.
   - طراحی و پیاده‌سازی ذخیره مقادیر جاری و چندردیفی، نسخه/تاریخچه تغییرات، حذف منطقی و ثبت کاربر/زمان/رویداد مرتبط.
   - ایجاد شیت‌ها و APIهای مدیریتی لازم به‌صورت افزایشی، tenant-scoped و سازگار با `GoogleSheetsRepository`؛ بدون جایگزینی `14_EventData` و بدون دستکاری داده‌های قبلی.
