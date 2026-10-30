@@ -26,6 +26,14 @@ test('form builder uses central information types and event-type assignments',()
   assert.match(module,/PMS\.Api\.delete\('\/event-type-forms\/'\s*\+/);
 });
 
+test('event type management can attach and detach reusable forms',()=>{
+  const module=read('js/modules/event-types.js');
+  assert.match(module,/event-type-forms/);
+  assert.match(module,/openEventTypeForms/);
+  assert.match(module,/PMS\.Api\.post\('\/event-types\/'/);
+  assert.match(module,/PMS\.Api\.delete\('\/event-type-forms\/'/);
+});
+
 test('event entry loads assigned forms, submits FormResponses and displays saved snapshots',()=>{
   const events=read('js/modules/events.js');
   assert.match(events,/\/event-types\/'.*\/forms/);
