@@ -21,7 +21,7 @@ function withQueryParam(rawUrl, key, value) {
 }
 const routes = [
   'login', 'dashboard', 'projects', 'project-detail', 'events', 'workflows',
-  'project-statuses', 'event-types', 'procurement', 'attachments', 'reports',
+  'project-statuses', 'event-types', 'information-types', 'procurement', 'attachments', 'reports',
   'users', 'departments', 'roles', 'permissions', 'audit', 'settings', 'admin'
 ];
 const dangerousAction = /ثبت|ذخیره|حذف|پاک.?کردن|ارسال|تحویل|تأیید|تایید|ایجاد|افزودن|ویرایش|آپلود|بارگذاری فایل|خروج|ورود|لغو سفارش|اعمال تغییر|انتشار|دریافت فایل|دانلود/i;
@@ -58,6 +58,7 @@ const formOpenersByRoute = {
   workflows: ['workflow-create-button'],
   'project-statuses': ['project-status-create'],
   'event-types': ['event-type-create-button'],
+  'information-types': ['information-type-create'],
   procurement: ['procurement-create-project-order', 'procurement-create-general-order', 'procurement-create-receipt'],
   // The attachment upload button opens a form only; the audit inventories it without submitting.
   attachments: ['attachment-upload-button'],
