@@ -1,0 +1,27 @@
+<section class="page-section">
+  <div class="page-header">
+    <div>
+      <h2>تعریف اطلاعات مرکزی</h2>
+      <p>انواع اطلاعات را مستقل از فرم و رویداد تعریف کنید تا بعداً در بخش‌های مختلف پرونده قابل استفاده باشند.</p>
+    </div>
+    <div class="page-header-actions">
+      <button type="button" class="btn btn-primary" id="information-type-create">+ تعریف نوع اطلاعات</button>
+    </div>
+  </div>
+
+  <div id="information-types-message" class="alert" hidden role="status" aria-live="polite"></div>
+  <div class="card">
+    <div class="card-body">
+      <div class="filter-bar">
+        <div class="filter-group">
+          <label for="information-type-search">جستجو</label>
+          <input id="information-type-search" type="search" placeholder="جستجوی عنوان یا کد اطلاعات">
+        </div>
+      </div>
+      <div id="information-types-loading" class="loading-state">در حال بارگذاری تعریف‌های اطلاعات…</div>
+      <div id="information-types-error" class="alert alert-danger" hidden role="alert"></div>
+      <div id="information-types-table" class="table-wrapper" hidden></div>
+      <div id="information-types-empty" class="table-empty" hidden>هنوز نوع اطلاعاتی تعریف نشده است.</div>
+    </div>
+  </div>
+</section>
