@@ -1623,7 +1623,13 @@
               FieldType: String(info.DataType || 'text').toLowerCase(),
               Options: info.OptionsJSON || '[]'
             };
-            const input = this.createFieldInput(inputField, inputField.FieldType);
+            let input;
+            if (inputField.FieldType === 'boolean') {
+              input = document.createElement('select');
+              input.innerHTML = '<option value="">انتخاب کنید</option><option value="true">بله</option><option value="false">خیر</option>';
+            } else {
+              input = this.createFieldInput(inputField, inputField.FieldType);
+            }
             input.dataset.formValue = 'true';
             input.dataset.formId = String(form.ID || mapping.FormID);
             input.dataset.infoTypeId = typeId;
@@ -1632,10 +1638,6 @@
             labelElement.htmlFor = input.id;
             wrapper.appendChild(labelElement);
             wrapper.appendChild(input);
-            if (inputField.FieldType === 'boolean') {
-              input.type = 'checkbox';
-              input.required = false;
-            }
             if (field.HelpText) {
               const help = document.createElement('small');
               help.className = 'event-muted';
@@ -1655,12 +1657,19 @@
       columns.forEach((column) => {
         const cell = document.createElement('td');
         const type = String(column.DataType || 'text').toLowerCase();
-        const input = this.createFieldInput({
-          Code: column.Code,
-          FieldType: type,
-          Options: column.OptionsJSON || '[]'
-        }, type);
+        let input;
+        if (type === 'boolean') {
+          input = document.createElement('select');
+          input.innerHTML = '<option value="">انتخاب کنید</option><option value="true">بله</option><option value="false">خیر</option>';
+        } else {
+          input = this.createFieldInput({
+            Code: column.Code,
+            FieldType: type,
+            Options: column.OptionsJSON || '[]'
+          }, type);
+        }
         input.dataset.columnCode = String(column.Code);
+        input.dataset.columnType = type;
         input.required = column.IsRequired === true || String(column.IsRequired).toLowerCase() === 'true';
         input.setAttribute('aria-label', column.Name || column.Code);
         cell.appendChild(input);
@@ -1702,6 +1711,7 @@
               let hasAnyValue = false;
               row.querySelectorAll('[data-column-code]').forEach((input) => {
                 let item = input.type === 'checkbox' ? input.checked : input.value;
+                if (input.dataset.columnType === 'boolean' && item !== '') item = String(item).toLowerCase() === 'true';
                 if (input.type === 'number' && String(item).trim() !== '') item = Number(item);
                 value[input.dataset.columnCode] = item;
                 if (item !== '' && item !== null && item !== undefined && item !== false) hasAnyValue = true;
