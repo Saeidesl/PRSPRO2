@@ -1124,7 +1124,6 @@
         if (selectedOption && selectedOption.disabled) {
           typeSelect.value = '';
           this.loadDynamicFields('');
-          this.loadConfiguredForms('');
         }
       };
 
