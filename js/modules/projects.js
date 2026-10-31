@@ -2850,6 +2850,19 @@
         const quantity = project.Quantity !== undefined && project.Quantity !== null && project.Quantity !== ''
           ? 'تعداد: ' + this.escape(project.Quantity.toLocaleString ? project.Quantity.toLocaleString('fa-IR') : project.Quantity)
           : '';
+        const cardInformationHtml = (Array.isArray(project.CardInformation) ? project.CardInformation : []).map((info) => {
+          const value = info && info.Value;
+          let display = '';
+          if (Array.isArray(value)) {
+            display = value.map((row) => row && typeof row === 'object'
+              ? Object.keys(row).map((key) => row[key]).filter(item => item !== '' && item !== null && item !== undefined).join(' · ')
+              : String(row)).filter(Boolean).join('، ');
+          } else if (value && typeof value === 'object') {
+            display = value.FileName || value.Name || Object.keys(value).map(key => value[key]).filter(item => item !== '' && item !== null && item !== undefined).join(' · ');
+          } else display = String(value === undefined || value === null ? '' : value);
+          if (!display) return '';
+          return '<span class="project-list-badge"><strong>' + this.escape(info.Name || 'اطلاعات') + ':</strong> ' + this.escape(display) + '</span>';
+        }).join('');
         html += `
           <article class="project-list-card">
               <button type="button" class="project-list-card-menu-button" data-project-menu-toggle="${this.escape(id)}" aria-label="گزینه‌های پروژه ${this.escape(project.ProjectCode || id)}" aria-expanded="false" aria-controls="project-list-menu-${this.escape(id)}" title="گزینه‌های پروژه"><span aria-hidden="true">⋮</span></button>
@@ -2874,6 +2887,7 @@
                   <span class="project-list-badge">مرحله: ${this.escape(step)}</span>
                   ${project.CurrentStepStatus ? '<span class="project-list-badge">وضعیت مرحله: ' + this.escape(project.CurrentStepStatus) + '</span>' : ''}
                   ${quantity ? '<span class="project-list-badge">' + quantity + '</span>' : ''}
+                  ${cardInformationHtml}
                 </div>
                 <div class="project-list-card-activity">آخرین بروزرسانی: ${this.escape(this.formatDate(project.UpdatedAt))}</div>
               </div>
