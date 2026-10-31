@@ -1175,6 +1175,7 @@
       const editProjectId = isEditMode ? String(editProject.ID || editProject.Id || editProject.id) : '';
       modal.id = isEditMode ? 'project-edit-modal' : 'project-create-modal';
       modal.dataset.editMode = isEditMode ? 'true' : 'false';
+      if (isDraftMode) modal.dataset.draftMode = 'true';
       if (isEditMode) modal.dataset.projectId = editProjectId;
       if (options && options.settingsOnly && isEditMode) modal.dataset.settingsOnly = 'true';
 
