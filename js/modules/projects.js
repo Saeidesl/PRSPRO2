@@ -722,7 +722,7 @@
       try {
         const result = await window.PMS.Api.getCached(
           '/project-dashboard/lookups',
-          'dashboard_project_lookups_v1',
+          'dashboard_project_lookups_v2',
           {
             onRefresh: (freshData) => applyLookups(freshData)
           }
@@ -1762,8 +1762,7 @@
 
         const lookupWorkflows = Array.isArray(lookupData.workflows) ? lookupData.workflows : [];
         if (isEditMode && !lookupWorkflows.length && editProject.WorkflowID) {
-          // Editing does not require PROJECT_CREATE or workflow-management access;
-          // the current workflow is locked, so a single display option is sufficient.
+          // Dashboard lookups now include tenant-scoped active workflows for project editing.
           lookupWorkflows.push({
             ID: editProject.WorkflowID,
             Name: editProject.WorkflowName || editProject.WorkflowTitle || editProject.WorkflowCode || 'گردش کار فعلی',
