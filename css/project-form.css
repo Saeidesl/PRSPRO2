@@ -346,3 +346,11 @@
 #project-create-form [data-project-workflow-field] select {
   min-height: 48px;
 }
+
+/* Explicit visibility guard for the workflow selector on new-project forms. */
+#project-create-modal [data-project-workflow-field] {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  grid-column: 1 / -1 !important;
+}
