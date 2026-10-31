@@ -34,6 +34,18 @@ test('event type management can attach and detach reusable forms',()=>{
   assert.match(module,/PMS\.Api\.delete\('\/event-type-forms\/'/);
 });
 
+test('event type create and edit form can assign reusable forms inline',()=>{
+  const module=read('js/modules/event-types.js');
+  assert.match(module,/id="et-form-settings"/);
+  assert.match(module,/id="et-form-select"/);
+  assert.match(module,/PMS\.Api\.get\('\/forms'\)/);
+  assert.match(module,/pendingEventForms\.push/);
+  assert.match(module,/for \(const mapping of pendingEventForms\)/);
+  assert.match(module,/PMS\.Api\.post\('\/event-types\/'\s*\+/);
+  assert.match(module,/PMS\.Api\.delete\('\/event-type-forms\/'\s*\+/);
+  assert.match(module,/فرم‌های متصل به این رویداد/);
+});
+
 test('event entry loads assigned forms, submits FormResponses and displays saved snapshots',()=>{
   const events=read('js/modules/events.js');
   assert.match(events,/\/event-types\/'.*\/forms/);
