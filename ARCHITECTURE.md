@@ -96,3 +96,20 @@
 - cache-busting داشبورد برای اشتراک‌گذاری: https://github.com/Saeidesl/PRSPRO2/commit/ba9682fb699c182c42876b45c7a4121631540d0d
 - ثبت تسک‌های ۹ تا ۱۱ در TODO1: https://github.com/Saeidesl/PRSPRO2/commit/cfb1cf7e254f1e680a1a86f9a89a3824706b2d24
 - آخرین ثبت TODO1: https://github.com/Saeidesl/PRSPRO2/commit/d8bce660b012ab839cb07d6a0e227ef9f5a6ad09
+
+## 2026-10-31 — نوع داده تصویر و فایل در اطلاعات پویا
+
+### نقشه فرانت‌اند
+
+- `js/modules/information-types.js`: نوع‌های `image` و `file` در تعریف اطلاعات مرکزی و تعریف/ویرایش ستون‌های جدولی ارائه می‌شوند.
+- `js/modules/project-detail.js`: `informationInput`, `uploadInformationFile`, `renderInformationValue`, `openInformationAttachment` برای انتخاب فایل، پیش‌نمایش محلی تصویر، ارسال فایل به API پیوست پروژه، نمایش نام و دریافت/پیش‌نمایش فایل استفاده می‌شوند.
+- `js/modules/events.js`: `createFieldInput`, `addConfiguredFormRow`, `collectConfiguredFormResponses`, `uploadConfiguredFormFile` انواع تصویر/فایل را در فرم‌های متصل به رویداد پشتیبانی می‌کنند. فایل قبل از ثبت رویداد به پروژه انتخاب‌شده متصل می‌شود و فقط metadata مرجع در `FormResponses` ارسال می‌شود.
+- `index.html`: نسخه cache-busting ماژول‌های `information-types.js`, `project-detail.js`, `events.js` با کلید `20261031-information-files-1` به‌روز شده است.
+
+### قرارداد و محدودیت‌ها
+
+- فرانت‌اند از `POST /projects/:projectId/attachments` با `AttachmentType=INFORMATION` استفاده می‌کند؛ Base64 فقط در زمان انتقال است و فایل در Google Drive ذخیره می‌شود.
+- سقف انتخاب فایل در رابط با سقف سمت سرور همسان است: ۱۰ مگابایت. پسوند و MIME باید با هم سازگار باشند؛ تصویر فقط JPEG/PNG/WebP/GIF است و فایل می‌تواند تصویر، PDF، Word یا Excel باشد.
+- مقادیر ذخیره‌شده در اطلاعات پروژه یا پاسخ فرم فقط `AttachmentID`, `FileName`, `MimeType`, `FileSize`, `AttachmentType` را نگه می‌دارند. دانلود و پیش‌نمایش از API کنترل‌شده `/attachments/:id/download` عبور می‌کند.
+- فایل‌های فرم پروژه به شناسه پروژه متصل می‌شوند؛ ثبت فرم دارای فایل در رویداد مستقل پشتیبانی نمی‌شود.
+- آزمون‌های رگرسیون فرانت‌اند در `tests/information-file-types.test.js` و بک‌اند در `tests/information-file-types.test.js` اضافه شده‌اند. آزمون عملی کاربر هنوز برای این تسک لازم است.
