@@ -24,6 +24,13 @@ test('draft projects can be reopened and completed through the existing project 
   assert.match(source, /تکمیل و فعال‌سازی پروژه/);
 });
 
+test('project creators can see and reopen their own drafts without project-view permission', () => {
+  const source = read('js/modules/projects.js');
+  assert.match(source, /permissions\.indexOf\('PROJECT_CREATE'\) !== -1/);
+  assert.match(source, /canEditThisProject = this\.canEditProjects\(\) \|\| \(isDraft && this\.canCreateOrEditProjects\(\)\)/);
+  assert.match(source, /localDraft && this\.canCreateOrEditProjects\(\)/);
+});
+
 test('project list and detail distinguish drafts from production projects', () => {
   const list = read('js/modules/projects.js');
   const detail = read('js/modules/project-detail.js');
