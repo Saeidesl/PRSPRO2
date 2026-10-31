@@ -175,12 +175,19 @@
         const type = record.InformationType || {};
         const name = type.Name || type.Code || 'اطلاعات';
         const multi = String(type.Cardinality || 'SINGLE').toUpperCase() === 'MULTIPLE';
+        const columns = Array.isArray(record.Columns) ? record.Columns.filter(col => String(col.Status || 'ACTIVE') === 'ACTIVE') : [];
+        const hasColumns = columns.length > 0;
         const value = record.Value !== undefined ? record.Value : this.parseAuditData(record.ValueJSON);
-        const hasValue = record.Status !== 'EMPTY' && value !== null && value !== '';
+        const isMeaningful = item => {
+          if (item === null || item === undefined || item === '') return false;
+          if (Array.isArray(item)) return item.some(isMeaningful);
+          if (item && typeof item === 'object') return Object.keys(item).some(key => isMeaningful(item[key]));
+          return true;
+        };
+        const hasValue = record.Status !== 'EMPTY' && isMeaningful(value);
         let content = '<div class="project-information-empty">هنوز مقداری ثبت نشده است.</div>';
-        if (hasValue && multi) {
-          const columns = Array.isArray(record.Columns) ? record.Columns : [];
-          const dataRows = Array.isArray(value) ? value : [];
+        if (hasValue && hasColumns) {
+          const dataRows = multi ? (Array.isArray(value) ? value : []) : (value && typeof value === 'object' ? [value] : []);
           content = dataRows.length
             ? '<div class="table-wrapper"><table class="data-table"><thead><tr>' + columns.map(col => '<th>' + this.escape(col.Name) + '</th>').join('') + '</tr></thead><tbody>' +
               dataRows.map(row => '<tr>' + columns.map(col => '<td>' + this.escape(this.informationValue(row[String(col.Code)])) + '</td>').join('') + '</tr>').join('') +
@@ -272,17 +279,18 @@
       if (!this.canEditProjectInformation()) return;
       const type = record.InformationType || {};
       const multi = String(type.Cardinality || 'SINGLE').toUpperCase() === 'MULTIPLE';
-      const columns = Array.isArray(record.Columns) ? record.Columns : [];
+      const columns = Array.isArray(record.Columns) ? record.Columns.filter(col => String(col.Status || 'ACTIVE') === 'ACTIVE') : [];
+      const hasColumns = columns.length > 0;
       const current = record.Value !== undefined ? record.Value : this.parseAuditData(record.ValueJSON);
       let body = '<form id="project-information-edit-form">';
-      if (!multi) {
+      if (!hasColumns) {
         body += this.informationInput({ Name: type.Name, DataType: type.DataType, OptionsJSON: type.OptionsJSON }, current, 'Value');
       } else {
-        const rows = Array.isArray(current) && current.length ? current : [{}];
-        body += '<div id="project-information-rows">' + rows.map((row, index) => '<div class="project-information-row" data-information-row>' +
+        const rows = multi ? (Array.isArray(current) && current.length ? current : [{}]) : [current && typeof current === 'object' ? current : {}];
+        body += '<div id="project-information-rows">' + rows.map((row) => '<div class="project-information-row" data-information-row>' +
           columns.map(col => this.informationInput(col, row[String(col.Code)], 'column_' + col.Code)).join('') +
-          '<div class="project-information-row-actions"><button type="button" class="btn btn-sm btn-danger" data-remove-information-row>حذف ردیف</button></div></div>').join('') + '</div>' +
-          '<button type="button" class="btn btn-light" id="project-information-add-row">+ افزودن ردیف</button>';
+          (multi ? '<div class="project-information-row-actions"><button type="button" class="btn btn-sm btn-danger" data-remove-information-row>حذف ردیف</button></div>' : '') + '</div>').join('') + '</div>' +
+          (multi ? '<button type="button" class="btn btn-light" id="project-information-add-row">+ افزودن ردیف</button>' : '');
       }
       body += '<div class="form-group" style="margin-top:14px"><label>توضیح تغییر (اختیاری)</label><textarea name="Reason" rows="2" placeholder="علت ثبت یا اصلاح اطلاعات"></textarea></div>' +
         '<div class="modal-actions"><button type="submit" class="btn btn-primary">ذخیره اطلاعات</button><button type="button" class="btn btn-light" data-information-cancel>انصراف</button></div></form>';
@@ -292,7 +300,7 @@
       const rowTemplate = () => '<div class="project-information-row" data-information-row">' +
         columns.map(col => this.informationInput(col, '', 'column_' + col.Code)).join('') +
         '<div class="project-information-row-actions"><button type="button" class="btn btn-sm btn-danger" data-remove-information-row>حذف ردیف</button></div></div>';
-      if (multi) {
+      if (multi && hasColumns) {
         box.body.querySelector('#project-information-add-row').addEventListener('click', () => rowsHost.insertAdjacentHTML('beforeend', rowTemplate()));
         rowsHost.addEventListener('click', event => {
           const remove = event.target.closest('[data-remove-information-row]');
@@ -309,8 +317,8 @@
         const submit = form.querySelector('[type="submit"]');
         submit.disabled = true;
         let value;
-        if (multi) {
-          value = Array.from(rowsHost.querySelectorAll('[data-information-row]')).map(row => {
+        if (hasColumns) {
+          const dataRows = Array.from(rowsHost.querySelectorAll('[data-information-row]')).map(row => {
             const item = {};
             columns.forEach(col => {
               const control = row.querySelector('[name="column_' + CSS.escape(String(col.Code)) + '"]');
@@ -321,6 +329,7 @@
             });
             return item;
           });
+          value = multi ? dataRows : (dataRows[0] || {});
         } else {
           const control = form.elements.Value;
           value = control ? control.value : '';
