@@ -1769,6 +1769,7 @@
         }
         input.dataset.columnCode = String(column.Code);
         input.dataset.columnType = type;
+        input.dataset.formDataType = type;
         if (input.type === 'file') input.addEventListener('change', () => { let preview=cell.querySelector('[data-event-file-preview]'); if(!preview){preview=document.createElement('div');preview.dataset.eventFilePreview='true';cell.appendChild(preview);} preview.textContent=(input.files&&input.files[0])?input.files[0].name:''; });
         input.dataset.columnType = type;
         input.dataset.columnRequired = String(column.IsRequired === true || String(column.IsRequired).toLowerCase() === 'true');
