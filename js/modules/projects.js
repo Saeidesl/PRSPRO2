@@ -1268,7 +1268,7 @@
           <form id="project-create-form" class="project-form-layout">
             <div class="filter-group form-group project-form-field" style="margin-bottom:16px;">
               <label for="new-project-code">کد پروژه <span style="color:var(--color-danger);">*</span></label>
-              <input type="text" id="new-project-code" name="ProjectCode" ${isDraftMode || !isEditMode ? "required" : ""} maxlength="100" autocomplete="off" placeholder="کد پروژه را وارد کنید" style="width:100%;box-sizing:border-box;" ${isEditMode && !isDraftMode ? "readonly aria-readonly=\"true\"" : ""}>
+              <input type="text" id="new-project-code" name="ProjectCode" ${isDraftMode ? "required" : ""} maxlength="100" autocomplete="off" placeholder="کد پروژه را وارد کنید" style="width:100%;box-sizing:border-box;" ${isEditMode && !isDraftMode ? "readonly aria-readonly=\"true\"" : ""}>
               <small style="display:block;margin-top:5px;color:var(--color-text-secondary);">${isDraftMode ? 'با تکمیل پیش‌نویس ثبت می‌شود و پس از آن ثابت خواهد بود.' : 'برای ثبت کامل پروژه الزامی است؛ در ثبت اولیه طرح می‌توانید آن را بعداً تکمیل کنید.'}</small>
             </div>
             <div class="filter-group form-group project-form-field" style="margin-bottom:16px;">
@@ -1306,7 +1306,7 @@
               <select
                 id="new-project-workflow"
                 name="WorkflowID"
-                required
+                ${isDraftMode ? "required" : ""}
                 style="width:100%;box-sizing:border-box;"
                 ${isEditMode && !isDraftMode ? "disabled aria-disabled=\"true\"" : ""}
               >
