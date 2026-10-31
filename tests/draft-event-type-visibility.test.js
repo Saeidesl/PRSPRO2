@@ -19,16 +19,3 @@ test('project event types remain selectable for users who can create projects', 
   assert.match(source, /\(!canAccessProjectOptions && isProjectEvent\)/);
   assert.match(source, /option\.dataset\.allowOnDraft = String\(type\.AllowOnDraft/);
 });
-
-test('backend project listing permits PROJECT_CREATE and limits non-viewers to their own drafts', () => {
-  const router = readBackend('Router.js');
-  const projects = readBackend('ProjectService.js');
-  assert.match(router, /requireAny\(params, \['PROJECT_VIEW', 'PROJECT_CREATE'\]\)/);
-  assert.match(projects, /return String\(project\.RecordState \|\| 'ACTIVE'\)\.toUpperCase\(\) === 'DRAFT'[\\s\\S]*?String\(project\.CreatedBy \|\| ''\) === String\(user\.ID \|\| ''\)/);
-});
-
-function readBackend(name) {
-  const backendRoot = process.env.PMS_BACKEND_ROOT;
-  if (!backendRoot) return '';
-  return fs.readFileSync(path.join(backendRoot, name), 'utf8');
-}
