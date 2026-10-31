@@ -2655,7 +2655,8 @@
           router &&
           (router.isAdmin() ||
             (Array.isArray(router.permissions) &&
-              router.permissions.indexOf('PROJECT_VIEW') !== -1))
+              (router.permissions.indexOf('PROJECT_VIEW') !== -1 ||
+               router.permissions.indexOf('PROJECT_CREATE') !== -1)))
         );
 
         if (canViewProjects) {
