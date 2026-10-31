@@ -1422,6 +1422,20 @@
       document.body.appendChild(modal);
       this.modal = modal;
 
+      // Ensure the workflow selector is visibly present in the standard new-project form.
+      const workflowField = modal.querySelector('[data-project-workflow-field]');
+      const projectTitleField = modal.querySelector('#new-project-title');
+      const titleField = projectTitleField && projectTitleField.closest('.project-form-field');
+      if (workflowField && !isEditMode) {
+        workflowField.hidden = false;
+        workflowField.removeAttribute('hidden');
+        workflowField.style.setProperty('display', 'block', 'important');
+        workflowField.style.setProperty('visibility', 'visible', 'important');
+        if (titleField && titleField.nextElementSibling !== workflowField) {
+          titleField.insertAdjacentElement('afterend', workflowField);
+        }
+      }
+
       const settingsModal = document.createElement('div');
       settingsModal.id = 'project-create-settings-modal';
       settingsModal.style.cssText = 'position:fixed;inset:0;z-index:10020;background:var(--color-overlay,rgba(0,0,0,.5));display:none;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;direction:rtl;';
