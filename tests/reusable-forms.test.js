@@ -26,6 +26,39 @@ test('form builder uses central information types and event-type assignments',()
   assert.match(module,/PMS\.Api\.delete\('\/event-type-forms\/'\s*\+/);
 });
 
+
+test('forms workspace separates form design from event assignment',()=>{
+  const page=read('pages/forms.html');
+  const module=read('js/modules/forms.js');
+  const css=read('css/reusable-forms.css');
+  assert.match(page,/data-forms-tab="design"/);
+  assert.match(page,/data-forms-tab="connect"/);
+  assert.match(page,/id="forms-design-panel"/);
+  assert.match(page,/id="forms-connect-panel"/);
+  assert.match(page,/id="forms-connect-event-type"/);
+  assert.match(page,/id="forms-connect-form"/);
+  assert.match(page,/id="forms-connect-required"/);
+  assert.match(module,/switchTab: function/);
+  assert.match(module,/loadMappings: async function/);
+  assert.match(module,/connectForm: async function/);
+  const start=module.indexOf('openDesigner: async function');
+  const end=module.indexOf('notice: function',start);
+  const designer=module.slice(start,end);
+  assert.doesNotMatch(designer,/form-event-type|form-event-attach|form-event-mappings|event-type-forms/);
+  assert.match(designer,/طراحی فرم/);
+  assert.match(css,/forms-workspace-tabs/);
+  assert.match(css,/@media\(max-width:600px\)/);
+});
+
+test('event assignment view uses existing event form APIs and prevents duplicate links',()=>{
+  const module=read('js/modules/forms.js');
+  assert.match(module,/PMS\.Api\.get\('\/event-types\/'\s*\+/);
+  assert.match(module,/PMS\.Api\.post\('\/event-types\/'\s*\+/);
+  assert.match(module,/PMS\.Api\.delete\('\/event-type-forms\/'\s*\+/);
+  assert.match(module,/mapping\.FormID/);
+  assert.match(module,/mappingRequest/);
+});
+
 test('event type management can attach and detach reusable forms',()=>{
   const module=read('js/modules/event-types.js');
   assert.match(module,/event-type-forms/);
