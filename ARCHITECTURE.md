@@ -104,7 +104,7 @@
 - `js/modules/information-types.js`: نوع‌های `image` و `file` در تعریف اطلاعات مرکزی و تعریف/ویرایش ستون‌های جدولی ارائه می‌شوند.
 - `js/modules/project-detail.js`: `informationInput`, `uploadInformationFile`, `renderInformationValue`, `openInformationAttachment` برای انتخاب فایل، پیش‌نمایش محلی تصویر، ارسال فایل به API پیوست پروژه، نمایش نام و دریافت/پیش‌نمایش فایل استفاده می‌شوند.
 - `js/modules/events.js`: `createFieldInput`, `addConfiguredFormRow`, `collectConfiguredFormResponses`, `uploadConfiguredFormFile` انواع تصویر/فایل را در فرم‌های متصل به رویداد پشتیبانی می‌کنند. فایل قبل از ثبت رویداد به پروژه انتخاب‌شده متصل می‌شود و فقط metadata مرجع در `FormResponses` ارسال می‌شود.
-- `index.html`: نسخه cache-busting ماژول‌های `information-types.js`, `project-detail.js`, `events.js` با کلید `20261031-information-files-1` به‌روز شده است.
+- `index.html`: نسخه cache-busting ماژول‌های `information-types.js`, `project-detail.js`, `events.js` با کلید `20261031-information-files-1` برای `information-types.js` و `project-detail.js` و `20261031-information-files-2` برای `events.js` به‌روز شده است.
 
 ### قرارداد و محدودیت‌ها
 
