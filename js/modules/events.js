@@ -855,13 +855,15 @@
               const value = response.Values ? response.Values[key] : null;
               const label = field.LabelOverride || info.Name || info.Code || 'اطلاعات';
               html += '<div class="event-form-response-field"><strong>' + Events.escape(label) + '</strong>';
-              if (String(info.Cardinality || 'SINGLE').toUpperCase() === 'MULTIPLE' && Array.isArray(value)) {
-                const columns = Array.isArray(info.Columns) ? info.Columns : [];
-                if (value.length && columns.length) {
+              const cardinality = String(info.Cardinality || 'SINGLE').toUpperCase();
+              const columns = Array.isArray(info.Columns) ? info.Columns.filter(column => String(column.Status || 'ACTIVE') === 'ACTIVE') : [];
+              if (columns.length) {
+                const dataRows = cardinality === 'MULTIPLE' ? (Array.isArray(value) ? value : []) : (value && typeof value === 'object' && Object.keys(value).length ? [value] : []);
+                if (dataRows.length) {
                   html += '<div class="event-modal-table-wrap"><table class="event-modal-table"><thead><tr>';
                   columns.forEach(function (column) { html += '<th>' + Events.escape(column.Name || column.Code) + '</th>'; });
                   html += '</tr></thead><tbody>';
-                  value.forEach(function (row) {
+                  dataRows.forEach(function (row) {
                     html += '<tr>';
                     columns.forEach(function (column) { html += '<td>' + Events.escape(Events.displayValue(row[String(column.Code)])) + '</td>'; });
                     html += '</tr>';
@@ -1576,6 +1578,7 @@
           const typeId = String(field.InformationTypeID || info.ID || '');
           const label = field.LabelOverride || info.Name || info.Code || 'اطلاعات';
           const cardinality = String(info.Cardinality || 'SINGLE').toUpperCase();
+          const columns = Array.isArray(info.Columns) ? info.Columns.filter(column => String(column.Status || 'ACTIVE') === 'ACTIVE') : [];
           const required = field.IsRequired === true || String(field.IsRequired).toLowerCase() === 'true';
           const wrapper = document.createElement('div');
           wrapper.className = 'event-field event-form-value-field';
@@ -1584,7 +1587,7 @@
           wrapper.dataset.cardinality = cardinality;
           const visibilityRule = field.VisibilityRule || this.parseVisibilityRule(field.VisibilityRuleJSON);
           wrapper.dataset.visibilityRule = JSON.stringify(visibilityRule || {});
-          if (cardinality === 'MULTIPLE') {
+          if (columns.length) {
             const title = document.createElement('strong');
             title.textContent = label + (required ? ' *' : '');
             wrapper.appendChild(title);
@@ -1594,7 +1597,6 @@
               help.textContent = field.HelpText;
               wrapper.appendChild(help);
             }
-            const columns = Array.isArray(info.Columns) ? info.Columns : [];
             const tableWrap = document.createElement('div');
             tableWrap.className = 'event-modal-table-wrap';
             const table = document.createElement('table');
@@ -1609,28 +1611,32 @@
               th.textContent = column.Name || column.Code;
               headRow.appendChild(th);
             });
-            const actionHead = document.createElement('th');
-            actionHead.textContent = 'عملیات';
-            headRow.appendChild(actionHead);
+            if (cardinality === 'MULTIPLE') {
+              const actionHead = document.createElement('th');
+              actionHead.textContent = 'عملیات';
+              headRow.appendChild(actionHead);
+            }
             head.appendChild(headRow);
             table.appendChild(head);
             const tbody = document.createElement('tbody');
             table.appendChild(tbody);
             tableWrap.appendChild(table);
             wrapper.appendChild(tableWrap);
-            const add = document.createElement('button');
-            add.type = 'button';
-            add.className = 'event-modal-button';
-            add.textContent = 'افزودن ردیف';
-            add.addEventListener('click', () => {
-              if (tbody.querySelectorAll('[data-form-row]').length >= 500) {
-                this.showFormError('حداکثر ۵۰۰ ردیف برای هر جدول مجاز است.');
-                return;
-              }
-              this.addConfiguredFormRow(tbody, columns);
-            });
-            wrapper.appendChild(add);
-            this.addConfiguredFormRow(tbody, columns);
+            if (cardinality === 'MULTIPLE') {
+              const add = document.createElement('button');
+              add.type = 'button';
+              add.className = 'event-modal-button';
+              add.textContent = 'افزودن ردیف';
+              add.addEventListener('click', () => {
+                if (tbody.querySelectorAll('[data-form-row]').length >= 500) {
+                  this.showFormError('حداکثر ۵۰۰ ردیف برای هر جدول مجاز است.');
+                  return;
+                }
+                this.addConfiguredFormRow(tbody, columns, true);
+              });
+              wrapper.appendChild(add);
+            }
+            this.addConfiguredFormRow(tbody, columns, cardinality === 'MULTIPLE');
           } else {
             const labelElement = document.createElement('label');
             labelElement.textContent = label + (required ? ' *' : '');
@@ -1688,8 +1694,9 @@
           const source = wrappers.find((item) => item.dataset.infoTypeId === String(rule.fieldId));
           let value;
           if (source && !source.hidden) {
-            if (source.dataset.cardinality === 'MULTIPLE') {
-              const rows = Array.from(source.querySelectorAll('[data-form-row]'));
+            const table = source.querySelector('[data-form-table]');
+            if (table) {
+              const rows = Array.from(table.querySelectorAll('[data-form-row]'));
               value = rows.some((row) => Array.from(row.querySelectorAll('[data-column-code]')).some((input) =>
                 input.type === 'checkbox' ? input.checked : input.value !== ''
               ));
@@ -1716,7 +1723,7 @@
       });
     },
 
-    addConfiguredFormRow: function (tbody, columns) {
+    addConfiguredFormRow: function (tbody, columns, allowRemove) {
       const row = document.createElement('tr');
       row.dataset.formRow = 'true';
       columns.forEach((column) => {
@@ -1735,19 +1742,22 @@
         }
         input.dataset.columnCode = String(column.Code);
         input.dataset.columnType = type;
-        input.required = column.IsRequired === true || String(column.IsRequired).toLowerCase() === 'true';
+        input.dataset.columnRequired = String(column.IsRequired === true || String(column.IsRequired).toLowerCase() === 'true');
+        input.required = input.dataset.columnRequired === 'true';
         input.setAttribute('aria-label', column.Name || column.Code);
         cell.appendChild(input);
         row.appendChild(cell);
       });
-      const actionCell = document.createElement('td');
-      const remove = document.createElement('button');
-      remove.type = 'button';
-      remove.className = 'event-modal-button';
-      remove.textContent = 'حذف';
-      remove.addEventListener('click', () => row.remove());
-      actionCell.appendChild(remove);
-      row.appendChild(actionCell);
+      if (allowRemove) {
+        const actionCell = document.createElement('td');
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'event-modal-button';
+        remove.textContent = 'حذف';
+        remove.addEventListener('click', () => row.remove());
+        actionCell.appendChild(remove);
+        row.appendChild(actionCell);
+      }
       tbody.appendChild(row);
     },
 
@@ -1770,10 +1780,14 @@
           );
           const hiddenByRule = !!fieldWrapper && fieldWrapper.hidden;
           if (hiddenByRule) {
-            values[typeId] = String(info.Cardinality || 'SINGLE').toUpperCase() === 'MULTIPLE' ? [] : '';
+            const cardinality = String(info.Cardinality || 'SINGLE').toUpperCase();
+            const hasColumns = Array.isArray(info.Columns) && info.Columns.some(column => String(column.Status || 'ACTIVE') === 'ACTIVE');
+            values[typeId] = hasColumns ? (cardinality === 'MULTIPLE' ? [] : {}) : (cardinality === 'MULTIPLE' ? [] : '');
             continue;
           }
-          if (String(info.Cardinality || 'SINGLE').toUpperCase() === 'MULTIPLE') {
+          const cardinality = String(info.Cardinality || 'SINGLE').toUpperCase();
+          const hasColumns = Array.isArray(info.Columns) && info.Columns.some(column => String(column.Status || 'ACTIVE') === 'ACTIVE');
+          if (hasColumns) {
             const table = Array.from(container.querySelectorAll('[data-form-table]')).find((node) =>
               node.dataset.formId === formId && node.dataset.infoTypeId === typeId
             );
@@ -1810,7 +1824,7 @@
               this.showFormError('حداقل یک ردیف برای «' + (field.LabelOverride || info.Name) + '» وارد کنید.');
               return null;
             }
-            values[typeId] = valueRows;
+            values[typeId] = cardinality === 'MULTIPLE' ? valueRows : (valueRows[0] || {});
           } else {
             const input = Array.from(container.querySelectorAll('[data-form-value]')).find((node) =>
               node.dataset.formId === formId && node.dataset.infoTypeId === typeId
@@ -1827,10 +1841,12 @@
             values[typeId] = value;
           }
         }
-        const hasAnyValue = Object.keys(values).some((key) => {
-          const value = values[key];
-          return Array.isArray(value) ? value.length > 0 : (value !== '' && value !== null && value !== undefined);
-        });
+        const hasValue = (value) => {
+          if (Array.isArray(value)) return value.some(hasValue);
+          if (value && typeof value === 'object') return Object.keys(value).some((key) => hasValue(value[key]));
+          return value !== '' && value !== null && value !== undefined;
+        };
+        const hasAnyValue = Object.keys(values).some((key) => hasValue(values[key]));
         const mappingRequired = mapping.IsRequired === true || String(mapping.IsRequired).toLowerCase() === 'true';
         if (hasAnyValue || mappingRequired) {
           responses.push({ FormID: formId, FormVersion: Number(form.Version || 1), Values: values });
