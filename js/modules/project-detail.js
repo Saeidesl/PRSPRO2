@@ -867,7 +867,7 @@
 
 
       if (step) {
-        step.textContent = this.getStepName(project.CurrentStepID);
+        step.textContent = isDraft ? 'پس از تکمیل گردش‌کار تعیین می‌شود' : this.getStepName(project.CurrentStepID);
       }
 
       if (created) {
