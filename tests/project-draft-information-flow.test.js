@@ -38,6 +38,7 @@ test('project list and detail distinguish drafts from production projects', () =
   assert.match(list, /isDraft \? 'پیش‌نویس'/);
   assert.match(list, /در انتظار تکمیل اطلاعات/);
   assert.match(detail, /پیش‌نویس — نیازمند تکمیل/);
+  assert.match(detail, /پس از تکمیل گردش‌کار تعیین می‌شود/);
   assert.match(detail, /addEventButton\.hidden = isDraft/);
 });
 
