@@ -863,7 +863,15 @@
         status.textContent = isDraft ? 'پیش‌نویس — نیازمند تکمیل' : this.statusText(project.Status);
       }
       const addEventButton = document.getElementById('project-add-event-button');
-      if (addEventButton) addEventButton.hidden = isDraft || addEventButton.hidden;
+      const router = window.PMS && window.PMS.Router;
+      const canCreateEvents = !!(router && ((typeof router.isAdmin === 'function' && router.isAdmin()) ||
+        (Array.isArray(router.permissions) && router.permissions.indexOf('EVENT_CREATE') !== -1)));
+      const hasDraftEventTypes = (Array.isArray(this.eventTypes) ? this.eventTypes : []).some(function(type) {
+        return String(type.ConnectionType || 'PROJECT').toUpperCase() !== 'INDEPENDENT' &&
+          (type.AllowOnDraft === true || String(type.AllowOnDraft).toLowerCase() === 'true') &&
+          String(type.Status || 'ACTIVE').toUpperCase() === 'ACTIVE';
+      });
+      if (addEventButton) addEventButton.hidden = !canCreateEvents || (isDraft && !hasDraftEventTypes);
 
 
       if (step) {
@@ -899,7 +907,7 @@
         info.innerHTML =
           '<div class="detail-list">' +
             this.detailRow('شناسه پروژه', project.ID) +
-            this.detailRow('وضعیت تکمیل پرونده', isDraft ? 'پیش‌نویس؛ برای ثبت رویداد ابتدا اطلاعات پایه و گردش‌کار را تکمیل کنید.' : 'تکمیل‌شده') +
+            this.detailRow('وضعیت تکمیل پرونده', isDraft ? 'پیش‌نویس؛ رویدادهای مجاز می‌توانند پیش از تکمیل ثبت شوند.' : 'تکمیل‌شده') +
             this.detailRow('کد پروژه', project.ProjectCode) +
             this.detailRow('عنوان پروژه', project.Title) +
             this.detailRow('تعداد اولیه', project.Quantity) +
