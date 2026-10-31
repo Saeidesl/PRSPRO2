@@ -119,14 +119,15 @@
       const router = window.PMS.Router;
       const permissions = router && Array.isArray(router.permissions) ? router.permissions : [];
       const isAdmin = !!(router && typeof router.isAdmin === 'function' && router.isAdmin());
-      const canViewProjects = isAdmin || permissions.indexOf('PROJECT_VIEW') !== -1;
+      const canViewAllProjects = isAdmin || permissions.indexOf('PROJECT_VIEW') !== -1;
+      const canViewProjects = canViewAllProjects || permissions.indexOf('PROJECT_CREATE') !== -1;
       const canCreateProjects = isAdmin || permissions.indexOf('PROJECT_CREATE') !== -1;
       const createButton = document.getElementById('project-create-button');
       if (createButton) createButton.hidden = !canCreateProjects;
 
       if (canViewProjects) {
         this.loadProjects();
-        this.loadProjectStatuses();
+        if (canViewAllProjects) this.loadProjectStatuses();
       } else {
         // Create-only users should not trigger a forbidden project-list request.
         const card = document.querySelector('.page-section > .card');
@@ -2823,6 +2824,10 @@
         const stateClass = isDraft ? 'is-hold' : statusClass(project.Status);
         const step = isDraft ? 'در انتظار تکمیل اطلاعات' : this.getProjectStageName(project);
         const statusLabel = isDraft ? 'پیش‌نویس' : this.statusText(project.Status);
+        const router = window.PMS && window.PMS.Router;
+        const permissions = router && Array.isArray(router.permissions) ? router.permissions : [];
+        const canViewThisProject = !isDraft || !!(router && ((typeof router.isAdmin === 'function' && router.isAdmin()) || permissions.indexOf('PROJECT_VIEW') !== -1));
+        const canEditThisProject = this.canEditProjects() || (isDraft && this.canCreateOrEditProjects());
         const quantity = project.Quantity !== undefined && project.Quantity !== null && project.Quantity !== ''
           ? 'تعداد: ' + this.escape(project.Quantity.toLocaleString ? project.Quantity.toLocaleString('fa-IR') : project.Quantity)
           : '';
@@ -2856,8 +2861,8 @@
               <div class="project-list-card-media" data-project-media="${this.escape(id)}" data-image-state="loading" aria-label="تصویر پروژه"><div class="project-list-card-image-placeholder"><span class="project-list-image-spinner" aria-hidden="true"></span><span class="project-list-card-image-label">در حال بارگذاری تصویر</span></div><img class="project-list-card-thumbnail" data-project-thumbnail="${this.escape(id)}" alt="" hidden loading="lazy" decoding="async" tabindex="0" role="button" aria-label="نمایش تصویر پروژه"></div>
             </div>
             <div class="project-list-card-actions">
-              <button type="button" class="btn btn-sm btn-light project-view-button" data-project-id="${this.escape(id)}">مشاهده پروژه</button>
-              ${this.canEditProjects() ? `
+              ${canViewThisProject ? '<button type="button" class="btn btn-sm btn-light project-view-button" data-project-id="' + this.escape(id) + '">مشاهده پروژه</button>' : ''}
+              ${canEditThisProject ? `
                 <button type="button" class="btn btn-sm btn-secondary project-edit-button" data-project-id="${this.escape(id)}" title="${isDraft ? 'تکمیل اطلاعات اولیه پروژه' : 'ویرایش اطلاعات پروژه'}">${isDraft ? 'تکمیل پروژه' : 'ویرایش'}</button>
               ` : ''}
             </div>
