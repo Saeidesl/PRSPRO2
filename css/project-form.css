@@ -330,27 +330,25 @@
   #project-create-form.project-form-layout { padding-top:12px; }
 }
 
-/* Keep workflow selection prominent and easy to find in the new-project form. */
-#project-create-form [data-project-workflow-field] {
-  grid-column: 1 / -1 !important;
-  padding: 14px 16px !important;
-  border: 1px solid var(--color-primary) !important;
-  border-inline-start-width: 4px !important;
-  border-radius: 12px !important;
-  background: var(--color-surface-hover, var(--color-surface)) !important;
-}
-#project-create-form [data-project-workflow-field] > label {
-  font-size: var(--font-size-md, 15px) !important;
-  font-weight: 750 !important;
-}
-#project-create-form [data-project-workflow-field] select {
-  min-height: 48px;
-}
-
-/* Explicit visibility guard for the workflow selector on new-project forms. */
-#project-create-modal [data-project-workflow-field] {
+/* Workflow selector uses the same neutral form-field styling as other project fields. */
+#project-create-form [data-project-workflow-field],
+#project-create-modal [data-project-workflow-field],
+#project-edit-modal [data-project-workflow-field] {
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
   grid-column: 1 / -1 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+#project-create-form [data-project-workflow-field] > label,
+#project-edit-modal [data-project-workflow-field] > label {
+  font-size: inherit !important;
+  font-weight: 600 !important;
+}
+#project-create-form [data-project-workflow-field] select,
+#project-edit-modal [data-project-workflow-field] select {
+  min-height: var(--control-height, 42px);
 }
