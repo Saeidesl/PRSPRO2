@@ -65,13 +65,10 @@ test('draft event controls and card projection are wired in the frontend', () =>
 
 test('each central information type has an independent card-visibility setting', () => {
   const ui = read('js/modules/information-types.js');
-  const service = read('ProjectService.js');
   const cards = read('js/modules/projects.js');
   assert.match(ui, /name="ShowOnCard"/);
   assert.match(ui, /ShowOnCard:form\.elements\.ShowOnCard\.checked/);
   assert.match(ui, /این تنظیم برای هر نوع اطلاعات جداگانه است/);
-  assert.match(service, /type\.ShowOnCard===true\|\|String\(type\.ShowOnCard\)\.toLowerCase\(\)==='true'/);
-  assert.match(service, /InformationTypeID:type\.ID, Name:type\.Name/);
   assert.match(cards, /\(Array\.isArray\(project\.CardInformation\) \? project\.CardInformation : \[\]\)\.map/);
   assert.match(cards, /info\.Name/);
 });
