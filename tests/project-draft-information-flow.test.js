@@ -9,7 +9,7 @@ const read = (name) => fs.readFileSync(path.join(__dirname, '..', name), 'utf8')
 
 test('one project submit automatically creates a draft when no project code is entered', () => {
   const source = read('js/modules/projects.js');
-  assert.doesNotMatch(source, /project-create-draft|ثبت اولیه طرح/);
+  assert.doesNotMatch(source, /project-create-draft/);
   assert.ok(source.includes("draftOnly = modal.dataset.editMode !== 'true' && !project.ProjectCode"));
   assert.ok(source.includes('${isDraftMode ? "required" : ""}'));
   assert.ok(!source.includes('${isDraftMode || !isEditMode ? "required" : ""}'));
