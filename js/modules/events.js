@@ -177,13 +177,15 @@
         ? router.permissions
         : [];
       const canViewEvents = isAdmin || permissions.indexOf('EVENT_VIEW') !== -1;
-      const canViewProjects = isAdmin || permissions.indexOf('PROJECT_VIEW') !== -1;
+      const canLoadProjectOptions = isAdmin ||
+        permissions.indexOf('PROJECT_VIEW') !== -1 ||
+        permissions.indexOf('PROJECT_CREATE') !== -1;
       const canLoadEventTypes = isAdmin ||
         permissions.indexOf('EVENT_CREATE') !== -1 ||
         permissions.indexOf('EVENT_TYPE_MANAGE') !== -1;
 
       const cachedEvents = canViewEvents ? PMS.Cache.get(CACHE_KEY) : null;
-      const cachedProjects = canViewProjects
+      const cachedProjects = canLoadProjectOptions
         ? PMS.Cache.get(PROJECTS_CACHE_KEY)
         : null;
       const cachedTypes = canLoadEventTypes
@@ -194,7 +196,7 @@
         this.events = [];
         PMS.Cache.remove(CACHE_KEY);
       }
-      if (!canViewProjects) {
+      if (!canLoadProjectOptions) {
         this.projects = [];
         PMS.Cache.remove(PROJECTS_CACHE_KEY);
       }
@@ -240,7 +242,7 @@
           );
         }
 
-        if (canViewProjects) {
+        if (canLoadProjectOptions) {
           resultKeys.push('projects');
           requests.push(
             PMS.Api.getCached('/projects', PROJECTS_CACHE_KEY, {
@@ -1080,8 +1082,9 @@
 
       const router = PMS.Router;
       const permissions = router && Array.isArray(router.permissions) ? router.permissions : [];
-      const canViewProjects = !!(router && typeof router.isAdmin === 'function' && router.isAdmin()) ||
-        permissions.indexOf('PROJECT_VIEW') !== -1;
+      const canAccessProjectOptions = !!(router && typeof router.isAdmin === 'function' && router.isAdmin()) ||
+        permissions.indexOf('PROJECT_VIEW') !== -1 ||
+        permissions.indexOf('PROJECT_CREATE') !== -1;
 
       this.eventTypes.forEach(function (type) {
         const id = Events.idOf(type);
@@ -1089,7 +1092,7 @@
 
         if (!id ||
             String(type.Status || 'ACTIVE').toUpperCase() !== 'ACTIVE' ||
-            (!canViewProjects && isProjectEvent)) {
+            (!canAccessProjectOptions && isProjectEvent)) {
           return;
         }
 
