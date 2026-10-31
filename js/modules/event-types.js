@@ -848,6 +848,7 @@
       setFieldChecked(form, 'TrackVariantQuantity', item.TrackVariantQuantity);
       setFieldChecked(form, 'IsWorkCompletion', item.IsWorkCompletion);
       setFieldChecked(form, 'AllowOnDraft', item.AllowOnDraft);
+      setFieldChecked(form, 'AllowOnDraft', item.AllowOnDraft);
 
       setSelectedCheckboxes(form, 'AllowedDepartmentIDs', item.AllowedDepartmentIDs);
       setSelectedCheckboxes(form, 'AllowedUserIDs', item.AllowedUserIDs);
@@ -1069,6 +1070,7 @@
         UseProjectSizes: fieldChecked(form, 'UseProjectSizes'),
         TrackVariantQuantity: fieldChecked(form, 'TrackVariantQuantity'),
         IsWorkCompletion: fieldChecked(form, 'IsWorkCompletion'),
+        AllowOnDraft: fieldChecked(form, 'AllowOnDraft'),
         AllowOnDraft: fieldChecked(form, 'AllowOnDraft')
       };
 
