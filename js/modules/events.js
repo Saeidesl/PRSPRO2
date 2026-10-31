@@ -1675,6 +1675,17 @@
             labelElement.htmlFor = input.id;
             wrapper.appendChild(labelElement);
             wrapper.appendChild(input);
+            if (inputField.FieldType === 'image') {
+              const profileLabel = document.createElement('label');
+              profileLabel.className = 'event-muted';
+              profileLabel.style.display = 'block';
+              const profileToggle = document.createElement('input');
+              profileToggle.type = 'checkbox';
+              profileToggle.dataset.profileImageToggle = 'true';
+              profileLabel.appendChild(profileToggle);
+              profileLabel.appendChild(document.createTextNode(' استفاده از این تصویر به‌عنوان عکس پروفایل پروژه'));
+              wrapper.appendChild(profileLabel);
+            }
             if (field.HelpText) {
               const help = document.createElement('small');
               help.className = 'event-muted';
@@ -1776,6 +1787,17 @@
         input.required = input.dataset.columnRequired === 'true';
         input.setAttribute('aria-label', column.Name || column.Code);
         cell.appendChild(input);
+        if (type === 'image') {
+          const profileLabel = document.createElement('label');
+          profileLabel.className = 'event-muted';
+          profileLabel.style.display = 'block';
+          const profileToggle = document.createElement('input');
+          profileToggle.type = 'checkbox';
+          profileToggle.dataset.profileImageToggle = 'true';
+          profileLabel.appendChild(profileToggle);
+          profileLabel.appendChild(document.createTextNode(' عکس پروفایل'));
+          cell.appendChild(profileLabel);
+        }
         row.appendChild(cell);
       });
       if (allowRemove) {
@@ -1890,11 +1912,13 @@
       const dataUrl = await new Promise((resolve, reject) => {
         const reader = new FileReader(); reader.onload = () => resolve(String(reader.result || '')); reader.onerror = () => reject(new Error('خواندن فایل ناموفق بود.')); reader.readAsDataURL(file);
       });
-      const response = await PMS.Api.post('/projects/' + encodeURIComponent(projectId) + '/attachments', {FileName:file.name,MimeType:mime,Base64:dataUrl.split(',')[1] || '',AttachmentType:'INFORMATION'}, {trackSync:false});
+      const profileToggle = input && input.parentElement && input.parentElement.querySelector('[data-profile-image-toggle]');
+      const attachmentType = dataType === 'image' && profileToggle && profileToggle.checked ? 'PROFILE' : 'INFORMATION';
+      const response = await PMS.Api.post('/projects/' + encodeURIComponent(projectId) + '/attachments', {FileName:file.name,MimeType:mime,Base64:dataUrl.split(',')[1] || '',AttachmentType:attachmentType}, {trackSync:false});
       const result = PMS.Api.extractData ? PMS.Api.extractData(response) : (response && response.data) || response;
       const attachment = result && (result.attachment || result.Attachment);
       if (!attachment || !(attachment.ID || attachment.Id)) throw new Error('اطلاعات فایل بارگذاری‌شده دریافت نشد.');
-      const value = {AttachmentID:attachment.ID || attachment.Id,FileName:attachment.FileName || file.name,MimeType:attachment.MimeType || mime,FileSize:Number(attachment.FileSize || file.size),AttachmentType:'INFORMATION'};
+      const value = {AttachmentID:attachment.ID || attachment.Id,FileName:attachment.FileName || file.name,MimeType:attachment.MimeType || mime,FileSize:Number(attachment.FileSize || file.size),AttachmentType:attachmentType};
       if (input) input.dataset.uploadedAttachment = JSON.stringify(value);
       return value;
     },
