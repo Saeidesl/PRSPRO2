@@ -1268,7 +1268,7 @@
           <form id="project-create-form" class="project-form-layout">
             <div class="filter-group form-group project-form-field" style="margin-bottom:16px;">
               <label for="new-project-code">کد پروژه <span style="color:var(--color-danger);">*</span></label>
-              <input type="text" id="new-project-code" name="ProjectCode" ${isDraftMode || !isEditMode ? "required" : ""} maxlength="100" autocomplete="off" placeholder="کد پروژه را وارد کنید" style="width:100%;box-sizing:border-box;" ${isEditMode && !isDraftMode ? "readonly aria-readonly=\"true\"" : ""}>
+              <input type="text" id="new-project-code" name="ProjectCode" ${isDraftMode ? "required" : ""} maxlength="100" autocomplete="off" placeholder="کد پروژه را وارد کنید" style="width:100%;box-sizing:border-box;" ${isEditMode && !isDraftMode ? "readonly aria-readonly=\"true\"" : ""}>
               <small style="display:block;margin-top:5px;color:var(--color-text-secondary);">${isDraftMode ? 'با تکمیل پیش‌نویس ثبت می‌شود و پس از آن ثابت خواهد بود.' : 'برای ثبت کامل پروژه الزامی است؛ در ثبت اولیه طرح می‌توانید آن را بعداً تکمیل کنید.'}</small>
             </div>
             <div class="filter-group form-group project-form-field" style="margin-bottom:16px;">
@@ -1306,7 +1306,7 @@
               <select
                 id="new-project-workflow"
                 name="WorkflowID"
-                required
+                ${isDraftMode ? "required" : ""}
                 style="width:100%;box-sizing:border-box;"
                 ${isEditMode && !isDraftMode ? "disabled aria-disabled=\"true\"" : ""}
               >
@@ -1396,7 +1396,6 @@
               gap:10px;
               flex-wrap:wrap;
             ">
-              ${!isEditMode ? '<button type="button" id="project-create-draft" class="btn btn-secondary">ثبت اولیه طرح (نام و تصویر)</button>' : ''}
               <button
                 type="submit"
                 id="project-create-submit"
@@ -1712,15 +1711,6 @@
         event.preventDefault();
         this.createProject(modal);
       });
-      const saveDraftButton = modal.querySelector('#project-create-draft');
-      if (saveDraftButton) saveDraftButton.addEventListener('click', () => {
-        const profileType = modal.querySelector('#new-project-attachment-type');
-        const profileInput = modal.querySelector('#new-project-file');
-        if (profileType) profileType.value = 'PROFILE';
-        if (profileInput) profileInput.accept = 'image/jpeg,image/png,image/webp,image/gif';
-        this.createProject(modal, { draftOnly: true });
-      });
-
       const existingAttachmentsList = modal.querySelector('#project-edit-attachments-list');
       if (existingAttachmentsList) {
         existingAttachmentsList.addEventListener('click', async (event) => {
@@ -2398,14 +2388,13 @@
     // ثبت پروژه
     // ========================================================
 
-    createProject: async function (modal, options) {
+    createProject: async function (modal) {
       if (this.isSaving) {
         return;
       }
 
-      const draftOnly = !!(options && options.draftOnly);
+      let draftOnly = false;
       const isDraftEditing = modal.dataset.draftMode === 'true';
-      const draftButton = modal.querySelector('#project-create-draft');
       const codeInput = modal.querySelector('#new-project-code');
       const titleInput = modal.querySelector('#new-project-title');
       const quantityInput = modal.querySelector('#new-project-quantity');
@@ -2456,6 +2445,10 @@
         NotifyEnabled: !!(notifyInput && notifyInput.checked),
         Status: String((modal.querySelector('#new-project-status') || {}).value || '')
       };
+      // One create action: a missing project code means the record starts as a
+      // draft; entering a code means the user is completing a full project.
+      // Drafts keep the same project ID and are completed later via PUT /projects/:id.
+      draftOnly = modal.dataset.editMode !== 'true' && !project.ProjectCode;
       if (draftOnly) {
         Object.assign(project, {
           ProjectCode: '', WorkflowID: '', AvailableDepartmentIDs: [],
@@ -2546,7 +2539,6 @@
 
       this.isSaving = true;
       submitButton.disabled = true;
-      if (draftButton) draftButton.disabled = true;
       submitButton.textContent = modal.dataset.editMode === 'true' ? 'در حال ذخیره...' : 'در حال ثبت...';
       // Keep the user informed even when the server request takes several seconds.
       this.clearFormError(modal);
@@ -2665,7 +2657,7 @@
         }
         modal.remove();
 
-        alert((draftOnly ? 'پیش‌نویس اولیه طرح ثبت شد.' : 'پروژه با موفقیت ثبت شد.') + attachmentWarning + materialSpecsWarning);
+        alert((draftOnly ? 'پیش‌نویس پروژه ثبت شد؛ می‌توانی اطلاعات آن را از طریق رویدادها تکمیل کنی.' : 'پروژه با موفقیت ثبت شد.') + attachmentWarning + materialSpecsWarning);
 
         // Refresh the list only when the user is allowed to view projects.
         const router = window.PMS.Router;
@@ -2694,7 +2686,6 @@
             ? (isDraftEditing ? 'تکمیل و فعال‌سازی پروژه' : 'ذخیره تغییرات')
             : 'ثبت پروژه';
         }
-        if (draftButton && draftButton.isConnected) draftButton.disabled = false;
       }
     },
 

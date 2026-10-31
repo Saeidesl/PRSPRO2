@@ -7,15 +7,17 @@ const path = require('node:path');
 
 const read = (name) => fs.readFileSync(path.join(__dirname, '..', name), 'utf8');
 
-test('current project form offers initial draft registration with name and profile image', () => {
+test('one project submit automatically creates a draft when no project code is entered', () => {
   const source = read('js/modules/projects.js');
-  assert.match(source, /project-create-draft/);
-  assert.match(source, /ثبت اولیه طرح \(نام و تصویر\)/);
+  assert.doesNotMatch(source, /project-create-draft/);
+  assert.ok(source.includes("draftOnly = modal.dataset.editMode !== 'true' && !project.ProjectCode"));
+  assert.ok(source.includes('${isDraftMode ? "required" : ""}'));
+  assert.ok(!source.includes('${isDraftMode || !isEditMode ? "required" : ""}'));
   assert.match(source, /RecordState: 'DRAFT'/);
-  assert.match(source, /draftOnly \? 'PROFILE'/);
+  assert.ok(source.includes("const selectedAttachmentType = draftOnly ? 'PROFILE'"));
   assert.match(source, /برای ثبت اولیه، انتخاب تصویر طرح الزامی است/);
+  assert.match(source, /پیش‌نویس پروژه ثبت شد/);
 });
-
 test('draft projects can be reopened and completed through the existing project edit API', () => {
   const source = read('js/modules/projects.js');
   assert.match(source, /modal\.dataset\.draftMode = 'true'/);
@@ -42,9 +44,9 @@ test('project list and detail distinguish drafts from production projects', () =
   assert.match(detail, /hasDraftEventTypes/);
 });
 
-test('project assets use cache-busting for the draft lifecycle changes', () => {
+test('project assets use cache-busting for the unified project entry', () => {
   const source = read('index.html');
-  assert.match(source, /projects\.js\?v=20261031-draft-card-info-1/);
+  assert.match(source, /projects\.js\?v=20261031-unified-project-entry-1/);
   assert.match(source, /project-detail\.js\?v=20261031-draft-events-1/);
 });
 
