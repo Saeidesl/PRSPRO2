@@ -855,13 +855,15 @@
               const value = response.Values ? response.Values[key] : null;
               const label = field.LabelOverride || info.Name || info.Code || 'اطلاعات';
               html += '<div class="event-form-response-field"><strong>' + Events.escape(label) + '</strong>';
-              if (String(info.Cardinality || 'SINGLE').toUpperCase() === 'MULTIPLE' && Array.isArray(value)) {
-                const columns = Array.isArray(info.Columns) ? info.Columns : [];
-                if (value.length && columns.length) {
+              const cardinality = String(info.Cardinality || 'SINGLE').toUpperCase();
+              const columns = Array.isArray(info.Columns) ? info.Columns.filter(column => String(column.Status || 'ACTIVE') === 'ACTIVE') : [];
+              if (columns.length) {
+                const dataRows = cardinality === 'MULTIPLE' ? (Array.isArray(value) ? value : []) : (value && typeof value === 'object' && Object.keys(value).length ? [value] : []);
+                if (dataRows.length) {
                   html += '<div class="event-modal-table-wrap"><table class="event-modal-table"><thead><tr>';
                   columns.forEach(function (column) { html += '<th>' + Events.escape(column.Name || column.Code) + '</th>'; });
                   html += '</tr></thead><tbody>';
-                  value.forEach(function (row) {
+                  dataRows.forEach(function (row) {
                     html += '<tr>';
                     columns.forEach(function (column) { html += '<td>' + Events.escape(Events.displayValue(row[String(column.Code)])) + '</td>'; });
                     html += '</tr>';
@@ -1692,8 +1694,9 @@
           const source = wrappers.find((item) => item.dataset.infoTypeId === String(rule.fieldId));
           let value;
           if (source && !source.hidden) {
-            if (source.dataset.cardinality === 'MULTIPLE') {
-              const rows = Array.from(source.querySelectorAll('[data-form-row]'));
+            const table = source.querySelector('[data-form-table]');
+            if (table) {
+              const rows = Array.from(table.querySelectorAll('[data-form-row]'));
               value = rows.some((row) => Array.from(row.querySelectorAll('[data-column-code]')).some((input) =>
                 input.type === 'checkbox' ? input.checked : input.value !== ''
               ));
@@ -1777,10 +1780,14 @@
           );
           const hiddenByRule = !!fieldWrapper && fieldWrapper.hidden;
           if (hiddenByRule) {
-            values[typeId] = String(info.Cardinality || 'SINGLE').toUpperCase() === 'MULTIPLE' ? [] : '';
+            const cardinality = String(info.Cardinality || 'SINGLE').toUpperCase();
+            const hasColumns = Array.isArray(info.Columns) && info.Columns.some(column => String(column.Status || 'ACTIVE') === 'ACTIVE');
+            values[typeId] = hasColumns ? (cardinality === 'MULTIPLE' ? [] : {}) : (cardinality === 'MULTIPLE' ? [] : '');
             continue;
           }
-          if (String(info.Cardinality || 'SINGLE').toUpperCase() === 'MULTIPLE') {
+          const cardinality = String(info.Cardinality || 'SINGLE').toUpperCase();
+          const hasColumns = Array.isArray(info.Columns) && info.Columns.some(column => String(column.Status || 'ACTIVE') === 'ACTIVE');
+          if (hasColumns) {
             const table = Array.from(container.querySelectorAll('[data-form-table]')).find((node) =>
               node.dataset.formId === formId && node.dataset.infoTypeId === typeId
             );
@@ -1817,7 +1824,7 @@
               this.showFormError('حداقل یک ردیف برای «' + (field.LabelOverride || info.Name) + '» وارد کنید.');
               return null;
             }
-            values[typeId] = valueRows;
+            values[typeId] = cardinality === 'MULTIPLE' ? valueRows : (valueRows[0] || {});
           } else {
             const input = Array.from(container.querySelectorAll('[data-form-value]')).find((node) =>
               node.dataset.formId === formId && node.dataset.infoTypeId === typeId
@@ -1834,10 +1841,12 @@
             values[typeId] = value;
           }
         }
-        const hasAnyValue = Object.keys(values).some((key) => {
-          const value = values[key];
-          return Array.isArray(value) ? value.length > 0 : (value !== '' && value !== null && value !== undefined);
-        });
+        const hasValue = (value) => {
+          if (Array.isArray(value)) return value.some(hasValue);
+          if (value && typeof value === 'object') return Object.keys(value).some((key) => hasValue(value[key]));
+          return value !== '' && value !== null && value !== undefined;
+        };
+        const hasAnyValue = Object.keys(values).some((key) => hasValue(values[key]));
         const mappingRequired = mapping.IsRequired === true || String(mapping.IsRequired).toLowerCase() === 'true';
         if (hasAnyValue || mappingRequired) {
           responses.push({ FormID: formId, FormVersion: Number(form.Version || 1), Values: values });
