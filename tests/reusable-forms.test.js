@@ -46,3 +46,18 @@ test('event entry loads assigned forms, submits FormResponses and displays saved
   assert.match(events,/VisibilityRule/);
   assert.match(events,/event-form-group/);
 });
+
+test('form table rendering separates one-row and repeatable cardinality',()=>{
+  const events=read('js/modules/events.js');
+  const types=read('js/modules/information-types.js');
+  const detail=read('js/modules/project-detail.js');
+  assert.match(events,/if \(columns\.length\)/);
+  assert.match(events,/cardinality === 'MULTIPLE' \? valueRows : \(valueRows\[0\] \|\| \{\}\)/);
+  assert.match(events,/dataset\.columnRequired/);
+  assert.match(events,/addConfiguredFormRow\(tbody, columns, cardinality === 'MULTIPLE'\)/);
+  assert.match(events,/const hasColumns = Array\.isArray\(info\.Columns\)/);
+  assert.match(detail,/const hasColumns = columns\.length > 0/);
+  assert.match(detail,/value = multi \? dataRows : \(dataRows\[0\] \|\| \{\}\)/);
+  assert.match(types,/تعدادپذیری/);
+  assert.doesNotMatch(types,/form\.elements\.DataType\.disabled = true/);
+});
