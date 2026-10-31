@@ -1682,6 +1682,20 @@
               wrapper.appendChild(help);
             }
           }
+          wrapper.querySelectorAll('input[type="file"]').forEach(input => {
+            input.addEventListener('change', () => {
+              const file = input.files && input.files[0];
+              if (!file) return;
+              let preview = wrapper.querySelector('[data-event-file-preview]');
+              if (!preview) { preview = document.createElement('div'); preview.dataset.eventFilePreview = 'true'; wrapper.appendChild(preview); }
+              preview.replaceChildren();
+              if (String(info.DataType || '').toLowerCase() === 'image' && file.type.indexOf('image/') === 0) {
+                const reader = new FileReader();
+                reader.onload = () => { const img = document.createElement('img'); img.alt = file.name; img.src = String(reader.result || ''); img.style.cssText = 'max-width:160px;max-height:120px;object-fit:contain'; preview.appendChild(img); };
+                reader.readAsDataURL(file);
+              } else preview.textContent = file.name;
+            });
+          });
           groupContainer.appendChild(wrapper);
         });
         container.appendChild(card);
@@ -1755,6 +1769,8 @@
         }
         input.dataset.columnCode = String(column.Code);
         input.dataset.columnType = type;
+        if (input.type === 'file') input.addEventListener('change', () => { let preview=cell.querySelector('[data-event-file-preview]'); if(!preview){preview=document.createElement('div');preview.dataset.eventFilePreview='true';cell.appendChild(preview);} preview.textContent=(input.files&&input.files[0])?input.files[0].name:''; });
+        input.dataset.columnType = type;
         input.dataset.columnRequired = String(column.IsRequired === true || String(column.IsRequired).toLowerCase() === 'true');
         input.required = input.dataset.columnRequired === 'true';
         input.setAttribute('aria-label', column.Name || column.Code);
@@ -1774,7 +1790,7 @@
       tbody.appendChild(row);
     },
 
-    collectConfiguredFormResponses: function () {
+    collectConfiguredFormResponses: async function (projectId) {
       const responses = [];
       const container = document.getElementById('event-configured-forms');
       if (!container) return responses;
@@ -1788,85 +1804,100 @@
           const typeId = String(field.InformationTypeID || info.ID || '');
           if (!typeId) continue;
           const required = field.IsRequired === true || String(field.IsRequired).toLowerCase() === 'true';
-          const fieldWrapper = Array.from(container.querySelectorAll('.event-form-value-field')).find((node) =>
-            node.dataset.formId === formId && node.dataset.infoTypeId === typeId
-          );
-          const hiddenByRule = !!fieldWrapper && fieldWrapper.hidden;
-          if (hiddenByRule) {
+          const wrapper = Array.from(container.querySelectorAll('.event-form-value-field')).find(node => node.dataset.formId === formId && node.dataset.infoTypeId === typeId);
+          if (wrapper && wrapper.hidden) {
             const cardinality = String(info.Cardinality || 'SINGLE').toUpperCase();
             const hasColumns = Array.isArray(info.Columns) && info.Columns.some(column => String(column.Status || 'ACTIVE') === 'ACTIVE');
             values[typeId] = hasColumns ? (cardinality === 'MULTIPLE' ? [] : {}) : (cardinality === 'MULTIPLE' ? [] : '');
             continue;
           }
           const cardinality = String(info.Cardinality || 'SINGLE').toUpperCase();
-          const hasColumns = Array.isArray(info.Columns) && info.Columns.some(column => String(column.Status || 'ACTIVE') === 'ACTIVE');
-          if (hasColumns) {
-            const table = Array.from(container.querySelectorAll('[data-form-table]')).find((node) =>
-              node.dataset.formId === formId && node.dataset.infoTypeId === typeId
-            );
-            const columns = Array.isArray(info.Columns) ? info.Columns : [];
+          const columns = Array.isArray(info.Columns) ? info.Columns.filter(column => String(column.Status || 'ACTIVE') === 'ACTIVE') : [];
+          if (columns.length) {
+            const table = Array.from(container.querySelectorAll('[data-form-table]')).find(node => node.dataset.formId === formId && node.dataset.infoTypeId === typeId);
             const rows = table ? Array.from(table.querySelectorAll('[data-form-row]')) : [];
-            let invalidRow = false;
-            const valueRows = rows.map((row) => {
+            const valueRows = [];
+            for (const row of rows) {
               const value = {};
               let hasAnyValue = false;
-              row.querySelectorAll('[data-column-code]').forEach((input) => {
-                let item = input.type === 'checkbox' ? input.checked : input.value;
-                const hasRawValue = input.type === 'checkbox' ? input.checked : (item !== '' && item !== null && item !== undefined);
-                if (hasRawValue) hasAnyValue = true;
-                if (input.dataset.columnType === 'boolean' && item !== '') item = String(item).toLowerCase() === 'true';
-                if (input.type === 'number' && String(item).trim() !== '') item = Number(item);
-                value[input.dataset.columnCode] = item;
-              });
-              if (hasAnyValue) {
-                const missing = Array.from(row.querySelectorAll('[data-column-code]')).find((input) =>
-                  input.dataset.columnRequired === 'true' &&
-                  (input.value === '' || input.value === null || input.value === undefined)
-                );
-                if (missing) {
-                  this.showFormError('ستون «' + (missing.getAttribute('aria-label') || missing.dataset.columnCode) + '» الزامی است.');
-                  missing.focus();
-                  invalidRow = true;
-                  return null;
+              const inputs = Array.from(row.querySelectorAll('[data-column-code]'));
+              for (const input of inputs) {
+                const dataType = String(input.dataset.columnType || '').toLowerCase();
+                let item = '';
+                if (input.type === 'file') {
+                  const selected = input.files && input.files[0];
+                  if (selected) { item = await this.uploadConfiguredFormFile(selected, dataType, projectId, input); hasAnyValue = true; }
+                  else if (input.dataset.uploadedAttachment) { try { item = JSON.parse(input.dataset.uploadedAttachment); hasAnyValue = true; } catch (error) {} }
+                } else {
+                  item = input.type === 'checkbox' ? input.checked : input.value;
+                  if (input.type === 'checkbox' ? input.checked : (item !== '' && item !== null && item !== undefined)) hasAnyValue = true;
+                  if (dataType === 'boolean' && item !== '') item = String(item).toLowerCase() === 'true';
+                  if (input.type === 'number' && String(item).trim() !== '') item = Number(item);
                 }
+                value[input.dataset.columnCode] = item;
               }
-              return hasAnyValue ? value : null;
-            }).filter(Boolean);
-            if (invalidRow) return null;
-            if (required && valueRows.length === 0) {
-              this.showFormError('حداقل یک ردیف برای «' + (field.LabelOverride || info.Name) + '» وارد کنید.');
-              return null;
+              if (hasAnyValue) {
+                const missing = inputs.find(input => input.dataset.columnRequired === 'true' &&
+                  (input.type === 'file' ? !(input.files && input.files[0]) && !input.dataset.uploadedAttachment : (input.value === '' || input.value === null || input.value === undefined)));
+                if (missing) { this.showFormError('ستون «' + (missing.getAttribute('aria-label') || missing.dataset.columnCode) + '» الزامی است.'); missing.focus(); return null; }
+                valueRows.push(value);
+              }
             }
+            if (required && valueRows.length === 0) { this.showFormError('حداقل یک ردیف برای «' + (field.LabelOverride || info.Name) + '» وارد کنید.'); return null; }
             values[typeId] = cardinality === 'MULTIPLE' ? valueRows : (valueRows[0] || {});
           } else {
-            const input = Array.from(container.querySelectorAll('[data-form-value]')).find((node) =>
-              node.dataset.formId === formId && node.dataset.infoTypeId === typeId
-            );
+            const input = Array.from(container.querySelectorAll('[data-form-value]')).find(node => node.dataset.formId === formId && node.dataset.infoTypeId === typeId);
             if (!input) continue;
-            let value = input.type === 'checkbox' ? input.checked : input.value;
-            if (input.dataset.formDataType === 'boolean' && value !== '') value = String(value).toLowerCase() === 'true';
-            if (input.type === 'number' && String(value).trim() !== '') value = Number(value);
-            if (required && (value === '' || value === null || value === undefined)) {
-              input.reportValidity();
-              input.focus();
-              return null;
+            let value = '';
+            if (input.type === 'file') {
+              const selected = input.files && input.files[0];
+              if (selected) value = await this.uploadConfiguredFormFile(selected, String(info.DataType || 'file').toLowerCase(), projectId, input);
+              else if (input.dataset.uploadedAttachment) { try { value = JSON.parse(input.dataset.uploadedAttachment); } catch (error) {} }
+            } else {
+              value = input.type === 'checkbox' ? input.checked : input.value;
+              if (input.dataset.formDataType === 'boolean' && value !== '') value = String(value).toLowerCase() === 'true';
+              if (input.type === 'number' && String(value).trim() !== '') value = Number(value);
             }
+            if (required && (value === '' || value === null || value === undefined)) { input.reportValidity(); input.focus(); return null; }
             values[typeId] = value;
           }
         }
-        const hasValue = (value) => {
+        const hasValue = value => {
           if (Array.isArray(value)) return value.some(hasValue);
-          if (value && typeof value === 'object') return Object.keys(value).some((key) => hasValue(value[key]));
+          if (value && typeof value === 'object') return Object.keys(value).some(key => hasValue(value[key]));
           return value !== '' && value !== null && value !== undefined;
         };
-        const hasAnyValue = Object.keys(values).some((key) => hasValue(values[key]));
+        const hasAnyValue = Object.keys(values).some(key => hasValue(values[key]));
         const mappingRequired = mapping.IsRequired === true || String(mapping.IsRequired).toLowerCase() === 'true';
-        if (hasAnyValue || mappingRequired) {
-          responses.push({ FormID: formId, FormVersion: Number(form.Version || 1), Values: values });
-        }
+        if (hasAnyValue || mappingRequired) responses.push({ FormID: formId, FormVersion: Number(form.Version || 1), Values: values });
       }
       return responses;
     },
+
+    uploadConfiguredFormFile: async function (file, dataType, projectId, input) {
+      if (input && input.dataset.uploadedAttachment) {
+        try { const cached = JSON.parse(input.dataset.uploadedAttachment); if (cached && cached.FileName === file.name && Number(cached.FileSize) === Number(file.size)) return cached; } catch (error) {}
+      }
+      if (!projectId) throw new Error('بارگذاری فایل در رویداد مستقل امکان‌پذیر نیست؛ این فرم باید به پروژه متصل باشد.');
+      const maxBytes = 10 * 1024 * 1024;
+      const extension = String(file.name || '').split('.').pop().toLowerCase();
+      const mimeByExtension = {jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',webp:'image/webp',gif:'image/gif',pdf:'application/pdf',doc:'application/msword',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',xls:'application/vnd.ms-excel',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'};
+      const mime = String(file.type || mimeByExtension[extension] || '').toLowerCase();
+      if (!mimeByExtension[extension] || mimeByExtension[extension] !== mime || file.size < 1 || file.size > maxBytes || (dataType === 'image' && mime.indexOf('image/') !== 0)) {
+        throw new Error(dataType === 'image' ? 'فقط تصویر JPEG، PNG، WebP یا GIF تا ۱۰ مگابایت مجاز است.' : 'فقط تصویر، PDF، Word یا Excel تا ۱۰ مگابایت مجاز است.');
+      }
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader(); reader.onload = () => resolve(String(reader.result || '')); reader.onerror = () => reject(new Error('خواندن فایل ناموفق بود.')); reader.readAsDataURL(file);
+      });
+      const response = await PMS.Api.post('/projects/' + encodeURIComponent(projectId) + '/attachments', {FileName:file.name,MimeType:mime,Base64:dataUrl.split(',')[1] || '',AttachmentType:'INFORMATION'}, {trackSync:false});
+      const result = PMS.Api.extractData ? PMS.Api.extractData(response) : (response && response.data) || response;
+      const attachment = result && (result.attachment || result.Attachment);
+      if (!attachment || !(attachment.ID || attachment.Id)) throw new Error('اطلاعات فایل بارگذاری‌شده دریافت نشد.');
+      const value = {AttachmentID:attachment.ID || attachment.Id,FileName:attachment.FileName || file.name,MimeType:attachment.MimeType || mime,FileSize:Number(attachment.FileSize || file.size),AttachmentType:'INFORMATION'};
+      if (input) input.dataset.uploadedAttachment = JSON.stringify(value);
+      return value;
+    },
+
 
     createFieldInput: function (field, type) {
       let input;
@@ -1899,8 +1930,9 @@
           datetime: 'datetime-local'
         };
 
-        input.type = types[type] || 'text';
-
+        input.type = type === 'image' || type === 'file' ? 'file' : (types[type] || 'text');
+        if (type === 'image') input.accept = 'image/jpeg,image/png,image/webp,image/gif';
+        if (type === 'file') input.accept = '.jpg,.jpeg,.png,.webp,.gif,.pdf,.doc,.docx,.xls,.xlsx,image/jpeg,image/png,image/webp,image/gif,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
         if (type === 'number') input.step = 'any';
       }
 
@@ -2026,7 +2058,7 @@
         }
       }
 
-      const formResponses = this.collectConfiguredFormResponses();
+      const formResponses = await this.collectConfiguredFormResponses(projectId);
       if (formResponses === null) return;
 
       const type = this.findById(this.eventTypes, typeId);
