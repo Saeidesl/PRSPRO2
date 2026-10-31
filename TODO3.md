@@ -354,6 +354,18 @@
 
 **تست‌ها:** `tests/reusable-forms.test.js` و `tests/forms-api-contract.test.js` در بک‌اند؛ `tests/reusable-forms.test.js` در فرانت‌اند. خروجی نهایی تسک فقط پس از موفقیت تمام CIها و آزمون عملی کاربر تأیید می‌شود.
 
+### ۶. زیرساخت موجود برای تصویر و فایل — کشف تسک ۵
+
+- بک‌اند: فایل پایدار ARCHITECTURE.md در مخزن بک‌اند موجود نیست؛ سند معماری قابل بازیابی ARCHITECTURE2.md است و همراه با فایل‌های واقعی مخزن بررسی شد.
+- AttachmentValidator.js: فهرست مجاز MIME/پسوند را در FILE_TYPES نگه می‌دارد؛ JPEG/PNG/WebP/GIF، PDF، Word و Excel مجازند. اندازه واقعی فایل در سمت سرور با AppConfig.gs.js → FILES.MAX_SIZE_MB (۱۰ مگابایت) کنترل می‌شود.
+- AttachmentService.js و StorageRepository.js / GoogleDriveStorage.js: محتوا به Google Drive منتقل می‌شود و فقط metadata و StorageKey در شیت 15_Attachments ذخیره می‌شوند. بارگذاری پروژه از POST /projects/:projectId/attachments با payload شامل FileName, MimeType, Base64, AttachmentType انجام می‌شود؛ نوع پیوست جدید INFORMATION با allow-list عمومی AttachmentType سازگار است.
+- مسیرهای موجود: GET /projects/:projectId/attachments, GET /attachments/:attachmentId/download, DELETE /attachments/:attachmentId؛ مجوزهای ATTACHMENT_VIEW, ATTACHMENT_UPLOAD و دسترسی پروژه/tenant در سرویس اعمال می‌شوند.
+- ProjectInformationService.js: مقدارهای پرونده در 30_ProjectInformation.ValueJSON و تاریخچه در 31_ProjectInformationHistory ذخیره می‌شوند. _scalar, _validate, save نقاط لازم برای پذیرش امن reference پیوست‌اند؛ metadata فایل نباید از ورودی کلاینت اعتماد شود و باید با AttachmentRepository.findById، tenant، پروژه، نوع پیوست و MIME تطبیق داده شود.
+- InformationTypeValidator.js: allow-list فعلی DATA_TYPES شامل متن/عدد/تاریخ/Boolean/Select است و باید image و file را اضافه کند؛ همین دو نوع برای ستون‌های جدولی نیز مجاز خواهند بود.
+- فرانت‌اند: js/modules/information-types.js فرم تعریف نوع اطلاعات و مدیریت ستون‌ها را می‌سازد؛ js/modules/project-detail.js توابع informationInput, openProjectInformationForm, renderProjectInformation و loadProjectInformation را برای ثبت/نمایش داده دارد.
+- فرم‌های رویداد: js/modules/events.js توابع renderConfiguredForms, addConfiguredFormRow, collectConfiguredFormResponses, createFieldInput و submitForm؛ بک‌اند FormService.prepareEventResponses از ProjectInformationService._validate استفاده می‌کند و EventService._createUnlocked_ پیش از ساخت رویداد پاسخ‌ها را اعتبارسنجی می‌کند. برای بارگذاری فایل از فرم رویداد، پیوست باید به پروژه انتخاب‌شده متصل شود؛ رویداد مستقل نمی‌تواند فرم پروژه‌ای حاوی فایل ثبت کند.
+- Cache busting فرانت‌اند در index.html باید برای information-types.js, project-detail.js, events.js به‌روزرسانی شود؛ تست‌های رگرسیون در پوشه tests/ هر دو مخزن قرار می‌گیرند.
+
 ## 📋 Macro-Task Queue & Implementation Log
 
 - [x] **تسک ۱ — بررسی معماری و طراحی نقشه اجرایی**
