@@ -2,11 +2,30 @@
   'use strict';
   const PMS = window.PMS;
   const Forms = {
-    items: [], informationTypes: [], eventTypes: [], busy: false,
+    items: [], informationTypes: [], eventTypes: [], busy: false, selectedEventTypeId: '', mappingRequest: 0,
     init: function () {
       const button=document.getElementById('forms-create-button');
       if(button) button.addEventListener('click',()=>this.openForm(null));
+      document.querySelectorAll('[data-forms-tab]').forEach(tab=>tab.addEventListener('click',()=>this.switchTab(tab.dataset.formsTab)));
+      const eventSelect=document.getElementById('forms-connect-event-type');
+      if(eventSelect)eventSelect.addEventListener('change',()=>{this.selectedEventTypeId=eventSelect.value;this.loadMappings();});
+      const formSelect=document.getElementById('forms-connect-form');
+      if(formSelect)formSelect.addEventListener('change',()=>this.updateConnectionControls());
+      const connectButton=document.getElementById('forms-connect-submit');
+      if(connectButton)connectButton.addEventListener('click',()=>this.connectForm());
       this.load();
+    },
+    switchTab: function (tab) {
+      const design=tab!=='connect';
+      const designPanel=document.getElementById('forms-design-panel');
+      const connectPanel=document.getElementById('forms-connect-panel');
+      const designTab=document.getElementById('forms-design-tab');
+      const connectTab=document.getElementById('forms-connect-tab');
+      if(designPanel)designPanel.hidden=!design;
+      if(connectPanel)connectPanel.hidden=design;
+      if(designTab){designTab.classList.toggle('is-active',design);designTab.setAttribute('aria-selected',design?'true':'false');}
+      if(connectTab){connectTab.classList.toggle('is-active',!design);connectTab.setAttribute('aria-selected',design?'false':'true');}
+      if(!design&&this.selectedEventTypeId&&!this.mappingsLoadedForCurrentEvent)this.loadMappings();
     },
     list: function(value,key) {
       const data=PMS.Api.extractData(value);
@@ -26,10 +45,11 @@
           PMS.Api.get('/forms'),PMS.Api.get('/information-types'),PMS.Api.get('/event-types')
         ]);
         this.items=this.list(forms,'forms');this.informationTypes=this.list(types,'informationTypes');
-        this.eventTypes=this.list(events,'eventTypes');
+        this.eventTypes=this.list(events,'eventTypes').filter(x=>String(x.ConnectionType||'PROJECT').toUpperCase()!=='INDEPENDENT'&&String(x.Status||'ACTIVE').toUpperCase()==='ACTIVE');
         this.render();
+        this.renderConnectionOptions();
       } catch(e) {
-        if(error){error.hidden=false;error.textContent=e.message||'دریافت فرم‌ها ناموفق بود.';}
+        if(error){error.hidden=false;error.textContent=e.message||'دریافت اطلاعات فرم‌ها ناموفق بود.';}
       } finally {if(loading)loading.hidden=true;}
     },
     render: function () {
@@ -38,11 +58,104 @@
       if(!this.items.length){table.hidden=true;table.innerHTML='';if(empty)empty.hidden=false;return;}
       if(empty)empty.hidden=true;
       table.innerHTML='<table class="data-table"><thead><tr><th>نام فرم</th><th>کد</th><th>نسخه</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody>'+
-        this.items.map(item=>'<tr><td>'+this.esc(item.Name)+'</td><td>'+this.esc(item.Code)+'</td><td>'+this.esc(item.Version||1)+'</td><td>'+this.esc(item.Status||'ACTIVE')+'</td><td><button class="btn btn-sm btn-secondary" data-edit="'+this.esc(item.ID)+'">ویرایش</button> <button class="btn btn-sm btn-primary" data-design="'+this.esc(item.ID)+'">طراحی و اتصال</button></td></tr>').join('')+
+        this.items.map(item=>'<tr><td><strong>'+this.esc(item.Name)+'</strong></td><td>'+this.esc(item.Code)+'</td><td>'+this.esc(item.Version||1)+'</td><td>'+this.esc(String(item.Status||'ACTIVE').toUpperCase()==='ACTIVE'?'فعال':'غیرفعال')+'</td><td><button class="btn btn-sm btn-secondary" data-edit="'+this.esc(item.ID)+'">مشخصات</button> <button class="btn btn-sm btn-primary" data-design="'+this.esc(item.ID)+'">طراحی فیلدها</button></td></tr>').join('')+
         '</tbody></table>';
       table.hidden=false;
       table.querySelectorAll('[data-edit]').forEach(b=>b.addEventListener('click',()=>this.openForm(b.dataset.edit)));
       table.querySelectorAll('[data-design]').forEach(b=>b.addEventListener('click',()=>this.openDesigner(b.dataset.design)));
+    },
+    renderConnectionOptions: function () {
+      const eventSelect=document.getElementById('forms-connect-event-type');
+      const formSelect=document.getElementById('forms-connect-form');
+      if(eventSelect){
+        const selected=this.selectedEventTypeId;
+        eventSelect.innerHTML='<option value="">انتخاب نوع رویداد…</option>'+this.eventTypes.map(item=>'<option value="'+this.esc(item.ID)+'">'+this.esc(item.Name||item.Code)+'</option>').join('');
+        eventSelect.value=this.eventTypes.some(x=>String(x.ID)===String(selected))?selected:'';
+        this.selectedEventTypeId=eventSelect.value;
+      }
+      if(formSelect){
+        const selected=formSelect.value;
+        const active=this.items.filter(x=>String(x.Status||'ACTIVE').toUpperCase()==='ACTIVE');
+        formSelect.innerHTML='<option value="">انتخاب فرم…</option>'+active.map(item=>'<option value="'+this.esc(item.ID)+'">'+this.esc(item.Name||item.Code)+'</option>').join('');
+        formSelect.value=active.some(x=>String(x.ID)===String(selected))?selected:'';
+      }
+      this.updateConnectionControls();
+      const caption=document.getElementById('forms-mappings-caption');
+      if(caption)caption.textContent=this.selectedEventTypeId?'فرم‌هایی که هنگام ثبت این نوع رویداد نمایش داده می‌شوند.':'پس از انتخاب نوع رویداد، اتصال‌های آن در این قسمت نمایش داده می‌شوند.';
+      if(this.selectedEventTypeId)this.loadMappings();else this.renderMappings([]);
+    },
+    updateConnectionControls: function () {
+      const eventSelect=document.getElementById('forms-connect-event-type');
+      const formSelect=document.getElementById('forms-connect-form');
+      const button=document.getElementById('forms-connect-submit');
+      const feedback=document.getElementById('forms-connect-feedback');
+      const formId=formSelect&&formSelect.value;
+      const duplicate=(this.mappings||[]).some(x=>String(x.FormID)===String(formId));
+      if(button)button.disabled=!(eventSelect&&eventSelect.value&&formId&&!duplicate);
+      if(feedback)feedback.textContent=duplicate?'این فرم قبلاً به رویداد انتخاب‌شده متصل شده است.':'';
+    },
+    loadMappings: async function () {
+      const eventId=this.selectedEventTypeId;
+      const list=document.getElementById('forms-mappings-list');
+      const loading=document.getElementById('forms-mappings-loading');
+      const error=document.getElementById('forms-mappings-error');
+      const token=++this.mappingRequest;
+      this.mappingsLoadedForCurrentEvent=false;
+      if(error){error.hidden=true;error.textContent='';}
+      if(!eventId){this.mappings=[];this.renderMappings([]);return;}
+      if(loading)loading.hidden=false;
+      if(list)list.innerHTML='';
+      try{
+        const response=await PMS.Api.get('/event-types/'+encodeURIComponent(eventId)+'/forms');
+        if(token!==this.mappingRequest||eventId!==this.selectedEventTypeId)return;
+        this.mappings=this.list(response,'eventTypes');
+        this.mappingsLoadedForCurrentEvent=true;
+        this.renderMappings(this.mappings);
+      }catch(err){
+        if(token!==this.mappingRequest)return;
+        if(error){error.hidden=false;error.textContent=err.message||'دریافت فرم‌های متصل ناموفق بود.';}
+        if(list)list.innerHTML='<div class="table-empty">اتصال‌ها بارگذاری نشدند. دوباره نوع رویداد را انتخاب کن یا صفحه را تازه‌سازی کن.</div>';
+      }finally{if(token===this.mappingRequest&&loading)loading.hidden=true;}
+      this.updateConnectionControls();
+    },
+    renderMappings: function (rows) {
+      const list=document.getElementById('forms-mappings-list');
+      const count=document.getElementById('forms-mappings-count');
+      if(count)count.textContent=String((rows||[]).length)+' فرم';
+      if(!list)return;
+      if(!this.selectedEventTypeId){list.innerHTML='<div class="table-empty">برای مشاهده فرم‌های متصل، یک نوع رویداد انتخاب کن.</div>';return;}
+      if(!rows||!rows.length){list.innerHTML='<div class="forms-mappings-empty"><strong>هنوز فرمی متصل نشده است.</strong><span>از قسمت بالا یک فرم انتخاب و به این رویداد متصل کن.</span></div>';this.updateConnectionControls();return;}
+      list.innerHTML=rows.map(mapping=>{
+        const form=mapping.Form||{};
+        const required=mapping.IsRequired===true||String(mapping.IsRequired).toLowerCase()==='true';
+        return '<article class="forms-mapping-row"><div class="forms-mapping-main"><strong>'+this.esc(form.Name||form.Code||mapping.FormName||mapping.FormID||'فرم')+'</strong><small>'+(required?'تکمیل اجباری':'تکمیل اختیاری')+'</small></div><button type="button" class="btn btn-sm btn-secondary" data-unlink="'+this.esc(mapping.ID)+'">قطع اتصال</button></article>';
+      }).join('');
+      list.querySelectorAll('[data-unlink]').forEach(button=>button.addEventListener('click',async()=>{
+        if(button.disabled)return;
+        button.disabled=true;
+        try{await PMS.Api.delete('/event-type-forms/'+encodeURIComponent(button.dataset.unlink));await this.loadMappings();}
+        catch(err){button.disabled=false;const error=document.getElementById('forms-mappings-error');if(error){error.hidden=false;error.textContent=err.message||'قطع اتصال فرم ناموفق بود.';}}
+      }));
+      this.updateConnectionControls();
+    },
+    connectForm: async function () {
+      const eventSelect=document.getElementById('forms-connect-event-type');
+      const formSelect=document.getElementById('forms-connect-form');
+      const requiredSelect=document.getElementById('forms-connect-required');
+      const button=document.getElementById('forms-connect-submit');
+      const feedback=document.getElementById('forms-connect-feedback');
+      const eventId=eventSelect&&eventSelect.value,formId=formSelect&&formSelect.value;
+      if(!eventId||!formId){if(feedback)feedback.textContent='نوع رویداد و فرم را انتخاب کن.';return;}
+      if((this.mappings||[]).some(x=>String(x.FormID)===String(formId))){this.updateConnectionControls();return;}
+      if(button)button.disabled=true;
+      if(feedback)feedback.textContent='در حال اتصال…';
+      try{
+        await PMS.Api.post('/event-types/'+encodeURIComponent(eventId)+'/forms',{FormID:formId,IsRequired:requiredSelect?requiredSelect.value==='true':true});
+        if(formSelect)formSelect.value='';
+        if(feedback)feedback.textContent='فرم با موفقیت به رویداد متصل شد.';
+        await this.loadMappings();
+      }catch(err){if(feedback)feedback.textContent=err.message||'اتصال فرم ناموفق بود.';}
+      finally{this.updateConnectionControls();}
     },
     modal: function(title,id) {
       const old=document.getElementById(id);if(old)old.remove();
@@ -76,21 +189,17 @@
       });
     },
     openDesigner: async function(id) {
-      const modal=this.modal('طراحی فرم و اتصال به رویدادها','form-designer-modal'),body=modal.querySelector('.event-modal-content');
+      const modal=this.modal('طراحی فرم','form-designer-modal'),body=modal.querySelector('.event-modal-content');
       body.innerHTML='<p class="event-muted">در حال دریافت ساختار فرم…</p>';
       try {
-        const [response,mappings]=await Promise.all([
-          PMS.Api.get('/forms/'+encodeURIComponent(id)),
-          Promise.resolve(null)
-        ]);
+        const response=await PMS.Api.get('/forms/'+encodeURIComponent(id));
         const form=PMS.Api.extractData(response)||{};
         const fields=Array.isArray(form.Fields)?form.Fields:[];
         const nextFieldOrder=fields.reduce((max,field)=>Math.max(max,Number(field.FieldOrder)||0),0)+1;
-        const mappingHtml='<section class="et-section"><h4>اتصال به نوع رویداد</h4><div class="form-group"><label>نوع رویداد</label><select id="form-event-type"><option value="">انتخاب نوع رویداد</option>'+this.eventTypes.filter(x=>String(x.ConnectionType||'PROJECT').toUpperCase()!=='INDEPENDENT'&&String(x.Status||'ACTIVE')==='ACTIVE').map(x=>'<option value="'+this.esc(x.ID)+'">'+this.esc(x.Name||x.Code)+'</option>').join('')+'</select></div><label><input type="checkbox" id="form-event-required" checked> تکمیل این فرم اجباری باشد</label><button type="button" class="btn btn-secondary" id="form-event-attach">اتصال فرم</button><div id="form-event-mappings" class="et-field-list"></div></section>';
-        body.innerHTML='<style>.form-designer-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.form-designer-grid .form-group{margin:0}.form-designer-field{border:1px solid var(--color-border);border-radius:8px;padding:10px;margin:8px 0}.form-designer-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}@media(max-width:650px){.form-designer-grid{grid-template-columns:1fr}}</style>'+
-          '<p><strong>'+this.esc(form.Name)+'</strong> <span class="event-muted">نسخه '+this.esc(form.Version||1)+'</span></p>'+
+        body.innerHTML='<p class="forms-designer-intro">در این قسمت فقط فیلدهای فرم را از اطلاعات مرکزی انتخاب و مرتب کن. اتصال فرم به رویداد در بخش جداگانه «اتصال فرم به رویداد» انجام می‌شود.</p>'+
+          '<div class="forms-designer-title"><strong>'+this.esc(form.Name)+'</strong><span>نسخه '+this.esc(form.Version||1)+'</span></div>'+
           '<section class="et-section"><h4>افزودن اطلاعات مرکزی به فرم</h4><form id="form-field-add"><div class="form-designer-grid"><div class="form-group"><label>نوع اطلاعات</label><select name="InformationTypeID" required><option value="">انتخاب اطلاعات مرکزی</option>'+this.informationTypes.filter(x=>String(x.Status||'ACTIVE')==='ACTIVE').map(x=>'<option value="'+this.esc(x.ID)+'">'+this.esc(x.Name)+' ('+this.esc(x.Code)+')</option>').join('')+'</select></div><div class="form-group"><label>گروه</label><input name="GroupName" maxlength="120" placeholder="مثلاً مشخصات اولیه"></div><div class="form-group"><label>عنوان نمایشی</label><input name="LabelOverride" maxlength="150"></div><div class="form-group"><label>ترتیب نمایش</label><input name="FieldOrder" type="number" min="0" value="'+nextFieldOrder+'"></div><div class="form-group" style="grid-column:1/-1"><label>راهنمای ورود</label><input name="HelpText" maxlength="500"></div></div><div class="form-designer-grid"><div class="form-group"><label>نمایش در صورت تحقق شرط</label><select name="VisibleWhenInformationTypeID"><option value="">بدون شرط</option>'+fields.filter(f=>Number(f.FieldOrder||0)<nextFieldOrder).map(f=>'<option value="'+this.esc(f.InformationTypeID)+'">'+this.esc(f.LabelOverride||f.InformationType.Name)+'</option>').join('')+'</select></div><div class="form-group"><label>شرط</label><select name="VisibilityOperator"><option value="FILLED">فیلد مرجع پر شده باشد</option><option value="EMPTY">فیلد مرجع خالی باشد</option><option value="EQUALS">برابر با مقدار</option><option value="NOT_EQUALS">مخالف مقدار</option></select></div><div class="form-group"><label>مقدار مقایسه</label><input name="VisibilityValue"></div></div><label><input name="IsRequired" type="checkbox"> تکمیل این فیلد اجباری باشد</label><div class="form-designer-actions"><button class="btn btn-primary" type="submit">افزودن فیلد</button></div></form></section>'+
-          '<section class="et-section"><h4>فیلدهای فرم</h4><div id="form-field-list"></div></section>'+mappingHtml;
+          '<section class="et-section"><h4>فیلدهای فرم</h4><p class="forms-designer-help">فیلدها از اطلاعات مرکزی انتخاب می‌شوند؛ تغییر این تنظیمات، تعریف اصلی اطلاعات را تغییر نمی‌دهد.</p><div id="form-field-list"></div></section>';
         const fieldList=body.querySelector('#form-field-list');
         const renderFields=()=>{
           fieldList.innerHTML=fields.length?fields.map(f=>'<div class="form-designer-field"><strong>'+this.esc(f.LabelOverride||f.InformationType.Name)+'</strong><div class="event-muted">'+this.esc(f.InformationType.Name)+' · '+this.esc(f.InformationType.Cardinality)+' · '+(f.IsRequired?'اجباری':'اختیاری')+' · '+this.esc(f.GroupName||'بدون گروه')+' · ترتیب '+this.esc(f.FieldOrder)+'</div><button type="button" class="btn btn-sm btn-secondary" data-edit-field="'+this.esc(f.ID)+'">ویرایش</button> <button type="button" class="btn btn-sm btn-secondary" data-remove="'+this.esc(f.ID)+'">حذف از فرم</button></div>').join(''):'<p class="event-muted">هنوز فیلدی به فرم اضافه نشده است.</p>';
@@ -107,10 +216,7 @@
         };
         renderFields();
         body.querySelector('#form-field-add').addEventListener('submit',async e=>{e.preventDefault();const f=e.currentTarget;const payload={InformationTypeID:f.elements.InformationTypeID.value,GroupName:f.elements.GroupName.value,LabelOverride:f.elements.LabelOverride.value,HelpText:f.elements.HelpText.value,FieldOrder:Number(f.elements.FieldOrder.value||fields.length+1),IsRequired:f.elements.IsRequired.checked,VisibilityRuleJSON:f.elements.VisibleWhenInformationTypeID.value?{fieldId:f.elements.VisibleWhenInformationTypeID.value,operator:f.elements.VisibilityOperator.value,value:f.elements.VisibilityValue.value}:{}};try{await PMS.Api.post('/forms/'+encodeURIComponent(id)+'/fields',payload);const fresh=PMS.Api.extractData(await PMS.Api.get('/forms/'+encodeURIComponent(id)))||{};fields.splice(0,fields.length,...(fresh.Fields||[]));renderFields();f.reset();f.elements.FieldOrder.value=fields.length+1;}catch(err){this.notice(body,err.message||'افزودن فیلد ناموفق بود.');}});
-        const mappingBox=body.querySelector('#form-event-mappings');
-        const renderMappings=async()=>{try{const rows=this.list(await PMS.Api.get('/forms/'+encodeURIComponent(id)+'/event-types'),'eventTypes');mappingBox.innerHTML=rows.length?rows.map(x=>'<div class="et-field-row"><span>'+this.esc(x.EventType&& (x.EventType.Name||x.EventType.Code)||x.EventTypeID)+' · '+(x.IsRequired?'اجباری':'اختیاری')+'</span><button type="button" class="btn btn-sm btn-secondary" data-unlink="'+this.esc(x.ID)+'">قطع اتصال</button></div>').join(''):'<p class="event-muted">این فرم هنوز به رویدادی متصل نشده است.</p>';mappingBox.querySelectorAll('[data-unlink]').forEach(b=>b.addEventListener('click',async()=>{try{await PMS.Api.delete('/event-type-forms/'+encodeURIComponent(b.dataset.unlink));renderMappings();}catch(err){this.notice(body,err.message);}}));}catch(err){this.notice(body,err.message||'دریافت اتصال‌ها ناموفق بود.');}};
-        await renderMappings();
-        body.querySelector('#form-event-attach').addEventListener('click',async()=>{const typeId=body.querySelector('#form-event-type').value;if(!typeId){this.notice(body,'ابتدا نوع رویداد را انتخاب کنید.');return;}try{await PMS.Api.post('/event-types/'+encodeURIComponent(typeId)+'/forms',{FormID:id,IsRequired:body.querySelector('#form-event-required').checked});await renderMappings();}catch(err){this.notice(body,err.message||'اتصال فرم ناموفق بود.');}});
+
       } catch(error){this.notice(body,error.message||'دریافت ساختار فرم ناموفق بود.');}
     },
     notice: function(container,message){let box=container.querySelector('.form-editor-notice');if(!box){box=document.createElement('p');box.className='alert alert-danger form-editor-notice';container.prepend(box);}box.textContent=message;},
