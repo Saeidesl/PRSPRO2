@@ -1,12 +1,57 @@
-<section class="page-section">
+<section class="page-section forms-workspace">
   <div class="page-header">
-    <div><h2>فرم‌های قابل استفاده مجدد</h2><p>ساخت فرم از اطلاعات مرکزی و اتصال آن به انواع رویداد موجود</p></div>
-    <div class="page-header-actions"><button type="button" class="btn btn-primary" id="forms-create-button">+ ایجاد فرم</button></div>
+    <div>
+      <h2>مدیریت فرم‌ها</h2>
+      <p>فرم‌ها را طراحی کن و جداگانه مشخص کن در کدام رویدادها استفاده شوند.</p>
+    </div>
   </div>
-  <div class="card"><div class="card-body">
-    <div id="forms-loading" class="loading-state">در حال بارگذاری فرم‌ها…</div>
-    <div id="forms-error" class="alert alert-danger" hidden></div>
-    <div id="forms-table" class="table-wrapper" hidden></div>
-    <div id="forms-empty" class="table-empty" hidden>هنوز فرمی تعریف نشده است.</div>
-  </div></div>
+
+  <nav class="forms-workspace-tabs" role="tablist" aria-label="بخش‌های مدیریت فرم">
+    <button type="button" class="forms-workspace-tab is-active" id="forms-design-tab" role="tab" aria-selected="true" aria-controls="forms-design-panel" data-forms-tab="design">
+      <span class="forms-tab-step">۱</span>
+      <span><strong>طراحی فرم‌ها</strong><small>ساخت فرم و تنظیم فیلدها</small></span>
+    </button>
+    <button type="button" class="forms-workspace-tab" id="forms-connect-tab" role="tab" aria-selected="false" aria-controls="forms-connect-panel" data-forms-tab="connect">
+      <span class="forms-tab-step">۲</span>
+      <span><strong>اتصال فرم به رویداد</strong><small>انتخاب رویداد و مدیریت فرم‌های متصل</small></span>
+    </button>
+  </nav>
+
+  <section id="forms-design-panel" class="forms-workspace-panel" role="tabpanel" aria-labelledby="forms-design-tab">
+    <div class="forms-panel-heading">
+      <div><h3>فرم‌های تعریف‌شده</h3><p>در این بخش فقط ساختار و فیلدهای فرم را مدیریت می‌کنی.</p></div>
+      <button type="button" class="btn btn-primary" id="forms-create-button">+ ایجاد فرم جدید</button>
+    </div>
+    <div class="card"><div class="card-body">
+      <div id="forms-loading" class="loading-state">در حال بارگذاری فرم‌ها…</div>
+      <div id="forms-error" class="alert alert-danger" hidden></div>
+      <div id="forms-table" class="table-wrapper" hidden></div>
+      <div id="forms-empty" class="table-empty" hidden>هنوز فرمی تعریف نشده است. برای شروع، «ایجاد فرم جدید» را انتخاب کن.</div>
+    </div></div>
+  </section>
+
+  <section id="forms-connect-panel" class="forms-workspace-panel" role="tabpanel" aria-labelledby="forms-connect-tab" hidden>
+    <div class="forms-panel-heading">
+      <div><h3>اتصال فرم به رویداد</h3><p>ابتدا نوع رویداد را انتخاب کن؛ سپس فرم‌هایی را که باید هنگام ثبت آن نمایش داده شوند، متصل کن.</p></div>
+    </div>
+    <div class="forms-connect-guide">
+      <span class="forms-connect-guide-number">۱</span><span>نوع رویداد را انتخاب کن.</span>
+      <span class="forms-connect-guide-number">۲</span><span>فرم و اجباری یا اختیاری بودن آن را مشخص کن.</span>
+      <span class="forms-connect-guide-number">۳</span><span>اتصال‌های ثبت‌شده را بررسی یا قطع کن.</span>
+    </div>
+    <div class="card forms-connect-card"><div class="card-body">
+      <div class="forms-connect-selectors">
+        <div class="form-group"><label for="forms-connect-event-type">نوع رویداد</label><select id="forms-connect-event-type"><option value="">انتخاب نوع رویداد…</option></select><small>فرم‌ها برای این نوع رویداد نمایش داده می‌شوند.</small></div>
+        <div class="form-group"><label for="forms-connect-form">فرم فعال</label><select id="forms-connect-form"><option value="">ابتدا نوع رویداد را انتخاب کن</option></select><small>فقط فرم‌های فعال قابل اتصال هستند.</small></div>
+        <div class="form-group"><label for="forms-connect-required">نحوه تکمیل فرم</label><select id="forms-connect-required"><option value="true">اجباری — ثبت رویداد بدون فرم ممکن نیست</option><option value="false">اختیاری — تکمیل فرم به انتخاب کاربر</option></select></div>
+      </div>
+      <div class="forms-connect-actions"><button type="button" class="btn btn-primary" id="forms-connect-submit" disabled>اتصال فرم به رویداد</button><span id="forms-connect-feedback" class="forms-connect-feedback" role="status" aria-live="polite"></span></div>
+    </div></div>
+    <div class="card forms-mappings-card"><div class="card-body">
+      <div class="forms-mappings-heading"><div><h3>فرم‌های متصل</h3><p id="forms-mappings-caption">پس از انتخاب نوع رویداد، اتصال‌های آن در این قسمت نمایش داده می‌شوند.</p></div><span id="forms-mappings-count" class="forms-mappings-count">۰ فرم</span></div>
+      <div id="forms-mappings-loading" class="loading-state" hidden>در حال دریافت اتصال‌ها…</div>
+      <div id="forms-mappings-error" class="alert alert-danger" hidden></div>
+      <div id="forms-mappings-list" class="forms-mappings-list"><div class="table-empty">برای مشاهده فرم‌های متصل، یک نوع رویداد انتخاب کن.</div></div>
+    </div></div>
+  </section>
 </section>
