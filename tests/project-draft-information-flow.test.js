@@ -39,11 +39,24 @@ test('project list and detail distinguish drafts from production projects', () =
   assert.match(list, /در انتظار تکمیل اطلاعات/);
   assert.match(detail, /پیش‌نویس — نیازمند تکمیل/);
   assert.match(detail, /پس از تکمیل گردش‌کار تعیین می‌شود/);
-  assert.match(detail, /addEventButton\.hidden = isDraft/);
+  assert.match(detail, /hasDraftEventTypes/);
 });
 
 test('project assets use cache-busting for the draft lifecycle changes', () => {
   const source = read('index.html');
   assert.match(source, /projects\.js\?v=20261031-project-draft-flow-1/);
   assert.match(source, /project-detail\.js\?v=20261031-project-draft-flow-1/);
+});
+
+
+test('draft event controls and card projection are wired in the frontend', () => {
+  const types = read('js/modules/event-types.js');
+  const events = read('js/modules/events.js');
+  const projects = read('js/modules/projects.js');
+  const info = read('js/modules/information-types.js');
+  assert.match(types, /AllowOnDraft/);
+  assert.match(events, /refreshDraftEventOptions/);
+  assert.match(events, /data-profile-image-toggle/);
+  assert.match(projects, /CardInformation/);
+  assert.match(info, /ShowOnCard/);
 });
