@@ -598,7 +598,11 @@
     },
 
     openProjectEditForm: async function (projectId, options) {
-      if (!this.canEditProjects()) {
+      const localDraft = (this.projects || []).find((item) =>
+        String(item.ID || item.Id || item.id || '') === String(projectId || '') &&
+        String(item.RecordState || '').toUpperCase() === 'DRAFT'
+      );
+      if (!this.canEditProjects() && !(localDraft && this.canCreateOrEditProjects())) {
         alert('دسترسی ویرایش پروژه را ندارید.');
         return;
       }
