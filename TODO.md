@@ -1,66 +1,59 @@
 ## 🎯 Current Objective
 
-یکپارچه‌سازی کامل چرخه ایجاد پروژه و ثبت رویداد؛ پروژه باید از همان مسیر استاندارد پروژه‌ها قابل ایجاد با اطلاعات ناقص باشد و تکمیل اطلاعات از طریق همان رویدادها و فرم‌های reusable انجام شود. هیچ دکمه، فرم، endpoint یا موجودیت موازی برای «ثبت اولیه طرح» ایجاد نشود. رکورد پروژه، شناسه آن و مسیر اصلی ثبت رویداد در تمام چرخه ثابت می‌مانند.
+ساده‌سازی هویت پروژه با حذف وابستگی چرخه کاری به DRAFT و تنظیم AllowOnDraft: کاربر از همان فرم استاندارد، یک کد موقت دلخواه و یکتا وارد می‌کند؛ پروژه با شناسه ثابت و وضعیت عملیاتی عادی ساخته می‌شود؛ رویدادها از مسیر معمول ثبت می‌شوند؛ سپس کاربر هر زمان کد موقت را با کد قطعی جایگزین می‌کند. تمام رویدادها، فرم‌ها، فایل‌ها و تاریخچه به همان شناسه داخلی متصل می‌مانند.
 
 ## 🗺️ Technical Spec & Architecture Map (DO NOT DELETE)
 
 ### مخازن و شاخه‌ها
-- Frontend: `Saeidesl/PRSPRO2`، شاخه مرجع `main`.
-- Backend: `Saeidesl/PRSPRO2BACKEND`، شاخه مرجع `main`.
-- فایل `TODO.md` در فرانت‌اند وجود نداشت؛ این فایل workspace همین فاز است.
-- `Saeidesl/PRSPRO2BACKEND/TODO.md` متعلق به فاز مستقل استانداردسازی تأمین ملزومات است؛ در این فاز نباید تغییر یا بازنویسی شود.
-- `ARCHITECTURE.md` هر دو مخزن بررسی شد. تصمیم‌های قبلی درباره پیش‌نویس، رویداد روی پیش‌نویس و فرم reusable در معماری فرانت‌اند ثبت شده‌اند.
-- PRهای فرانت‌اند #121، #122 و #123 و بک‌اند #78 ادغام شده‌اند. PR #123 مسیر دسترسی فرانت‌اند برای انتخاب پروژه/نوع رویداد با مجوز `PROJECT_CREATE` را اصلاح کرده است.
+- Frontend: `Saeidesl/PRSPRO2`، شاخه `main`.
+- Backend: `Saeidesl/PRSPRO2BACKEND`، شاخه `main`.
+- این فاز فقط چرخه کدگذاری و ایجاد/ویرایش پروژه را تغییر می‌دهد؛ TODO مستقل تأمین ملزومات در بک‌اند نباید تغییر کند.
+- پیش از شروع، TODO فرانت‌اند و بخش‌های مرتبط ARCHITECTURE.md هر دو مخزن بررسی شدند.
+- هیچ merge یا انتشار Apps Script/GitHub Pages بدون اجازه صریح کاربر انجام نمی‌شود.
 
-### یافته معماری فعلی و مسئله‌ای که باید رفع شود
-- در `js/modules/projects.js` تابع `Projects.openCreateForm` همان فرم ایجاد/ویرایش را می‌سازد؛ اما دکمه جداگانه `#project-create-draft` و گزینه `draftOnly` در `Projects.createProject(modal, options)` یک شاخه دوم برای ثبت اولیه ایجاد کرده‌اند.
-- مسیر ثبت کامل و ثبت اولیه هر دو به `POST /projects` می‌رسند، اما payload و اعتبارسنجی متفاوت‌اند: ثبت اولیه `RecordState='DRAFT'` و فیلدهای اصلی خالی می‌فرستد؛ ثبت کامل `RecordState='ACTIVE'` می‌سازد. وجود دو اقدام مجزا در UI همان تجربه موازی و گیج‌کننده‌ای است که باید حذف شود.
-- در بک‌اند `ProjectService.create(project, params)` در `ProjectService.js` بر اساس `RecordState` دو شاخه ساخت رکورد دارد؛ هر دو باید پشت همان قرارداد استاندارد ایجاد پروژه باقی بمانند، بدون endpoint یا موجودیت جدید.
-- `ProjectService.update(id, data, params)` پیش‌نویس را با همان شناسه به پروژه فعال تبدیل می‌کند؛ کد و گردش‌کار پس از تکمیل هویت پروژه ثابت می‌شوند.
-- `ProjectService.list(params)` برای کاربر فاقد `PROJECT_VIEW` فقط پیش‌نویس‌های متعلق به خودش را در کنار کنترل tenant برمی‌گرداند.
-- `js/modules/events.js` صفحه اصلی ثبت رویداد است. `Events.loadProjects` داده پروژه‌ها را از مسیر موجود دریافت می‌کند؛ بارگذاری گزینه پروژه و نوع رویداد برای مجوزهای `PROJECT_VIEW` یا `PROJECT_CREATE` مجاز شده است. فیلتر نوع رویداد، `AllowOnDraft` را کنترل می‌کند.
-- `Events.createEvent` پاسخ فرم‌های متصل را با `collectConfiguredFormResponses(projectId)` جمع می‌کند و از همان `POST /events` با payload شامل `ProjectID`، `EventTypeID`، داده‌های رویداد، `FormResponses` و `IdempotencyKey` استفاده می‌کند. برای رویداد مستقل `ProjectID` خالی است.
-- `js/modules/project-detail.js` در وضعیت فعلی ثبت رویداد مستقیم از جزئیات پروژه را برای پیش‌نویس غیرفعال می‌کند؛ مسیر استاندارد ثبت رویداد در صفحه رویدادهاست. در اصلاح UX نباید مسیر موازی جدیدی در جزئیات پروژه ساخته شود.
-- `EventService._createUnlocked_(event, params)` در `EventService.js` مالک اعتبارسنجی سروری نوع رویداد، پروژه، دسترسی tenant/project، واحد/کاربر و گزینه `AllowOnDraft` است. `_getConfiguredChanges_` برای پیش‌نویس تغییر وضعیت/گردش‌کار را اعمال نمی‌کند.
-- `FormService.validateEventResponses` و `FormService.saveEventResponses` در `FormService.js` پاسخ فرم را اعتبارسنجی و ذخیره می‌کنند. فیلد مرکزی با کد `PROJECT_CODE` از طریق `ProjectService.validateDraftProjectCodeFromEvent` و `assignDraftProjectCodeFromEvent` کد اصلی همان پروژه را با کنترل یکتایی Tenant ثبت می‌کند؛ سایر مقادیر به `ProjectInformationService.save` با `SourceEventID` متصل می‌شوند.
-- فرم‌های reusable از صفحه `pages/forms.html` و ماژول `js/modules/forms.js` مدیریت می‌شوند؛ طراحی فرم از اتصال فرم به نوع رویداد جدا شده است. مسیرهای فعلی فرم حفظ می‌شوند.
-- اطلاعات پویای پروژه در بک‌اند توسط `ProjectInformationService.js` و مخزن‌های مرتبط در شیت‌های `30_ProjectInformation` و `31_ProjectInformationHistory` نگهداری می‌شوند؛ snapshot پاسخ فرم رویداد در `34_EventFormData` است.
-- فایل‌ها و تصاویر پروژه از `POST /projects/:projectId/attachments` و `AttachmentService.js` عبور می‌کنند؛ فایل در Drive و metadata در `15_Attachments` ذخیره می‌شود.
+### یافته‌های وضع موجود
+- در فرانت‌اند `js/modules/projects.js`، تابع `Projects.openCreateForm` فرم ایجاد/ویرایش را می‌سازد و فیلد `#new-project-code` را دارد؛ در حال حاضر برای DRAFT در زمان ویرایش required است و برای پروژه ACTIVE readonly است.
+- تابع `Projects.createProject(modal)` از `POST /projects` برای ایجاد و `PUT /projects/:id` برای ویرایش/تکمیل استفاده می‌کند. payload شامل `ProjectCode` است؛ شاخه فعلی DRAFT کد را در زمان ایجاد خالی نگه می‌دارد.
+- `js/modules/project-detail.js` و کارت‌های پروژه، کد نمایشی را از رکورد پروژه دریافت می‌کنند؛ شناسه داخلی `ID` مبنای ارتباط رویدادها و فایل‌هاست.
+- در بک‌اند `Router.js`: `POST /projects` به `ProjectService.create`، `PUT /projects/:id` به `ProjectService.update` و `POST /events` به `EventService.create` متصل است. endpoint جدید لازم نیست.
+- `ProjectValidator.js`: ایجاد DRAFT فعلاً فقط عنوان را می‌خواهد؛ ایجاد ACTIVE کد پروژه، عنوان، گردش‌کار و واحد مجاز را اعتبارسنجی می‌کند. در ویرایش نیز کد الزامی است و فقط قواعد فعلی اجازه تغییر کد DRAFT را می‌دهند.
+- `ProjectService.js`: ساخت DRAFT کد خالی می‌سازد؛ در `update` کد فقط برای DRAFT قابل تغییر است و برای پروژه ACTIVE صریحاً immutable شده است. یکتایی کد در Tenant بررسی می‌شود. منطق قفل/اعتبارسنجی کد و Audit باید برای ویرایش کد در هر وضعیت حفظ و یکپارچه شود.
+- `FormService.js`: نوع اطلاعات مرکزی با کد `PROJECT_CODE` در فرم رویداد به `ProjectService.validateDraftProjectCodeFromEvent` و `assignDraftProjectCodeFromEvent` متصل است. این مسیر ویژه باید با مدل جدید هماهنگ شود تا کد پروژه از فرم رویداد تغییر نکند و فقط از فیلد کد پروژه ویرایش شود.
+- `EventService.js`: در وضع موجود ثبت رویداد روی DRAFT به گزینه `AllowOnDraft` وابسته است؛ `EventTypeService.js` و `EventTypeValidator.js` این گزینه را نگه می‌دارند. با حذف چرخه DRAFT، رویدادهای پروژه از مسیر عادی پروژه فعال استفاده خواهند کرد.
+- شیت اصلی پروژه `08_Projects` و فیلد `ProjectCode` منبع یگانه کد پروژه باقی می‌مانند. شناسه داخلی `ID` تغییر نمی‌کند. کد در `30_ProjectInformation` کپی نمی‌شود.
+- فایل‌ها در Drive و metadata در `15_Attachments`، پاسخ فرم رویداد در `34_EventFormData`، مقدارهای پویا در `30_ProjectInformation` و تاریخچه در `31_ProjectInformationHistory` باقی می‌مانند.
 
-### فایل‌های اصلی فرانت‌اند
-- `js/modules/projects.js`: `Projects.openCreateForm`, `Projects.createProject`, `Projects.loadProjects`; فرم و چرخه ایجاد/تکمیل پروژه.
-- `js/modules/events.js`: `Events.init`, بارگذاری پروژه‌ها/نوع رویدادها، `collectConfiguredFormResponses`, `createEvent`; مسیر واحد ثبت رویداد.
-- `js/modules/project-detail.js`: نمایش وضعیت و اطلاعات پرونده؛ نباید فرم/endpoint موازی ثبت رویداد اضافه شود.
-- `js/modules/forms.js`, `pages/forms.html`, `css/reusable-forms.css`: طراحی فرم و اتصال آن به نوع رویداد.
-- `js/core/api.js`: درخواست‌های API از طریق `PMS.Api.get/post/put`.
-- `index.html`: نسخه‌گذاری cache-busting ماژول‌های تغییرکرده.
-- تست‌های موجود: `tests/single-project-entry.test.js`, `tests/project-draft-information-flow.test.js`, `tests/draft-event-type-visibility.test.js`, `tests/reusable-forms.test.js`, `tests/project-information-dossier.test.js`.
+### فایل‌ها، توابع و APIهای درگیر
 
-### فایل‌های اصلی بک‌اند و API
-- `Router.js`: `POST /projects` → `ProjectService.create`; `PUT /projects/:id` → `ProjectService.update`; `GET /projects` و `GET /projects/:id`; `POST /events` → `EventService.create`.
-- `ProjectService.js`: ایجاد/فهرست/دریافت/تکمیل پروژه و اعتبارسنجی کد پروژه.
-- `EventService.js`: ثبت رویداد، `AllowOnDraft`، عدم انتقال چرخه عمر/گردش‌کار برای DRAFT و idempotency.
-- `EventTypeService.js`, `EventTypeValidator.js`, `EventTypeRepository.js`: تعریف و نگهداری `AllowOnDraft` با پیش‌فرض خاموش.
-- `FormService.js`: اتصال فرم reusable، اعتبارسنجی پاسخ‌ها، snapshot و همگام‌سازی اطلاعات پروژه.
-- `ProjectInformationService.js`: مقادیر جاری و تاریخچه اطلاعات پویا.
-- `AttachmentService.js`: پیوست‌های پروژه.
-- `DatabaseSetup.js`: ساختار شیت‌ها و ستون‌های افزایشی.
-- آزمون بک‌اند با `node --test tests/*.test.js` و workflow بررسی بک‌اند انجام می‌شود؛ انتشار Apps Script از workflow همگام‌سازی مستقل است.
+#### Frontend
+- `js/modules/projects.js`: `Projects.openCreateForm`, `Projects.createProject`, `Projects.openProjectEditForm`, `Projects.loadProjects`; فیلد کد باید از لحظه ایجاد اجباری و در فرم ویرایش همیشه قابل تغییر باشد.
+- `js/modules/events.js`: انتخاب پروژه و ثبت رویداد با `POST /events) بدون نیاز به شاخه ویژه DRAFT.
+- `js/modules/project-detail.js`: نمایش کد فعلی و حذف رفتارهای مختص DRAFT در صورت بی‌نیازشدن.
+- `index.html`: cache-busting فایل‌های تغییرکرده.
+- تست‌های موجود: `tests/single-project-entry.test.js`, `tests/project-draft-information-flow.test.js`, `tests/draft-event-type-visibility.test.js`, `tests/project-information-dossier.test.js`.
 
-### قرارداد داده و جریان هدف
-1. ایجاد پروژه فقط از فرم استاندارد و endpoint موجود `POST /projects` انجام می‌شود؛ در صورت ناقص‌بودن اطلاعات لازم، همان submit یک رکورد DRAFT می‌سازد و در صورت کامل‌بودن، همان submit رکورد ACTIVE می‌سازد. تشخیص وضعیت باید در منطق واحد و بدون دکمه/فرم/endpoint جدا باشد.
-2. هر دو حالت از همان شناسه پروژه و فهرست پروژه‌ها استفاده می‌کنند. تکمیل اطلاعات با `PUT /projects/:id` روی همان رکورد انجام می‌شود.
-3. ثبت رویداد فقط از مسیر عمومی `POST /events` است. رویداد پروژه‌ای payload دارای `ProjectID` و `EventTypeID` است؛ فرم‌های متصل در `FormResponses` ارسال می‌شوند. نوع رویداد فقط با `AllowOnDraft=true` روی DRAFT مجاز است.
-4. پاسخ فرم باید در همان پرونده پروژه و تاریخچه ذخیره شود؛ رویداد روی DRAFT نباید وضعیت پروژه یا گردش‌کار را فعال/جابجا کند.
-5. پس از تکمیل اطلاعات، همان پروژه ACTIVE می‌شود؛ رویدادها، فایل‌ها، تاریخچه، پیوندها و شناسه پروژه حفظ می‌شوند. هیچ انتقال یا کپی به پرونده/موجودیت جدید انجام نمی‌شود.
-6. مجوزها، TenantID، مالکیت پیش‌نویس، دسترسی پروژه، واحد/کاربر و اعتبارسنجی فرم همواره در بک‌اند مرجع نهایی هستند.
+#### Backend
+- `Router.js`: قراردادهای موجود `POST /projects)، `PUT /projects/:id)، `GET /projects)، `GET /projects/:id)، `POST /events) حفظ می‌شوند.
+- `ProjectValidator.js`: الزام کد موقت ورودی کاربر در ایجاد و اعتبارسنجی تغییر کد در ویرایش.
+- `ProjectService.js`: ایجاد پروژه عملیاتی با کد ورودی؛ امکان تغییر کد در تمام وضعیت‌های مجاز؛ کنترل یکتایی در سطح Tenant، قفل برای جلوگیری از رقابت، Audit و حفظ شناسه.
+- `FormService.js`: حذف مسیر ویژه تغییر کد از پاسخ فرم رویداد؛ جلوگیری از ثبت/ویرایش کد پروژه از نوع اطلاعات `PROJECT_CODE`.
+- `EventService.js`, `EventTypeService.js`, `EventTypeValidator.js`: حذف وابستگی ثبت رویداد پروژه به `AllowOnDraft) در صورت حذف کامل DRAFT از چرخه عملیاتی؛ بررسی و پاک‌سازی کنترل‌شده فیلد/منطق منسوخ.
+- `ProjectRepository.js`, `ProjectInformationService.js`, `DatabaseSetup.js): فقط در صورت نیاز واقعی تغییر؛ شناسه‌ها و شیت‌های اطلاعات/تاریخچه نباید بازطراحی شوند.
+- آزمون بک‌اند: `node --test tests/*.test.js).
+
+### قرارداد هدف و قواعد ایمنی
+1. فرم استاندارد ایجاد پروژه همیشه یک کد موقت دلخواه از کاربر می‌گیرد؛ کد خالی یا تکراری در Tenant پذیرفته نمی‌شود.
+2. پروژه از همان ابتدا رکورد عملیاتی عادی است؛ برای شروع کار نیازی به DRAFT یا تنظیم AllowOnDraft نیست.
+3. کد موقت و کد قطعی هر دو در همان فیلد `08_Projects.ProjectCode` نگهداری می‌شوند. فیلد در فرم ویرایش برای پروژه‌های ایجادشده نیز قابل تغییر است.
+4. تغییر کد فقط مقدار `ProjectCode` را تغییر می‌دهد؛ شناسه داخلی پروژه، رویدادها، پیوست‌ها، فرم‌ها، تاریخچه، گردش‌کار و سایر روابط نباید تغییر کنند.
+5. کنترل یکتایی کد به‌صورت case-insensitive و tenant-scoped، در سرور و داخل قفل انجام می‌شود؛ Audit باید کد قبلی و جدید را ثبت کند.
+6. پاسخ فرم رویداد دیگر منبع تغییر کد پروژه نیست؛ کد پروژه فقط از فیلد استاندارد ایجاد/ویرایش پروژه مدیریت می‌شود.
+7. رویدادهای پروژه از همان `POST /events` ثبت می‌شوند. هیچ endpoint یا موجودیت موازی ایجاد نمی‌شود.
+8. حذف/بی‌اثرکردن DRAFT و AllowOnDraft باید با سازگاری داده‌های موجود و بدون حذف رکوردها/تاریخچه انجام شود؛ اگر داده DRAFT موجود باشد، در این فاز نباید بدون مسیر امن به‌صورت مخرب تغییر داده شود. ابتدا باید رفتار سازگار برای رکوردهای موجود تعیین و آزمون شود.
 
 ## 📋 Macro-Task Queue & Implementation Log
 
-- [x] تسک ۱ — کشف و مستندسازی مسیر فعلی ایجاد پروژه، ثبت رویداد و فرم‌های reusable در هر دو مخزن.
-  - *Log:* `TODO.md` در ریشه مخزن فرانت‌اند ایجاد شد. `ARCHITECTURE.md` هر دو مخزن و فایل‌های `projects.js`, `events.js`, `project-detail.js`, `ProjectService.js`, `EventService.js`, `FormService.js`, `EventTypeService.js`, `Router.js` بررسی شدند. مشخص شد دکمه `ثبت اولیه طرح` و گزینه `draftOnly` در کنار ثبت کامل، دو شاخه UX برای یک موجودیت ساخته‌اند؛ در عین حال ثبت رویداد و پاسخ فرم از APIهای عمومی موجود استفاده می‌کنند. تناقض مهم: جزئیات پروژه ثبت رویداد را برای DRAFT غیرفعال می‌کند، اما صفحه رویدادها امکان انتخاب پروژه و نوع رویداد مجاز را دارد. PRهای #121/#122/#123 فرانت‌اند و #78 بک‌اند ادغام شده‌اند؛ CI مربوط به merge PR #123 موفق بوده و یک اجرای جدید Pages برای commit بعدی هنگام بررسی در صف بوده است. TODO مستقل تأمین در بک‌اند دست‌نخورده باقی می‌ماند.
-- [x] تسک ۲ — یکپارچه‌سازی ایجاد پروژه در رابط و قرارداد موجود؛ حذف شاخه UX موازی «ثبت اولیه طرح» و تبدیل submit استاندارد به ایجاد خودکار DRAFT یا ACTIVE بر اساس کامل‌بودن اطلاعات، با حفظ `POST /projects` و شناسه واحد.
-  - *Log:* در PR #124 ادغام‌شده، `js/modules/projects.js` مسیر ایجاد را به submit واحد تبدیل کرد؛ `Projects.createProject(modal)` بر اساس کامل‌بودن اطلاعات DRAFT یا ACTIVE می‌سازد و تکمیل DRAFT را با `PUT /projects/:id` روی همان شناسه انجام می‌دهد. دکمه و handler جداگانه ثبت اولیه حذف شد؛ `index.html` برای cache-busting به‌روزرسانی و تست‌های `tests/project-draft-information-flow.test.js` اصلاح شدند.
-- [x] تسک ۳ — تنظیم مستقل نمایش اطلاعات روی کارت پروژه؛ هر نوع اطلاعات مرکزی تنظیم نمایش مستقل داشته باشد و مقادیر متفاوت مانند تعداد پیشنهادی و تعداد تأییدشده بدون بازنویسی یکدیگر نمایش داده شوند.
-  - *Log:* PR #125 با وجود ناتمام‌ماندن `browser-audit` و بنا به درخواست صریح کاربر ادغام شد. در `js/modules/information-types.js` توضیح تنظیم `ShowOnCard` روشن شد تا استقلال تنظیم برای هر نوع اطلاعات مشخص باشد؛ `js/modules/projects.js` از قبل `CardInformation` را به‌صورت پویا نمایش می‌داد. تست مستقل فرانت‌اند در `tests/project-draft-information-flow.test.js` اضافه شد و نسخه cache ماژول در `index.html` به‌روزرسانی شد. PR با روش squash در commit `b506fdc7123cba1459301868d6cc54dfbd596e93` ادغام شد؛ نتیجه نهایی browser audit پیش از ادغام دریافت نشد.
-- [ ] تسک ۴ — (IN PROGRESS) تثبیت امنیت، سازگاری و آزمون سرتاسری؛ آزمون چرخه ایجاد ناقص → ثبت رویداد/فرم → نمایش در کارت و تاریخچه → تکمیل همان پروژه، همراه با کنترل مجوزها، idempotency، عدم تغییر ناخواسته گردش‌کار و بررسی CI/استقرار آزمایشی.
+- [x] تسک ۱ — کشف و مستندسازی مدل کد پروژه، ایجاد/ویرایش، ثبت رویداد و وابستگی‌های DRAFT در فرانت‌اند و بک‌اند.
+  - *Log:* `TODO.md` قبلی و `ARCHITECTURE.md` هر دو مخزن بررسی شدند. فایل‌های `js/modules/projects.js`, `ProjectService.js`, `ProjectValidator.js`, `Router.js`, `FormService.js` و تست‌های چرخه پروژه بررسی شدند. مشخص شد فیلد کد در فرم ایجاد موجود اما DRAFT آن را خالی نگه می‌دارد؛ کد پروژه ACTIVE در UI و بک‌اند قفل است؛ و فرم رویداد مسیر ویژه‌ای برای تخصیص کد دارد. قراردادهای موجود API و شیت‌های مرتبط در Technical Spec ثبت شدند. هنوز هیچ فایل کد تغییر نکرده است.
+- [ ] تسک ۲ — (IN PROGRESS) اجرای مدل کد موقت دستی و قابل‌ویرایش: ایجاد پروژه عملیاتی با کد واردشده توسط کاربر، امکان تغییر کد در هر زمان، حفظ یکتایی Tenant و Audit، حذف وابستگی ثبت رویداد به DRAFT/AllowOnDraft و حذف مسیر تغییر کد از فرم رویداد؛ همراه با تغییرات یکپارچه فرانت‌اند و بک‌اند.
+- [ ] تسک ۳ — آزمون و تثبیت سازگاری: افزودن/به‌روزرسانی تست‌های رگرسیون برای ایجاد با کد موقت، تغییر به کد نهایی، جلوگیری از کد تکراری، حفظ شناسه و تمام سوابق، ثبت رویداد عادی و رفتار امن رکوردهای DRAFT قدیمی؛ اجرای تست‌های کامل و بررسی CI بدون merge یا انتشار تولید.
