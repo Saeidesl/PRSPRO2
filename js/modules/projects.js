@@ -1261,7 +1261,7 @@
             <div class="filter-group form-group project-form-field" style="margin-bottom:16px;">
               <label for="new-project-code">کد پروژه <span style="color:var(--color-danger);">*</span></label>
               <input type="text" id="new-project-code" name="ProjectCode" ${isDraftMode || !isEditMode ? "required" : ""} maxlength="100" autocomplete="off" placeholder="کد پروژه را وارد کنید" style="width:100%;box-sizing:border-box;" ${isEditMode && !isDraftMode ? "readonly aria-readonly=\"true\"" : ""}>
-              <small style="display:block;margin-top:5px;color:var(--color-text-secondary);">کد را اپراتور وارد می‌کند و پس از ایجاد پروژه قابل تغییر نیست.</small>
+              <small style="display:block;margin-top:5px;color:var(--color-text-secondary);">${isDraftMode ? 'با تکمیل پیش‌نویس ثبت می‌شود و پس از آن ثابت خواهد بود.' : 'برای ثبت کامل پروژه الزامی است؛ در ثبت اولیه طرح می‌توانید آن را بعداً تکمیل کنید.'}</small>
             </div>
             <div class="filter-group form-group project-form-field" style="margin-bottom:16px;">
               <label for="new-project-title">نام پروژه <span style="color:var(--color-danger);">*</span></label>
@@ -1705,7 +1705,13 @@
         this.createProject(modal);
       });
       const saveDraftButton = modal.querySelector('#project-create-draft');
-      if (saveDraftButton) saveDraftButton.addEventListener('click', () => this.createProject(modal, { draftOnly: true }));
+      if (saveDraftButton) saveDraftButton.addEventListener('click', () => {
+        const profileType = modal.querySelector('#new-project-attachment-type');
+        const profileInput = modal.querySelector('#new-project-file');
+        if (profileType) profileType.value = 'PROFILE';
+        if (profileInput) profileInput.accept = 'image/jpeg,image/png,image/webp,image/gif';
+        this.createProject(modal, { draftOnly: true });
+      });
 
       const existingAttachmentsList = modal.querySelector('#project-edit-attachments-list');
       if (existingAttachmentsList) {
