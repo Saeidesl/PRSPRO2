@@ -1268,8 +1268,8 @@
           <form id="project-create-form" class="project-form-layout">
             <div class="filter-group form-group project-form-field" style="margin-bottom:16px;">
               <label for="new-project-code">کد پروژه <span style="color:var(--color-danger);">*</span></label>
-              <input type="text" id="new-project-code" name="ProjectCode" ${isDraftMode ? "required" : ""} maxlength="100" autocomplete="off" placeholder="کد پروژه را وارد کنید" style="width:100%;box-sizing:border-box;" ${isEditMode && !isDraftMode ? "readonly aria-readonly=\"true\"" : ""}>
-              <small style="display:block;margin-top:5px;color:var(--color-text-secondary);">${isDraftMode ? 'با تکمیل پیش‌نویس ثبت می‌شود و پس از آن ثابت خواهد بود.' : 'برای ثبت کامل پروژه الزامی است؛ در ثبت اولیه طرح می‌توانید آن را بعداً تکمیل کنید.'}</small>
+              <input type="text" id="new-project-code" name="ProjectCode" required maxlength="100" autocomplete="off" placeholder="کد موقت یا قطعی پروژه را وارد کنید" style="width:100%;box-sizing:border-box;">
+              <small style="display:block;margin-top:5px;color:var(--color-text-secondary);">فعلاً کد موقت دلخواه وارد کنید؛ هر زمان کد قطعی مشخص شد، همین فیلد را ویرایش کنید.</small>
             </div>
             <div class="filter-group form-group project-form-field" style="margin-bottom:16px;">
               <label for="new-project-title">نام پروژه <span style="color:var(--color-danger);">*</span></label>
@@ -2407,7 +2407,6 @@
         return;
       }
 
-      let draftOnly = false;
       const isDraftEditing = modal.dataset.draftMode === 'true';
       const codeInput = modal.querySelector('#new-project-code');
       const titleInput = modal.querySelector('#new-project-title');
@@ -2459,19 +2458,10 @@
         NotifyEnabled: !!(notifyInput && notifyInput.checked),
         Status: String((modal.querySelector('#new-project-status') || {}).value || '')
       };
-      // One create action: a missing project code means the record starts as a
-      // draft; entering a code means the user is completing a full project.
-      // Drafts keep the same project ID and are completed later via PUT /projects/:id.
-      draftOnly = modal.dataset.editMode !== 'true' && !project.ProjectCode;
-      if (draftOnly) {
-        Object.assign(project, {
-          ProjectCode: '', WorkflowID: '', AvailableDepartmentIDs: [],
-          AllowedUserIDs: [], Status: '', RecordState: 'DRAFT'
-        });
-      } else if (isDraftEditing) {
-        project.RecordState = 'ACTIVE';
-      }
-      if (modal.dataset.editMode !== 'true' && !draftOnly) {
+      // New projects always receive a user-entered temporary or final code.
+      // Legacy drafts can still be completed in place without changing their ID.
+      if (isDraftEditing) project.RecordState = 'ACTIVE';
+      if (modal.dataset.editMode !== 'true') {
         try {
           localStorage.setItem(projectSettingsStorageKey(), JSON.stringify({
             departmentIds: selectedDepartments, userIds: selectedUsers, notifyEnabled: project.NotifyEnabled, status: project.Status
@@ -2479,7 +2469,7 @@
         } catch (settingsSaveError) {}
       }
 
-      if (!draftOnly && !project.ProjectCode) {
+      if (!project.ProjectCode) {
         this.showFormError(modal, 'کد پروژه را وارد کن.');
         codeInput.focus();
         return;
@@ -2491,20 +2481,20 @@
         return;
       }
 
-      if (!draftOnly && quantityInput.value.trim() !== '' &&
+      if (quantityInput.value.trim() !== '' &&
           (!Number.isFinite(project.Quantity) || project.Quantity < 1 || !Number.isInteger(project.Quantity))) {
         this.showFormError(modal, 'تعداد پروژه باید یک عدد صحیح بزرگ‌تر از صفر باشد.');
         quantityInput.focus();
         return;
       }
 
-      if (!draftOnly && !project.WorkflowID) {
+      if (!project.WorkflowID) {
         this.showFormError(modal, 'یک گردش کار انتخاب کن.');
         workflowSelect.focus();
         return;
       }
 
-      if (!draftOnly && !project.AvailableDepartmentIDs.length) {
+      if (!project.AvailableDepartmentIDs.length) {
         this.showFormError(modal, 'حداقل یک واحد مجاز برای پروژه انتخاب کن.');
         const settingsOverlay = modal.querySelector('#project-create-settings-modal');
         if (settingsOverlay) {
@@ -2515,7 +2505,7 @@
         departmentsSelect.focus();
         return;
       }
-      if (!draftOnly && project.Status === '') {
+      if (project.Status === '') {
         this.showFormError(modal, modal.dataset.editMode === 'true' ? 'وضعیت پروژه را در تنظیمات انتخاب کن.' : 'وضعیت پروژه پس از ایجاد را در تنظیمات انتخاب کن.');
         const settingsOverlay = modal.querySelector('#project-create-settings-modal');
         if (settingsOverlay) {
@@ -2536,13 +2526,8 @@
         fileInput.focus();
         return;
       }
-      const selectedAttachmentType = draftOnly ? 'PROFILE' : String(attachmentTypeInput && attachmentTypeInput.value || 'PROJECT_DOCUMENT').toUpperCase();
-      if (draftOnly && !selectedFile) {
-        this.showFormError(modal, 'برای ثبت اولیه، انتخاب تصویر طرح الزامی است.');
-        fileInput.focus();
-        return;
-      }
-      if (selectedFile && (draftOnly || selectedAttachmentType === 'PROFILE') &&
+      const selectedAttachmentType = String(attachmentTypeInput && attachmentTypeInput.value || 'PROJECT_DOCUMENT').toUpperCase();
+      if (selectedFile && selectedAttachmentType === 'PROFILE' &&
           !(/^image\/(jpeg|png|webp|gif)$/i.test(String(selectedFile.type || '')) ||
             /\.(jpe?g|png|webp|gif)$/i.test(selectedFile.name || ''))) {
         this.showFormError(modal, 'برای نوع «عکس پروفایل پروژه» فقط فایل تصویری انتخاب کنید.');
@@ -2671,7 +2656,7 @@
         }
         modal.remove();
 
-        alert((draftOnly ? 'پیش‌نویس پروژه ثبت شد؛ می‌توانی اطلاعات آن را از طریق رویدادها تکمیل کنی.' : 'پروژه با موفقیت ثبت شد.') + attachmentWarning + materialSpecsWarning);
+        alert('پروژه با موفقیت ثبت شد.' + attachmentWarning + materialSpecsWarning);
 
         // Refresh the list only when the user is allowed to view projects.
         const router = window.PMS.Router;
