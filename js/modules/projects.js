@@ -1171,6 +1171,7 @@
       const modal = document.createElement('div');
 
       const isEditMode = !!(editProject && (editProject.ID || editProject.Id || editProject.id));
+      const isDraftMode = isEditMode && String(editProject.RecordState || '').toUpperCase() === 'DRAFT';
       const editProjectId = isEditMode ? String(editProject.ID || editProject.Id || editProject.id) : '';
       modal.id = isEditMode ? 'project-edit-modal' : 'project-create-modal';
       modal.dataset.editMode = isEditMode ? 'true' : 'false';
@@ -1253,7 +1254,7 @@
           <form id="project-create-form" class="project-form-layout">
             <div class="filter-group form-group project-form-field" style="margin-bottom:16px;">
               <label for="new-project-code">کد پروژه <span style="color:var(--color-danger);">*</span></label>
-              <input type="text" id="new-project-code" name="ProjectCode" required maxlength="100" autocomplete="off" placeholder="کد پروژه را وارد کنید" style="width:100%;box-sizing:border-box;" ${isEditMode ? "readonly aria-readonly=\"true\"" : ""}>
+              <input type="text" id="new-project-code" name="ProjectCode" ${isDraftMode || !isEditMode ? "required" : ""} maxlength="100" autocomplete="off" placeholder="کد پروژه را وارد کنید" style="width:100%;box-sizing:border-box;" ${isEditMode && !isDraftMode ? "readonly aria-readonly=\"true\"" : ""}>
               <small style="display:block;margin-top:5px;color:var(--color-text-secondary);">کد را اپراتور وارد می‌کند و پس از ایجاد پروژه قابل تغییر نیست.</small>
             </div>
             <div class="filter-group form-group project-form-field" style="margin-bottom:16px;">
@@ -1293,7 +1294,7 @@
                 name="WorkflowID"
                 required
                 style="width:100%;box-sizing:border-box;"
-                ${isEditMode ? "disabled aria-disabled=\"true\"" : ""}
+                ${isEditMode && !isDraftMode ? "disabled aria-disabled=\"true\"" : ""}
               >
                 <option value="">در حال دریافت گردش کارها...</option>
               </select>
@@ -1381,6 +1382,7 @@
               gap:10px;
               flex-wrap:wrap;
             ">
+              ${!isEditMode ? '<button type="button" id="project-create-draft" class="btn btn-secondary">ثبت اولیه طرح (نام و تصویر)</button>' : ''}
               <button
                 type="submit"
                 id="project-create-submit"
@@ -1388,7 +1390,7 @@
                 ${isEditMode ? "disabled" : ""}
                 ${isEditMode ? 'title="در انتظار دریافت تنظیمات و فایل‌های پروژه"' : ""}
               >
-                ${isEditMode ? "در حال دریافت اطلاعات…" : "ثبت پروژه"}
+                ${isEditMode ? (isDraftMode ? "تکمیل و فعال‌سازی پروژه" : "در حال دریافت اطلاعات…") : "ثبت پروژه"}
               </button>
 
               <button
@@ -1696,6 +1698,8 @@
         event.preventDefault();
         this.createProject(modal);
       });
+      const saveDraftButton = modal.querySelector('#project-create-draft');
+      if (saveDraftButton) saveDraftButton.addEventListener('click', () => this.createProject(modal, { draftOnly: true }));
 
       const existingAttachmentsList = modal.querySelector('#project-edit-attachments-list');
       if (existingAttachmentsList) {
@@ -2374,11 +2378,14 @@
     // ثبت پروژه
     // ========================================================
 
-    createProject: async function (modal) {
+    createProject: async function (modal, options) {
       if (this.isSaving) {
         return;
       }
 
+      const draftOnly = !!(options && options.draftOnly);
+      const isDraftEditing = modal.dataset.draftMode === 'true';
+      const draftButton = modal.querySelector('#project-create-draft');
       const codeInput = modal.querySelector('#new-project-code');
       const titleInput = modal.querySelector('#new-project-title');
       const quantityInput = modal.querySelector('#new-project-quantity');
@@ -2429,7 +2436,15 @@
         NotifyEnabled: !!(notifyInput && notifyInput.checked),
         Status: String((modal.querySelector('#new-project-status') || {}).value || '')
       };
-      if (modal.dataset.editMode !== 'true') {
+      if (draftOnly) {
+        Object.assign(project, {
+          ProjectCode: '', WorkflowID: '', AvailableDepartmentIDs: [],
+          AllowedUserIDs: [], Status: '', RecordState: 'DRAFT'
+        });
+      } else if (isDraftEditing) {
+        project.RecordState = 'ACTIVE';
+      }
+      if (modal.dataset.editMode !== 'true' && !draftOnly) {
         try {
           localStorage.setItem(projectSettingsStorageKey(), JSON.stringify({
             departmentIds: selectedDepartments, userIds: selectedUsers, notifyEnabled: project.NotifyEnabled, status: project.Status
@@ -2437,7 +2452,7 @@
         } catch (settingsSaveError) {}
       }
 
-      if (!project.ProjectCode) {
+      if (!draftOnly && !project.ProjectCode) {
         this.showFormError(modal, 'کد پروژه را وارد کن.');
         codeInput.focus();
         return;
@@ -2449,20 +2464,20 @@
         return;
       }
 
-      if (quantityInput.value.trim() !== '' &&
+      if (!draftOnly && quantityInput.value.trim() !== '' &&
           (!Number.isFinite(project.Quantity) || project.Quantity < 1 || !Number.isInteger(project.Quantity))) {
         this.showFormError(modal, 'تعداد پروژه باید یک عدد صحیح بزرگ‌تر از صفر باشد.');
         quantityInput.focus();
         return;
       }
 
-      if (!project.WorkflowID) {
+      if (!draftOnly && !project.WorkflowID) {
         this.showFormError(modal, 'یک گردش کار انتخاب کن.');
         workflowSelect.focus();
         return;
       }
 
-      if (!project.AvailableDepartmentIDs.length) {
+      if (!draftOnly && !project.AvailableDepartmentIDs.length) {
         this.showFormError(modal, 'حداقل یک واحد مجاز برای پروژه انتخاب کن.');
         const settingsOverlay = modal.querySelector('#project-create-settings-modal');
         if (settingsOverlay) {
@@ -2473,7 +2488,7 @@
         departmentsSelect.focus();
         return;
       }
-      if (project.Status === '') {
+      if (!draftOnly && project.Status === '') {
         this.showFormError(modal, modal.dataset.editMode === 'true' ? 'وضعیت پروژه را در تنظیمات انتخاب کن.' : 'وضعیت پروژه پس از ایجاد را در تنظیمات انتخاب کن.');
         const settingsOverlay = modal.querySelector('#project-create-settings-modal');
         if (settingsOverlay) {
@@ -2494,8 +2509,13 @@
         fileInput.focus();
         return;
       }
-      const selectedAttachmentType = String(attachmentTypeInput && attachmentTypeInput.value || 'PROJECT_DOCUMENT').toUpperCase();
-      if (selectedFile && selectedAttachmentType === 'PROFILE' &&
+      const selectedAttachmentType = draftOnly ? 'PROFILE' : String(attachmentTypeInput && attachmentTypeInput.value || 'PROJECT_DOCUMENT').toUpperCase();
+      if (draftOnly && !selectedFile) {
+        this.showFormError(modal, 'برای ثبت اولیه، انتخاب تصویر طرح الزامی است.');
+        fileInput.focus();
+        return;
+      }
+      if (selectedFile && (draftOnly || selectedAttachmentType === 'PROFILE') &&
           !(/^image\/(jpeg|png|webp|gif)$/i.test(String(selectedFile.type || '')) ||
             /\.(jpe?g|png|webp|gif)$/i.test(selectedFile.name || ''))) {
         this.showFormError(modal, 'برای نوع «عکس پروفایل پروژه» فقط فایل تصویری انتخاب کنید.');
@@ -2506,6 +2526,7 @@
 
       this.isSaving = true;
       submitButton.disabled = true;
+      if (draftButton) draftButton.disabled = true;
       submitButton.textContent = modal.dataset.editMode === 'true' ? 'در حال ذخیره...' : 'در حال ثبت...';
       // Keep the user informed even when the server request takes several seconds.
       this.clearFormError(modal);
@@ -2545,7 +2566,7 @@
           updateProgress('تغییرات پروژه ذخیره شد.', 'success');
           if (this.modal === modal) this.modal = null;
           modal.remove();
-          alert('تغییرات پروژه با موفقیت ذخیره شد.');
+          alert(isDraftEditing ? 'پروژه تکمیل و فعال شد.' : 'تغییرات پروژه با موفقیت ذخیره شد.');
           this.loadProjects();
           return;
         }
@@ -2624,7 +2645,7 @@
         }
         modal.remove();
 
-        alert('پروژه با موفقیت ثبت شد.' + attachmentWarning + materialSpecsWarning);
+        alert((draftOnly ? 'پیش‌نویس اولیه طرح ثبت شد.' : 'پروژه با موفقیت ثبت شد.') + attachmentWarning + materialSpecsWarning);
 
         // Refresh the list only when the user is allowed to view projects.
         const router = window.PMS.Router;
@@ -2648,8 +2669,11 @@
 
         if (submitButton.isConnected) {
           submitButton.disabled = false;
-          submitButton.textContent = modal.dataset.editMode === 'true' ? 'ذخیره تغییرات' : 'ثبت پروژه';
+          submitButton.textContent = modal.dataset.editMode === 'true'
+            ? (isDraftEditing ? 'تکمیل و فعال‌سازی پروژه' : 'ذخیره تغییرات')
+            : 'ثبت پروژه';
         }
+        if (draftButton && draftButton.isConnected) draftButton.disabled = false;
       }
     },
 
@@ -2794,8 +2818,10 @@
       let html = '';
       projects.forEach((project) => {
         const id = project.ID || project.Id || project.id || '';
-        const stateClass = statusClass(project.Status);
-        const step = this.getProjectStageName(project);
+        const isDraft = String(project.RecordState || '').toUpperCase() === 'DRAFT';
+        const stateClass = isDraft ? 'is-hold' : statusClass(project.Status);
+        const step = isDraft ? 'در انتظار تکمیل اطلاعات' : this.getProjectStageName(project);
+        const statusLabel = isDraft ? 'پیش‌نویس' : this.statusText(project.Status);
         const quantity = project.Quantity !== undefined && project.Quantity !== null && project.Quantity !== ''
           ? 'تعداد: ' + this.escape(project.Quantity.toLocaleString ? project.Quantity.toLocaleString('fa-IR') : project.Quantity)
           : '';
@@ -2819,7 +2845,7 @@
                 <div class="project-list-card-code">${this.escape(project.ProjectCode || 'بدون کد')}</div>
                 <div class="project-list-card-title">${this.escape(project.Title || project.Name || 'بدون عنوان')}</div>
                 <div class="project-list-card-meta">
-                  <span class="project-list-badge ${stateClass}"><span aria-hidden="true">●</span> ${this.escape(this.statusText(project.Status))}</span>
+                  <span class="project-list-badge ${stateClass}"><span aria-hidden="true">●</span> ${this.escape(statusLabel)}</span>
                   <span class="project-list-badge">مرحله: ${this.escape(step)}</span>
                   ${project.CurrentStepStatus ? '<span class="project-list-badge">وضعیت مرحله: ' + this.escape(project.CurrentStepStatus) + '</span>' : ''}
                   ${quantity ? '<span class="project-list-badge">' + quantity + '</span>' : ''}
@@ -2831,7 +2857,7 @@
             <div class="project-list-card-actions">
               <button type="button" class="btn btn-sm btn-light project-view-button" data-project-id="${this.escape(id)}">مشاهده پروژه</button>
               ${this.canEditProjects() ? `
-                <button type="button" class="btn btn-sm btn-secondary project-edit-button" data-project-id="${this.escape(id)}" title="ویرایش اطلاعات پروژه">ویرایش</button>
+                <button type="button" class="btn btn-sm btn-secondary project-edit-button" data-project-id="${this.escape(id)}" title="${isDraft ? 'تکمیل اطلاعات اولیه پروژه' : 'ویرایش اطلاعات پروژه'}">${isDraft ? 'تکمیل پروژه' : 'ویرایش'}</button>
               ` : ''}
             </div>
           </article>
