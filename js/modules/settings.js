@@ -19,13 +19,53 @@
     if (data && Array.isArray(data.Workflows)) return data.Workflows;
     return [];
   }
+  function ensureWorkflowSettingsUI() {
+    let select = document.getElementById('settings-default-workflow');
+    let saveButton = document.getElementById('settings-save-workflow');
+    if (select && saveButton) return { select: select, saveButton: saveButton };
+
+    const container = document.querySelector('.page-container') || document.getElementById('page-content');
+    if (!container) return null;
+    let card = container.querySelector('[data-default-workflow-settings]');
+    if (!card) {
+      card = document.createElement('section');
+      card.className = 'card';
+      card.setAttribute('data-default-workflow-settings', 'true');
+      card.innerHTML =
+        '<div class="card-body">' +
+          '<h3>تنظیمات گردش کار پروژه‌ها</h3>' +
+          '<p>گردش کار پیش‌فرض برای پروژه‌های جدید را از این قسمت انتخاب کنید.</p>' +
+          '<div class="form-group">' +
+            '<label for="settings-default-workflow">گردش کار پیش‌فرض</label>' +
+            '<select id="settings-default-workflow" class="form-control" style="width:100%;min-height:42px;"><option value="">در حال دریافت گردش کارها...</option></select>' +
+          '</div>' +
+          '<button type="button" id="settings-save-workflow" class="btn btn-primary">ذخیره گردش کار پیش‌فرض</button>' +
+        '</div>';
+      const heading = container.querySelector('.page-header');
+      if (heading && heading.parentNode === container) heading.insertAdjacentElement('afterend', card);
+      else container.insertBefore(card, container.firstChild);
+    }
+    select = document.getElementById('settings-default-workflow');
+    saveButton = document.getElementById('settings-save-workflow');
+    return select && saveButton ? { select: select, saveButton: saveButton } : null;
+  }
+
   const Settings = {
     init: async function () {
-      const message = document.getElementById('settings-message');
-      const select = document.getElementById('settings-default-workflow');
-      const saveButton = document.getElementById('settings-save-workflow');
-      if (message) message.textContent = 'تنظیمات گردش کار را از این بخش مدیریت کنید.';
-      if (!select || !saveButton) return;
+      const controls = ensureWorkflowSettingsUI();
+      if (!controls) return;
+      const select = controls.select;
+      const saveButton = controls.saveButton;
+      let message = document.getElementById('settings-message');
+      if (!message) {
+        message = document.createElement('div');
+        message.id = 'settings-message';
+        message.setAttribute('role', 'status');
+        message.setAttribute('aria-live', 'polite');
+        select.closest('[data-default-workflow-settings], .card')?.insertAdjacentElement('beforebegin', message);
+      }
+      if (message) message.textContent = 'در حال دریافت فهرست گردش کارها...';
+
       let workflows = [];
       try {
         const response = await window.PMS.Api.get('/workflows');
@@ -35,23 +75,33 @@
         });
       } catch (error) {
         select.innerHTML = '<option value="">دریافت گردش کارها ناموفق بود</option>';
-        if (message) message.textContent = 'دریافت گردش کارها ممکن نشد. دسترسی مشاهده گردش کارها را بررسی کنید.';
+        if (message) message.textContent = 'بخش تنظیمات نمایش داده شد، اما دریافت فهرست گردش کارها ناموفق بود. دسترسی یا اتصال سرور را بررسی کنید.';
         saveButton.disabled = true;
+        console.error('Settings workflow list could not be loaded:', error);
         return;
       }
+
       const options = workflows.map(function (workflow) {
         return { id: String(getId(workflow) || ''), name: String(getName(workflow) || '') };
       }).filter(function (workflow) { return workflow.id; });
       let saved = '';
       try { saved = localStorage.getItem(STORAGE_KEY) || ''; } catch (error) {}
-      select.innerHTML = '<option value="">انتخاب گردش کار پیش‌فرض</option>' + options.map(function (workflow) {
-        const id = workflow.id.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const name = workflow.name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        return '<option value="' + id + '">' + name + '</option>';
-      }).join('');
-      select.value = options.some(function (workflow) { return workflow.id === saved; }) ? saved : (options.length ? options[0].id : '');
+      select.innerHTML = options.length
+        ? options.map(function (workflow) {
+            const id = workflow.id.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            const name = workflow.name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return '<option value="' + id + '">' + name + '</option>';
+          }).join('')
+        : '<option value="">گردش کار فعالی تعریف نشده است</option>';
+      select.value = options.some(function (workflow) { return workflow.id === saved; })
+        ? saved
+        : (options.length ? options[0].id : '');
       saveButton.disabled = !options.length;
-      saveButton.addEventListener('click', function () {
+      if (message) message.textContent = options.length
+        ? 'گردش کار پیش‌فرض پروژه‌های جدید را انتخاب و ذخیره کنید.'
+        : 'گردش کار فعالی برای انتخاب وجود ندارد. ابتدا یک گردش کار فعال تعریف کنید.';
+
+      saveButton.onclick = function () {
         const value = String(select.value || '');
         if (!value) {
           if (message) message.textContent = 'ابتدا یک گردش کار انتخاب کنید.';
@@ -64,7 +114,7 @@
         } catch (error) {
           if (message) message.textContent = 'ذخیره تنظیمات در این مرورگر ممکن نشد.';
         }
-      });
+      };
     }
   };
   window.PMS.Settings = Settings;
