@@ -11,6 +11,8 @@ test('one project submit automatically creates a draft when no project code is e
   const source = read('js/modules/projects.js');
   assert.doesNotMatch(source, /project-create-draft|ثبت اولیه طرح/);
   assert.ok(source.includes("draftOnly = modal.dataset.editMode !== 'true' && !project.ProjectCode"));
+  assert.ok(source.includes('${isDraftMode ? "required" : ""}'));
+  assert.ok(!source.includes('${isDraftMode || !isEditMode ? "required" : ""}'));
   assert.match(source, /RecordState: 'DRAFT'/);
   assert.ok(source.includes("const selectedAttachmentType = draftOnly ? 'PROFILE'"));
   assert.match(source, /برای ثبت اولیه، انتخاب تصویر طرح الزامی است/);
