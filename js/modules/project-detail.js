@@ -297,7 +297,7 @@
       const box = this.openProjectInformationModal((type.Name || 'اطلاعات') + (multi ? ' · جدول اطلاعات' : ''), body);
       const form = box.body.querySelector('form');
       const rowsHost = box.body.querySelector('#project-information-rows');
-      const rowTemplate = () => '<div class="project-information-row" data-information-row">' +
+      const rowTemplate = () => '<div class="project-information-row" data-information-row>' +
         columns.map(col => this.informationInput(col, '', 'column_' + col.Code)).join('') +
         '<div class="project-information-row-actions"><button type="button" class="btn btn-sm btn-danger" data-remove-information-row>حذف ردیف</button></div></div>';
       if (multi && hasColumns) {
