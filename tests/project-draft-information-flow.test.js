@@ -44,7 +44,7 @@ test('project list and detail distinguish drafts from production projects', () =
 
 test('project assets use cache-busting for the draft lifecycle changes', () => {
   const source = read('index.html');
-  assert.match(source, /projects\.js\?v=20261031-project-draft-flow-1/);
+  assert.match(source, /projects\.js\?v=20261031-draft-card-info-1/);
   assert.match(source, /project-detail\.js\?v=20261031-project-draft-flow-1/);
 });
 
