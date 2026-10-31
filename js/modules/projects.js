@@ -1298,23 +1298,24 @@
               >
             </div>
 
-            <div class="filter-group form-group project-form-field" style="margin-bottom:16px;">
+            <div class="filter-group form-group project-form-field project-workflow-field" data-project-workflow-field style="margin-bottom:16px;">
               <label for="new-project-workflow">
-                گردش کار <span style="color:var(--color-danger);">*</span>
+                گردش کار پروژه <span style="color:var(--color-danger);">*</span>
               </label>
 
               <select
                 id="new-project-workflow"
                 name="WorkflowID"
-                ${isDraftMode ? "required" : ""}
+                ${(!isEditMode || isDraftMode) ? "required" : ""}
                 style="width:100%;box-sizing:border-box;"
                 ${isEditMode && !isDraftMode ? "disabled aria-disabled=\"true\"" : ""}
+                aria-describedby="new-project-workflow-help"
               >
                 <option value="">در حال دریافت گردش کارها...</option>
               </select>
 
-              <small style="display:block;margin-top:6px;color:var(--color-text-secondary);">
-                یک گردش کار را انتخاب کنید. پس از ایجاد پروژه، مسیر گردش کار قابل تغییر نیست.
+              <small id="new-project-workflow-help" style="display:block;margin-top:6px;color:var(--color-text-secondary);">
+                گردش کار موردنظر را برای این پروژه انتخاب کنید. این انتخاب هنگام ایجاد پروژه ثبت می‌شود و پس از ایجاد قابل تغییر نیست.
               </small>
             </div>
 
