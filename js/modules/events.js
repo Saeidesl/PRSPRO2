@@ -1096,7 +1096,8 @@
         const option = document.createElement('option');
         option.value = id;
         option.textContent = type.Name || type.Code || id;
-
+        option.dataset.connectionType = isProjectEvent ? 'PROJECT' : 'INDEPENDENT';
+        option.dataset.allowOnDraft = String(type.AllowOnDraft === true || String(type.AllowOnDraft).toLowerCase() === 'true');
         typeSelect.appendChild(option);
       });
 
@@ -1110,8 +1111,33 @@
       document.getElementById('event-form-cancel')
         .addEventListener('click', () => this.closeForm());
 
+      const refreshDraftEventOptions = () => {
+        const selectedProject = this.findById(this.projects, projectSelect.value);
+        const isDraftProject = !!selectedProject && String(selectedProject.RecordState || '').toUpperCase() === 'DRAFT';
+        Array.from(typeSelect.options).forEach((option) => {
+          if (!option.value) return;
+          const blocked = isDraftProject && option.dataset.connectionType === 'PROJECT' && option.dataset.allowOnDraft !== 'true';
+          option.disabled = blocked;
+          option.hidden = blocked;
+        });
+        const selectedOption = typeSelect.options[typeSelect.selectedIndex];
+        if (selectedOption && selectedOption.disabled) {
+          typeSelect.value = '';
+          this.loadDynamicFields('');
+          this.loadConfiguredForms('');
+        }
+      };
+
       typeSelect.addEventListener('change', () => {
         const selectedType = this.findById(this.eventTypes, typeSelect.value);
+        const selectedProject = this.findById(this.projects, projectSelect.value);
+        if (selectedProject && String(selectedProject.RecordState || '').toUpperCase() === 'DRAFT' &&
+            selectedType && String(selectedType.ConnectionType || 'PROJECT').toUpperCase() !== 'INDEPENDENT' &&
+            !(selectedType.AllowOnDraft === true || String(selectedType.AllowOnDraft).toLowerCase() === 'true')) {
+          typeSelect.value = '';
+          this.showFormError('این نوع رویداد برای ثبت روی پیش‌نویس مجاز نشده است.');
+          return;
+        }
         const isIndependent = !!selectedType &&
           String(selectedType.ConnectionType || 'PROJECT').toUpperCase() === 'INDEPENDENT';
         const projectField = projectSelect.closest('.event-field');
@@ -1124,6 +1150,7 @@
       });
 
       projectSelect.addEventListener('change', () => {
+        refreshDraftEventOptions();
         this.updateSubmitAvailability();
         this.renderVariantFields();
       });
@@ -1148,6 +1175,7 @@
         }
       });
 
+      refreshDraftEventOptions();
       this.updateSubmitAvailability();
 
       const firstInput = document.getElementById('event-form-project');
