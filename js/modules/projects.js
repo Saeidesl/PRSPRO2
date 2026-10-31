@@ -734,6 +734,14 @@
     },
 
     loadStageLookups: async function () {
+      const router = window.PMS && window.PMS.Router;
+      const permissions = router && Array.isArray(router.permissions) ? router.permissions : [];
+      const canReadWorkflowStages = !!(router &&
+        ((typeof router.isAdmin === 'function' && router.isAdmin()) ||
+          permissions.indexOf('PROJECT_VIEW') !== -1 ||
+          permissions.indexOf('WORKFLOW_MANAGE') !== -1));
+      if (!canReadWorkflowStages) return;
+
       const workflowIds = Array.from(new Set((this.projects || [])
         .map((project) => String(project.WorkflowID || project.WorkflowId || ''))
         .filter(Boolean))).sort();
