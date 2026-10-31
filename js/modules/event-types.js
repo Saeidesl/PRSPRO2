@@ -628,6 +628,7 @@
         '<section class="et-section" id="et-project-settings">' +
           '<h4>۲. تنظیمات گردش پروژه</h4>' +
           '<span class="et-section-description">مشخص کن پس از ثبت این رویداد، پروژه به کدام واحد منتقل شود و وضعیت آن تغییر کند یا نه.</span>' +
+          '<div class="form-group et-full"><label style="display:block;padding:12px;border:1px solid var(--color-border);border-radius:8px"><input name="AllowOnDraft" type="checkbox"> اجازه ثبت این رویداد پیش از تکمیل مشخصات پایه پروژه</label><small class="et-muted">فقط برای رویدادهای مرتبط با پروژه. فعال‌سازی این گزینه پروژه را خودکار تکمیل نمی‌کند؛ مقدار پیش‌فرض خاموش است.</small></div>' +
 
           '<div class="et-form-grid">' +
 
@@ -846,6 +847,7 @@
       setFieldChecked(form, 'UseProjectSizes', item.UseProjectSizes);
       setFieldChecked(form, 'TrackVariantQuantity', item.TrackVariantQuantity);
       setFieldChecked(form, 'IsWorkCompletion', item.IsWorkCompletion);
+      setFieldChecked(form, 'AllowOnDraft', item.AllowOnDraft);
 
       setSelectedCheckboxes(form, 'AllowedDepartmentIDs', item.AllowedDepartmentIDs);
       setSelectedCheckboxes(form, 'AllowedUserIDs', item.AllowedUserIDs);
@@ -989,6 +991,7 @@
       const isIndependent = connectionTypeField.value === 'INDEPENDENT';
       projectSettingsSection.hidden = isIndependent;
       eventFormSettingsSection.hidden = isIndependent;
+      if (isIndependent) setFieldChecked(form, 'AllowOnDraft', false);
     };
     connectionTypeField.addEventListener('change', refreshConnectionTypeSettings);
     refreshConnectionTypeSettings();
@@ -1066,7 +1069,8 @@
         UseProjectColors: fieldChecked(form, 'UseProjectColors'),
         UseProjectSizes: fieldChecked(form, 'UseProjectSizes'),
         TrackVariantQuantity: fieldChecked(form, 'TrackVariantQuantity'),
-        IsWorkCompletion: fieldChecked(form, 'IsWorkCompletion')
+        IsWorkCompletion: fieldChecked(form, 'IsWorkCompletion'),
+        AllowOnDraft: fieldChecked(form, 'AllowOnDraft')
       };
 
       if (!payload.Name || !payload.Code) {

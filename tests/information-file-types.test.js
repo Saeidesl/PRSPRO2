@@ -26,6 +26,7 @@ test('reusable event forms upload image and file values to the selected project 
   assert.match(module,/collectConfiguredFormResponses: async function \(projectId\)/);
   assert.match(module,/uploadConfiguredFormFile: async function/);
   assert.match(module,/await this\.collectConfiguredFormResponses\(projectId\)/);
-  assert.match(module,/AttachmentType:'INFORMATION'/);
+  assert.match(module,/AttachmentType:attachmentType/);
+  assert.match(module,/: 'INFORMATION'/);
   assert.match(module,/بارگذاری فایل در رویداد مستقل امکان‌پذیر نیست/);
 });
