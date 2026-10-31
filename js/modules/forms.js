@@ -8,7 +8,7 @@
       if(button) button.addEventListener('click',()=>this.openForm(null));
       document.querySelectorAll('[data-forms-tab]').forEach(tab=>tab.addEventListener('click',()=>this.switchTab(tab.dataset.formsTab)));
       const eventSelect=document.getElementById('forms-connect-event-type');
-      if(eventSelect)eventSelect.addEventListener('change',()=>{this.selectedEventTypeId=eventSelect.value;this.loadMappings();});
+      if(eventSelect)eventSelect.addEventListener('change',()=>{this.selectedEventTypeId=eventSelect.value;this.mappings=[];this.updateConnectionControls();this.loadMappings();});
       const formSelect=document.getElementById('forms-connect-form');
       if(formSelect)formSelect.addEventListener('change',()=>this.updateConnectionControls());
       const connectButton=document.getElementById('forms-connect-submit');
