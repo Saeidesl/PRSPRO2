@@ -743,8 +743,26 @@
           '</div>' +
         '</section>' +
 
+        '<section class="et-section" id="et-form-settings">' +
+          '<h4>۵. فرم‌های متصل به این رویداد</h4>' +
+          '<span class="et-section-description">فرم‌هایی را انتخاب کن که هنگام ثبت این نوع رویداد برای کاربر نمایش داده شوند. می‌توانی تکمیل هر فرم را اجباری یا اختیاری کنی.</span>' +
+          '<div class="et-form-grid">' +
+            '<div class="form-group">' +
+              '<label for="et-form-select">انتخاب فرم</label>' +
+              '<select id="et-form-select"><option value="">در حال دریافت فرم‌ها...</option></select>' +
+            '</div>' +
+            '<div class="form-group">' +
+              '<label><input id="et-form-required" type="checkbox" checked> تکمیل فرم اجباری باشد</label>' +
+            '</div>' +
+            '<div class="form-group et-full">' +
+              '<button type="button" class="btn btn-secondary" id="et-form-attach">افزودن فرم به رویداد</button>' +
+            '</div>' +
+          '</div>' +
+          '<div id="et-form-mappings" class="et-field-list"><p class="et-muted">در حال دریافت اتصال‌ها...</p></div>' +
+        '</section>' +
+
         '<section class="et-section">' +
-          '<h4>۵. فیلدهای اختصاصی این نوع رویداد</h4>' +
+          '<h4>۶. فیلدهای اختصاصی این نوع رویداد</h4>' +
           '<span class="et-section-description">می‌توانی هنگام تعریف نوع رویداد، فیلدهای مخصوص همان رویداد را هم اضافه کنی. این فیلدها به‌صورت سراسری تعریف نمی‌شوند.</span>' +
           '<div id="et-inline-fields">' +
             '<p class="et-muted">' +
@@ -838,10 +856,139 @@
 
     form.querySelector('#et-cancel').addEventListener('click', modal.close);
 
+    const eventFormSelect = form.querySelector('#et-form-select');
+    const eventFormMappingsBox = form.querySelector('#et-form-mappings');
+    const eventFormAttachButton = form.querySelector('#et-form-attach');
+    const eventFormRequiredInput = form.querySelector('#et-form-required');
+    let activeReusableForms = [];
+    let savedEventFormMappings = [];
+    const pendingEventForms = [];
+
+    function unwrapEventFormResponse(value) {
+      return value && value.data !== undefined ? value.data : value;
+    }
+
+    function renderEventFormMappings() {
+      const rows = editing ? savedEventFormMappings : pendingEventForms;
+      if (!rows.length) {
+        eventFormMappingsBox.innerHTML = '<p class="et-muted">هنوز فرمی برای این رویداد انتخاب نشده است.</p>';
+        return;
+      }
+      eventFormMappingsBox.innerHTML = rows.map(function (mapping, index) {
+        const linkedForm = mapping.Form || {};
+        const formName = linkedForm.Name || linkedForm.Code || mapping.FormName || mapping.FormID;
+        const required = isChecked(mapping.IsRequired);
+        const mappingId = mapping.ID || '';
+        return '<div class="et-field-row"><span>' + escapeHtml(formName || 'فرم') +
+          ' · ' + (required ? 'اجباری' : 'اختیاری') + '</span>' +
+          '<button type="button" class="btn btn-sm btn-secondary" data-remove-event-form="' +
+          escapeAttribute(editing ? mappingId : String(index)) + '">قطع اتصال</button></div>';
+      }).join('');
+      eventFormMappingsBox.querySelectorAll('[data-remove-event-form]').forEach(function (button) {
+        button.addEventListener('click', async function () {
+          if (editing) {
+            if (!button.dataset.removeEventForm) return;
+            button.disabled = true;
+            try {
+              await PMS.Api.delete('/event-type-forms/' + encodeURIComponent(button.dataset.removeEventForm));
+              await refreshEventFormMappings();
+            } catch (error) {
+              button.disabled = false;
+              showMessage(error.message || 'قطع اتصال فرم ناموفق بود.');
+            }
+          } else {
+            pendingEventForms.splice(Number(button.dataset.removeEventForm), 1);
+            renderEventFormMappings();
+          }
+        });
+      });
+    }
+
+    async function refreshEventFormMappings() {
+      if (!editing) {
+        renderEventFormMappings();
+        return;
+      }
+      const response = await PMS.Api.get('/event-types/' + encodeURIComponent(eventTypeId) + '/forms');
+      savedEventFormMappings = normalizeList(unwrapEventFormResponse(response), 'eventTypes');
+      renderEventFormMappings();
+    }
+
+    async function loadEventFormOptions() {
+      try {
+        const response = await PMS.Api.get('/forms');
+        const formsData = unwrapEventFormResponse(response);
+        activeReusableForms = normalizeList(formsData, 'forms').filter(function (reusableForm) {
+          return String(reusableForm.Status || 'ACTIVE').toUpperCase() === 'ACTIVE';
+        });
+        eventFormSelect.innerHTML = '<option value="">انتخاب فرم</option>' +
+          activeReusableForms.map(function (reusableForm) {
+            return '<option value="' + escapeAttribute(getId(reusableForm)) + '">' +
+              escapeHtml(getName(reusableForm) || reusableForm.Code || getId(reusableForm)) + '</option>';
+          }).join('');
+        await refreshEventFormMappings();
+        if (!activeReusableForms.length) {
+          eventFormSelect.innerHTML = '<option value="">ابتدا از بخش مدیریت فرم‌ها یک فرم فعال بساز</option>';
+          eventFormAttachButton.disabled = true;
+        }
+      } catch (error) {
+        eventFormSelect.innerHTML = '<option value="">دریافت فهرست فرم‌ها ناموفق بود</option>';
+        eventFormAttachButton.disabled = true;
+        eventFormMappingsBox.innerHTML = '<p class="et-muted">دریافت فرم‌ها یا اتصال‌های قبلی ناموفق بود. فرم را ذخیره کن و دوباره وارد ویرایش شو.</p>';
+        console.warn('Event type form mappings could not be loaded:', error);
+      }
+    }
+
+    eventFormAttachButton.addEventListener('click', async function () {
+      const formId = eventFormSelect.value;
+      if (!formId) {
+        showMessage('ابتدا یک فرم را انتخاب کن.');
+        return;
+      }
+      const alreadyLinked = (editing ? savedEventFormMappings : pendingEventForms)
+        .some(function (mapping) { return String(mapping.FormID) === String(formId); });
+      if (alreadyLinked) {
+        showMessage('این فرم قبلاً به رویداد متصل شده است.');
+        return;
+      }
+      const reusableForm = activeReusableForms.find(function (entry) {
+        return String(getId(entry)) === String(formId);
+      });
+      const required = eventFormRequiredInput.checked;
+      if (!editing) {
+        pendingEventForms.push({
+          FormID: formId,
+          FormName: getName(reusableForm) || (reusableForm && reusableForm.Code) || formId,
+          IsRequired: required
+        });
+        renderEventFormMappings();
+        eventFormSelect.value = '';
+        return;
+      }
+      eventFormAttachButton.disabled = true;
+      try {
+        await PMS.Api.post('/event-types/' + encodeURIComponent(eventTypeId) + '/forms', {
+          FormID: formId,
+          IsRequired: required
+        });
+        eventFormSelect.value = '';
+        await refreshEventFormMappings();
+      } catch (error) {
+        showMessage(error.message || 'اتصال فرم ناموفق بود.');
+      } finally {
+        eventFormAttachButton.disabled = false;
+      }
+    });
+
+    loadEventFormOptions();
+
     const connectionTypeField = form.elements.namedItem('ConnectionType');
     const projectSettingsSection = form.querySelector('#et-project-settings');
+    const eventFormSettingsSection = form.querySelector('#et-form-settings');
     const refreshConnectionTypeSettings = function () {
-      projectSettingsSection.hidden = connectionTypeField.value === 'INDEPENDENT';
+      const isIndependent = connectionTypeField.value === 'INDEPENDENT';
+      projectSettingsSection.hidden = isIndependent;
+      eventFormSettingsSection.hidden = isIndependent;
     };
     connectionTypeField.addEventListener('change', refreshConnectionTypeSettings);
     refreshConnectionTypeSettings();
@@ -926,6 +1073,11 @@
         showMessage('نام و کد نوع رویداد الزامی است.');
         return;
       }
+      if (payload.ConnectionType === 'INDEPENDENT' && pendingEventForms.length) {
+        showMessage('فرم‌های متصل فقط برای رویدادهای مرتبط با پروژه قابل انتخاب هستند.');
+        return;
+      }
+
       if (payload.ConnectionType === 'INDEPENDENT' &&
           (payload.UseProjectColors || payload.UseProjectSizes || payload.TrackVariantQuantity)) {
         showMessage('برای رویداد مستقل از پروژه، رنگ‌بندی، سایزبندی و ثبت مقدار ترکیب باید غیرفعال باشند.');
@@ -982,7 +1134,20 @@
           const createdId = created && getId(created);
 
           if (createdId) {
-            showMessage('نوع رویداد ثبت شد. اکنون می‌توانی فیلد اختصاصی اضافه کنی.');
+            try {
+              for (const mapping of pendingEventForms) {
+                await PMS.Api.post('/event-types/' + encodeURIComponent(createdId) + '/forms', {
+                  FormID: mapping.FormID,
+                  IsRequired: mapping.IsRequired
+                });
+              }
+              showMessage(pendingEventForms.length
+                ? 'نوع رویداد و فرم‌های انتخاب‌شده با موفقیت ثبت شدند.'
+                : 'نوع رویداد ثبت شد. اکنون می‌توانی فیلد اختصاصی اضافه کنی.');
+            } catch (mappingError) {
+              showMessage('نوع رویداد ثبت شد، اما اتصال یکی از فرم‌ها انجام نشد. از ویرایش نوع رویداد دوباره تلاش کن. ' +
+                (mappingError.message || ''));
+            }
             modal.close();
             await openEventTypeForm(createdId);
           } else {
