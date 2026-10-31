@@ -7,15 +7,18 @@ const path = require('node:path');
 
 const read = (name) => fs.readFileSync(path.join(__dirname, '..', name), 'utf8');
 
-test('current project form offers initial draft registration with name and profile image', () => {
+test('one project submit automatically creates a draft when no project code is entered', () => {
   const source = read('js/modules/projects.js');
-  assert.match(source, /project-create-draft/);
-  assert.match(source, /ثبت اولیه طرح \(نام و تصویر\)/);
+  const formStart = source.indexOf('project-form-actions');
+  const formEnd = source.indexOf('</form>', formStart);
+  const form = source.slice(formStart, formEnd);
+  assert.doesNotMatch(form, /project-create-draft|ثبت اولیه طرح/);
+  assert.match(source, /draftOnly = modal\\.dataset\\.editMode !== 'true' && !project\\.ProjectCode/);
   assert.match(source, /RecordState: 'DRAFT'/);
-  assert.match(source, /draftOnly \? 'PROFILE'/);
+  assert.match(source, /const selectedAttachmentType = draftOnly \\? 'PROFILE'/);
   assert.match(source, /برای ثبت اولیه، انتخاب تصویر طرح الزامی است/);
+  assert.match(source, /پیش‌نویس پروژه ثبت شد/);
 });
-
 test('draft projects can be reopened and completed through the existing project edit API', () => {
   const source = read('js/modules/projects.js');
   assert.match(source, /modal\.dataset\.draftMode = 'true'/);
