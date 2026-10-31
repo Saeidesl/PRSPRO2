@@ -34,5 +34,5 @@ test('project dossier exposes revision history with before and after values', ()
 
 test('project detail script cache version is refreshed for the dossier UI', () => {
   const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  assert.match(index, /project-detail\.js\?v=20261031-cardinality-rows-1/);
+  assert.match(index, /project-detail\.js\?v=20261031-information-files-1/);
 });
