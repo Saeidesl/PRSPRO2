@@ -58,7 +58,7 @@
       roles: ['ROLE_MANAGE'],
       permissions: ['PERMISSION_MANAGE'],
       audit: ['REPORT_VIEW'],
-      settings: ['SYSTEM_SETTINGS'],
+      settings: ['SYSTEM_SETTINGS', 'PROJECT_CREATE'],
       admin: ['SYSTEM_SETTINGS']
     },
 
