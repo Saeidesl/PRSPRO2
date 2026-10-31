@@ -59,6 +59,17 @@ test('event entry loads assigned forms, submits FormResponses and displays saved
   assert.match(events,/event-form-group/);
 });
 
+test('assigned forms load independently from legacy event fields',()=>{
+  const module=read('js/modules/events.js');
+  const start=module.indexOf('loadDynamicFields: async function');
+  const end=module.indexOf('updateSubmitAvailability: function',start);
+  const loader=module.slice(start,end);
+  assert.ok(loader.indexOf('this.loadConfiguredForms(selectedTypeId)') < loader.indexOf("'/event-types/' + encodeURIComponent(selectedTypeId) + '/fields'"));
+  assert.match(loader,/await configuredFormsLoad/);
+  assert.match(module,/Array\.isArray\(data\.forms\)/);
+  assert.match(module,/Array\.isArray\(data\.data\)/);
+});
+
 test('form table rendering separates one-row and repeatable cardinality',()=>{
   const events=read('js/modules/events.js');
   const types=read('js/modules/information-types.js');
