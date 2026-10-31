@@ -82,6 +82,7 @@
       '<div class="form-group form-grid-full"><label>توضیحات</label><textarea name="Description" rows="2">'+esc(item&&item.Description)+'</textarea></div>'+
       '<div class="form-group"><label>ساختار اطلاعات</label><select name="Cardinality"><option value="SINGLE">تک‌مقداری</option><option value="MULTIPLE">چندمقداری (جدولی)</option></select></div>'+
       '<div class="form-group"><label>وضعیت</label><select name="Status"><option value="ACTIVE">فعال</option><option value="INACTIVE">غیرفعال</option></select></div>'+
+      '<div class="form-group form-grid-full"><label><input type="checkbox" name="ShowOnCard"> نمایش این اطلاعات در کارت پروژه</label><small>مقدار جاری این نوع اطلاعات در کارت پروژه‌ها نمایش داده می‌شود.</small></div>'+
       '<div class="form-group"><label>نوع داده</label><select name="DataType"><option value="text">متن</option><option value="textarea">متن چندخطی</option><option value="number">عدد</option><option value="date">تاریخ</option><option value="datetime">تاریخ و زمان</option><option value="boolean">بله/خیر</option><option value="select">فهرست انتخابی</option><option value="image">تصویر</option><option value="file">فایل</option></select></div>'+
       '<div class="form-group form-grid-full"><label>گزینه‌ها (برای فهرست انتخابی، با ویرگول جدا شوند)</label><input name="Options" placeholder="قرمز، آبی، مشکی"></div>'+
       '<div class="form-group form-grid-full"><label>قواعد اعتبارسنجی (JSON اختیاری)</label><input name="Rules" placeholder="{&quot;min&quot;:1,&quot;max&quot;:100}"></div>'+
@@ -90,6 +91,7 @@
     form.elements.Cardinality.value=item&&item.Cardinality||'SINGLE';
     form.elements.Status.value=item&&item.Status||'ACTIVE';
     form.elements.DataType.value=item&&item.DataType||'text';
+    form.elements.ShowOnCard.checked=!!(item&&(item.ShowOnCard===true||String(item.ShowOnCard).toLowerCase()==='true'));
     form.elements.Options.value='';
     try{const opts=JSON.parse(item&&item.OptionsJSON||'[]');form.elements.Options.value=Array.isArray(opts)?opts.map(x=>typeof x==='object'?x.value:x).join(', '):'';}catch(e){}
     try{form.elements.Rules.value=JSON.stringify(JSON.parse(item&&item.ValidationRuleJSON||'{}'));}catch(e){form.elements.Rules.value='';}
@@ -98,7 +100,7 @@
       e.preventDefault();
       let rules={};try{rules=JSON.parse(form.elements.Rules.value||'{}');}catch(err){message('قواعد اعتبارسنجی باید JSON معتبر باشد.',true);return;}
       const options=form.elements.Options.value.split(',').map(x=>x.trim()).filter(Boolean);
-      const payload={Name:form.elements.Name.value.trim(),Code:form.elements.Code.value.trim(),Description:form.elements.Description.value.trim(),Cardinality:form.elements.Cardinality.value,DataType:form.elements.DataType.value,Status:form.elements.Status.value,OptionsJSON:JSON.stringify(options),ValidationRuleJSON:JSON.stringify(rules)};
+      const payload={Name:form.elements.Name.value.trim(),Code:form.elements.Code.value.trim(),Description:form.elements.Description.value.trim(),Cardinality:form.elements.Cardinality.value,DataType:form.elements.DataType.value,Status:form.elements.Status.value,ShowOnCard:form.elements.ShowOnCard.checked,OptionsJSON:JSON.stringify(options),ValidationRuleJSON:JSON.stringify(rules)};
       const save=form.querySelector('[type="submit"]');save.disabled=true;
       try{if(editing)await PMS.Api.put('/information-types/'+encodeURIComponent(item.ID),payload);else await PMS.Api.post('/information-types',payload);box.close();message('تعریف اطلاعات ذخیره شد.');await load();}
       catch(err){message(err.message||'ذخیره اطلاعات ناموفق بود.',true);save.disabled=false;}
