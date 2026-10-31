@@ -1308,14 +1308,14 @@
                 name="WorkflowID"
                 ${(!isEditMode || isDraftMode) ? "required" : ""}
                 style="width:100%;box-sizing:border-box;"
-                ${isEditMode && !isDraftMode ? "disabled aria-disabled=\"true\"" : ""}
+                
                 aria-describedby="new-project-workflow-help"
               >
                 <option value="">در حال دریافت گردش کارها...</option>
               </select>
 
               <small id="new-project-workflow-help" style="display:block;margin-top:6px;color:var(--color-text-secondary);">
-                گردش کار موردنظر را برای این پروژه انتخاب کنید. این انتخاب هنگام ایجاد پروژه ثبت می‌شود و پس از ایجاد قابل تغییر نیست.
+                گردش کار موردنظر را انتخاب کنید. در صورت ثبت رویداد برای پروژه، تغییر گردش کار طبق محدودیت‌های سامانه امکان‌پذیر نخواهد بود.
               </small>
             </div>
 
