@@ -1341,6 +1341,11 @@
         '<div class="event-inline-loading"><span class="event-spinner" aria-hidden="true"></span>' +
         '<span>در حال آماده‌سازی فیلدهای این رویداد...</span></div>';
 
+      // Load reusable forms independently from legacy event fields. A failure
+      // in the latter must not prevent forms assigned to this event type from
+      // appearing in the event-entry modal.
+      const configuredFormsLoad = this.loadConfiguredForms(selectedTypeId);
+
       try {
         const response = await PMS.Api.get(
           '/event-types/' + encodeURIComponent(selectedTypeId) + '/fields'
@@ -1366,7 +1371,7 @@
 
         this.eventFields = fields;
         this.renderDynamicFields(fields);
-        await this.loadConfiguredForms(selectedTypeId);
+        await configuredFormsLoad;
 
         this.fieldsLoading = false;
         this.fieldsReady = true;
@@ -1522,8 +1527,16 @@
       try {
         const response = await PMS.Api.get('/event-types/' + encodeURIComponent(eventTypeId) + '/forms');
         if (requestId !== this.formsRequestId || !document.getElementById('event-create-modal')) return;
-        const data = PMS.Api.extractData(response);
-        this.formDefinitions = Array.isArray(data) ? data : (data && Array.isArray(data.items) ? data.items : []);
+        let data = PMS.Api.extractData(response);
+        // Accept the canonical API array and common envelope variants so
+        // harmless response wrapping changes cannot silently hide assigned forms.
+        for (let depth = 0; depth < 3 && data && !Array.isArray(data); depth++) {
+          if (Array.isArray(data.items)) data = data.items;
+          else if (Array.isArray(data.forms)) data = data.forms;
+          else if (Array.isArray(data.data)) data = data.data;
+          else break;
+        }
+        this.formDefinitions = Array.isArray(data) ? data : [];
         this.renderConfiguredForms();
         this.formsReady = true;
       } catch (error) {
