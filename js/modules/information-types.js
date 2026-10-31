@@ -49,10 +49,10 @@
     const rows=state.items.filter(function(item){return !query||[item.Name,item.Code,item.Description].join(' ').toLowerCase().includes(query);});
     if(!rows.length){container.innerHTML='';container.hidden=true;if(empty){empty.hidden=false;empty.textContent=query?'موردی با این جستجو پیدا نشد.':'هنوز نوع اطلاعاتی تعریف نشده است.';}return;}
     if(empty)empty.hidden=true;
-    container.innerHTML='<table class="data-table"><thead><tr><th>عنوان</th><th>کد</th><th>ساختار</th><th>نوع داده</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody>'+
+    container.innerHTML='<table class="data-table"><thead><tr><th>عنوان</th><th>کد</th><th>تعدادپذیری</th><th>نوع داده پایه</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody>'+
       rows.map(function(item){
         const multi=String(item.Cardinality).toUpperCase()==='MULTIPLE';
-        return '<tr><td>'+esc(item.Name)+'</td><td><code>'+esc(item.Code)+'</code></td><td>'+(multi?'چندمقداری / جدولی':'تک‌مقداری')+'</td><td>'+esc(multi?'ستون‌های قابل تعریف':item.DataType)+'</td><td>'+esc(item.Status||'ACTIVE')+'</td><td class="table-actions">'+
+        return '<tr><td>'+esc(item.Name)+'</td><td><code>'+esc(item.Code)+'</code></td><td>'+(multi?'چندمقداری':'تک‌مقداری')+'</td><td>'+esc(item.DataType||'متن')+'</td><td>'+esc(item.Status||'ACTIVE')+'</td><td class="table-actions">'+
           '<button type="button" class="btn btn-sm btn-light" data-columns="'+esc(item.ID)+'">ستون‌ها</button> '+
           '<button type="button" class="btn btn-sm btn-light" data-edit="'+esc(item.ID)+'">ویرایش</button> '+
           '<button type="button" class="btn btn-sm btn-danger" data-disable="'+esc(item.ID)+'">غیرفعال‌سازی</button></td></tr>';
@@ -93,8 +93,6 @@
     form.elements.Options.value='';
     try{const opts=JSON.parse(item&&item.OptionsJSON||'[]');form.elements.Options.value=Array.isArray(opts)?opts.map(x=>typeof x==='object'?x.value:x).join(', '):'';}catch(e){}
     try{form.elements.Rules.value=JSON.stringify(JSON.parse(item&&item.ValidationRuleJSON||'{}'));}catch(e){form.elements.Rules.value='';}
-    form.elements.Cardinality.addEventListener('change',function(){if(form.elements.Cardinality.value==='MULTIPLE'){form.elements.DataType.value='text';form.elements.DataType.disabled=true;}else form.elements.DataType.disabled=false;});
-    form.elements.Cardinality.dispatchEvent(new Event('change'));
     form.querySelector('[data-close]').addEventListener('click',box.close);
     form.addEventListener('submit',async function(e){
       e.preventDefault();
