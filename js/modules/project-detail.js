@@ -858,9 +858,13 @@
         code.textContent = project.ProjectCode || '-';
       }
 
+      const isDraft = String(project.RecordState || '').toUpperCase() === 'DRAFT';
       if (status) {
-        status.textContent = this.statusText(project.Status);
+        status.textContent = isDraft ? 'پیش‌نویس — نیازمند تکمیل' : this.statusText(project.Status);
       }
+      const addEventButton = document.getElementById('project-add-event-button');
+      if (addEventButton) addEventButton.hidden = isDraft || addEventButton.hidden;
+
 
       if (step) {
         step.textContent = this.getStepName(project.CurrentStepID);
@@ -895,6 +899,7 @@
         info.innerHTML =
           '<div class="detail-list">' +
             this.detailRow('شناسه پروژه', project.ID) +
+            this.detailRow('وضعیت تکمیل پرونده', isDraft ? 'پیش‌نویس؛ برای ثبت رویداد ابتدا اطلاعات پایه و گردش‌کار را تکمیل کنید.' : 'تکمیل‌شده') +
             this.detailRow('کد پروژه', project.ProjectCode) +
             this.detailRow('عنوان پروژه', project.Title) +
             this.detailRow('تعداد اولیه', project.Quantity) +
