@@ -1121,7 +1121,13 @@
           if (!option.value) return;
           const blocked = isDraftProject && option.dataset.connectionType === 'PROJECT' && option.dataset.allowOnDraft !== 'true';
           option.disabled = blocked;
-          option.hidden = blocked;
+          // Keep all event types visible; explain which ones are unavailable on drafts.
+          // Hiding every non-draft-enabled type made the list look as if it had not loaded.
+          option.hidden = false;
+          if (!option.dataset.originalLabel) option.dataset.originalLabel = option.textContent;
+          option.textContent = blocked
+            ? option.dataset.originalLabel + ' (غیرمجاز برای پیش‌نویس)'
+            : option.dataset.originalLabel;
         });
         const selectedOption = typeSelect.options[typeSelect.selectedIndex];
         if (selectedOption && selectedOption.disabled) {
