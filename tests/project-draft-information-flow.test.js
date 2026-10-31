@@ -29,6 +29,7 @@ test('project creators can see and reopen their own drafts without project-view 
   assert.match(source, /permissions\.indexOf\('PROJECT_CREATE'\) !== -1/);
   assert.match(source, /canEditThisProject = this\.canEditProjects\(\) \|\| \(isDraft && this\.canCreateOrEditProjects\(\)\)/);
   assert.match(source, /localDraft && this\.canCreateOrEditProjects\(\)/);
+  assert.match(source, /canReadWorkflowStages/);
 });
 
 test('project list and detail distinguish drafts from production projects', () => {
