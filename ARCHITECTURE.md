@@ -113,3 +113,12 @@
 - مقادیر ذخیره‌شده در اطلاعات پروژه یا پاسخ فرم فقط `AttachmentID`, `FileName`, `MimeType`, `FileSize`, `AttachmentType` را نگه می‌دارند. دانلود و پیش‌نمایش از API کنترل‌شده `/attachments/:id/download` عبور می‌کند.
 - فایل‌های فرم پروژه به شناسه پروژه متصل می‌شوند؛ ثبت فرم دارای فایل در رویداد مستقل پشتیبانی نمی‌شود.
 - آزمون‌های رگرسیون فرانت‌اند در `tests/information-file-types.test.js` و بک‌اند در `tests/information-file-types.test.js` اضافه شده‌اند. آزمون عملی کاربر هنوز برای این تسک لازم است.
+
+## 2026-10-31 — جداسازی طراحی فرم و اتصال به رویداد
+
+- `pages/forms.html`: صفحه مدیریت فرم‌ها دو نمای مستقل با تب‌های `طراحی فرم‌ها` و `اتصال فرم به رویداد` دارد؛ طراحی شامل فهرست/مشخصات/فیلدها و اتصال شامل انتخاب نوع رویداد، فرم فعال، اجباری/اختیاری بودن و فهرست اتصال‌های همان رویداد است.
+- `js/modules/forms.js`: `Forms.switchTab`, `renderConnectionOptions`, `loadMappings`, `renderMappings`, `connectForm`, `openDesigner`؛ طراح دیگر کنترل اتصال به رویداد ندارد. انتخاب نوع رویداد اتصال‌های قبلی را بارگذاری می‌کند، از اتصال تکراری جلوگیری می‌شود و قطع اتصال از همان نمای مستقل انجام می‌گیرد.
+- مسیرهای موجود بدون تغییر استفاده می‌شوند: `GET /forms`, `GET /information-types`, `GET /event-types`, `GET /forms/:id`, `POST /forms/:id/fields`, `PUT /form-fields/:id`, `DELETE /form-fields/:id`, `GET /event-types/:id/forms`, `POST /event-types/:id/forms`, `DELETE /event-type-forms/:id`.
+- `css/reusable-forms.css`: تب‌ها، راهنمای سه‌مرحله‌ای اتصال، کارت اتصال‌ها، وضعیت خالی و چیدمان واکنش‌گرا برای موبایل و تم‌های موجود.
+- `tests/reusable-forms.test.js`: جدایی ساختاری دو نما، حذف کنترل اتصال از طراح، استفاده از APIهای موجود و کنترل اتصال تکراری/درخواست‌های هم‌زمان را پوشش می‌دهد.
+- `index.html`: cache-busting ماژول و stylesheet فرم‌ها با شناسه `20261031-form-workspace-1` به‌روز شده است. تنظیمات inline اتصال در `event-types.js` برای حفظ سازگاری موجود دست‌نخورده مانده است.
