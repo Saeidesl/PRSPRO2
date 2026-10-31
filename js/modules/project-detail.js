@@ -190,11 +190,11 @@
           const dataRows = multi ? (Array.isArray(value) ? value : []) : (value && typeof value === 'object' ? [value] : []);
           content = dataRows.length
             ? '<div class="table-wrapper"><table class="data-table"><thead><tr>' + columns.map(col => '<th>' + this.escape(col.Name) + '</th>').join('') + '</tr></thead><tbody>' +
-              dataRows.map(row => '<tr>' + columns.map(col => '<td>' + this.escape(this.informationValue(row[String(col.Code)])) + '</td>').join('') + '</tr>').join('') +
+              dataRows.map(row => '<tr>' + columns.map(col => '<td>' + this.renderInformationValue(row[String(col.Code)], col.DataType) + '</td>').join('') + '</tr>').join('') +
               '</tbody></table></div>'
             : '<div class="project-information-empty">جدولی ثبت نشده است.</div>';
         } else if (hasValue) {
-          content = '<div class="project-information-value">' + this.escape(this.informationValue(value)) + '</div>';
+          content = '<div class="project-information-value">' + this.renderInformationValue(value, type.DataType) + '</div>';
         }
         return '<article class="project-information-item">' +
           '<div class="project-information-item-head"><div><strong>' + this.escape(name) + '</strong><small>' +
@@ -223,7 +223,81 @@
           alert(err.message || 'حذف اطلاعات انجام نشد.');
         }
       }));
+      container.querySelectorAll('[data-information-attachment]').forEach(btn => btn.addEventListener('click', () => {
+        this.openInformationAttachment(btn.dataset.informationAttachment, btn.dataset.informationPreview === 'true');
+      }));
       this.ensureProjectInformationStyles();
+    },
+
+    renderInformationValue: function (value, dataType) {
+      const type = String(dataType || '').toLowerCase();
+      if ((type === 'image' || type === 'file') && value && typeof value === 'object') {
+        const id = value.AttachmentID || value.ID;
+        if (!id) return '<span>-</span>';
+        if (!this.canViewInformationFiles()) return '<span>' + this.escape(value.FileName || 'فایل ثبت‌شده') + '</span>';
+        return '<span class="information-file-value">' + this.escape(value.FileName || 'فایل ثبت‌شده') +
+          ' <button type="button" class="btn btn-sm btn-light" data-information-attachment="' + this.escape(id) +
+          '" data-information-preview="' + (type === 'image' ? 'true' : 'false') + '">' +
+          (type === 'image' ? 'پیش‌نمایش' : 'دریافت') + '</button></span>';
+      }
+      return this.escape(this.informationValue(value));
+    },
+
+    openInformationAttachment: async function (attachmentId, preview) {
+      if (!this.canViewInformationFiles()) return;
+      try {
+        const response = await window.PMS.Api.get('/attachments/' + encodeURIComponent(attachmentId) + '/download', { trackSync: false });
+        const data = window.PMS.Api.extractData ? window.PMS.Api.extractData(response) : (response && response.data) || response;
+        if (!data || !data.Base64) throw new Error('محتوای فایل دریافت نشد.');
+        const binary = window.atob(data.Base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+        const blob = new Blob([bytes], { type: data.MimeType || 'application/octet-stream' });
+        const url = URL.createObjectURL(blob);
+        if (preview && String(data.MimeType || '').toLowerCase().indexOf('image/') === 0) {
+          const box = this.openProjectInformationModal(data.FileName || 'پیش‌نمایش تصویر',
+            '<div class="information-image-preview"><img alt="' + this.escape(data.FileName || 'تصویر') + '" src="' + url + '"></div>');
+          const oldClose = box.close;
+          box.close = function () { URL.revokeObjectURL(url); oldClose(); };
+        } else {
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = data.FileName || 'download';
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 30000);
+        }
+      } catch (error) {
+        alert(error.message || 'دریافت فایل ناموفق بود.');
+      }
+    },
+
+    uploadInformationFile: async function (file, dataType) {
+      if (!file) return '';
+      if (!this.canUploadInformationFiles()) throw new Error('مجوز بارگذاری پیوست را ندارید.');
+      const maxBytes = 10 * 1024 * 1024;
+      const extension = String(file.name || '').split('.').pop().toLowerCase();
+      const mimeByExtension = {jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',webp:'image/webp',gif:'image/gif',pdf:'application/pdf',doc:'application/msword',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',xls:'application/vnd.ms-excel',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'};
+      const mime = String(file.type || mimeByExtension[extension] || '').toLowerCase();
+      const allowed = Object.keys(mimeByExtension).indexOf(extension) !== -1 && mimeByExtension[extension] === mime;
+      if (!allowed || file.size < 1 || file.size > maxBytes || (dataType === 'image' && mime.indexOf('image/') !== 0)) {
+        throw new Error(dataType === 'image' ? 'فقط تصویر JPEG، PNG، WebP یا GIF تا ۱۰ مگابایت مجاز است.' : 'فقط تصویر، PDF، Word یا Excel تا ۱۰ مگابایت مجاز است.');
+      }
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(new Error('خواندن فایل ناموفق بود.'));
+        reader.readAsDataURL(file);
+      });
+      const response = await window.PMS.Api.post('/projects/' + encodeURIComponent(this.projectId) + '/attachments', {
+        FileName: file.name, MimeType: mime, Base64: dataUrl.split(',')[1] || '', AttachmentType: 'INFORMATION'
+      }, { trackSync: false });
+      const result = window.PMS.Api.extractData ? window.PMS.Api.extractData(response) : (response && response.data) || response;
+      const attachment = result && (result.attachment || result.Attachment);
+      if (!attachment || !(attachment.ID || attachment.Id)) throw new Error('اطلاعات فایل بارگذاری‌شده دریافت نشد.');
+      return {AttachmentID: attachment.ID || attachment.Id, FileName: attachment.FileName || file.name,
+        MimeType: attachment.MimeType || mime, FileSize: Number(attachment.FileSize || file.size), AttachmentType: 'INFORMATION'};
     },
 
     informationValue: function (value) {
@@ -239,7 +313,7 @@
       if (document.getElementById('project-information-styles')) return;
       const style = document.createElement('style');
       style.id = 'project-information-styles';
-      style.textContent = '.project-information-item{padding:14px 0;border-bottom:1px solid var(--color-border)}.project-information-item:last-child{border-bottom:0}.project-information-item-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.project-information-item-head strong{display:block;color:var(--color-text);font-size:13px}.project-information-item-head small{display:block;color:var(--color-text-secondary);font-size:11px;margin-top:4px}.project-information-actions{display:flex;gap:6px;flex-wrap:wrap}.project-information-item-content{margin-top:10px}.project-information-value{white-space:pre-wrap;overflow-wrap:anywhere;color:var(--color-text);font-size:13px}.project-information-empty{font-size:12px;color:var(--color-text-secondary)}.project-information-modal .modal{max-width:760px;max-height:90vh;overflow:auto}.project-information-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;padding:12px;margin:10px 0;border:1px solid var(--color-border);border-radius:8px}.project-information-row-actions{display:flex;justify-content:flex-end}.project-information-history-row{padding:12px 0;border-bottom:1px solid var(--color-border);font-size:12px;line-height:1.9}.project-information-history-row strong{color:var(--color-text)}.project-information-history-row pre{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--color-background);padding:8px;border-radius:6px;direction:ltr;text-align:left}@media(max-width:600px){.project-information-item-head{align-items:flex-start;flex-direction:column}.project-information-actions{width:100%}.project-information-actions button{flex:1}}';
+      style.textContent = '.project-information-item{padding:14px 0;border-bottom:1px solid var(--color-border)}.project-information-item:last-child{border-bottom:0}.project-information-item-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.project-information-item-head strong{display:block;color:var(--color-text);font-size:13px}.project-information-item-head small{display:block;color:var(--color-text-secondary);font-size:11px;margin-top:4px}.project-information-actions{display:flex;gap:6px;flex-wrap:wrap}.project-information-item-content{margin-top:10px}.information-file-field input{display:block;width:100%;margin-top:6px}.information-file-current{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:12px}.information-file-preview img{display:block;max-width:180px;max-height:140px;object-fit:contain;margin-top:8px;border-radius:8px}.information-image-preview img{display:block;max-width:100%;max-height:70vh;object-fit:contain;margin:auto}.project-information-value{white-space:pre-wrap;overflow-wrap:anywhere;color:var(--color-text);font-size:13px}.project-information-empty{font-size:12px;color:var(--color-text-secondary)}.project-information-modal .modal{max-width:760px;max-height:90vh;overflow:auto}.project-information-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;padding:12px;margin:10px 0;border:1px solid var(--color-border);border-radius:8px}.project-information-row-actions{display:flex;justify-content:flex-end}.project-information-history-row{padding:12px 0;border-bottom:1px solid var(--color-border);font-size:12px;line-height:1.9}.project-information-history-row strong{color:var(--color-text)}.project-information-history-row pre{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--color-background);padding:8px;border-radius:6px;direction:ltr;text-align:left}@media(max-width:600px){.project-information-item-head{align-items:flex-start;flex-direction:column}.project-information-actions{width:100%}.project-information-actions button{flex:1}}';
       document.head.appendChild(style);
     },
 
@@ -257,11 +331,39 @@
       return { overlay: overlay, body: overlay.querySelector('.modal-body'), close: close };
     },
 
+    canUploadInformationFiles: function () {
+      const router = window.PMS && window.PMS.Router;
+      return !!(router && ((typeof router.isAdmin === 'function' && router.isAdmin()) ||
+        (Array.isArray(router.permissions) && router.permissions.indexOf('ATTACHMENT_UPLOAD') !== -1)));
+    },
+
+    canViewInformationFiles: function () {
+      const router = window.PMS && window.PMS.Router;
+      return !!(router && ((typeof router.isAdmin === 'function' && router.isAdmin()) ||
+        (Array.isArray(router.permissions) && router.permissions.indexOf('ATTACHMENT_VIEW') !== -1)));
+    },
+
     informationInput: function (column, value, fieldName) {
       const type = String(column.DataType || 'text').toLowerCase();
       const label = this.escape(column.Name || fieldName);
       const required = column.IsRequired === true || String(column.IsRequired).toLowerCase() === 'true';
       const raw = value === null || value === undefined ? '' : value;
+      if (type === 'image' || type === 'file') {
+        const current = raw && typeof raw === 'object' ? raw : null;
+        const currentId = current && (current.AttachmentID || current.ID);
+        const accept = type === 'image' ? 'image/jpeg,image/png,image/webp,image/gif' :
+          '.jpg,.jpeg,.png,.webp,.gif,.pdf,.doc,.docx,.xls,.xlsx,image/jpeg,image/png,image/webp,image/gif,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        return '<div class="form-group information-file-field"><label>' + label + (required ? ' *' : '') +
+          '<input type="file" name="' + this.escape(fieldName) + '" data-information-file-input data-file-data-type="' + type +
+          '" data-current-attachment="' + this.escape(current ? JSON.stringify(current) : '') + '" accept="' + accept + '"' +
+          (required && !currentId ? ' required' : '') + (this.canUploadInformationFiles() ? '' : ' disabled') + '></label>' +
+          (currentId ? '<div class="information-file-current"><span>' + this.escape(current.FileName || 'فایل ثبت‌شده') + '</span>' +
+            (this.canViewInformationFiles() ? '<button type="button" class="btn btn-sm btn-light" data-information-attachment="' + this.escape(currentId) +
+              '" data-information-preview="' + (type === 'image' ? 'true' : 'false') + '">' + (type === 'image' ? 'پیش‌نمایش تصویر' : 'دریافت فایل') + '</button>' : '') +
+            '</div>' : '') +
+          '<div data-information-file-preview class="information-file-preview"></div>' +
+          (!this.canUploadInformationFiles() ? '<small>برای بارگذاری فایل، مجوز پیوست لازم است.</small>' : '') + '</div>';
+      }
       if (type === 'boolean') {
         return '<div class="form-group"><label>' + label + '</label><select name="' + this.escape(fieldName) + '"' + (required ? ' required' : '') + '><option value="">انتخاب کنید</option><option value="true"' + (raw === true || String(raw) === 'true' ? ' selected' : '') + '>بله</option><option value="false"' + (raw === false || String(raw) === 'false' ? ' selected' : '') + '>خیر</option></select></div>';
       }
@@ -312,6 +414,25 @@
         });
       }
       form.querySelector('[data-information-cancel]').addEventListener('click', box.close);
+      form.querySelectorAll('[data-information-file-input]').forEach(input => input.addEventListener('change', () => {
+        const preview = input.parentElement.parentElement.querySelector('[data-information-file-preview]');
+        const file = input.files && input.files[0];
+        if (!preview) return;
+        preview.replaceChildren();
+        if (!file) return;
+        if (input.dataset.fileDataType === 'image') {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const img = document.createElement('img');
+            img.alt = file.name;
+            img.src = String(reader.result || '');
+            preview.appendChild(img);
+          };
+          reader.readAsDataURL(file);
+        } else {
+          preview.textContent = file.name;
+        }
+      }));
       form.addEventListener('submit', async event => {
         event.preventDefault();
         const submit = form.querySelector('[type="submit"]');
@@ -323,20 +444,44 @@
             columns.forEach(col => {
               const control = row.querySelector('[name="column_' + CSS.escape(String(col.Code)) + '"]');
               let v = control ? control.value : '';
-              if (v !== '' && String(col.DataType).toLowerCase() === 'number') v = Number(v);
-              if (v !== '' && String(col.DataType).toLowerCase() === 'boolean') v = v === 'true';
-              item[String(col.Code)] = v;
+              const dataType = String(col.DataType || '').toLowerCase();
+              if (control && control.type === 'file') {
+                const selected = control.files && control.files[0];
+                if (selected) {
+                  item[String(col.Code)] = this.uploadInformationFile(selected, dataType);
+                } else {
+                  try { item[String(col.Code)] = JSON.parse(control.dataset.currentAttachment || 'null') || ''; }
+                  catch (error) { item[String(col.Code)] = ''; }
+                }
+              } else {
+                if (v !== '' && dataType === 'number') v = Number(v);
+                if (v !== '' && dataType === 'boolean') v = v === 'true';
+                item[String(col.Code)] = v;
+              }
             });
             return item;
           });
           value = multi ? dataRows : (dataRows[0] || {});
         } else {
           const control = form.elements.Value;
-          value = control ? control.value : '';
-          if (value !== '' && String(type.DataType).toLowerCase() === 'number') value = Number(value);
-          if (value !== '' && String(type.DataType).toLowerCase() === 'boolean') value = value === 'true';
+          const dataType = String(type.DataType || '').toLowerCase();
+          if (control && control.type === 'file') {
+            const selected = control.files && control.files[0];
+            if (selected) value = this.uploadInformationFile(selected, dataType);
+            else {
+              try { value = JSON.parse(control.dataset.currentAttachment || 'null') || ''; }
+              catch (error) { value = ''; }
+            }
+          } else {
+            value = control ? control.value : '';
+            if (value !== '' && dataType === 'number') value = Number(value);
+            if (value !== '' && dataType === 'boolean') value = value === 'true';
+          }
         }
         try {
+          if (value && typeof value.then === 'function') value = await value;
+          if (Array.isArray(value)) value = await Promise.all(value.map(async row => { const clean = {}; for (const key of Object.keys(row)) clean[key] = row[key] && typeof row[key].then === 'function' ? await row[key] : row[key]; return clean; }));
+          else if (value && typeof value === 'object' && !value.AttachmentID) { const clean = {}; for (const key of Object.keys(value)) clean[key] = value[key] && typeof value[key].then === 'function' ? await value[key] : value[key]; value = clean; }
           await window.PMS.Api.post('/projects/' + encodeURIComponent(this.projectId) + '/information/' + encodeURIComponent(record.InformationTypeID), { Value: value, Reason: form.elements.Reason.value });
           window.PMS.Api.invalidate('project_information_' + String(this.projectId));
           box.close();
