@@ -1615,8 +1615,12 @@
         String(typeInput.value) === String(this.fieldsLoadedForTypeId)
       );
 
+      const amendmentReady = !this.amendmentMode || Boolean(
+        this.amendmentSourceEventId && this.amendmentSourceFormId && this.amendmentSourceVersion
+      );
       const canSubmit =
         !this.submitting &&
+        amendmentReady &&
         projectSelected &&
         typeSelected &&
         dateSelected &&
@@ -2285,7 +2289,7 @@
         OccurredAt: date.toISOString(),
         Description: description,
         DynamicData: dynamicData,
-        FormResponses: formResponses,
+        FormResponses: this.amendmentMode ? [] : formResponses,
         VariantDetails: Array.from(form.querySelectorAll('[data-variant-row]')).map((row) => {
           const value = (name) => {
             const input = row.querySelector('[data-variant-field="' + name + '"]');
@@ -2318,6 +2322,25 @@
       try {
         const eventResponse = await PMS.Api.post('/events', payload);
         const eventResult = PMS.Api.extractData(eventResponse) || {};
+        if (this.amendmentMode) {
+          const amendmentEvent = eventResult.event || eventResult.Event || eventResult;
+          const amendmentEventId = String(amendmentEvent.ID || amendmentEvent.Id || eventResult.eventId || '');
+          const selectedSourceForm = document.getElementById('event-amendment-source-form');
+          const selectedOption = selectedSourceForm && selectedSourceForm.options[selectedSourceForm.selectedIndex];
+          if (!this.amendmentSourceEventId || !this.amendmentSourceFormId || !amendmentEventId || !selectedOption) {
+            throw new Error('رویداد اصلی، فرم مبنا یا شناسه رویداد اصلاحی معتبر نیست.');
+          }
+          this.amendmentEventId = amendmentEventId;
+          const amendmentValues = await this.collectConfiguredFormResponses(projectId);
+          if (amendmentValues === null) throw new Error('مقادیر فرم اصلاحی کامل نیستند.');
+          const formValues = amendmentValues.find(item => String(item.FormID) === String(this.amendmentSourceFormId));
+          if (!formValues) throw new Error('پاسخ فرم اصلاح‌شده جمع‌آوری نشد.');
+          await PMS.Api.put('/events/' + encodeURIComponent(this.amendmentSourceEventId) + '/forms/' + encodeURIComponent(this.amendmentSourceFormId), {
+            AmendmentEventID: amendmentEventId,
+            FormVersion: this.amendmentSourceVersion,
+            Values: formValues.Values
+          });
+        }
         const procurementIntegration = eventResult.procurementIntegration || {};
 
         PMS.Api.invalidateMany([
@@ -2511,6 +2534,12 @@
       this.pendingIdempotencyKey = '';
       this.pendingIdempotencyFingerprint = '';
       if (this.submitting && !force) return;
+      this.amendmentMode = false;
+      this.amendmentSourceEventId = '';
+      this.amendmentSourceFormId = '';
+      this.amendmentSourceVersion = 0;
+      this.amendmentEventId = '';
+      this.amendmentPendingValues = null;
 
       const modal = document.getElementById('event-create-modal');
       if (modal) modal.remove();
