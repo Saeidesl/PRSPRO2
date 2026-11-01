@@ -695,7 +695,7 @@
         return '<h3>مشخصات پروژه</h3><dl>' + rows.map(k => '<div><dt>' + this.escape(k) + '</dt><dd>' + this.escape(this.informationValue(p[k])) + '</dd></div>').join('') + '</dl>';
       }
       const matchingRecords = item.formId ? this.projectForms.filter(entry => String(entry.formId || entry.FormID || (entry.definition && entry.definition.ID) || '') === String(item.formId) && (!item.eventTypeId || String(entry.event && (entry.event.EventTypeID || entry.event.EventTypeId) || '') === String(item.eventTypeId))) : [];
-      const record = (matchingRecords.length ? matchingRecords[matchingRecords.length - 1] : null) || this.projectForms[Number(item.sourceIndex)];
+      const record = item.formId ? (matchingRecords.length ? matchingRecords[matchingRecords.length - 1] : null) : this.projectForms[Number(item.sourceIndex)];
       if (!record) return '';
       const definition = record.definition || {};
       const fields = Array.isArray(definition.Fields) ? definition.Fields : [];
