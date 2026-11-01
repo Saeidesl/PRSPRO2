@@ -363,6 +363,24 @@
         const move = event.target.closest('[data-ppd-move]');
         if (close) { overlay.remove(); document.body.classList.remove('ppd-printing'); return; }
         if (innerImage) { event.preventDefault(); event.stopPropagation(); return; }
+        const innerTable = event.target.closest('[data-ppd-inner-table]');
+        if (innerTable) {
+          const article = innerTable.closest('[data-ppd-element]');
+          const column = event.target.closest('[data-ppd-inner-column]');
+          if (article) {
+            this.printDesignerSelectedTable = {
+              elementId: article.dataset.ppdElement,
+              tableId: innerTable.dataset.ppdInnerTable,
+              columnCode: column ? column.dataset.ppdInnerColumn : null
+            };
+            this.printDesignerSelectedInner = null;
+            this.printDesignerSelectedId = null;
+            this.renderPrintDesigner(overlay);
+          }
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
         if (save) { this.savePrintDesignerTemplate(); save.textContent = 'ذخیره شد'; return; }
         if (print) { window.print(); return; }
         if (move) {
@@ -410,6 +428,40 @@
         if (element) { this.printDesignerSelectedInner = null; this.printDesignerSelectedId = element.dataset.ppdElement; this.renderPrintDesigner(overlay); }
       });
       overlay.addEventListener('input', (event) => {
+        const tableKey = event.target.dataset.ppdTableStyle;
+        const columnKey = event.target.dataset.ppdColumnWidth;
+        if (tableKey || columnKey) {
+          const selection = this.printDesignerSelectedTable;
+          const parent = (this.printDesignerElements || []).find(item => item.id === (selection && selection.elementId));
+          if (!parent || !selection) return;
+          parent.tableLayout = parent.tableLayout || {};
+          const layout = parent.tableLayout[selection.tableId] || (parent.tableLayout[selection.tableId] = {});
+          const tableNode = overlay.querySelector('[data-ppd-element="' + this.escape(parent.id) + '"] [data-ppd-inner-table="' + this.escape(selection.tableId) + '"]');
+          if (!tableNode) return;
+          if (tableKey === 'width') {
+            layout.width = Math.max(25, Math.min(100, Number(event.target.value) || 100));
+            tableNode.style.width = layout.width + '%';
+          }
+          if (columnKey) {
+            const cols = Array.from(tableNode.querySelectorAll('col[data-ppd-col-code]'));
+            const target = cols.find(col => col.dataset.ppdColCode === columnKey);
+            if (!target) return;
+            const current = cols.map(col => Number(col.dataset.width) || 100 / cols.length);
+            const targetIndex = cols.indexOf(target);
+            const minimum = 5;
+            const desired = Math.max(minimum, Math.min(100 - minimum * (cols.length - 1), Number(event.target.value) || minimum));
+            const remaining = current.reduce((sum, value, index) => sum + (index === targetIndex ? 0 : value), 0);
+            const next = current.map((value, index) => index === targetIndex ? desired :
+              (remaining > 0 ? (value / remaining) * (100 - desired) : (100 - desired) / Math.max(1, cols.length - 1)));
+            layout.columns = layout.columns || {};
+            cols.forEach((col, index) => {
+              layout.columns[col.dataset.ppdColCode] = next[index];
+              col.dataset.width = String(next[index]);
+              col.style.width = next[index] + '%';
+            });
+          }
+          return;
+        }
         const innerKey = event.target.dataset.ppdInnerStyle;
         if (innerKey) {
           const selection = this.printDesignerSelectedInner;
@@ -494,6 +546,25 @@
         return '<article draggable="true" data-ppd-element="' + this.escape(item.id) + '" class="ppd-element ' + (item.id === this.printDesignerSelectedId ? 'is-selected' : '') + '" style="border:' + this.escape(style.border || '0') + ';padding:' + Number(style.padding || 0) + 'px;background:' + this.escape(style.background || '#fff') + ';font-size:' + Number(style.fontSize || 13) + 'px;text-align:' + this.escape(style.align || 'right') + '">' + content + (item.id === this.printDesignerSelectedId ? '<button type="button" class="ppd-element-remove" data-ppd-remove="' + this.escape(item.id) + '" aria-label="حذف">×</button>' : '') + '</article>';
       }).join('') : '<div class="ppd-paper-empty">از پنل «افزودن محتوا» موارد موردنیاز را به این صفحه اضافه کن.</div>';
       this.loadPrintDesignerImages(paper);
+      const tableSelection = this.printDesignerSelectedTable;
+      if (tableSelection) {
+        const parent = elements.find(item => item.id === tableSelection.elementId);
+        const table = parent && parent.tableLayout && parent.tableLayout[tableSelection.tableId] || {};
+        const tableNode = paper.querySelector('[data-ppd-element="' + this.escape(tableSelection.elementId) + '"] [data-ppd-inner-table="' + this.escape(tableSelection.tableId) + '"]');
+        const columns = tableNode ? Array.from(tableNode.querySelectorAll('thead th[data-ppd-inner-column]')) : [];
+        if (parent && columns.length) {
+          const saved = table.columns || {};
+          properties.innerHTML = '<h4>تنظیم جدول فرم</h4><label>عرض کل جدول (%)<input type="range" min="25" max="100" step="1" value="' + Math.max(25, Math.min(100, Number(table.width) || 100)) + '" data-ppd-table-style="width"></label>' +
+            '<p class="ppd-help">عرض جدول از عرض قابل چاپ صفحه بیشتر نمی‌شود.</p>' +
+            columns.map((column) => {
+              const code = column.dataset.ppdInnerColumn;
+              const value = Number(saved[code]) > 0 ? Number(saved[code]) : 100 / columns.length;
+              const max = 100 - 5 * (columns.length - 1);
+              return '<label>عرض ستون «' + this.escape(column.textContent || code) + '» (%)<input type="range" min="5" max="' + max + '" step="1" value="' + Math.round(value) + '" data-ppd-column-width="' + this.escape(code) + '"></label>';
+            }).join('');
+          return;
+        }
+      }
       const innerSelection = this.printDesignerSelectedInner;
       if (innerSelection) {
         const parent = elements.find(x => x.id === innerSelection.elementId);
@@ -548,6 +619,35 @@
         } catch (error) { node.textContent = 'بارگذاری تصویر ناموفق بود'; }
       }));
     },
+    renderPrintDesignerTable: function (tableId, columns, rows) {
+      const item = this.printDesignerCurrentItem || {};
+      const layouts = item.tableLayout || {};
+      const layout = layouts[tableId] || {};
+      const width = Math.max(25, Math.min(100, Number(layout.width) || 100));
+      const savedWidths = layout.columns || {};
+      const count = Math.max(1, columns.length);
+      const widths = columns.map((column) => {
+        const code = String(column.Code || column.code || '');
+        const value = Number(savedWidths[code]);
+        return Number.isFinite(value) && value > 0 ? value : 100 / count;
+      });
+      const total = widths.reduce((sum, value) => sum + value, 0) || 100;
+      const normalized = widths.map(value => value * 100 / total);
+      const selected = this.printDesignerSelectedTable;
+      const isSelected = selected && selected.elementId === item.id && selected.tableId === tableId;
+      const colgroup = '<colgroup>' + columns.map((column, index) =>
+        '<col data-ppd-col-code="' + this.escape(String(column.Code || column.code || '')) + '" data-width="' + normalized[index] + '" style="width:' + normalized[index] + '%">'
+      ).join('') + '</colgroup>';
+      const head = '<thead><tr>' + columns.map(column => {
+        const code = String(column.Code || column.code || '');
+        return '<th data-ppd-inner-column="' + this.escape(code) + '">' + this.escape(column.Name || column.name || code) + '</th>';
+      }).join('') + '</tr></thead>';
+      const body = '<tbody>' + rows.map(row => '<tr>' + columns.map(column =>
+        '<td>' + this.renderPrintDesignerValue(row && row[String(column.Code || column.code)], column.DataType || column.dataType) + '</td>'
+      ).join('') + '</tr>').join('') + '</tbody>';
+      return '<table class="ppd-inner-table' + (isSelected ? ' is-inner-table-selected' : '') + '" data-ppd-inner-table="' + this.escape(tableId) + '" data-ppd-columns="' + count + '" style="width:' + width + '%;max-width:100%;table-layout:fixed">' + colgroup + head + body + '</table>';
+    },
+
     renderPrintDesignerElement: function (item) {
       if (item.type === 'line') return '<hr>';
       if (item.type === 'text') return '<div>' + this.escape(item.text) + '</div>';
@@ -574,9 +674,9 @@
         const cols = Array.isArray(info.Columns) ? info.Columns.filter(col => String(col.Status || 'ACTIVE').toUpperCase() === 'ACTIVE') : [];
         if (cols.length) {
           const rows = String(info.Cardinality || 'SINGLE').toUpperCase() === 'MULTIPLE' ? (Array.isArray(value) ? value : []) : (value && typeof value === 'object' ? [value] : []);
-          return '<h3>' + this.escape(info.Name || info.Title || 'فیلد') + '</h3><table><thead><tr>' + cols.map(col => '<th>' + this.escape(col.Name || col.Code) + '</th>').join('') + '</tr></thead><tbody>' + rows.map(row => '<tr>' + cols.map(col => '<td>' + this.renderPrintDesignerValue(row && row[String(col.Code)], col.DataType) + '</td>').join('') + '</tr>').join('') + '</tbody></table>';
+          return '<h3>' + this.escape(info.Name || info.Title || 'فیلد') + '</h3>' + this.renderPrintDesignerTable('field-' + String(item.fieldKey), cols, rows);
         }
-        return '<strong>' + this.escape(info.Name || info.Title || 'فیلد') + '</strong><div>' + this.renderPrintDesignerValue(value, info.DataType) + '</div>';
+        return '<strong>' + this.escape(info.Name || info.Title || 'فیلد') + '</strong><div>' + this.renderProjectFormValue(value, info.DataType) + '</div>';
       }
       const content = fields.slice().sort((a,b) => Number(a.FieldOrder||0)-Number(b.FieldOrder||0)).map(field => {
         const info = field.InformationType || {};
@@ -586,8 +686,8 @@
         let output = '<span>-</span>';
         if (columns.length) {
           const rows = String(info.Cardinality || 'SINGLE').toUpperCase() === 'MULTIPLE' ? (Array.isArray(value) ? value : []) : (value && typeof value === 'object' ? [value] : []);
-          output = rows.length ? '<table><thead><tr>' + columns.map(col => '<th>' + this.escape(col.Name || col.Code) + '</th>').join('') + '</tr></thead><tbody>' + rows.map(row => '<tr>' + columns.map(col => '<td>' + this.renderPrintDesignerValue(row && row[String(col.Code)], col.DataType) + '</td>').join('') + '</tr>').join('') + '</tbody></table>' : '<span>-</span>';
-        } else if (value !== undefined && value !== null && value !== '') output = this.renderPrintDesignerValue(value, info.DataType);
+          output = rows.length ? this.renderPrintDesignerTable('field-' + String(field.ID || field.InformationTypeID || info.Code || id), columns, rows) : '<span>-</span>';
+        } else if (value !== undefined && value !== null && value !== '') output = this.renderProjectFormValue(value, info.DataType);
         return '<section><strong>' + this.escape(info.Name || info.Title || info.Code || 'فیلد') + '</strong><div>' + output + '</div></section>';
       }).join('');
       return '<h3>' + this.escape(item.title || definition.Name || 'فرم') + '</h3><small>' + this.escape((record.event && (record.event.EventTypeName || record.event.EventTypeTitle)) || 'رویداد') + ' · ' + this.escape(this.formatDate(record.createdAt)) + '</small>' + content;
