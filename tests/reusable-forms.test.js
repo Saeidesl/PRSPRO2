@@ -134,3 +134,11 @@ test('amendment submission fingerprints source identity and edited values for sa
   assert.match(events,/amendmentSourceFormId: this\.amendmentMode \? this\.amendmentSourceFormId/);
   assert.match(events,/amendmentValues: this\.amendmentMode \? formResponses/);
 });
+
+
+test('amendment form sends the source response timestamp for stale edit protection',()=>{
+  const events=read('js/modules/events.js');
+  assert.match(events,/option\.dataset\.updatedAt = String\(item\.UpdatedAt \|\| ''\)/);
+  assert.match(events,/this\.amendmentSourceUpdatedAt = String\(option\.dataset\.updatedAt \|\| ''\)/);
+  assert.match(events,/ExpectedUpdatedAt: this\.amendmentSourceUpdatedAt/);
+});
