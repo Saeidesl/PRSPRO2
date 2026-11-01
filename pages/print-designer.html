@@ -1,12 +1,36 @@
 <section class="page-section ppd-entry-page">
   <div class="page-header">
-    <div><h2>چاپ‌ساز</h2><p>انتخاب پروژه و طراحی قالب چاپی مستقل از صفحه پروژه</p></div>
+    <div><h2>قالب‌های چاپ</h2><p>قالب را یک‌بار طراحی و در دیتابیس ذخیره کن؛ سپس برای هر پروژه فقط قالب را انتخاب و خروجی بگیر.</p></div>
   </div>
-  <div class="card"><div class="card-body ppd-entry-controls">
-    <label for="print-designer-project-select">انتخاب پروژه</label>
-    <select id="print-designer-project-select"><option value="">در حال دریافت فهرست پروژه‌ها...</option></select>
-    <button type="button" class="btn btn-primary" id="print-designer-launch" disabled>ورود به محیط طراحی</button>
-    <p id="print-designer-project-status" class="text-muted" aria-live="polite"></p>
-    <div id="project-forms-loading" hidden></div><div id="project-forms-error" hidden></div><div id="project-forms-retry" hidden></div><div id="project-forms-list" hidden></div>
-  </div></div>
+  <div class="ppd-entry-grid">
+    <section class="card">
+      <div class="card-body">
+        <h3>مدیریت قالب‌ها</h3>
+        <p class="text-muted">برای طراحی قالب جدید یا ویرایش قالب مشترک، یک پروژه مرجع انتخاب کن تا فهرست فرم‌های قابل استفاده نمایش داده شود.</p>
+        <label for="print-designer-project-select">پروژه مرجع طراحی</label>
+        <select id="print-designer-project-select"><option value="">در حال دریافت پروژه‌ها...</option></select>
+        <label for="print-template-name">نام قالب جدید</label>
+        <input id="print-template-name" type="text" maxlength="100" placeholder="مثلاً فرم گزارش نهایی پروژه">
+        <label for="print-template-existing-select">قالب ذخیره‌شده برای ویرایش</label>
+        <select id="print-template-existing-select"><option value="">انتخاب قالب...</option></select>
+        <div class="ppd-entry-actions">
+          <button type="button" class="btn btn-primary" id="print-template-create">طراحی قالب جدید</button>
+          <button type="button" class="btn btn-secondary" id="print-template-edit">ویرایش قالب انتخابی</button>
+        </div>
+      </div>
+    </section>
+    <section class="card">
+      <div class="card-body">
+        <h3>چاپ پروژه</h3>
+        <p class="text-muted">پروژه و قالب را انتخاب کن. سیستم اطلاعات همان پروژه را داخل قالب قرار می‌دهد و پیش‌نمایش نهایی را نمایش می‌دهد.</p>
+        <label for="print-run-project-select">انتخاب پروژه</label>
+        <select id="print-run-project-select"><option value="">در حال دریافت پروژه‌ها...</option></select>
+        <label for="print-run-template-select">انتخاب قالب چاپ</label>
+        <select id="print-run-template-select"><option value="">انتخاب قالب...</option></select>
+        <button type="button" class="btn btn-primary" id="print-run-preview">نمایش پیش‌نمایش چاپ</button>
+      </div>
+    </section>
+  </div>
+  <p id="print-designer-project-status" class="ppd-entry-status text-muted" aria-live="polite"></p>
+  <div id="project-forms-loading" hidden></div><div id="project-forms-error" hidden></div><div id="project-forms-retry" hidden></div><div id="project-forms-list" hidden></div>
 </section>
