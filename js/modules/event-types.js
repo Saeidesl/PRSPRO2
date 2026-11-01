@@ -1023,7 +1023,11 @@
       const isIndependent = connectionTypeField.value === 'INDEPENDENT';
       projectSettingsSection.hidden = isIndependent;
       eventFormSettingsSection.hidden = isIndependent;
-      if (isIndependent) setFieldChecked(form, 'AllowOnDraft', false);
+      if (isIndependent) {
+        setFieldChecked(form, 'AllowOnDraft', false);
+        setFieldChecked(form, 'IsFormAmendment', false);
+      }
+      amendableFormList.hidden = isIndependent || !amendmentEnabledInput.checked;
     };
     connectionTypeField.addEventListener('change', refreshConnectionTypeSettings);
     refreshConnectionTypeSettings();
