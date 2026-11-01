@@ -100,3 +100,6 @@ body.ppd-printing{overflow:hidden!important}
 @media print{
  .ppd-standalone .ppd-paper{width:210mm!important;min-height:297mm!important;padding:15mm!important}
 }
+
+.ppd-missing-value{display:inline-block;padding:4px 8px;border:1px dashed #9ca3af;border-radius:5px;color:#6b7280;background:#f9fafb;font-size:11px;font-style:italic}
+@media print{.ppd-missing-value{background:#fff;color:#555;border-color:#aaa}}
