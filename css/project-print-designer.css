@@ -25,3 +25,6 @@
 
 .ppd-form-group{border:1px solid var(--color-border);border-radius:8px;padding:7px;margin-bottom:8px}.ppd-form-group>button:first-child{border:0;font-weight:700}.ppd-field-add{font-size:11px!important;padding:6px 8px!important;margin:3px 0!important;background:var(--color-background)!important}
 @media print{body.ppd-printing>#app{display:none!important}}
+
+.ppd-standalone{position:relative;inset:auto;z-index:1;height:calc(100vh - 150px);min-height:680px;border:1px solid var(--color-border);border-radius:12px}.ppd-entry-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.ppd-entry-controls label{font-weight:700}.ppd-entry-controls select{min-width:min(420px,100%);max-width:100%;min-height:42px;padding:8px;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface);color:var(--color-text)}.ppd-entry-controls p{flex-basis:100%;margin:0}.ppd-standalone .ppd-paper{margin-bottom:24px}
+@media(max-width:680px){.ppd-standalone{height:auto;min-height:0}.ppd-entry-controls{align-items:stretch;flex-direction:column}.ppd-entry-controls select,.ppd-entry-controls button{width:100%}}
