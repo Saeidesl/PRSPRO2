@@ -43,7 +43,7 @@ test('print designer supports visual ordering, element styling, saved templates 
 test('print designer assets are cache-busted and loaded by the application',()=>{
   const index=read('index.html');
   assert.match(index,/project-print-designer\.css\?v=/);
-  assert.match(index,/project-detail\.js\?v=20261101-print-design-output-separation-1/);
+  assert.match(index,/project-detail\.js\?v=20261101-print-designer-workspace-1/);
 });
 
 
@@ -158,4 +158,32 @@ test('template design and document output are separate routes and modes',()=>{
  assert.match(module,/data-ppd-print/);
  const editor=module.slice(module.indexOf('openPrintDesigner: function'),module.indexOf('openPrintOutput: async function'));
  assert.doesNotMatch(editor,/data-ppd-print/);
+});
+
+
+test('standalone print designer remains a full-screen layer above the application sidebar',()=>{
+ const css=read('css/project-print-designer.css');
+ assert.match(css,/\.ppd-standalone\{position:fixed;inset:0;z-index:12000/);
+ assert.doesNotMatch(css,/\.ppd-standalone\{position:relative/);
+ assert.match(css,/body\.ppd-printing\{overflow:hidden/);
+});
+
+test('print designer form library has distinct sections, clear empty state and responsive panel layout',()=>{
+ const module=read('js/modules/project-detail.js');
+ const css=read('css/project-print-designer.css');
+ assert.match(module,/ppd-library-section ppd-library-forms/);
+ assert.match(module,/ppd-library-empty/);
+ assert.match(module,/data-ppd-form/);
+ assert.match(module,/data-ppd-field/);
+ assert.match(css,/\.ppd-library-actions\{display:grid/);
+ assert.match(css,/\.ppd-form-library\{display:flex/);
+ assert.match(css,/@media\(max-width:760px\)/);
+ assert.match(css,/\.ppd-standalone \.ppd-paper\{width:min\(210mm,calc\(100vw - 48px\)\)/);
+});
+
+test('print designer keeps A4 print dimensions and read-only output styles',()=>{
+ const css=read('css/project-print-designer.css');
+ assert.match(css,/@page\{size:A4 portrait/);
+ assert.match(css,/\.ppd-standalone \.ppd-paper\{width:210mm!important/);
+ assert.match(css,/\.ppd-output-mode \.ppd-properties\{display:none!important/);
 });
