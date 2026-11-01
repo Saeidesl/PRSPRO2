@@ -39,3 +39,7 @@
 @media print{.ppd-inline-image[data-ppd-inner-image]{outline:0!important}}
 
 .ppd-inline-image[data-ppd-inner-image]{touch-action:none;user-select:none;-webkit-user-drag:none}.ppd-inline-image[data-ppd-inner-image].is-inner-selected{outline:2px solid #2563eb;outline-offset:4px}
+
+/* Independent form-table layout controls in the print designer */
+.ppd-element .ppd-inner-table{border-collapse:collapse;max-width:100%;margin:7px 0;table-layout:fixed}.ppd-element .ppd-inner-table th,.ppd-element .ppd-inner-table td{overflow-wrap:anywhere;word-break:normal}.ppd-element .ppd-inner-table.is-inner-table-selected{outline:2px dashed #2563eb;outline-offset:3px}.ppd-properties [data-ppd-table-style],.ppd-properties [data-ppd-column-width]{accent-color:var(--color-primary)}
+@media print{.ppd-element .ppd-inner-table.is-inner-table-selected{outline:0!important}}
