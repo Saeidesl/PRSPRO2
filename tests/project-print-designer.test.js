@@ -128,7 +128,7 @@ test('print templates are stored through the backend API and not browser localSt
 test('saved print layouts resolve reusable forms by stable FormID across projects',()=>{
  const module=read('js/modules/project-detail.js');
  assert.match(module,/formId:String\(item\.formId/);
- assert.match(module,/this\.projectForms\.find\(entry => item\.formId/);
+ assert.match(module,/const matchingRecords = item\.formId[\s\S]{0,350}item\.eventTypeId/);
 });
 
 test('project print preview supports PNG export, native sharing, PDF and direct printing',()=>{
