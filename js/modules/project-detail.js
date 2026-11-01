@@ -5,6 +5,10 @@
     projectId: null,
     project: null,
     projectInformation: [],
+    projectForms: [],
+    projectFormsLoading: false,
+    projectFormsError: '',
+    projectFormsLoadVersion: 0,
     events: [],
     auditRecords: [],
     auditLoadError: '',
@@ -29,7 +33,6 @@
       this.bindProjectPassportImageEvents();
       this.ensureProjectPassportStyles();
       this.load();
-      this.loadProjectInformation(false);
       this.loadProjectPassportImages(false);
       this.loadAuditHistory(false);
     },
@@ -111,11 +114,11 @@
         });
       }
 
-      const informationRetry = document.getElementById('project-information-retry');
-      if (informationRetry && !informationRetry.dataset.bound) {
-        informationRetry.dataset.bound = '1';
-        informationRetry.addEventListener('click', function () {
-          ProjectDetail.loadProjectInformation(true);
+      const formsRetry = document.getElementById('project-forms-retry');
+      if (formsRetry && !formsRetry.dataset.bound) {
+        formsRetry.dataset.bound = '1';
+        formsRetry.addEventListener('click', function () {
+          ProjectDetail.loadProjectForms(ProjectDetail.events, ProjectDetail.loadVersion, true);
         });
       }
 
@@ -132,6 +135,171 @@
       const router = window.PMS && window.PMS.Router;
       return !!(router && ((typeof router.isAdmin === 'function' && router.isAdmin()) ||
         (Array.isArray(router.permissions) && router.permissions.indexOf('PROJECT_EDIT') !== -1)));
+    },
+
+    loadProjectForms: async function (events, version, forceRefresh) {
+      const container = document.getElementById('project-forms-list');
+      const loading = document.getElementById('project-forms-loading');
+      const error = document.getElementById('project-forms-error');
+      const retry = document.getElementById('project-forms-retry');
+      if (!container || !this.projectId) return;
+      const requestVersion = ++this.projectFormsLoadVersion;
+      const activeEvents = (Array.isArray(events) ? events : []).filter(function (event) {
+        const status = String(event.Status || '').toUpperCase();
+        return event && (event.ID || event.Id) && !event.IsProcurementTimeline &&
+          status !== 'VOID' && status !== 'CANCELLED' && status !== 'CANCELED';
+      });
+      this.projectFormsLoading = true;
+      this.projectFormsError = '';
+      if (loading) loading.hidden = false;
+      if (error) error.hidden = true;
+      if (retry) retry.hidden = true;
+      if (!activeEvents.length) {
+        this.projectForms = [];
+        this.renderProjectForms();
+        if (loading) loading.hidden = true;
+        this.projectFormsLoading = false;
+        return;
+      }
+      try {
+        const collected = [];
+        // محدودسازی هم‌زمانی از ایجاد موج درخواست برای پروژه‌های دارای timeline طولانی جلوگیری می‌کند.
+        for (let start = 0; start < activeEvents.length; start += 5) {
+          if (requestVersion !== this.projectFormsLoadVersion || version !== this.loadVersion) return;
+          const batch = activeEvents.slice(start, start + 5);
+          const results = await Promise.all(batch.map(async (event) => {
+            const eventId = String(event.ID || event.Id);
+            const response = forceRefresh
+              ? await window.PMS.Api.get('/events/' + encodeURIComponent(eventId) + '/forms', { trackSync: false })
+              : await window.PMS.Api.getCached('/events/' + encodeURIComponent(eventId) + '/forms',
+                  'project_event_forms_' + eventId, { trackSync: false });
+            return { event: event, responses: this.normalizeArray(response, ['items', 'Items', 'responses', 'Responses']) };
+          }));
+          results.forEach((result) => {
+            result.responses.forEach((record) => {
+              const definition = record.Definition || record.definition || {};
+              const fields = Array.isArray(definition.Fields) ? definition.Fields :
+                (Array.isArray(definition.fields) ? definition.fields : []);
+              if (!fields.length) return;
+              collected.push({
+                event: result.event,
+                eventId: String(result.event.ID || result.event.Id),
+                formId: String(record.FormID || record.formId || definition.ID || definition.Id || ''),
+                definition: definition,
+                values: record.Values || record.values || {},
+                updatedAt: record.UpdatedAt || record.updatedAt || '',
+                createdAt: record.CreatedAt || record.createdAt || result.event.OccurredAt || result.event.CreatedAt || ''
+              });
+            });
+          });
+        }
+        if (requestVersion !== this.projectFormsLoadVersion || version !== this.loadVersion) return;
+        collected.sort((a, b) => {
+          const at = new Date(a.createdAt || 0).getTime() || 0;
+          const bt = new Date(b.createdAt || 0).getTime() || 0;
+          return at - bt;
+        });
+        this.projectForms = collected;
+        this.renderProjectForms();
+      } catch (err) {
+        if (requestVersion !== this.projectFormsLoadVersion || version !== this.loadVersion) return;
+        this.projectFormsError = err && err.message ? err.message : 'دریافت فرم‌های پروژه ناموفق بود.';
+        if (error) {
+          error.textContent = this.projectFormsError;
+          error.hidden = false;
+        }
+        if (retry) retry.hidden = false;
+      } finally {
+        if (requestVersion === this.projectFormsLoadVersion) {
+          this.projectFormsLoading = false;
+          if (loading) loading.hidden = true;
+        }
+      }
+    },
+
+    renderProjectForms: function () {
+      const container = document.getElementById('project-forms-list');
+      const count = document.getElementById('project-forms-count');
+      if (!container) return;
+      const forms = Array.isArray(this.projectForms) ? this.projectForms : [];
+      if (count) count.textContent = String(forms.length);
+      if (!forms.length) {
+        container.innerHTML = '<div class="table-empty">هنوز پاسخی برای فرم‌های این پروژه ثبت نشده است.</div>';
+        return;
+      }
+      container.innerHTML = forms.map((item, index) => {
+        const definition = item.definition || {};
+        const event = item.event || {};
+        const formTitle = definition.Name || definition.Title || definition.Code || 'فرم ثبت‌شده';
+        const eventTitle = event.EventTypeName || event.EventTypeTitle || 'رویداد';
+        const fields = Array.isArray(definition.Fields) ? definition.Fields : [];
+        const values = item.values && typeof item.values === 'object' ? item.values : {};
+        const fieldHtml = fields.slice().sort((a, b) => Number(a.FieldOrder || 0) - Number(b.FieldOrder || 0)).map((field) => {
+          const info = field.InformationType || {};
+          const infoId = String(field.InformationTypeID || info.ID || info.Id || '');
+          const value = values[infoId];
+          const columns = Array.isArray(info.Columns) ? info.Columns.filter(col => String(col.Status || 'ACTIVE').toUpperCase() === 'ACTIVE') : [];
+          const hasValue = value !== undefined && value !== null && value !== '' &&
+            !(Array.isArray(value) && value.length === 0);
+          let content = '<span class="project-form-empty">ثبت نشده</span>';
+          if (hasValue && columns.length) {
+            const rows = String(info.Cardinality || 'SINGLE').toUpperCase() === 'MULTIPLE'
+              ? (Array.isArray(value) ? value : [])
+              : (value && typeof value === 'object' ? [value] : []);
+            content = rows.length
+              ? '<div class="table-wrapper"><table class="data-table project-form-table"><thead><tr>' +
+                columns.map(col => '<th>' + this.escape(col.Name || col.Code) + '</th>').join('') +
+                '</tr></thead><tbody>' + rows.map(row => '<tr>' + columns.map(col => {
+                  const cell = row && row[String(col.Code)];
+                  return '<td>' + this.renderProjectFormValue(cell, col.DataType) + '</td>';
+                }).join('') + '</tr>').join('') + '</tbody></table></div>'
+              : '<span class="project-form-empty">ردیفی ثبت نشده است.</span>';
+          } else if (hasValue) {
+            content = this.renderProjectFormValue(value, info.DataType);
+          }
+          return '<section class="project-form-field"><h4>' + this.escape(info.Name || info.Title || info.Code || 'فیلد') +
+            '</h4><div class="project-form-field-value">' + content + '</div></section>';
+        }).join('');
+        return '<article class="project-form-card" data-project-form-index="' + index + '">' +
+          '<header class="project-form-card-header"><div><h4>' + this.escape(formTitle) + '</h4>' +
+          '<p>' + this.escape(eventTitle) + ' · ' + this.escape(this.formatDate(item.createdAt)) + '</p></div>' +
+          '<span class="project-form-event-ref">رویداد ' + this.escape(item.eventId) + '</span></header>' +
+          '<div class="project-form-card-body">' + fieldHtml + '</div></article>';
+      }).join('');
+      container.querySelectorAll('[data-project-form-attachment]').forEach((button) => {
+        button.addEventListener('click', () => {
+          this.openInformationAttachment(button.dataset.projectFormAttachment,
+            button.dataset.projectFormPreview === 'true');
+        });
+      });
+    },
+
+    renderProjectFormValue: function (value, dataType) {
+      if (value === null || value === undefined || value === '') return '<span>-</span>';
+      const type = String(dataType || '').toLowerCase();
+      if ((type === 'file' || type === 'image') && typeof value === 'object') {
+        const fileName = value.FileName || value.Name || 'پیوست ثبت‌شده';
+        const canView = this.canViewInformationFiles();
+        const attachmentId = value.AttachmentID || value.ID || '';
+        return '<span class="project-form-attachment">' + this.escape(fileName) +
+          (canView && attachmentId
+            ? ' <button type="button" class="btn btn-sm btn-light" data-project-form-attachment="' + this.escape(attachmentId) +
+              '" data-project-form-preview="' + (type === 'image' ? 'true' : 'false') + '">' +
+              (type === 'image' ? 'پیش‌نمایش' : 'دریافت') + '</button>'
+            : '') + '</span>';
+      }
+      if (typeof value === 'boolean' || String(type) === 'boolean') {
+        return '<span>' + (value === true || String(value).toLowerCase() === 'true' ? 'بله' : 'خیر') + '</span>';
+      }
+      if (Array.isArray(value)) {
+        return '<ul class="project-form-value-list">' + value.map(item => '<li>' +
+          this.escape(typeof item === 'object' ? JSON.stringify(item) : item) + '</li>').join('') + '</ul>';
+      }
+      if (typeof value === 'object') {
+        const label = value.Name || value.Title || value.Value || value.FileName;
+        return '<span>' + this.escape(label !== undefined ? label : JSON.stringify(value)) + '</span>';
+      }
+      return '<span>' + this.escape(value) + '</span>';
     },
 
     loadProjectInformation: async function (forceRefresh) {
@@ -313,7 +481,7 @@
       if (document.getElementById('project-information-styles')) return;
       const style = document.createElement('style');
       style.id = 'project-information-styles';
-      style.textContent = '.project-information-item{padding:14px 0;border-bottom:1px solid var(--color-border)}.project-information-item:last-child{border-bottom:0}.project-information-item-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.project-information-item-head strong{display:block;color:var(--color-text);font-size:13px}.project-information-item-head small{display:block;color:var(--color-text-secondary);font-size:11px;margin-top:4px}.project-information-actions{display:flex;gap:6px;flex-wrap:wrap}.project-information-item-content{margin-top:10px}.information-file-field input{display:block;width:100%;margin-top:6px}.information-file-current{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:12px}.information-file-preview img{display:block;max-width:180px;max-height:140px;object-fit:contain;margin-top:8px;border-radius:8px}.information-image-preview img{display:block;max-width:100%;max-height:70vh;object-fit:contain;margin:auto}.project-information-value{white-space:pre-wrap;overflow-wrap:anywhere;color:var(--color-text);font-size:13px}.project-information-empty{font-size:12px;color:var(--color-text-secondary)}.project-information-modal .modal{max-width:760px;max-height:90vh;overflow:auto}.project-information-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;padding:12px;margin:10px 0;border:1px solid var(--color-border);border-radius:8px}.project-information-row-actions{display:flex;justify-content:flex-end}.project-information-history-row{padding:12px 0;border-bottom:1px solid var(--color-border);font-size:12px;line-height:1.9}.project-information-history-row strong{color:var(--color-text)}.project-information-history-row pre{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--color-background);padding:8px;border-radius:6px;direction:ltr;text-align:left}@media(max-width:600px){.project-information-item-head{align-items:flex-start;flex-direction:column}.project-information-actions{width:100%}.project-information-actions button{flex:1}}';
+      style.textContent = '.project-form-card{border:1px solid var(--color-border);border-radius:10px;margin:14px 0;overflow:hidden}.project-form-card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:14px;background:var(--color-background)}.project-form-card-header h4{margin:0;color:var(--color-text);font-size:14px}.project-form-card-header p{margin:5px 0 0;color:var(--color-text-secondary);font-size:11px}.project-form-event-ref{font-size:11px;color:var(--color-text-secondary);white-space:nowrap}.project-form-card-body{padding:4px 14px}.project-form-field{padding:12px 0;border-bottom:1px solid var(--color-border)}.project-form-field:last-child{border-bottom:0}.project-form-field h4{margin:0 0 8px;font-size:12px;color:var(--color-text-secondary)}.project-form-field-value{font-size:13px;color:var(--color-text);white-space:pre-wrap;overflow-wrap:anywhere}.project-form-empty{color:var(--color-text-secondary);font-size:12px}.project-form-table{min-width:0}.project-form-value-list{margin:0;padding-right:20px}.project-forms-count{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;border-radius:12px;background:var(--color-background);font-size:11px}.project-information-item{padding:14px 0;border-bottom:1px solid var(--color-border)}.project-information-item:last-child{border-bottom:0}.project-information-item-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.project-information-item-head strong{display:block;color:var(--color-text);font-size:13px}.project-information-item-head small{display:block;color:var(--color-text-secondary);font-size:11px;margin-top:4px}.project-information-actions{display:flex;gap:6px;flex-wrap:wrap}.project-information-item-content{margin-top:10px}.information-file-field input{display:block;width:100%;margin-top:6px}.information-file-current{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:12px}.information-file-preview img{display:block;max-width:180px;max-height:140px;object-fit:contain;margin-top:8px;border-radius:8px}.information-image-preview img{display:block;max-width:100%;max-height:70vh;object-fit:contain;margin:auto}.project-information-value{white-space:pre-wrap;overflow-wrap:anywhere;color:var(--color-text);font-size:13px}.project-information-empty{font-size:12px;color:var(--color-text-secondary)}.project-information-modal .modal{max-width:760px;max-height:90vh;overflow:auto}.project-information-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;padding:12px;margin:10px 0;border:1px solid var(--color-border);border-radius:8px}.project-information-row-actions{display:flex;justify-content:flex-end}.project-information-history-row{padding:12px 0;border-bottom:1px solid var(--color-border);font-size:12px;line-height:1.9}.project-information-history-row strong{color:var(--color-text)}.project-information-history-row pre{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--color-background);padding:8px;border-radius:6px;direction:ltr;text-align:left}@media(max-width:600px){.project-form-card-header{flex-direction:column}.project-information-item-head{align-items:flex-start;flex-direction:column}.project-information-actions{width:100%}.project-information-actions button{flex:1}}';
       document.head.appendChild(style);
     },
 
@@ -1180,6 +1348,7 @@
       });
 
       this.renderEvents(this.events);
+      this.loadProjectForms(this.events, version, false);
 
       this.loadSharedData(version).then(function () {
         if (version === ProjectDetail.loadVersion) {
