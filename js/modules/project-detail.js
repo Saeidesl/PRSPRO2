@@ -464,7 +464,7 @@
           const item = this.projectForms[index];
           const field = item && (item.definition.Fields || []).find((entry, i) => String(entry.ID || entry.InformationTypeID || i) === fieldKey);
           if (!item || !field) return;
-          this.printDesignerElements.push({id:'ppd-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),type:'form-field',sourceIndex:index,formId:String(item.formId || item.FormID || (item.definition && item.definition.ID) || ''),fieldKey:fieldKey,title:(field.InformationType && field.InformationType.Name) || 'فیلد',style:{border:'1px solid #d1d5db',padding:10,background:'#ffffff',fontSize:12,align:'right'}});
+          this.printDesignerElements.push({id:'ppd-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),type:'form-field',sourceIndex:index,formId:String(item.formId || item.FormID || (item.definition && item.definition.ID) || ''),eventTypeId:String(item.event && (item.event.EventTypeID || item.event.EventTypeId) || ''),fieldKey:fieldKey,title:(field.InformationType && field.InformationType.Name) || 'فیلد',style:{border:'1px solid #d1d5db',padding:10,background:'#ffffff',fontSize:12,align:'right'}});
           this.printDesignerSelectedId = this.printDesignerElements[this.printDesignerElements.length-1].id;
           this.renderPrintDesigner(overlay); return;
         }
@@ -472,7 +472,7 @@
           const index = Number(form.dataset.ppdForm);
           const item = this.projectForms[index];
           if (!item) return;
-          this.printDesignerElements.push({id:'ppd-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),type:'form',sourceIndex:index,formId:String(item.formId || item.FormID || (item.definition && item.definition.ID) || ''),title:(item.definition && (item.definition.Name || item.definition.Title)) || 'فرم ثبت‌شده',style:{border:'1px solid #d1d5db',padding:12,background:'#ffffff',fontSize:12,align:'right'}});
+          this.printDesignerElements.push({id:'ppd-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),type:'form',sourceIndex:index,formId:String(item.formId || item.FormID || (item.definition && item.definition.ID) || ''),eventTypeId:String(item.event && (item.event.EventTypeID || item.event.EventTypeId) || ''),title:(item.definition && (item.definition.Name || item.definition.Title)) || 'فرم ثبت‌شده',style:{border:'1px solid #d1d5db',padding:12,background:'#ffffff',fontSize:12,align:'right'}});
           this.printDesignerSelectedId = this.printDesignerElements[this.printDesignerElements.length-1].id;
           this.renderPrintDesigner(overlay); return;
         }
@@ -694,7 +694,8 @@
         const rows = Object.keys(p).filter(k => !/^(ID|TenantID|CreatedBy|UpdatedBy|DeletedAt)$/i.test(k) && ['string','number','boolean'].includes(typeof p[k]) && p[k] !== '').slice(0,24);
         return '<h3>مشخصات پروژه</h3><dl>' + rows.map(k => '<div><dt>' + this.escape(k) + '</dt><dd>' + this.escape(this.informationValue(p[k])) + '</dd></div>').join('') + '</dl>';
       }
-      const record = this.projectForms.find(entry => item.formId && String(entry.formId || entry.FormID || (entry.definition && entry.definition.ID) || '') === String(item.formId)) || this.projectForms[Number(item.sourceIndex)];
+      const matchingRecords = item.formId ? this.projectForms.filter(entry => String(entry.formId || entry.FormID || (entry.definition && entry.definition.ID) || '') === String(item.formId) && (!item.eventTypeId || String(entry.event && (entry.event.EventTypeID || entry.event.EventTypeId) || '') === String(item.eventTypeId))) : [];
+      const record = (matchingRecords.length ? matchingRecords[matchingRecords.length - 1] : null) || this.projectForms[Number(item.sourceIndex)];
       if (!record) return '';
       const definition = record.definition || {};
       const fields = Array.isArray(definition.Fields) ? definition.Fields : [];
