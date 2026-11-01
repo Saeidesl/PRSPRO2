@@ -23,7 +23,12 @@
     loadVersion: 0,
 
     init: function () {
-      if (window.location.hash.replace(/^#/, '').split('/')[0] === 'print-designer') {
+      const activePrintRoute = window.location.hash.replace(/^#/, '').split('/')[0];
+      if (activePrintRoute === 'print-output') {
+        this.initPrintOutputPage();
+        return;
+      }
+      if (activePrintRoute === 'print-design' || activePrintRoute === 'print-designer') {
         this.initPrintDesignerPage();
         return;
       }
@@ -270,9 +275,68 @@
       }
     },
 
+    initPrintOutputPage: async function () {
+      const select = document.getElementById('print-output-project-select');
+      const status = document.getElementById('print-output-project-status');
+      const launch = document.getElementById('print-output-launch');
+      const design = document.getElementById('print-output-open-design');
+      if (!select || !launch) return;
+      select.addEventListener('change', () => {
+        launch.disabled = !select.value;
+        if (design) design.disabled = !select.value;
+        if (status) status.textContent = select.value ? 'پروژه انتخاب شد؛ قالب ذخیره‌شده را می‌توانی برای چاپ آماده کنی.' : '';
+      });
+      if (design) design.addEventListener('click', () => {
+        if (select.value) window.location.hash = '#print-design/' + encodeURIComponent(select.value);
+      });
+      launch.addEventListener('click', async () => {
+        if (!select.value) return;
+        launch.disabled = true;
+        if (status) status.textContent = 'در حال آماده‌سازی سند...';
+        try {
+          await this.loadStandalonePrintProject(select.value);
+          this.printDesignerElements = this.loadPrintDesignerTemplate();
+          if (!this.printDesignerElements.length) {
+            if (status) status.textContent = 'برای این پروژه هنوز قالبی ذخیره نشده است. ابتدا وارد بخش طراحی قالب شو.';
+            return;
+          }
+          await this.openPrintOutput();
+          if (status) status.textContent = 'سند آماده چاپ است.';
+        } catch (error) {
+          if (status) status.textContent = error.message || 'آماده‌سازی سند ناموفق بود.';
+        } finally {
+          launch.disabled = !select.value;
+        }
+      });
+      try {
+        const response = await window.PMS.Api.getCached('/projects', 'PMS_PRINT_OUTPUT_PROJECTS');
+        const projects = this.normalizeArray(response, ['items','Items','projects','Projects']);
+        select.innerHTML = '<option value="">انتخاب پروژه...</option>' + projects.map(project => {
+          const id = project.ID || project.Id || project.ProjectID;
+          const code = project.ProjectCode || project.Code || '';
+          const title = project.Title || project.Name || project.ProjectName || 'بدون عنوان';
+          return '<option value="' + this.escape(id) + '">' + this.escape((code ? code + ' — ' : '') + title) + '</option>';
+        }).join('');
+        const requested = this.getPrintOutputProjectId();
+        if (requested && projects.some(p => String(p.ID || p.Id || p.ProjectID) === requested)) {
+          select.value = requested;
+          launch.disabled = false;
+          if (design) design.disabled = false;
+        }
+      } catch (error) {
+        if (status) status.textContent = 'فهرست پروژه‌ها دریافت نشد؛ لطفاً صفحه را تازه‌سازی کن.';
+      }
+    },
+
+    getPrintOutputProjectId: function () {
+      const parts = (window.location.hash || '').split('/');
+      if (parts.length < 2 || parts[0] !== '#print-output') return '';
+      try { return decodeURIComponent(parts[1]); } catch (error) { return parts[1]; }
+    },
+
     getPrintDesignerProjectId: function () {
       const parts = (window.location.hash || '').split('/');
-      if (parts.length < 2 || parts[0] !== '#print-designer') return '';
+      if (parts.length < 2 || (parts[0] !== '#print-design' && parts[0] !== '#print-designer')) return '';
       try { return decodeURIComponent(parts[1]); } catch (error) { return parts[1]; }
     },
 
@@ -306,13 +370,37 @@
       const overlay = document.createElement('section');
       overlay.id = 'project-print-designer';
       overlay.className = 'project-print-designer' + (standalone ? ' ppd-standalone' : '');
-      overlay.innerHTML = '<div class="ppd-toolbar"><div><strong>طراحی سند چاپی</strong><small>محتوا را اضافه کن، روی صفحه مرتب کن و ظاهرش را تغییر بده.</small></div><div class="ppd-toolbar-actions"><button type="button" data-ppd-save>ذخیره قالب</button><button type="button" data-ppd-print class="primary">چاپ / PDF</button><button type="button" data-ppd-close aria-label="بستن">×</button></div></div><div class="ppd-workspace"><aside class="ppd-library"><h3>افزودن محتوا</h3><button type="button" data-ppd-add="project">مشخصات اصلی پروژه</button><button type="button" data-ppd-add="project-fields">همه مشخصات پروژه</button><button type="button" data-ppd-add="text">متن دلخواه</button><button type="button" data-ppd-add="line">خط جداکننده</button><h4>فرم‌های ثبت‌شده</h4><div class="ppd-form-library">' + this.projectForms.map((item,index) => '<div class="ppd-form-group"><button type="button" data-ppd-form="' + index + '">' + this.escape((item.definition && (item.definition.Name || item.definition.Title)) || 'فرم کامل') + '<small>' + this.escape((item.event && (item.event.EventTypeName || item.event.EventTypeTitle)) || 'رویداد') + ' · ' + this.escape(this.formatDate(item.createdAt)) + '</small></button>' + ((item.definition && Array.isArray(item.definition.Fields)) ? item.definition.Fields.map((field,fieldIndex) => '<button type="button" class="ppd-field-add" data-ppd-field="' + index + '" data-ppd-field-key="' + this.escape(String(field.ID || field.InformationTypeID || fieldIndex)) + '">+ ' + this.escape((field.InformationType && field.InformationType.Name) || field.LabelOverride || 'فیلد') + '</button>').join('') : '') + '</div>').join('') + '</div></aside><main class="ppd-stage-wrap"><div class="ppd-stage-meta">پیش‌نمایش A4 · ' + this.escape(this.project && (this.project.Code || this.project.ProjectCode) || '') + '</div><div class="ppd-paper" data-ppd-paper><div class="ppd-paper-empty">از پنل «افزودن محتوا» موارد موردنیاز را به این صفحه اضافه کن.</div></div></main><aside class="ppd-properties"><h3>تنظیمات المان</h3><div data-ppd-properties class="ppd-properties-empty">برای تنظیم ظاهر، یک المان را انتخاب کن.</div><p class="ppd-help">برای تغییر ترتیب، المان‌ها را با ماوس یا لمس جابه‌جا کن.</p></aside></div>';
+      overlay.innerHTML = '<div class="ppd-toolbar"><div><strong>طراحی قالب چاپی</strong><small>چیدمان و ظاهر سند را تنظیم و قالب را ذخیره کن.</small></div><div class="ppd-toolbar-actions"><button type="button" data-ppd-save>ذخیره قالب</button><button type="button" data-ppd-close aria-label="بستن">×</button></div></div><div class="ppd-workspace"><aside class="ppd-library"><h3>افزودن محتوا</h3><button type="button" data-ppd-add="project">مشخصات اصلی پروژه</button><button type="button" data-ppd-add="project-fields">همه مشخصات پروژه</button><button type="button" data-ppd-add="text">متن دلخواه</button><button type="button" data-ppd-add="line">خط جداکننده</button><h4>فرم‌های ثبت‌شده</h4><div class="ppd-form-library">' + this.projectForms.map((item,index) => '<div class="ppd-form-group"><button type="button" data-ppd-form="' + index + '">' + this.escape((item.definition && (item.definition.Name || item.definition.Title)) || 'فرم کامل') + '<small>' + this.escape((item.event && (item.event.EventTypeName || item.event.EventTypeTitle)) || 'رویداد') + ' · ' + this.escape(this.formatDate(item.createdAt)) + '</small></button>' + ((item.definition && Array.isArray(item.definition.Fields)) ? item.definition.Fields.map((field,fieldIndex) => '<button type="button" class="ppd-field-add" data-ppd-field="' + index + '" data-ppd-field-key="' + this.escape(String(field.ID || field.InformationTypeID || fieldIndex)) + '">+ ' + this.escape((field.InformationType && field.InformationType.Name) || field.LabelOverride || 'فیلد') + '</button>').join('') : '') + '</div>').join('') + '</div></aside><main class="ppd-stage-wrap"><div class="ppd-stage-meta">پیش‌نمایش A4 · ' + this.escape(this.project && (this.project.Code || this.project.ProjectCode) || '') + '</div><div class="ppd-paper" data-ppd-paper><div class="ppd-paper-empty">از پنل «افزودن محتوا» موارد موردنیاز را به این صفحه اضافه کن.</div></div></main><aside class="ppd-properties"><h3>تنظیمات المان</h3><div data-ppd-properties class="ppd-properties-empty">برای تنظیم ظاهر، یک المان را انتخاب کن.</div><p class="ppd-help">برای تغییر ترتیب، المان‌ها را با ماوس یا لمس جابه‌جا کن.</p></aside></div>';
       document.body.classList.add('ppd-printing');
       document.body.appendChild(overlay);
       this.printDesignerElements = this.loadPrintDesignerTemplate();
       this.printDesignerSelectedId = null;
       this.bindPrintDesigner(overlay);
       this.renderPrintDesigner(overlay);
+    },
+
+    openPrintOutput: async function () {
+      const existing = document.getElementById('project-print-designer');
+      if (existing) existing.remove();
+      const overlay = document.createElement('section');
+      overlay.id = 'project-print-designer';
+      overlay.className = 'project-print-designer ppd-output-mode';
+      overlay.innerHTML = '<div class="ppd-toolbar"><div><strong>چاپ اسناد</strong><small>پیش‌نمایش نهایی قالب ذخیره‌شده پروژه</small></div><div class="ppd-toolbar-actions"><button type="button" data-ppd-print class="primary">چاپ / PDF</button><button type="button" data-ppd-close aria-label="بستن">×</button></div></div><div class="ppd-workspace ppd-output-workspace"><main class="ppd-stage-wrap"><div class="ppd-stage-meta">پیش‌نمایش A4 · ' + this.escape(this.project && (this.project.Code || this.project.ProjectCode) || '') + '</div><div class="ppd-paper" data-ppd-paper></div></main><aside class="ppd-properties" data-ppd-properties hidden></aside></div>';
+      document.body.classList.add('ppd-printing');
+      document.body.appendChild(overlay);
+      this.printDesignerElements = this.loadPrintDesignerTemplate();
+      this.printDesignerSelectedId = null;
+      this.printDesignerSelectedInner = null;
+      this.printDesignerSelectedTable = null;
+      this.renderPrintDesigner(overlay);
+      await this.printDesignerImagesReady;
+      overlay.addEventListener('click', event => {
+        if (event.target.closest('[data-ppd-print]')) window.print();
+        if (event.target.closest('[data-ppd-close]')) {
+          overlay.remove();
+          document.body.classList.remove('ppd-printing');
+        }
+      });
     },
 
     bindPrintDesigner: function (overlay) {
@@ -546,7 +634,7 @@
         this.printDesignerCurrentItem = null;
         return '<article draggable="true" data-ppd-element="' + this.escape(item.id) + '" class="ppd-element ' + (item.id === this.printDesignerSelectedId ? 'is-selected' : '') + '" style="border:' + this.escape(style.border || '0') + ';padding:' + Number(style.padding || 0) + 'px;background:' + this.escape(style.background || '#fff') + ';font-size:' + Number(style.fontSize || 13) + 'px;text-align:' + this.escape(style.align || 'right') + '">' + content + (item.id === this.printDesignerSelectedId ? '<button type="button" class="ppd-element-remove" data-ppd-remove="' + this.escape(item.id) + '" aria-label="حذف">×</button>' : '') + '</article>';
       }).join('') : '<div class="ppd-paper-empty">از پنل «افزودن محتوا» موارد موردنیاز را به این صفحه اضافه کن.</div>';
-      this.loadPrintDesignerImages(paper);
+      this.printDesignerImagesReady = this.loadPrintDesignerImages(paper);
       const tableSelection = this.printDesignerSelectedTable;
       if (tableSelection) {
         const parent = elements.find(item => item.id === tableSelection.elementId);
