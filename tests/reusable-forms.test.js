@@ -82,7 +82,7 @@ test('event type create and edit form can assign reusable forms inline',()=>{
 test('event entry loads assigned forms, submits FormResponses and displays saved snapshots',()=>{
   const events=read('js/modules/events.js');
   assert.match(events,/\/event-types\/'.*\/forms/);
-  assert.match(events,/FormResponses:\s*formResponses/);
+  assert.match(events,/FormResponses:\s*this\.amendmentMode \? \[\] : formResponses/);
   assert.match(events,/collectConfiguredFormResponses/);
   assert.match(events,/\/events\/'.*\/forms/);
   assert.match(events,/DefinitionSnapshot|response\.Definition/);
@@ -116,4 +116,21 @@ test('form table rendering separates one-row and repeatable cardinality',()=>{
   assert.match(detail,/value = multi \? dataRows : \(dataRows\[0\] \|\| \{\}\)/);
   assert.match(types,/تعدادپذیری/);
   assert.doesNotMatch(types,/form\.elements\.DataType\.disabled = true/);
+});
+
+
+test('amendment retry reuses the created correction event and updates the source response only once',()=>{
+  const events=read('js/modules/events.js');
+  assert.match(events,/this\.amendmentPendingValues = this\.amendmentMode \? formResponses : null/);
+  assert.match(events,/this\.amendmentMode && this\.amendmentEventId/);
+  assert.match(events,/تلاش مجدد باید فقط PUT را اجرا کند و رویداد تکراری نسازد/);
+  assert.match(events,/const amendmentValues = this\.amendmentPendingValues \|\| formResponses/);
+  assert.match(events,/PMS\.Api\.put\('\/events\/' \+ encodeURIComponent\(this\.amendmentSourceEventId\)/);
+});
+
+test('amendment submission fingerprints source identity and edited values for safe POST retries',()=>{
+  const events=read('js/modules/events.js');
+  assert.match(events,/amendmentSourceEventId: this\.amendmentMode \? this\.amendmentSourceEventId/);
+  assert.match(events,/amendmentSourceFormId: this\.amendmentMode \? this\.amendmentSourceFormId/);
+  assert.match(events,/amendmentValues: this\.amendmentMode \? formResponses/);
 });
