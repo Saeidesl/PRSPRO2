@@ -43,7 +43,7 @@ test('print designer supports visual ordering, element styling, saved templates 
 test('print designer assets are cache-busted and loaded by the application',()=>{
   const index=read('index.html');
   assert.match(index,/project-print-designer\.css\?v=/);
-  assert.match(index,/project-detail\.js\?v=20261101-print-designer-workspace-1/);
+  assert.match(index,/project-detail\.js\?v=20261101-named-print-templates-1/);
 });
 
 
@@ -186,4 +186,26 @@ test('print designer keeps A4 print dimensions and read-only output styles',()=>
  assert.match(css,/@page\{size:A4 portrait/);
  assert.match(css,/\.ppd-standalone \.ppd-paper\{width:210mm!important/);
  assert.match(css,/\.ppd-output-mode \.ppd-properties\{display:none!important/);
+});
+
+ 
+test('named print templates persist full layouts and stable form snapshots on the server',()=>{
+ const module=read('js/modules/project-detail.js');
+ assert.match(module,/Api\.post\('\/print-templates'/);
+ assert.match(module,/Api\.put\('\/print-templates\//);
+ assert.match(module,/formId:item\.formId/);
+ assert.match(module,/formDefinition:item\.definition/);
+ assert.match(module,/delete item\.sourceIndex/);
+ assert.match(module,/Template:\s*\{version:1,orientation:'portrait',elements:elements\}/);
+});
+
+test('print output selects a reusable named template independently of the project',()=>{
+ const page=read('pages/print-output.html');
+ const module=read('js/modules/project-detail.js');
+ assert.match(page,/print-output-template-select/);
+ assert.match(module,/Api\.getFresh\('\/print-templates'/);
+ assert.match(module,/Api\.get\('\/print-templates\//);
+ assert.match(module,/openPrintOutput\(template\)/);
+ assert.match(module,/اطلاعات وارد نشده/);
+ assert.match(module,/item\.formDefinition/);
 });
