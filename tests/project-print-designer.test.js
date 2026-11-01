@@ -5,10 +5,10 @@ const path=require('node:path');
 const test=require('node:test');
 const read=file=>fs.readFileSync(path.join(__dirname,'..',file),'utf8');
 
-test('project detail exposes a visual print designer entry point',()=>{
-  const page=read('pages/project-detail.html');
+test('standalone print designer route exposes its page module',()=>{
+  const page=read('pages/print-designer.html');
   const module=read('js/modules/project-detail.js');
-  assert.match(page,/id="project-print-designer-open"/);
+  assert.match(page,/print-designer-project-select/);
   assert.match(module,/openPrintDesigner: function/);
   assert.match(module,/bindPrintDesigner: function/);
 });
@@ -43,7 +43,7 @@ test('print designer supports visual ordering, element styling, saved templates 
 test('print designer assets are cache-busted and loaded by the application',()=>{
   const index=read('index.html');
   assert.match(index,/project-print-designer\.css\?v=/);
-  assert.match(index,/project-detail\.js\?v=20261101-visual-print-designer-1/);
+  assert.match(index,/project-detail\.js\?v=20261101-standalone-print-designer-1/);
 });
 
 
