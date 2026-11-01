@@ -311,6 +311,7 @@
             throw new Error('ساختار قالب ذخیره‌شده معتبر نیست.');
           }
           this.printDesignerTemplate = template;
+          this.printDesignerTemplateMeta = saved;
           this.printDesignerElements = template.elements;
           await this.openPrintOutput(template);
           if (status) status.textContent = 'سند با قالب انتخاب‌شده آماده چاپ است.';
@@ -659,7 +660,10 @@
           .find(item => String(item.Name || '').trim().toLocaleLowerCase() === name.trim().toLocaleLowerCase());
         let response;
         if (existing) {
-          if (!window.confirm('قالبی با این نام وجود دارد. نسخه قبلی با طراحی فعلی جایگزین شود؟')) return;
+          if (!window.confirm('قالبی با این نام وجود دارد. نسخه قبلی با طراحی فعلی جایگزین شود؟')) {
+            if (button) { button.textContent = originalLabel || 'ذخیره قالب'; button.disabled = false; }
+            return;
+          }
           response = await window.PMS.Api.put('/print-templates/' + encodeURIComponent(existing.ID || existing.Id), payload, {trackSync:false});
         } else {
           response = await window.PMS.Api.post('/print-templates', payload, {trackSync:false});
