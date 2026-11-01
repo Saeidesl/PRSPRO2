@@ -80,3 +80,17 @@ test('print designer renders image attachments as inline images on the A4 canvas
  assert.match(module,/ppd-inline-image/);
  assert.match(css,/ppd-inline-image/);
 });
+
+
+test('print designer exposes independently selectable and adjustable form images',()=>{
+ const module=read('js/modules/project-detail.js');
+ const css=read('css/project-print-designer.css');
+ assert.match(module,/data-ppd-inner-image/);
+ assert.match(module,/printDesignerSelectedInner/);
+ assert.match(module,/data-ppd-inner-style="width"/);
+ assert.match(module,/data-ppd-inner-style="x"/);
+ assert.match(module,/data-ppd-inner-style="y"/);
+ assert.match(module,/innerLayout\[selection\.imageId\]/);
+ assert.match(module,/image\.dataset\.ppdInnerImage/);
+ assert.match(css,/ppd-inline-image\[data-ppd-inner-image\]/);
+});
