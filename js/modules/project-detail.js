@@ -266,6 +266,12 @@
           '<span class="project-form-event-ref">رویداد ' + this.escape(item.eventId) + '</span></header>' +
           '<div class="project-form-card-body">' + fieldHtml + '</div></article>';
       }).join('');
+      container.querySelectorAll('[data-project-form-attachment]').forEach((button) => {
+        button.addEventListener('click', () => {
+          this.openInformationAttachment(button.dataset.projectFormAttachment,
+            button.dataset.projectFormPreview === 'true');
+        });
+      });
     },
 
     renderProjectFormValue: function (value, dataType) {
@@ -274,9 +280,12 @@
       if ((type === 'file' || type === 'image') && typeof value === 'object') {
         const fileName = value.FileName || value.Name || 'پیوست ثبت‌شده';
         const canView = this.canViewInformationFiles();
+        const attachmentId = value.AttachmentID || value.ID || '';
         return '<span class="project-form-attachment">' + this.escape(fileName) +
-          (canView && (value.AttachmentID || value.ID)
-            ? ' <small> (پیوست)</small>'
+          (canView && attachmentId
+            ? ' <button type="button" class="btn btn-sm btn-light" data-project-form-attachment="' + this.escape(attachmentId) +
+              '" data-project-form-preview="' + (type === 'image' ? 'true' : 'false') + '">' +
+              (type === 'image' ? 'پیش‌نمایش' : 'دریافت') + '</button>'
             : '') + '</span>';
       }
       if (typeof value === 'boolean' || String(type) === 'boolean') {
