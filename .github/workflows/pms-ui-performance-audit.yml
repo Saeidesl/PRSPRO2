@@ -68,6 +68,11 @@ jobs:
           cat /tmp/pms-audit-server.log
           exit 1
 
+      - name: Verify IRANSansWeb font rendering in Chromium
+        env:
+          PMS_BASE_URL: ${{ inputs.base_url || vars.PMS_STAGING_BASE_URL || vars.PMS_BASE_URL || 'http://127.0.0.1:4173/PRSPRO2/' }}
+        run: node tests/iransans-fonts.browser.cjs
+
       - name: Run UI inventory and performance audit
         env:
           PMS_BASE_URL: ${{ inputs.base_url || vars.PMS_STAGING_BASE_URL || vars.PMS_BASE_URL || 'http://127.0.0.1:4173/PRSPRO2/' }}
