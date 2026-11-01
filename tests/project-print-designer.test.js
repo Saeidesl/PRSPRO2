@@ -45,3 +45,18 @@ test('print designer assets are cache-busted and loaded by the application',()=>
   assert.match(index,/project-print-designer\.css\?v=/);
   assert.match(index,/project-detail\.js\?v=20261101-visual-print-designer-1/);
 });
+
+
+test('print designer is a standalone sidebar route with project selection',()=>{
+ const layout=read('js/components/layout.js');
+ const router=read('js/core/router.js');
+ const page=read('pages/print-designer.html');
+ const module=read('js/modules/project-detail.js');
+ assert.match(layout,/route: 'print-designer', label: 'چاپ‌ساز'/);
+ assert.match(router,/print-designer: 'pages\/print-designer.html'/);
+ assert.match(router,/print-designer: \['PROJECT_VIEW'\]/);
+ assert.match(page,/print-designer-project-select/);
+ assert.match(module,/initPrintDesignerPage: async function/);
+ assert.match(module,/loadStandalonePrintProject: async function/);
+ assert.doesNotMatch(read('pages/project-detail.html'),/project-print-designer-open/);
+});
