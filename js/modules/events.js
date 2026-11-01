@@ -2088,8 +2088,11 @@
     },
 
     uploadConfiguredFormFile: async function (file, dataType, projectId, input) {
-      if (input && input.dataset.uploadedAttachment) {
-        try { const cached = JSON.parse(input.dataset.uploadedAttachment); if (cached && cached.FileName === file.name && Number(cached.FileSize) === Number(file.size)) return cached; } catch (error) {}
+      // Reuse an upload only when it belongs to this exact File object.
+      // A previously saved attachment may have the same name/size as a newly
+      // selected replacement; metadata equality must never suppress that upload.
+      if (input && input._pmsUploadedFile === file && input._pmsUploadedAttachment) {
+        return input._pmsUploadedAttachment;
       }
       if (!projectId) throw new Error('بارگذاری فایل در رویداد مستقل امکان‌پذیر نیست؛ این فرم باید به پروژه متصل باشد.');
       const maxBytes = 10 * 1024 * 1024;
@@ -2109,7 +2112,11 @@
       const attachment = result && (result.attachment || result.Attachment);
       if (!attachment || !(attachment.ID || attachment.Id)) throw new Error('اطلاعات فایل بارگذاری‌شده دریافت نشد.');
       const value = {AttachmentID:attachment.ID || attachment.Id,FileName:attachment.FileName || file.name,MimeType:attachment.MimeType || mime,FileSize:Number(attachment.FileSize || file.size),AttachmentType:attachmentType};
-      if (input) input.dataset.uploadedAttachment = JSON.stringify(value);
+      if (input) {
+        input.dataset.uploadedAttachment = JSON.stringify(value);
+        input._pmsUploadedFile = file;
+        input._pmsUploadedAttachment = value;
+      }
       return value;
     },
 
