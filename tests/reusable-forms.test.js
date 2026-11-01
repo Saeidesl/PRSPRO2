@@ -164,9 +164,14 @@ test('event type settings expose explicit amendment flag and selectable reusable
   assert.match(types,/AmendableFormIDs: fieldChecked/);
 });
 
-test('event amendment mode prefers explicit configuration and limits source forms to its allow-list',()=>{
+test('event amendment mode loads source events without an out-of-scope allow-list and filters source forms by allow-list',()=>{
   const events=read('js/modules/events.js');
   assert.match(events,/selectedType\.IsFormAmendment/);
   assert.match(events,/selectedAmendmentType\.AmendableFormIDs/);
-  assert.match(events,/allowedFormIds\.indexOf\(id\) === -1/);
+  const eventLoaderStart=events.indexOf('loadAmendmentSourceEvents: async function');
+  const formLoaderStart=events.indexOf('loadAmendmentSourceForms: async function');
+  const eventLoader=events.slice(eventLoaderStart,formLoaderStart);
+  const formLoader=events.slice(formLoaderStart,events.indexOf('hydrateAmendmentForm: function',formLoaderStart));
+  assert.doesNotMatch(eventLoader,/allowedFormIds/);
+  assert.match(formLoader,/explicitAllowList && allowedFormIds\.indexOf\(id\) === -1/);
 });
