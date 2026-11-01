@@ -91,6 +91,8 @@ test('print designer exposes independently selectable and adjustable form images
  assert.match(module,/data-ppd-inner-style="x"/);
  assert.match(module,/data-ppd-inner-style="y"/);
  assert.match(module,/pointerdown/);
+ assert.match(module,/parentForControls/);
+ assert.match(module,/this\.printDesignerSelectedInner = \{ elementId: innerDrag\.elementId, imageId: innerDrag\.imageId \}/);
  assert.match(module,/pointermove/);
  assert.match(module,/innerLayout\[selection\.imageId\]/);
  assert.match(module,/image\.dataset\.ppdInnerImage/);
