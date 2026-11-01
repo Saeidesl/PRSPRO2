@@ -148,13 +148,13 @@ test('template design and document output are separate routes and modes',()=>{
  const module=read('js/modules/project-detail.js');
  assert.match(layout,/label: 'طراحی قالب'/);
  assert.match(layout,/label: 'چاپ اسناد'/);
- assert.match(router,/'print-design': 'pages\\/print-designer.html'/);
- assert.match(router,/'print-output': 'pages\\/print-output.html'/);
+ assert.ok(router.includes("'print-design': 'pages/print-designer.html'"));
+ assert.ok(router.includes("'print-output': 'pages/print-output.html'"));
  assert.match(design,/ذخیره کن/);
  assert.match(output,/print-output-project-select/);
  assert.match(module,/openPrintOutput: async function/);
  assert.match(module,/ppd-output-mode/);
- assert.match(module,/this\\.loadPrintDesignerTemplate\\(\\)/);
+ assert.ok(module.includes("this.loadPrintDesignerTemplate()"));
  assert.match(module,/data-ppd-print/);
  const editor=module.slice(module.indexOf('openPrintDesigner: function'),module.indexOf('openPrintOutput: async function'));
  assert.doesNotMatch(editor,/data-ppd-print/);
