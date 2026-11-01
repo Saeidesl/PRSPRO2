@@ -231,6 +231,7 @@
       overlay.id = 'project-print-designer';
       overlay.className = 'project-print-designer';
       overlay.innerHTML = '<div class="ppd-toolbar"><div><strong>طراحی سند چاپی</strong><small>محتوا را اضافه کن، روی صفحه مرتب کن و ظاهرش را تغییر بده.</small></div><div class="ppd-toolbar-actions"><button type="button" data-ppd-save>ذخیره قالب</button><button type="button" data-ppd-print class="primary">چاپ / PDF</button><button type="button" data-ppd-close aria-label="بستن">×</button></div></div><div class="ppd-workspace"><aside class="ppd-library"><h3>افزودن محتوا</h3><button type="button" data-ppd-add="project">مشخصات اصلی پروژه</button><button type="button" data-ppd-add="project-fields">همه مشخصات پروژه</button><button type="button" data-ppd-add="text">متن دلخواه</button><button type="button" data-ppd-add="line">خط جداکننده</button><h4>فرم‌های ثبت‌شده</h4><div class="ppd-form-library">' + this.projectForms.map((item,index) => '<button type="button" data-ppd-form="' + index + '">' + this.escape((item.definition && (item.definition.Name || item.definition.Title)) || 'فرم') + '<small>' + this.escape((item.event && (item.event.EventTypeName || item.event.EventTypeTitle)) || 'رویداد') + ' · ' + this.escape(this.formatDate(item.createdAt)) + '</small></button>').join('') + '</div></aside><main class="ppd-stage-wrap"><div class="ppd-stage-meta">پیش‌نمایش A4 · ' + this.escape(this.project && (this.project.Code || this.project.ProjectCode) || '') + '</div><div class="ppd-paper" data-ppd-paper><div class="ppd-paper-empty">از پنل «افزودن محتوا» موارد موردنیاز را به این صفحه اضافه کن.</div></div></main><aside class="ppd-properties"><h3>تنظیمات المان</h3><div data-ppd-properties class="ppd-properties-empty">برای تنظیم ظاهر، یک المان را انتخاب کن.</div><p class="ppd-help">برای تغییر ترتیب، المان‌ها را با ماوس یا لمس جابه‌جا کن.</p></aside></div>';
+      document.body.classList.add('ppd-printing');
       document.body.appendChild(overlay);
       this.printDesignerElements = this.loadPrintDesignerTemplate();
       this.printDesignerSelectedId = null;
@@ -242,13 +243,14 @@
       overlay.addEventListener('click', (event) => {
         const add = event.target.closest('[data-ppd-add]');
         const form = event.target.closest('[data-ppd-form]');
+        const fieldButton = event.target.closest('[data-ppd-field]');
         const close = event.target.closest('[data-ppd-close]');
         const save = event.target.closest('[data-ppd-save]');
         const print = event.target.closest('[data-ppd-print]');
         const element = event.target.closest('[data-ppd-element]');
         const remove = event.target.closest('[data-ppd-remove]');
         const move = event.target.closest('[data-ppd-move]');
-        if (close) { overlay.remove(); return; }
+        if (close) { overlay.remove(); document.body.classList.remove('ppd-printing'); return; }
         if (save) { this.savePrintDesignerTemplate(); save.textContent = 'ذخیره شد'; return; }
         if (print) { window.print(); return; }
         if (move) {
@@ -271,6 +273,16 @@
           let text = '';
           if (type === 'text') { text = window.prompt('متن موردنظر را وارد کن:') || ''; if (!text.trim()) return; }
           this.printDesignerElements.push({id:'ppd-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),type:type,text:text,style:{border:'1px solid #d1d5db',padding:12,background:'#ffffff',fontSize:13,align:'right'}});
+          this.printDesignerSelectedId = this.printDesignerElements[this.printDesignerElements.length-1].id;
+          this.renderPrintDesigner(overlay); return;
+        }
+        if (fieldButton) {
+          const index = Number(fieldButton.dataset.ppdField);
+          const fieldKey = fieldButton.dataset.ppdFieldKey;
+          const item = this.projectForms[index];
+          const field = item && (item.definition.Fields || []).find((entry, i) => String(entry.ID || entry.InformationTypeID || i) === fieldKey);
+          if (!item || !field) return;
+          this.printDesignerElements.push({id:'ppd-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),type:'form-field',sourceIndex:index,fieldKey:fieldKey,title:(field.InformationType && field.InformationType.Name) || 'فیلد',style:{border:'1px solid #d1d5db',padding:10,background:'#ffffff',fontSize:12,align:'right'}});
           this.printDesignerSelectedId = this.printDesignerElements[this.printDesignerElements.length-1].id;
           this.renderPrintDesigner(overlay); return;
         }
@@ -370,6 +382,19 @@
       const definition = record.definition || {};
       const fields = Array.isArray(definition.Fields) ? definition.Fields : [];
       const values = record.values || {};
+      if (item.type === 'form-field') {
+        const field = fields.find((entry, index) => String(entry.ID || entry.InformationTypeID || index) === String(item.fieldKey));
+        if (!field) return '';
+        const info = field.InformationType || {};
+        const id = String(field.InformationTypeID || info.ID || info.Id || '');
+        const value = values[id];
+        const cols = Array.isArray(info.Columns) ? info.Columns.filter(col => String(col.Status || 'ACTIVE').toUpperCase() === 'ACTIVE') : [];
+        if (cols.length) {
+          const rows = String(info.Cardinality || 'SINGLE').toUpperCase() === 'MULTIPLE' ? (Array.isArray(value) ? value : []) : (value && typeof value === 'object' ? [value] : []);
+          return '<h3>' + this.escape(info.Name || info.Title || 'فیلد') + '</h3><table><thead><tr>' + cols.map(col => '<th>' + this.escape(col.Name || col.Code) + '</th>').join('') + '</tr></thead><tbody>' + rows.map(row => '<tr>' + cols.map(col => '<td>' + this.escape(this.informationValue(row && row[String(col.Code)])) + '</td>').join('') + '</tr>').join('') + '</tbody></table>';
+        }
+        return '<strong>' + this.escape(info.Name || info.Title || 'فیلد') + '</strong><div>' + this.escape(this.informationValue(value)) + '</div>';
+      }
       const content = fields.slice().sort((a,b) => Number(a.FieldOrder||0)-Number(b.FieldOrder||0)).map(field => {
         const info = field.InformationType || {};
         const id = String(field.InformationTypeID || info.ID || info.Id || '');
