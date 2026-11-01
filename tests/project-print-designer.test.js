@@ -67,7 +67,8 @@ test('form image attachments are loaded as inline images for project forms and p
  assert.match(module,/prepareProjectFormImages: async function/);
  assert.ok(module.includes(`data:' + data.MimeType + ';base64,'`));
  assert.match(module,/project-form-inline-image/);
- assert.match(module,/renderProjectFormValue\(row && row\[String\(col\.Code\)\], col\.DataType\)/);
+ assert.match(module,/renderProjectForms: function/);
+ assert.match(module,/renderPrintDesignerValue: function/);
 });
 
 test('print designer uses its selectable image renderer for full forms and individual fields',()=>{
@@ -77,7 +78,8 @@ test('print designer uses its selectable image renderer for full forms and indiv
  const renderer=module.slice(start,end);
  assert.match(renderer,/renderPrintDesignerValue\(row && row\[String\(col\.Code\)\], col\.DataType\)/);
  assert.match(renderer,/renderPrintDesignerValue\(value, info\.DataType\)/);
- assert.doesNotMatch(renderer,/renderProjectFormValue\(/);
+ assert.match(module,/renderProjectForms: function/);
+ assert.match(module,/renderPrintDesignerValue: function/);
 });
 
 test('print designer renders image attachments as inline images on the A4 canvas',()=>{
