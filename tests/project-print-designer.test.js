@@ -65,7 +65,7 @@ test('print designer is a standalone sidebar route with project selection',()=>{
 test('form image attachments are loaded as inline images for project forms and print designer',()=>{
  const module=read('js/modules/project-detail.js');
  assert.match(module,/prepareProjectFormImages: async function/);
- assert.match(module,/data:image\//);
+ assert.match(module,/data:' \\+ data\\.MimeType \\+ ';base64,'/);
  assert.match(module,/project-form-inline-image/);
  assert.match(module,/renderProjectFormValue\(row && row\[String\(col\.Code\)\], col\.DataType\)/);
 });
