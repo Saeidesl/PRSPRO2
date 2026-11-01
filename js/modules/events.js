@@ -30,6 +30,7 @@
     amendmentSourceEventId: '',
     amendmentSourceFormId: '',
     amendmentSourceVersion: 0,
+    amendmentSourceUpdatedAt: '',
     amendmentEventId: '',
     amendmentPendingValues: null,
 
@@ -1213,6 +1214,7 @@
       this.amendmentSourceEventId = '';
       this.amendmentSourceFormId = '';
       this.amendmentSourceVersion = 0;
+      this.amendmentSourceUpdatedAt = '';
       this.amendmentEventId = '';
       this.amendmentPendingValues = null;
       const section = document.getElementById('event-amendment-section');
@@ -1271,6 +1273,7 @@
           option.value = id;
           option.textContent = definition.Name || definition.Code || id;
           option.dataset.version = String(item.FormVersion || definition.Version || 1);
+          option.dataset.updatedAt = String(item.UpdatedAt || '');
           option.dataset.response = JSON.stringify(item.Values || {});
           option.dataset.definition = JSON.stringify(definition);
           select.appendChild(option);
@@ -1295,6 +1298,7 @@
       }
       this.amendmentSourceFormId = String(formId);
       this.amendmentSourceVersion = Number(option.dataset.version || definition.Version || 1);
+      this.amendmentSourceUpdatedAt = String(option.dataset.updatedAt || '');
       this.formDefinitions = [{ Form: definition, FormID: formId, IsRequired: true }];
       this.renderConfiguredForms();
       const container = document.getElementById('event-configured-forms');
@@ -2349,6 +2353,7 @@
           await PMS.Api.put('/events/' + encodeURIComponent(this.amendmentSourceEventId) + '/forms/' + encodeURIComponent(this.amendmentSourceFormId), {
             AmendmentEventID: amendmentEventId,
             FormVersion: this.amendmentSourceVersion,
+            ExpectedUpdatedAt: this.amendmentSourceUpdatedAt,
             Values: formValues.Values
           });
         }
