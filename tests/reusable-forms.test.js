@@ -153,3 +153,20 @@ test('amending a saved attachment uploads a replacement even when name and size 
   assert.match(upload,/input\._pmsUploadedAttachment = value/);
   assert.doesNotMatch(upload,/cached\.FileName === file\.name/);
 });
+
+
+test('event type settings expose explicit amendment flag and selectable reusable form allow-list',()=>{
+  const types=read('js/modules/event-types.js');
+  assert.match(types,/id="et-is-form-amendment"/);
+  assert.match(types,/id="et-amendable-form-list"/);
+  assert.match(types,/name="AmendableFormIDs"/);
+  assert.match(types,/IsFormAmendment: fieldChecked/);
+  assert.match(types,/AmendableFormIDs: fieldChecked/);
+});
+
+test('event amendment mode prefers explicit configuration and limits source forms to its allow-list',()=>{
+  const events=read('js/modules/events.js');
+  assert.match(events,/selectedType\.IsFormAmendment/);
+  assert.match(events,/selectedAmendmentType\.AmendableFormIDs/);
+  assert.match(events,/allowedFormIds\.indexOf\(id\) === -1/);
+});
