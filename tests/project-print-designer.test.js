@@ -70,6 +70,16 @@ test('form image attachments are loaded as inline images for project forms and p
  assert.match(module,/renderProjectFormValue\(row && row\[String\(col\.Code\)\], col\.DataType\)/);
 });
 
+test('print designer uses its selectable image renderer for full forms and individual fields',()=>{
+ const module=read('js/modules/project-detail.js');
+ const start=module.indexOf('renderPrintDesignerElement: function (item) {');
+ const end=module.indexOf('renderProjectForms: function ()',start);
+ const renderer=module.slice(start,end);
+ assert.match(renderer,/renderPrintDesignerValue\(row && row\[String\(col\.Code\)\], col\.DataType\)/);
+ assert.match(renderer,/renderPrintDesignerValue\(value, info\.DataType\)/);
+ assert.doesNotMatch(renderer,/renderProjectFormValue\(/);
+});
+
 test('print designer renders image attachments as inline images on the A4 canvas',()=>{
  const module=read('js/modules/project-detail.js');
  const css=read('css/project-print-designer.css');
