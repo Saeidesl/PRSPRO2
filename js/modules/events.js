@@ -26,6 +26,12 @@
     fieldsLoadedForTypeId: '',
     searchTimer: null,
     preselectedProjectId: '',
+    amendmentMode: false,
+    amendmentSourceEventId: '',
+    amendmentSourceFormId: '',
+    amendmentSourceVersion: 0,
+    amendmentEventId: '',
+    amendmentPendingValues: null,
 
     init: function () {
       this.bindEvents();
@@ -1035,6 +1041,11 @@
         '<div class="event-field event-field-wide"><label for="event-form-description">شرح رویداد</label>' +
         '<textarea id="event-form-description" name="Description" rows="3" placeholder="توضیحات تکمیلی، در صورت نیاز"></textarea></div>' +
         '</div></section>' +
+        '<section class="event-form-section" id="event-amendment-section" hidden><h4 class="event-section-title">انتخاب فرم برای اصلاح</h4>' +
+        '<div class="event-dynamic-grid">' +
+        '<div class="event-field"><label for="event-amendment-source-event">رویداد اصلی</label><select id="event-amendment-source-event"><option value="">ابتدا پروژه را انتخاب کنید</option></select></div>' +
+        '<div class="event-field"><label for="event-amendment-source-form">فرم ثبت‌شده</label><select id="event-amendment-source-form" disabled><option value="">ابتدا رویداد اصلی را انتخاب کنید</option></select></div>' +
+        '</div><p class="event-muted" id="event-amendment-hint">پاسخ فرم انتخاب‌شده پس از ثبت رویداد اصلاحی به‌روزرسانی می‌شود.</p></section>' +
         '<section class="event-form-section" id="event-variant-section" hidden><h4 class="event-section-title">رنگ‌بندی، سایزبندی و مقدار</h4>' +
         '<div id="event-variant-fields" class="event-dynamic-grid"></div></section>' +
         '<section class="event-form-section"><h4 class="event-section-title">اطلاعات اختصاصی رویداد</h4>' +
@@ -1136,8 +1147,14 @@
         }
       };
 
+      const amendmentEventSelect = document.getElementById('event-amendment-source-event');
+      const amendmentFormSelect = document.getElementById('event-amendment-source-form');
+      if (amendmentEventSelect) amendmentEventSelect.addEventListener('change', () => this.loadAmendmentSourceForms(amendmentEventSelect.value));
+      if (amendmentFormSelect) amendmentFormSelect.addEventListener('change', () => this.hydrateAmendmentForm(amendmentFormSelect.value));
+
       typeSelect.addEventListener('change', () => {
         const selectedType = this.findById(this.eventTypes, typeSelect.value);
+        this.setAmendmentMode(!!selectedType && /(EDIT|UPDATE|AMEND|ویرایش|اصلاح)/i.test(String(selectedType.Code || '')+' '+String(selectedType.Name || '')), projectSelect.value);
         const selectedProject = this.findById(this.projects, projectSelect.value);
         if (selectedProject && String(selectedProject.RecordState || '').toUpperCase() === 'DRAFT' &&
             selectedType && String(selectedType.ConnectionType || 'PROJECT').toUpperCase() !== 'INDEPENDENT' &&
@@ -1158,6 +1175,7 @@
       });
 
       projectSelect.addEventListener('change', () => {
+        if (this.amendmentMode) this.loadAmendmentSourceEvents(projectSelect.value);
         refreshDraftEventOptions();
         this.updateSubmitAvailability();
         this.renderVariantFields();
@@ -1188,6 +1206,134 @@
 
       const firstInput = document.getElementById('event-form-project');
       if (firstInput) firstInput.focus();
+    },
+
+    setAmendmentMode: function (enabled, projectId) {
+      this.amendmentMode = !!enabled;
+      this.amendmentSourceEventId = '';
+      this.amendmentSourceFormId = '';
+      this.amendmentSourceVersion = 0;
+      this.amendmentEventId = '';
+      this.amendmentPendingValues = null;
+      const section = document.getElementById('event-amendment-section');
+      const sourceEvent = document.getElementById('event-amendment-source-event');
+      const sourceForm = document.getElementById('event-amendment-source-form');
+      if (section) section.hidden = !this.amendmentMode;
+      if (!this.amendmentMode) return;
+      if (sourceEvent) sourceEvent.innerHTML = '<option value="">انتخاب رویداد اصلی</option>';
+      if (sourceForm) { sourceForm.innerHTML = '<option value="">ابتدا رویداد اصلی را انتخاب کنید</option>'; sourceForm.disabled = true; }
+      this.loadAmendmentSourceEvents(projectId || '');
+    },
+
+    loadAmendmentSourceEvents: async function (projectId) {
+      const select = document.getElementById('event-amendment-source-event');
+      const formSelect = document.getElementById('event-amendment-source-form');
+      if (!select || !this.amendmentMode) return;
+      select.innerHTML = '<option value="">در حال دریافت رویدادها...</option>';
+      if (formSelect) { formSelect.innerHTML = '<option value="">ابتدا رویداد اصلی را انتخاب کنید</option>'; formSelect.disabled = true; }
+      if (!projectId) { select.innerHTML = '<option value="">ابتدا پروژه را انتخاب کنید</option>'; return; }
+      try {
+        const response = await PMS.Api.get('/projects/' + encodeURIComponent(projectId) + '/events');
+        const rows = this.normalize(PMS.Api.extractData(response));
+        select.innerHTML = '<option value="">انتخاب رویداد اصلی</option>';
+        rows.forEach((item) => {
+          const id = String(item.ID || item.EventID || '');
+          if (!id) return;
+          const option = document.createElement('option');
+          option.value = id;
+          option.textContent = (item.EventTypeName || item.TypeName || item.EventTypeCode || 'رویداد') + ' — ' + this.formatDate(item.OccurredAt);
+          select.appendChild(option);
+        });
+        if (rows.length === 0) select.innerHTML = '<option value="">رویدادی برای این پروژه پیدا نشد</option>';
+      } catch (error) {
+        select.innerHTML = '<option value="">دریافت رویدادها ناموفق بود</option>';
+        this.showFormError('دریافت رویدادهای قابل اصلاح ناموفق بود: ' + this.errorMessage(error));
+      }
+    },
+
+    loadAmendmentSourceForms: async function (eventId) {
+      const select = document.getElementById('event-amendment-source-form');
+      if (!select) return;
+      select.disabled = true;
+      select.innerHTML = '<option value="">در حال دریافت فرم‌ها...</option>';
+      this.amendmentSourceEventId = String(eventId || '');
+      this.amendmentSourceFormId = '';
+      if (!eventId) { select.innerHTML = '<option value="">ابتدا رویداد اصلی را انتخاب کنید</option>'; return; }
+      try {
+        const response = await PMS.Api.get('/events/' + encodeURIComponent(eventId) + '/forms');
+        const rows = this.normalize(PMS.Api.extractData(response));
+        select.innerHTML = '<option value="">انتخاب فرم ثبت‌شده</option>';
+        rows.forEach((item) => {
+          const definition = item.Definition || {};
+          const id = String(item.FormID || definition.ID || '');
+          if (!id) return;
+          const option = document.createElement('option');
+          option.value = id;
+          option.textContent = definition.Name || definition.Code || id;
+          option.dataset.version = String(item.FormVersion || definition.Version || 1);
+          option.dataset.response = JSON.stringify(item.Values || {});
+          option.dataset.definition = JSON.stringify(definition);
+          select.appendChild(option);
+        });
+        select.disabled = false;
+        if (!rows.length) select.innerHTML = '<option value="">این رویداد فرم قابل اصلاح ندارد</option>';
+      } catch (error) {
+        select.innerHTML = '<option value="">دریافت فرم‌ها ناموفق بود</option>';
+        this.showFormError('دریافت فرم ثبت‌شده ناموفق بود: ' + this.errorMessage(error));
+      }
+    },
+
+    hydrateAmendmentForm: function (formId) {
+      const select = document.getElementById('event-amendment-source-form');
+      const option = select && Array.from(select.options).find(item => item.value === String(formId));
+      if (!option) return;
+      let definition = {}, values = {};
+      try { definition = JSON.parse(option.dataset.definition || '{}'); values = JSON.parse(option.dataset.response || '{}'); }
+      catch (error) { this.showFormError('اطلاعات فرم قبلی قابل خواندن نیست.'); return; }
+      if (!Array.isArray(definition.Fields) || !definition.Fields.length) {
+        this.showFormError('ساختار نسخه ثبت‌شده این فرم در دسترس نیست.'); return;
+      }
+      this.amendmentSourceFormId = String(formId);
+      this.amendmentSourceVersion = Number(option.dataset.version || definition.Version || 1);
+      this.formDefinitions = [{ Form: definition, FormID: formId, IsRequired: true }];
+      this.renderConfiguredForms();
+      const container = document.getElementById('event-configured-forms');
+      (definition.Fields || []).forEach((field) => {
+        const typeId = String(field.InformationTypeID || (field.InformationType || {}).ID || '');
+        const info = field.InformationType || {};
+        const value = values[typeId];
+        const wrapper = Array.from(container.querySelectorAll('.event-form-value-field')).find(node => node.dataset.formId === String(formId) && node.dataset.infoTypeId === typeId);
+        if (!wrapper || value === undefined || value === null) return;
+        const columns = Array.isArray(info.Columns) ? info.Columns.filter(column => String(column.Status || 'ACTIVE') === 'ACTIVE') : [];
+        if (columns.length) {
+          const table = wrapper.querySelector('[data-form-table]');
+          const tbody = table && table.querySelector('tbody');
+          if (!tbody) return;
+          tbody.replaceChildren();
+          const rows = String(info.Cardinality || 'SINGLE').toUpperCase() === 'MULTIPLE' ? (Array.isArray(value) ? value : []) : (Object.keys(value || {}).length ? [value] : []);
+          rows.forEach((rowValue) => {
+            this.addConfiguredFormRow(tbody, columns, String(info.Cardinality || 'SINGLE').toUpperCase() === 'MULTIPLE');
+            const row = tbody.lastElementChild;
+            Object.keys(rowValue || {}).forEach((code) => {
+              const input = Array.from(row.querySelectorAll('[data-column-code]')).find(node => node.dataset.columnCode === code);
+              if (!input) return;
+              const item = rowValue[code];
+              if (input.type === 'file') {
+                if (item && typeof item === 'object') input.dataset.uploadedAttachment = JSON.stringify(item);
+              } else if (input.type === 'checkbox') input.checked = item === true || String(item) === 'true';
+              else input.value = item === null || item === undefined ? '' : String(item);
+            });
+          });
+          if (!rows.length) this.addConfiguredFormRow(tbody, columns, String(info.Cardinality || 'SINGLE').toUpperCase() === 'MULTIPLE');
+        } else {
+          const input = wrapper.querySelector('[data-form-value]');
+          if (!input) return;
+          if (input.type === 'file') { if (value && typeof value === 'object') input.dataset.uploadedAttachment = JSON.stringify(value); }
+          else if (input.type === 'checkbox') input.checked = value === true || String(value) === 'true';
+          else input.value = value === null || value === undefined ? '' : String(value);
+        }
+      });
+      this.updateSubmitAvailability();
     },
 
     renderVariantFields: function () {
