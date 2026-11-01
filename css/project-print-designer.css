@@ -43,3 +43,10 @@
 /* Independent form-table layout controls in the print designer */
 .ppd-element .ppd-inner-table{border-collapse:collapse;max-width:100%;margin:7px 0;table-layout:fixed}.ppd-element .ppd-inner-table th,.ppd-element .ppd-inner-table td{overflow-wrap:anywhere;word-break:normal}.ppd-element .ppd-inner-table.is-inner-table-selected{outline:2px dashed #2563eb;outline-offset:3px}.ppd-properties [data-ppd-table-style],.ppd-properties [data-ppd-column-width]{accent-color:var(--color-primary)}
 @media print{.ppd-element .ppd-inner-table.is-inner-table-selected{outline:0!important}}
+
+/* Separate read-only document output from the print template editor */
+.ppd-output-mode .ppd-workspace{display:block;overflow:auto}
+.ppd-output-mode .ppd-stage-wrap{width:100%;min-height:0;align-items:center}
+.ppd-output-mode .ppd-properties{display:none!important}
+.ppd-output-mode .ppd-paper{margin:0 auto 24px;cursor:default}
+@media(max-width:680px){.ppd-output-mode .ppd-workspace{display:block}.ppd-output-mode .ppd-stage-wrap{align-items:flex-start}.ppd-output-mode .ppd-paper{margin-left:0;margin-right:0}}
