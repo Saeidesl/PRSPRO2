@@ -62,3 +62,29 @@
   - *Log:* در `js/components/layout.js` دو گزینه مستقل «طراحی قالب» و «چاپ اسناد» اضافه شد. در `js/core/router.js` مسیرهای `print-design` و `print-output` با مجوز `PROJECT_VIEW` ثبت شدند و مسیر قدیمی `print-designer` برای سازگاری حفظ شد. `pages/print-designer.html` به صفحه طراحی قالب تغییر عنوان داد و `pages/print-output.html` برای انتخاب پروژه و چاپ سند ذخیره‌شده ایجاد شد. در `js/modules/project-detail.js` منطق طراحی از `openPrintDesigner()` حفظ شد و دکمه چاپ از toolbar طراحی حذف شد؛ `initPrintOutputPage()` و `openPrintOutput()` قالب نسخه ۱ ذخیره‌شده را فقط‌خواندنی بارگذاری و چاپ/PDF را اجرا می‌کنند. تنظیمات `innerLayout` و `tableLayout` و کلیدهای localStorage قبلی بدون مهاجرت حفظ شدند. `css/project-print-designer.css` حالت خروجی مستقل و `index.html` نسخه cache-busting جدید دریافت کردند. تست‌های `tests/project-print-designer.test.js`, `tests/project-draft-information-flow.test.js` و `tests/project-information-dossier.test.js` به‌روزرسانی شدند. GitHub Actions در commit نهایی `7110f2db179aa0e56f73cc1769cab31358218cb5` بررسی نحوی JavaScript، تمام تست‌های regression، وجود assetها و توازن CSS را موفق اجرا کرد؛ Frontend agent suite و Cross-repository QA نیز موفق شدند. PR #140 با squash merge commit `a029a9a105d3eeb20d0fe73a617d74296d878f3d` در `main` ادغام شد. آزمون واقعی مرورگر/چاپ/PDF توسط کاربر هنوز انجام نشده است.
 - [ ] تسک ۳ — آزمون کلی نسخه ادغام‌شده: بررسی دسترسی و نمایش دو منوی مستقل، ساخت/ویرایش/ذخیره قالب، حفظ قالب‌های قبلی، انتخاب پروژه و قالب در چاپ اسناد، پیش‌نمایش تصاویر و جدول‌ها، چاپ/PDF و رفتار دسکتاپ/موبایل. (IN PROGRESS)
   - *Log:* نسخه در `main` ادغام شده و آماده آزمون کلی کاربر است؛ نتیجه پذیرش واقعی هنوز ثبت نشده است.
+
+
+## 2026-11-01 — افزودن فونت سازمانی IRANSansWeb
+
+### محدوده و وضعیت
+- مخزن: `Saeidesl/PRSPRO2`؛ شاخه کاری: `feat/add-iransans-font-pack` بر پایه `main`.
+- هدف: یکپارچه‌سازی تایپوگرافی برنامه با شش وزن IRANSansWeb، بدون تغییر در منطق صفحات یا APIها.
+- فایل‌های فونت در ZIP کاربر بررسی شدند: Regular، UltraLight، Light، Medium، Bold و Black؛ همگی WOFF2 هستند.
+- پیاده‌سازی CSS و آزمون ایستا در این شاخه در حال انجام است.
+- هر شش فایل WOFF2 توسط کاربر در پوشه `fonts/` شاخه کاری بارگذاری شدند و وجود و خوانایی هر شش فایل از مخزن تأیید شد.
+
+### قرارداد فنی
+- `css/fonts.css`: تعریف شش وزن با `font-display: swap`.
+- `css/variables.css`: متغیر مرکزی `--font-family` به IRANSansWeb تغییر می‌کند.
+- `index.html`: فایل فونت پیش از استایل‌های برنامه بارگذاری می‌شود.
+- وزن‌ها: 200، 300، 400، 500، 700 و 900.
+- مسیرهای مورد انتظار: `fonts/IRANSansWeb*.woff2`.
+
+### تسک‌ها
+- [x] بررسی پک فونت و تطبیق وزن‌ها.
+- [x] ایجاد شاخه اختصاصی بر پایه main.
+- [x] تعریف CSS فونت‌ها و اتصال متغیر مرکزی.
+- [x] افزودن آزمون ایستای تعریف وزن‌ها و مسیر فایل‌ها.
+- [x] ثبت شش فایل WOFF2 در پوشه `fonts/` شاخه کاری و تأیید دسترسی از مخزن GitHub.
+- [ ] اجرای تست‌های خودکار شاخه و بررسی بصری تم روشن/تاریک، فرم‌ها، تقویم و خروجی چاپ.
+- [ ] تکمیل PR و ادغام پس از موفقیت کنترل‌ها.

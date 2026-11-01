@@ -21,7 +21,7 @@
     ),
     var(--color-background);
   color: var(--color-text);
-  font-family: Tahoma, "Segoe UI", Arial, sans-serif;
+  font-family: var(--font-family, Tahoma, "Segoe UI", Arial, sans-serif);
   font-size: 13px;
   line-height: 1.85;
   -webkit-font-smoothing: antialiased;
