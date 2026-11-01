@@ -43,7 +43,7 @@ test('print designer supports visual ordering, element styling, saved templates 
 test('print designer assets are cache-busted and loaded by the application',()=>{
   const index=read('index.html');
   assert.match(index,/project-print-designer\.css\?v=/);
-  assert.match(index,/project-detail\.js\?v=20261101-print-designer-inner-image-controls-2/);
+  assert.match(index,/project-detail\.js\?v=20261101-print-designer-table-layout-controls-1/);
 });
 
 
