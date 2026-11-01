@@ -22,6 +22,10 @@
     loadVersion: 0,
 
     init: function () {
+      if (window.location.hash.replace(/^#/, '').split('/')[0] === 'print-designer') {
+        this.initPrintDesignerPage();
+        return;
+      }
       this.projectId = this.getProjectId();
 
       if (!this.projectId) {
@@ -122,12 +126,6 @@
         });
       }
 
-      const printDesignerButton = document.getElementById('project-print-designer-open');
-      if (printDesignerButton && !printDesignerButton.dataset.bound) {
-        printDesignerButton.dataset.bound = '1';
-        printDesignerButton.addEventListener('click', function () { ProjectDetail.openPrintDesigner(); });
-      }
-
       const auditRetry = document.getElementById('project-management-history-retry');
       if (auditRetry && !auditRetry.dataset.bound) {
         auditRetry.dataset.bound = '1';
@@ -224,12 +222,87 @@
     },
 
 
-    openPrintDesigner: function () {
+
+    initPrintDesignerPage: async function () {
+      const select = document.getElementById('print-designer-project-select');
+      const status = document.getElementById('print-designer-project-status');
+      const launch = document.getElementById('print-designer-launch');
+      if (!select) return;
+      select.addEventListener('change', () => {
+        launch.disabled = !select.value;
+        if (status) status.textContent = select.value ? 'پروژه انتخاب شد؛ برای بارگذاری فرم‌ها ادامه بده.' : '';
+      });
+      launch.addEventListener('click', async () => {
+        if (!select.value) return;
+        launch.disabled = true;
+        if (status) status.textContent = 'در حال دریافت مشخصات و فرم‌های پروژه...';
+        try {
+          await this.loadStandalonePrintProject(select.value);
+          if (status) status.textContent = this.projectForms.length
+            ? 'اطلاعات آماده است؛ می‌توانی طراحی سند را شروع کنی.'
+            : 'پروژه بارگذاری شد؛ هنوز فرمی برای چاپ ثبت نشده است. می‌توانی مشخصات پروژه یا متن دلخواه اضافه کنی.';
+          this.openPrintDesigner(true);
+        } catch (error) {
+          if (status) status.textContent = error.message || 'دریافت اطلاعات پروژه ناموفق بود.';
+        } finally {
+          launch.disabled = !select.value;
+        }
+      });
+      try {
+        const response = await window.PMS.Api.getCached('/projects', 'PMS_PRINT_DESIGNER_PROJECTS');
+        const projects = this.normalizeArray(response, ['items','Items','projects','Projects']);
+        select.innerHTML = '<option value="">انتخاب پروژه...</option>' + projects.map(project => {
+          const id = project.ID || project.Id || project.ProjectID;
+          const code = project.ProjectCode || project.Code || '';
+          const title = project.Title || project.Name || project.ProjectName || 'بدون عنوان';
+          return '<option value="' + this.escape(id) + '">' + this.escape((code ? code + ' — ' : '') + title) + '</option>';
+        }).join('');
+        const requested = this.getPrintDesignerProjectId();
+        if (requested && projects.some(p => String(p.ID || p.Id || p.ProjectID) === requested)) {
+          select.value = requested;
+          launch.disabled = false;
+        }
+      } catch (error) {
+        if (status) status.textContent = 'فهرست پروژه‌ها دریافت نشد؛ لطفاً صفحه را تازه‌سازی کن.';
+      }
+    },
+
+    getPrintDesignerProjectId: function () {
+      const parts = (window.location.hash || '').split('/');
+      if (parts.length < 2 || parts[0] !== '#print-designer') return '';
+      try { return decodeURIComponent(parts[1]); } catch (error) { return parts[1]; }
+    },
+
+    loadStandalonePrintProject: async function (projectId) {
+      this.projectId = String(projectId);
+      const version = ++this.loadVersion;
+      this.projectForms = [];
+      this.events = [];
+      const results = await Promise.all([
+        window.PMS.Api.getFresh('/projects/' + encodeURIComponent(this.projectId), {trackSync:false}),
+        window.PMS.Api.getFresh('/projects/' + encodeURIComponent(this.projectId) + '/details', {trackSync:false})
+      ]);
+      if (version !== this.loadVersion) return;
+      this.project = this.unwrap(results[0] && results[0].data !== undefined ? results[0].data : results[0]);
+      if (!this.project || typeof this.project !== 'object') throw new Error('مشخصات پروژه دریافت نشد.');
+      this.applyEventDetailsBundle(results[1] && results[1].data !== undefined ? results[1].data : results[1], version);
+      await this.waitForProjectForms(version);
+    },
+
+    waitForProjectForms: async function (version) {
+      while (version === this.loadVersion && this.projectFormsLoading) {
+        await new Promise(resolve => setTimeout(resolve, 60));
+      }
+      if (version !== this.loadVersion) throw new Error('بارگذاری پروژه لغو شد.');
+      if (this.projectFormsError) throw new Error(this.projectFormsError);
+    },
+
+    openPrintDesigner: function (standalone) {
       const existing = document.getElementById('project-print-designer');
       if (existing) existing.remove();
       const overlay = document.createElement('section');
       overlay.id = 'project-print-designer';
-      overlay.className = 'project-print-designer';
+      overlay.className = 'project-print-designer' + (standalone ? ' ppd-standalone' : '');
       overlay.innerHTML = '<div class="ppd-toolbar"><div><strong>طراحی سند چاپی</strong><small>محتوا را اضافه کن، روی صفحه مرتب کن و ظاهرش را تغییر بده.</small></div><div class="ppd-toolbar-actions"><button type="button" data-ppd-save>ذخیره قالب</button><button type="button" data-ppd-print class="primary">چاپ / PDF</button><button type="button" data-ppd-close aria-label="بستن">×</button></div></div><div class="ppd-workspace"><aside class="ppd-library"><h3>افزودن محتوا</h3><button type="button" data-ppd-add="project">مشخصات اصلی پروژه</button><button type="button" data-ppd-add="project-fields">همه مشخصات پروژه</button><button type="button" data-ppd-add="text">متن دلخواه</button><button type="button" data-ppd-add="line">خط جداکننده</button><h4>فرم‌های ثبت‌شده</h4><div class="ppd-form-library">' + this.projectForms.map((item,index) => '<div class="ppd-form-group"><button type="button" data-ppd-form="' + index + '">' + this.escape((item.definition && (item.definition.Name || item.definition.Title)) || 'فرم کامل') + '<small>' + this.escape((item.event && (item.event.EventTypeName || item.event.EventTypeTitle)) || 'رویداد') + ' · ' + this.escape(this.formatDate(item.createdAt)) + '</small></button>' + ((item.definition && Array.isArray(item.definition.Fields)) ? item.definition.Fields.map((field,fieldIndex) => '<button type="button" class="ppd-field-add" data-ppd-field="' + index + '" data-ppd-field-key="' + this.escape(String(field.ID || field.InformationTypeID || fieldIndex)) + '">+ ' + this.escape((field.InformationType && field.InformationType.Name) || field.LabelOverride || 'فیلد') + '</button>').join('') : '') + '</div>').join('') + '</div></aside><main class="ppd-stage-wrap"><div class="ppd-stage-meta">پیش‌نمایش A4 · ' + this.escape(this.project && (this.project.Code || this.project.ProjectCode) || '') + '</div><div class="ppd-paper" data-ppd-paper><div class="ppd-paper-empty">از پنل «افزودن محتوا» موارد موردنیاز را به این صفحه اضافه کن.</div></div></main><aside class="ppd-properties"><h3>تنظیمات المان</h3><div data-ppd-properties class="ppd-properties-empty">برای تنظیم ظاهر، یک المان را انتخاب کن.</div><p class="ppd-help">برای تغییر ترتیب، المان‌ها را با ماوس یا لمس جابه‌جا کن.</p></aside></div>';
       document.body.classList.add('ppd-printing');
       document.body.appendChild(overlay);
