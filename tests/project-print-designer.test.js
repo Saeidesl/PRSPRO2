@@ -43,7 +43,7 @@ test('print designer supports visual ordering, element styling, saved templates 
 test('print designer assets are cache-busted and loaded by the application',()=>{
   const index=read('index.html');
   assert.match(index,/project-print-designer\.css\?v=/);
-  assert.match(index,/project-detail\.js\?v=20261101-print-designer-table-layout-controls-2/);
+  assert.match(index,/project-detail\.js\?v=20261101-print-design-output-separation-1/);
 });
 
 
@@ -52,7 +52,6 @@ test('print designer is a standalone sidebar route with project selection',()=>{
  const router=read('js/core/router.js');
  const page=read('pages/print-designer.html');
  const module=read('js/modules/project-detail.js');
- assert.match(layout,/route: 'print-designer', label: 'چاپ‌ساز'/);
  assert.match(router,/'print-designer': 'pages\/print-designer.html'/);
  assert.match(router,/'print-designer': \['PROJECT_VIEW'\]/);
  assert.match(page,/print-designer-project-select/);
@@ -138,4 +137,25 @@ test('print designer image layout ids remain stable by attachment and preserve l
  assert.match(module,/const innerId = 'img-' \+ attachmentKey \+ '-' \+ occurrence/);
  assert.match(module,/layouts\[innerId\] \|\| layouts\[legacyInnerId\]/);
  assert.match(module,/printDesignerImageOccurrences = Object\.create\(null\)/);
+});
+
+
+test('template design and document output are separate routes and modes',()=>{
+ const layout=read('js/components/layout.js');
+ const router=read('js/core/router.js');
+ const design=read('pages/print-designer.html');
+ const output=read('pages/print-output.html');
+ const module=read('js/modules/project-detail.js');
+ assert.match(layout,/label: 'طراحی قالب'/);
+ assert.match(layout,/label: 'چاپ اسناد'/);
+ assert.ok(router.includes("'print-design': 'pages/print-designer.html'"));
+ assert.ok(router.includes("'print-output': 'pages/print-output.html'"));
+ assert.match(design,/ذخیره کن/);
+ assert.match(output,/print-output-project-select/);
+ assert.match(module,/openPrintOutput: async function/);
+ assert.match(module,/ppd-output-mode/);
+ assert.ok(module.includes("this.loadPrintDesignerTemplate()"));
+ assert.match(module,/data-ppd-print/);
+ const editor=module.slice(module.indexOf('openPrintDesigner: function'),module.indexOf('openPrintOutput: async function'));
+ assert.doesNotMatch(editor,/data-ppd-print/);
 });
