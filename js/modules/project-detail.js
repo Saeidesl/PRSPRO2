@@ -325,6 +325,8 @@
         innerDrag = { imageId: image.dataset.ppdInnerImage, elementId: article.dataset.ppdElement, startX: event.clientX, startY: event.clientY, x: 0, y: 0, moved: false };
         this.printDesignerSelectedInner = { elementId: innerDrag.elementId, imageId: innerDrag.imageId };
         this.printDesignerSelectedId = null;
+        overlay.querySelectorAll('[data-ppd-inner-image].is-inner-selected').forEach(node => node.classList.remove('is-inner-selected'));
+        image.classList.add('is-inner-selected');
         const properties = overlay.querySelector('[data-ppd-properties]');
         const parentForControls = this.printDesignerElements.find(x => x.id === innerDrag.elementId);
         const selectedLayout = parentForControls && parentForControls.innerLayout && parentForControls.innerLayout[innerDrag.imageId] || {};
@@ -442,6 +444,8 @@
         this.renderPrintDesigner(overlay);
       });
       overlay.addEventListener('dragstart', event => {
+        const innerImage = event.target.closest('[data-ppd-inner-image]');
+        if (innerImage) { event.preventDefault(); return; }
         const el = event.target.closest('[data-ppd-element]');
         if (!el) return;
         event.dataTransfer.setData('text/plain', el.dataset.ppdElement);
@@ -514,7 +518,7 @@
         const cached = this.projectFormImageUrls && this.projectFormImageUrls[String(id)];
         const layout = this.printDesignerCurrentItem && this.printDesignerCurrentItem.innerLayout && this.printDesignerCurrentItem.innerLayout[innerId] || {};
         const style = 'width:' + (Number(layout.width) > 0 ? Number(layout.width) + 'px' : 'auto') + ';max-width:100%;transform:translate(' + Number(layout.x || 0) + 'px,' + Number(layout.y || 0) + 'px)';
-        if (cached) return '<img class="ppd-inline-image" data-ppd-inner-image="' + innerId + '" style="' + style + '" src="' + this.escape(cached) + '" alt="' + this.escape(name) + '">';
+        if (cached) return '<img draggable="false" class="ppd-inline-image" data-ppd-inner-image="' + innerId + '" style="' + style + '" src="' + this.escape(cached) + '" alt="' + this.escape(name) + '">';
         return '<span data-ppd-image="' + this.escape(id) + '" data-ppd-inner-image="' + innerId + '" data-ppd-image-name="' + this.escape(name) + '" style="' + style + '">در حال بارگذاری تصویر…</span>';
       }
       if (Array.isArray(value)) return value.map(entry => '<div>' + this.renderPrintDesignerValue(entry, dataType) + '</div>').join('');
@@ -535,6 +539,7 @@
           if (!base64 || mime.indexOf('image/') !== 0) throw new Error('invalid image');
           const image = document.createElement('img');
           image.className = 'ppd-inline-image';
+          image.draggable = false;
           image.alt = node.getAttribute('data-ppd-image-name') || 'تصویر فرم';
           image.dataset.ppdInnerImage = node.dataset.ppdInnerImage || '';
           image.style.cssText = node.style.cssText;
