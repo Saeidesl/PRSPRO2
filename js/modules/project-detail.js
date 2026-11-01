@@ -676,7 +676,7 @@
           const rows = String(info.Cardinality || 'SINGLE').toUpperCase() === 'MULTIPLE' ? (Array.isArray(value) ? value : []) : (value && typeof value === 'object' ? [value] : []);
           return '<h3>' + this.escape(info.Name || info.Title || 'فیلد') + '</h3>' + this.renderPrintDesignerTable('field-' + String(item.fieldKey), cols, rows);
         }
-        return '<strong>' + this.escape(info.Name || info.Title || 'فیلد') + '</strong><div>' + this.renderProjectFormValue(value, info.DataType) + '</div>';
+        return '<strong>' + this.escape(info.Name || info.Title || 'فیلد') + '</strong><div>' + this.renderPrintDesignerValue(value, info.DataType) + '</div>';
       }
       const content = fields.slice().sort((a,b) => Number(a.FieldOrder||0)-Number(b.FieldOrder||0)).map(field => {
         const info = field.InformationType || {};
@@ -687,7 +687,7 @@
         if (columns.length) {
           const rows = String(info.Cardinality || 'SINGLE').toUpperCase() === 'MULTIPLE' ? (Array.isArray(value) ? value : []) : (value && typeof value === 'object' ? [value] : []);
           output = rows.length ? this.renderPrintDesignerTable('field-' + String(field.ID || field.InformationTypeID || info.Code || id), columns, rows) : '<span>-</span>';
-        } else if (value !== undefined && value !== null && value !== '') output = this.renderProjectFormValue(value, info.DataType);
+        } else if (value !== undefined && value !== null && value !== '') output = this.renderPrintDesignerValue(value, info.DataType);
         return '<section><strong>' + this.escape(info.Name || info.Title || info.Code || 'فیلد') + '</strong><div>' + output + '</div></section>';
       }).join('');
       return '<h3>' + this.escape(item.title || definition.Name || 'فرم') + '</h3><small>' + this.escape((record.event && (record.event.EventTypeName || record.event.EventTypeTitle)) || 'رویداد') + ' · ' + this.escape(this.formatDate(record.createdAt)) + '</small>' + content;
