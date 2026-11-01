@@ -161,3 +161,53 @@
 - تنظیمات تصویر در `item.innerLayout` و تنظیمات عرض جدول/ستون در `item.tableLayout` نگهداری می‌شوند و بخشی از `elements` قالب چاپ نسخه ۱ هستند؛ قالب‌های قبلی نیاز به مهاجرت ندارند.
 - جدول‌های چندستونی از `renderPrintDesignerTable()` استفاده می‌کنند تا هم کنترل عرض و هم نمایش تصویرهای پیوست در سلول‌ها حفظ شود.
 - PR #137 و PR #138 ادغام شدند؛ تست‌های فرانت‌اند روی نسخه ادغام‌شده و اصلاح شناسه پایدار موفق‌اند. آزمون واقعی چاپ/PDF به پذیرش کاربر موکول است.
+
+
+## 2026-11-01 — استانداردسازی محیط طراحی قالب و تفکیک پنل‌ها
+
+### محدوده و وضعیت
+- وضعیت فاز: تکمیل‌شده؛ کاربر آزمون نهایی در برنامه را انجام داد و موفقیت را تأیید کرد.
+- مخزن: `Saeidesl/PRSPRO2`، شاخه `main`. بک‌اند تغییری نکرد.
+- هدف: رفع هم‌پوشانی پنل فرم‌ها با سایدبار، بازآرایی محیط طراحی قالب، اصلاح اسکرول و چیدمان واکنش‌گرا، بدون تغییر قرارداد داده قالب‌ها یا رفتار خروجی چاپ.
+- تغییرات در PR #143 با روش squash ادغام شدند؛ merge commit: `7960ca069f0495d369e95ca5d6715ebb81d37ee4`.
+
+### نقشه فنی
+- `pages/print-designer.html`: انتخاب پروژه و ورود به محیط مستقل طراحی.
+- `js/modules/project-detail.js`:
+  - `initPrintDesignerPage()`: بارگذاری پروژه‌ها و راه‌اندازی صفحه.
+  - `loadStandalonePrintProject()`: دریافت اطلاعات پروژه و فرم‌های ثبت‌شده از APIهای موجود.
+  - `openPrintDesigner(standalone)`: ساخت محیط طراحی، پنل محتوا/فرم‌ها، صفحه A4 و تنظیمات.
+  - `bindPrintDesigner()`, `renderPrintDesigner()`: تعاملات و نمایش محیط.
+  - `savePrintDesignerTemplate()`, `loadPrintDesignerTemplate()`: ذخیره و بازیابی قالب.
+- `css/project-print-designer.css`: overlay تمام‌صفحه، لایه‌بندی بالاتر از سایدبار، workspace، اسکرول، breakpoints، تم‌ها و قواعد چاپ.
+- `index.html`: cache-busting فایل‌های CSS و JS.
+- `tests/project-print-designer.test.js`: قراردادهای ساختاری، لایه‌بندی، فرم‌ها و سازگاری چاپ.
+- علت اصلی مشکل قبل از اصلاح: قواعد `.ppd-standalone` overlay را به موقعیت نسبی و z-index پایین محدود می‌کردند؛ workspace با ستون‌ها و حداقل عرض ثابت نیز در اندازه‌های کوچک نامناسب بود.
+
+### قرارداد داده و APIهای حفظ‌شده
+- قالب‌ها در localStorage با کلید `pms-print-template-<projectId>` و ساختار `version: 1` نگهداری می‌شوند.
+- تنظیمات `innerLayout` برای المان‌های داخلی/تصاویر و `tableLayout` برای جدول و ستون‌ها حفظ شده‌اند؛ مهاجرت قالب‌های قدیمی لازم نیست.
+- APIهای موجود و بدون تغییر:
+  - `GET /projects`
+  - `GET /projects/:projectId`
+  - `GET /projects/:projectId/details`
+  - `GET /attachments/:attachmentId/download`
+- هیچ endpoint، payload، شیت یا داده ثبت‌شده‌ای در این فاز تغییر نکرد.
+
+### نتیجه و اعتبارسنجی
+- محیط طراحی به overlay تمام‌صفحه تبدیل شد و پنل‌ها بالاتر از سایدبار قرار می‌گیرند.
+- پنل فرم‌ها و افزودن کل فرم/فیلد حفظ و مرتب شد؛ چیدمان دسکتاپ، تبلت و موبایل و اسکرول اصلاح شد.
+- کاغذ A4 و رفتار چاپ از قواعد محیط ویرایش تفکیک و حفظ شدند.
+- کاربر در تاریخ 2026-11-01 آزمون محیط واقعی را انجام داد و نتیجه را «موفق» اعلام کرد.
+- GitHub Actions روی commit شاخه PR #143:
+  - Frontend checks: موفق؛ شامل بررسی نحو JS، تست‌های رگرسیون، دارایی‌ها/CSS و guard آزمون E2E.
+  - PMS frontend agent suite: موفق.
+  - PMS cross-repository QA: موفق؛ شامل آزمون‌های بک‌اند و بررسی manifest/source.
+  - PMS comprehensive UI performance audit: موفق؛ شامل آزمون مرورگر و ممیزی رابط/عملکرد.
+- PR: https://github.com/Saeidesl/PRSPRO2/pull/143
+- Merge commit: https://github.com/Saeidesl/PRSPRO2/commit/7960ca069f0495d369e95ca5d6715ebb81d37ee4
+
+### Implementation Logs
+- تسک ۱ — کشف ساختار: `TODO.md`، `ARCHITECTURE.md` و فایل‌های صفحه، ماژول، CSS و تست بررسی شدند؛ علت لایه‌بندی و وابستگی‌های موجود ثبت شد. بک‌اند/API نیاز به تغییر نداشت.
+- تسک ۲ — پیاده‌سازی: `openPrintDesigner()` و ساختار پنل‌ها در `js/modules/project-detail.js` بازآرایی شدند؛ `.ppd-standalone` و workspace در `css/project-print-designer.css` اصلاح شدند؛ cache-busting در `index.html` و تست‌های رگرسیون به‌روز شدند. PR #143 ادغام شد.
+- تسک ۳ — پذیرش: آزمون‌های خودکار چهار جریان اصلی موفق شدند و کاربر نمایش پنل‌ها و عملکرد محیط طراحی را در برنامه واقعی آزمایش و تأیید کرد. فاز بسته شد.
