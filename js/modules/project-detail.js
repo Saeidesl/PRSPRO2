@@ -356,6 +356,7 @@
           let text = '';
           if (type === 'text') { text = window.prompt('متن موردنظر را وارد کن:') || ''; if (!text.trim()) return; }
           this.printDesignerElements.push({id:'ppd-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),type:type,text:text,style:{border:'1px solid #d1d5db',padding:12,background:'#ffffff',fontSize:13,align:'right'}});
+          this.printDesignerSelectedInner = null;
           this.printDesignerSelectedId = this.printDesignerElements[this.printDesignerElements.length-1].id;
           this.renderPrintDesigner(overlay); return;
         }
@@ -377,7 +378,7 @@
           this.printDesignerSelectedId = this.printDesignerElements[this.printDesignerElements.length-1].id;
           this.renderPrintDesigner(overlay); return;
         }
-        if (element) { this.printDesignerSelectedId = element.dataset.ppdElement; this.renderPrintDesigner(overlay); }
+        if (element) { this.printDesignerSelectedInner = null; this.printDesignerSelectedId = element.dataset.ppdElement; this.renderPrintDesigner(overlay); }
       });
       overlay.addEventListener('input', (event) => {
         const innerKey = event.target.dataset.ppdInnerStyle;
