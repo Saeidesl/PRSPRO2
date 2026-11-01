@@ -449,11 +449,13 @@
       const mime = String(value && typeof value === 'object' ? (value.MimeType || value.mimeType || '') : '').toLowerCase();
       if ((type === 'image' || type.indexOf('image/') === 0 || mime.indexOf('image/') === 0) && id) {
         const name = value.FileName || value.fileName || value.Name || 'تصویر فرم';
+        const cached = this.projectFormImageUrls && this.projectFormImageUrls[String(id)];
+        if (cached) return '<img class="ppd-inline-image" src="' + this.escape(cached) + '" alt="' + this.escape(name) + '">';
         return '<span data-ppd-image="' + this.escape(id) + '" data-ppd-image-name="' + this.escape(name) + '">در حال بارگذاری تصویر…</span>';
       }
       if (Array.isArray(value)) return value.map(entry => '<div>' + this.renderPrintDesignerValue(entry, dataType) + '</div>').join('');
       if (typeof value === 'object') return this.escape(value.FileName || value.Name || value.Value || JSON.stringify(value));
-      return this.renderPrintDesignerValue(value, info.DataType || info.Type || field.DataType);
+      return this.escape(this.informationValue(value));
     },
 
     loadPrintDesignerImages: async function (paper) {
