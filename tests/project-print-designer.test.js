@@ -43,7 +43,7 @@ test('print designer supports visual ordering, element styling, saved templates 
 test('print designer assets are cache-busted and loaded by the application',()=>{
   const index=read('index.html');
   assert.match(index,/project-print-designer\.css\?v=/);
-  assert.match(index,/project-detail\.js\?v=20261101-standalone-print-designer-1/);
+  assert.match(index,/project-detail\.js\?v=20261101-print-designer-inline-images-1/);
 });
 
 
@@ -59,4 +59,24 @@ test('print designer is a standalone sidebar route with project selection',()=>{
  assert.match(module,/initPrintDesignerPage: async function/);
  assert.match(module,/loadStandalonePrintProject: async function/);
  assert.doesNotMatch(read('pages/project-detail.html'),/project-print-designer-open/);
+});
+
+
+test('form image attachments are loaded as inline images for project forms and print designer',()=>{
+ const module=read('js/modules/project-detail.js');
+ assert.match(module,/prepareProjectFormImages: async function/);
+ assert.ok(module.includes(`data:' + data.MimeType + ';base64,'`));
+ assert.match(module,/project-form-inline-image/);
+ assert.match(module,/renderProjectFormValue\(row && row\[String\(col\.Code\)\], col\.DataType\)/);
+});
+
+test('print designer renders image attachments as inline images on the A4 canvas',()=>{
+ const module=read('js/modules/project-detail.js');
+ const css=read('css/project-print-designer.css');
+ assert.match(module,/renderPrintDesignerValue: function/);
+ assert.match(module,/data-ppd-image/);
+ assert.match(module,/loadPrintDesignerImages: async function/);
+ assert.ok(module.includes("'/attachments/' + encodeURIComponent(id) + '/download'"));
+ assert.match(module,/ppd-inline-image/);
+ assert.match(css,/ppd-inline-image/);
 });
