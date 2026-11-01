@@ -323,6 +323,12 @@
         const article = image.closest('[data-ppd-element]');
         if (!article) return;
         innerDrag = { imageId: image.dataset.ppdInnerImage, elementId: article.dataset.ppdElement, startX: event.clientX, startY: event.clientY, x: 0, y: 0, moved: false };
+        this.printDesignerSelectedInner = { elementId: innerDrag.elementId, imageId: innerDrag.imageId };
+        this.printDesignerSelectedId = null;
+        const properties = overlay.querySelector('[data-ppd-properties]');
+        const parentForControls = this.printDesignerElements.find(x => x.id === innerDrag.elementId);
+        const selectedLayout = parentForControls && parentForControls.innerLayout && parentForControls.innerLayout[innerDrag.imageId] || {};
+        if (properties) properties.innerHTML = '<h4>تنظیم تصویر داخل فرم</h4><label>عرض تصویر (پیکسل)<input type="range" min="40" max="700" step="5" value="' + Number(selectedLayout.width || 280) + '" data-ppd-inner-style="width"></label><label>جابه‌جایی افقی<input type="range" min="-300" max="300" value="' + Number(selectedLayout.x || 0) + '" data-ppd-inner-style="x"></label><label>جابه‌جایی عمودی<input type="range" min="-300" max="300" value="' + Number(selectedLayout.y || 0) + '" data-ppd-inner-style="y"></label><p class="ppd-help">نسبت تصویر حفظ می‌شود؛ تغییرات فقط روی قالب چاپ اثر دارد.</p>';
         const parent = this.printDesignerElements.find(x => x.id === innerDrag.elementId);
         const layout = parent && parent.innerLayout && parent.innerLayout[innerDrag.imageId] || {};
         innerDrag.x = Number(layout.x || 0); innerDrag.y = Number(layout.y || 0);
@@ -354,12 +360,7 @@
         const remove = event.target.closest('[data-ppd-remove]');
         const move = event.target.closest('[data-ppd-move]');
         if (close) { overlay.remove(); document.body.classList.remove('ppd-printing'); return; }
-        if (innerImage) {
-          event.preventDefault(); event.stopPropagation();
-          this.printDesignerSelectedInner = { elementId: innerImage.closest('[data-ppd-element]').dataset.ppdElement, imageId: innerImage.dataset.ppdInnerImage };
-          this.printDesignerSelectedId = null;
-          this.renderPrintDesigner(overlay); return;
-        }
+        if (innerImage) { event.preventDefault(); event.stopPropagation(); return; }
         if (save) { this.savePrintDesignerTemplate(); save.textContent = 'ذخیره شد'; return; }
         if (print) { window.print(); return; }
         if (move) {
