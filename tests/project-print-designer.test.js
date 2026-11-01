@@ -90,6 +90,8 @@ test('print designer exposes independently selectable and adjustable form images
  assert.match(module,/data-ppd-inner-style="width"/);
  assert.match(module,/data-ppd-inner-style="x"/);
  assert.match(module,/data-ppd-inner-style="y"/);
+ assert.match(module,/pointerdown/);
+ assert.match(module,/pointermove/);
  assert.match(module,/innerLayout\[selection\.imageId\]/);
  assert.match(module,/image\.dataset\.ppdInnerImage/);
  assert.match(css,/ppd-inline-image\[data-ppd-inner-image\]/);
