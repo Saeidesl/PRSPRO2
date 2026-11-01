@@ -232,7 +232,7 @@
       overlay.className = 'project-print-designer';
       overlay.innerHTML = '<div class="ppd-toolbar"><div><strong>طراحی سند چاپی</strong><small>محتوا را اضافه کن، روی صفحه مرتب کن و ظاهرش را تغییر بده.</small></div><div class="ppd-toolbar-actions"><button type="button" data-ppd-save>ذخیره قالب</button><button type="button" data-ppd-print class="primary">چاپ / PDF</button><button type="button" data-ppd-close aria-label="بستن">×</button></div></div><div class="ppd-workspace"><aside class="ppd-library"><h3>افزودن محتوا</h3><button type="button" data-ppd-add="project">مشخصات اصلی پروژه</button><button type="button" data-ppd-add="project-fields">همه مشخصات پروژه</button><button type="button" data-ppd-add="text">متن دلخواه</button><button type="button" data-ppd-add="line">خط جداکننده</button><h4>فرم‌های ثبت‌شده</h4><div class="ppd-form-library">' + this.projectForms.map((item,index) => '<button type="button" data-ppd-form="' + index + '">' + this.escape((item.definition && (item.definition.Name || item.definition.Title)) || 'فرم') + '<small>' + this.escape((item.event && (item.event.EventTypeName || item.event.EventTypeTitle)) || 'رویداد') + ' · ' + this.escape(this.formatDate(item.createdAt)) + '</small></button>').join('') + '</div></aside><main class="ppd-stage-wrap"><div class="ppd-stage-meta">پیش‌نمایش A4 · ' + this.escape(this.project && (this.project.Code || this.project.ProjectCode) || '') + '</div><div class="ppd-paper" data-ppd-paper><div class="ppd-paper-empty">از پنل «افزودن محتوا» موارد موردنیاز را به این صفحه اضافه کن.</div></div></main><aside class="ppd-properties"><h3>تنظیمات المان</h3><div data-ppd-properties class="ppd-properties-empty">برای تنظیم ظاهر، یک المان را انتخاب کن.</div><p class="ppd-help">برای تغییر ترتیب، المان‌ها را با ماوس یا لمس جابه‌جا کن.</p></aside></div>';
       document.body.appendChild(overlay);
-      this.printDesignerElements = [];
+      this.printDesignerElements = this.loadPrintDesignerTemplate();
       this.printDesignerSelectedId = null;
       this.bindPrintDesigner(overlay);
       this.renderPrintDesigner(overlay);
@@ -276,9 +276,12 @@
         const key = event.target.dataset.ppdStyle;
         if (!key) return;
         const item = this.printDesignerElements.find(x => x.id === this.printDesignerSelectedId);
-        if (!item) return;
+        const node = overlay.querySelector('[data-ppd-element="' + this.escape(item && item.id) + '"]');
+        if (!item || !node) return;
         item.style[key] = key === 'padding' || key === 'fontSize' ? Number(event.target.value) : event.target.value;
-        this.renderPrintDesigner(overlay);
+        if (key === 'padding') node.style.padding = item.style[key] + 'px';
+        if (key === 'fontSize') node.style.fontSize = item.style[key] + 'px';
+        if (key === 'background') node.style.background = item.style[key];
       });
       overlay.addEventListener('change', (event) => {
         const key = event.target.dataset.ppdStyle;
@@ -308,6 +311,14 @@
         this.printDesignerSelectedId = sourceId;
         this.renderPrintDesigner(overlay);
       });
+    },
+
+    loadPrintDesignerTemplate: function () {
+      try {
+        const raw = window.localStorage.getItem('pms-print-template-' + String(this.projectId));
+        const parsed = raw ? JSON.parse(raw) : null;
+        return parsed && parsed.version === 1 && Array.isArray(parsed.elements) ? parsed.elements : [];
+      } catch (error) { return []; }
     },
 
     savePrintDesignerTemplate: function () {
