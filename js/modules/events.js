@@ -1155,7 +1155,7 @@
 
       typeSelect.addEventListener('change', () => {
         const selectedType = this.findById(this.eventTypes, typeSelect.value);
-        this.setAmendmentMode(!!selectedType && /(EDIT|UPDATE|AMEND|ویرایش|اصلاح)/i.test(String(selectedType.Code || '')+' '+String(selectedType.Name || '')), projectSelect.value);
+        this.setAmendmentMode(!!selectedType && (selectedType.IsFormAmendment === true || String(selectedType.IsFormAmendment).toLowerCase() === 'true' || /(EDIT|UPDATE|AMEND|ویرایش|اصلاح)/i.test(String(selectedType.Code || '')+' '+String(selectedType.Name || ''))), projectSelect.value);
         const selectedProject = this.findById(this.projects, projectSelect.value);
         if (selectedProject && String(selectedProject.RecordState || '').toUpperCase() === 'DRAFT' &&
             selectedType && String(selectedType.ConnectionType || 'PROJECT').toUpperCase() !== 'INDEPENDENT' &&
@@ -1240,7 +1240,7 @@
         select.innerHTML = '<option value="">انتخاب رویداد اصلی</option>';
         rows.forEach((item) => {
           const id = String(item.ID || item.EventID || '');
-          if (!id) return;
+          if (!id || (allowedFormIds && allowedFormIds.indexOf(id) === -1)) return;
           const option = document.createElement('option');
           option.value = id;
           option.textContent = (item.EventTypeName || item.TypeName || item.EventTypeCode || 'رویداد') + ' — ' + this.formatDate(item.OccurredAt);
@@ -1265,6 +1265,9 @@
         const response = await PMS.Api.get('/events/' + encodeURIComponent(eventId) + '/forms');
         const rows = this.normalize(PMS.Api.extractData(response));
         select.innerHTML = '<option value="">انتخاب فرم ثبت‌شده</option>';
+        const selectedAmendmentType = this.findById(this.eventTypes, document.getElementById('event-form-type').value);
+        const explicitAllowList = selectedAmendmentType && (selectedAmendmentType.IsFormAmendment === true || String(selectedAmendmentType.IsFormAmendment).toLowerCase() === 'true');
+        const allowedFormIds = explicitAllowList ? (Array.isArray(selectedAmendmentType.AmendableFormIDs) ? selectedAmendmentType.AmendableFormIDs.map(String) : []) : null;
         rows.forEach((item) => {
           const definition = item.Definition || {};
           const id = String(item.FormID || definition.ID || '');
