@@ -20,7 +20,7 @@ function withQueryParam(rawUrl, key, value) {
   return url.toString();
 }
 const routes = [
-  'login', 'dashboard', 'projects', 'project-detail', 'events', 'workflows',
+  'login', 'dashboard', 'projects', 'print-designer', 'project-detail', 'events', 'workflows',
   'project-statuses', 'event-types', 'information-types', 'procurement', 'attachments', 'reports',
   'users', 'departments', 'roles', 'permissions', 'audit', 'settings', 'admin'
 ];
