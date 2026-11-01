@@ -27,19 +27,19 @@
 
 #### Frontend
 - `js/modules/projects.js`: `Projects.openCreateForm`, `Projects.createProject`, `Projects.openProjectEditForm`, `Projects.loadProjects`; فیلد کد باید از لحظه ایجاد اجباری و در فرم ویرایش همیشه قابل تغییر باشد.
-- `js/modules/events.js`: انتخاب پروژه و ثبت رویداد با `POST /events) بدون نیاز به شاخه ویژه DRAFT.
+- `js/modules/events.js`: انتخاب پروژه و ثبت رویداد با `POST /events` بدون نیاز به شاخه ویژه DRAFT.
 - `js/modules/project-detail.js`: نمایش کد فعلی و حذف رفتارهای مختص DRAFT در صورت بی‌نیازشدن.
 - `index.html`: cache-busting فایل‌های تغییرکرده.
 - تست‌های موجود: `tests/single-project-entry.test.js`, `tests/project-draft-information-flow.test.js`, `tests/draft-event-type-visibility.test.js`, `tests/project-information-dossier.test.js`.
 
 #### Backend
-- `Router.js`: قراردادهای موجود `POST /projects)، `PUT /projects/:id)، `GET /projects)، `GET /projects/:id)، `POST /events) حفظ می‌شوند.
+- `Router.js`: قراردادهای موجود `POST /projects`, `PUT /projects/:id`, `GET /projects`, `GET /projects/:id`, `POST /events` حفظ می‌شوند.
 - `ProjectValidator.js`: الزام کد موقت ورودی کاربر در ایجاد و اعتبارسنجی تغییر کد در ویرایش.
 - `ProjectService.js`: ایجاد پروژه عملیاتی با کد ورودی؛ امکان تغییر کد در تمام وضعیت‌های مجاز؛ کنترل یکتایی در سطح Tenant، قفل برای جلوگیری از رقابت، Audit و حفظ شناسه.
 - `FormService.js`: اجازه عبور فیلد `PROJECT_CODE` از پاسخ فرم و هدایت مقدار آن به عملیات امن تغییر کد در `ProjectService`؛ عدم ذخیره آن در `ProjectInformationService`.
-- `EventService.js`, `EventTypeService.js`, `EventTypeValidator.js`: حذف وابستگی ثبت رویداد پروژه به `AllowOnDraft) در صورت حذف کامل DRAFT از چرخه عملیاتی؛ بررسی و پاک‌سازی کنترل‌شده فیلد/منطق منسوخ.
-- `ProjectRepository.js`, `ProjectInformationService.js`, `DatabaseSetup.js): فقط در صورت نیاز واقعی تغییر؛ شناسه‌ها و شیت‌های اطلاعات/تاریخچه نباید بازطراحی شوند.
-- آزمون بک‌اند: `node --test tests/*.test.js).
+- `EventService.js`, `EventTypeService.js`, `EventTypeValidator.js`: حذف وابستگی ثبت رویداد پروژه به `AllowOnDraft` در صورت حذف کامل DRAFT از چرخه عملیاتی؛ بررسی و پاک‌سازی کنترل‌شده فیلد/منطق منسوخ.
+- `ProjectRepository.js`, `ProjectInformationService.js`, `DatabaseSetup.js`: فقط در صورت نیاز واقعی تغییر؛ شناسه‌ها و شیت‌های اطلاعات/تاریخچه نباید بازطراحی شوند.
+- آزمون بک‌اند: `node --test tests/*.test.js`.
 
 ### قرارداد هدف و قواعد ایمنی
 1. فرم استاندارد ایجاد پروژه همیشه یک کد موقت دلخواه از کاربر می‌گیرد؛ کد خالی یا تکراری در Tenant پذیرفته نمی‌شود.
@@ -55,6 +55,6 @@
 
 - [x] تسک ۱ — کشف و مستندسازی مدل کد پروژه، ایجاد/ویرایش، ثبت رویداد و وابستگی‌های DRAFT در فرانت‌اند و بک‌اند.
   - *Log:* `TODO.md` قبلی و `ARCHITECTURE.md` هر دو مخزن بررسی شدند. فایل‌های `js/modules/projects.js`, `ProjectService.js`, `ProjectValidator.js`, `Router.js`, `FormService.js` و تست‌های چرخه پروژه بررسی شدند. مشخص شد فیلد کد در فرم ایجاد موجود اما DRAFT آن را خالی نگه می‌دارد؛ کد پروژه ACTIVE در UI و بک‌اند قفل است؛ و فرم رویداد مسیر ویژه‌ای برای تخصیص کد دارد. قراردادهای موجود API و شیت‌های مرتبط در Technical Spec ثبت شدند. هنوز هیچ فایل کد تغییر نکرده است.
-- [ ] تسک ۲ — (IN PROGRESS) اجرای مدل کد موقت دستی و قابل‌ویرایش: ایجاد پروژه عملیاتی با کد واردشده توسط کاربر، امکان تغییر کد در فرم پروژه و فرم رویداد، حفظ یکتایی Tenant و Audit و حفظ سازگاری DRAFTهای قدیمی؛ همراه با تغییرات یکپارچه فرانت‌اند و بک‌اند.
-  - *Log:* تغییرات فرانت‌اند در `js/modules/projects.js` و cache-busting در `index.html` و تغییرات بک‌اند در `ProjectService.js` و `FormService.js` مستقیماً روی `main` ثبت شده‌اند. `FormService.validateEventResponses` اکنون `PROJECT_CODE` را رد نمی‌کند؛ `saveEventResponses` آن را به `ProjectService.updateProjectCodeFromEvent` می‌فرستد. این عملیات در قفل اسکریپت، با بررسی مالکیت Tenant و دسترسی کاربر به پروژه، تطبیق رویداد با همان ProjectID، کنترل کد تکراری به‌صورت case-insensitive و ثبت Audit انجام می‌شود. کد فقط در `08_Projects.ProjectCode` ذخیره می‌شود و از `ProjectInformationService` عبور نمی‌کند. commitهای تغییر فرم رویداد: `32c3823`, `51e493c`, `ddd3971`. تغییرات قبلی مدل کد دستی: `05a7ff8`, `d421ecc`. هنوز تست خودکار و انتشار Apps Script اجرا نشده است.
-- [ ] تسک ۳ — آزمون و تثبیت سازگاری: افزودن/به‌روزرسانی تست‌های رگرسیون برای ایجاد با کد موقت، تغییر به کد نهایی، جلوگیری از کد تکراری، حفظ شناسه و تمام سوابق، ثبت رویداد عادی و رفتار امن رکوردهای DRAFT قدیمی؛ اجرای تست‌های کامل و بررسی CI بدون merge یا انتشار تولید.
+- [x] تسک ۲ — اجرای مدل کد موقت دستی و قابل‌ویرایش: ایجاد پروژه عملیاتی با کد واردشده توسط کاربر، امکان تغییر کد در فرم پروژه و فرم رویداد، حفظ یکتایی Tenant و Audit و حفظ سازگاری DRAFTهای قدیمی؛ همراه با تغییرات یکپارچه فرانت‌اند و بک‌اند.
+  - *Log:* در فرانت‌اند، `js/modules/projects.js` با commit `05a7ff8` اصلاح شد تا ایجاد پروژه با کد واردشده و ویرایش کد پروژه‌های فعال ممکن باشد؛ cache-busting در `index.html` با commit `30f471d` به‌روزرسانی شد. در بک‌اند، `ProjectService.js` با commitهای `d421ecc`, `5c54c33` و `9096cbb` امکان تغییر کد پروژه فعال، کنترل یکتایی case-insensitive و tenant-scoped، قفل هم‌زمانی در CREATE/UPDATE، و Audit را پیاده‌سازی کرد. `FormService.js` با commitهای `32c3823` و `51e493c` مقدار `PROJECT_CODE` فرم رویداد را به مسیر امن تغییر کد در ProjectService هدایت می‌کند؛ نام توابع نیز در `9096cbb` با فراخوانی هماهنگ شد. تست‌های `tests/project-draft-information-flow.test.js` با commitهای `fc7598a` و `70f44a1` برای جریان ACTIVE، سازگاری DRAFTهای قدیمی و یکتایی کد هنگام ایجاد اصلاح شدند. CI در runهای `41237155627` و `41237155732` موفق شد؛ مجموعه تست‌های بک‌اند ۱۱۹ تست موفق و بدون خطا گزارش کرد و بررسی syntax/manifest و کنترل‌های ایمنی انتشار نیز موفق بودند. انتشار خودکار آزمایشی بک‌اند در run `41237121098` موفق شد. کاربر در آزمون واقعی برنامه تأیید کرد جریان موردنظر به‌درستی انجام شده است. کد پروژه همچنان فقط در `08_Projects.ProjectCode` ذخیره می‌شود و شناسه داخلی و ارتباط سوابق ثابت می‌مانند.
+- [ ] تسک ۳ — (IN PROGRESS) آزمون و تثبیت نهایی سازگاری: تکمیل بررسی‌های رگرسیون برای ایجاد با کد موقت، تغییر به کد نهایی، جلوگیری از کد تکراری، حفظ شناسه و تمام سوابق، ثبت رویداد عادی و رفتار امن رکوردهای DRAFT قدیمی؛ اجرای تست‌های کامل فرانت‌اند و بک‌اند و بررسی CI بدون merge یا انتشار تولید. مواردی که در تسک ۲ با تست خودکار و آزمون کاربر تأیید شده‌اند دوباره‌کاری نشوند؛ تمرکز روی پوشش باقی‌مانده و سازگاری انتها‌به‌انتها باشد.
