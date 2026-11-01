@@ -22,6 +22,10 @@
     loadVersion: 0,
 
     init: function () {
+      if (window.location.hash.replace(/^#/, '').split('/')[0] === 'print-designer') {
+        this.initPrintDesignerPage();
+        return;
+      }
       this.projectId = this.getProjectId();
 
       if (!this.projectId) {
@@ -215,6 +219,268 @@
           if (loading) loading.hidden = true;
         }
       }
+    },
+
+
+
+    initPrintDesignerPage: async function () {
+      const select = document.getElementById('print-designer-project-select');
+      const status = document.getElementById('print-designer-project-status');
+      const launch = document.getElementById('print-designer-launch');
+      if (!select) return;
+      select.addEventListener('change', () => {
+        launch.disabled = !select.value;
+        if (status) status.textContent = select.value ? 'پروژه انتخاب شد؛ برای بارگذاری فرم‌ها ادامه بده.' : '';
+      });
+      launch.addEventListener('click', async () => {
+        if (!select.value) return;
+        launch.disabled = true;
+        if (status) status.textContent = 'در حال دریافت مشخصات و فرم‌های پروژه...';
+        try {
+          await this.loadStandalonePrintProject(select.value);
+          if (status) status.textContent = this.projectForms.length
+            ? 'اطلاعات آماده است؛ می‌توانی طراحی سند را شروع کنی.'
+            : 'پروژه بارگذاری شد؛ هنوز فرمی برای چاپ ثبت نشده است. می‌توانی مشخصات پروژه یا متن دلخواه اضافه کنی.';
+          this.openPrintDesigner(true);
+        } catch (error) {
+          if (status) status.textContent = error.message || 'دریافت اطلاعات پروژه ناموفق بود.';
+        } finally {
+          launch.disabled = !select.value;
+        }
+      });
+      try {
+        const response = await window.PMS.Api.getCached('/projects', 'PMS_PRINT_DESIGNER_PROJECTS');
+        const projects = this.normalizeArray(response, ['items','Items','projects','Projects']);
+        select.innerHTML = '<option value="">انتخاب پروژه...</option>' + projects.map(project => {
+          const id = project.ID || project.Id || project.ProjectID;
+          const code = project.ProjectCode || project.Code || '';
+          const title = project.Title || project.Name || project.ProjectName || 'بدون عنوان';
+          return '<option value="' + this.escape(id) + '">' + this.escape((code ? code + ' — ' : '') + title) + '</option>';
+        }).join('');
+        const requested = this.getPrintDesignerProjectId();
+        if (requested && projects.some(p => String(p.ID || p.Id || p.ProjectID) === requested)) {
+          select.value = requested;
+          launch.disabled = false;
+        }
+      } catch (error) {
+        if (status) status.textContent = 'فهرست پروژه‌ها دریافت نشد؛ لطفاً صفحه را تازه‌سازی کن.';
+      }
+    },
+
+    getPrintDesignerProjectId: function () {
+      const parts = (window.location.hash || '').split('/');
+      if (parts.length < 2 || parts[0] !== '#print-designer') return '';
+      try { return decodeURIComponent(parts[1]); } catch (error) { return parts[1]; }
+    },
+
+    loadStandalonePrintProject: async function (projectId) {
+      this.projectId = String(projectId);
+      const version = ++this.loadVersion;
+      this.projectForms = [];
+      this.events = [];
+      const results = await Promise.all([
+        window.PMS.Api.getFresh('/projects/' + encodeURIComponent(this.projectId), 'print_designer_project_' + this.projectId, {trackSync:false}),
+        window.PMS.Api.getFresh('/projects/' + encodeURIComponent(this.projectId) + '/details', 'print_designer_project_details_' + this.projectId, {trackSync:false})
+      ]);
+      if (version !== this.loadVersion) return;
+      this.project = this.unwrap(results[0]);
+      if (!this.project || typeof this.project !== 'object') throw new Error('مشخصات پروژه دریافت نشد.');
+      this.applyEventDetailsBundle(results[1], version);
+      await this.waitForProjectForms(version);
+    },
+
+    waitForProjectForms: async function (version) {
+      while (version === this.loadVersion && this.projectFormsLoading) {
+        await new Promise(resolve => setTimeout(resolve, 60));
+      }
+      if (version !== this.loadVersion) throw new Error('بارگذاری پروژه لغو شد.');
+      if (this.projectFormsError) throw new Error(this.projectFormsError);
+    },
+
+    openPrintDesigner: function (standalone) {
+      const existing = document.getElementById('project-print-designer');
+      if (existing) existing.remove();
+      const overlay = document.createElement('section');
+      overlay.id = 'project-print-designer';
+      overlay.className = 'project-print-designer' + (standalone ? ' ppd-standalone' : '');
+      overlay.innerHTML = '<div class="ppd-toolbar"><div><strong>طراحی سند چاپی</strong><small>محتوا را اضافه کن، روی صفحه مرتب کن و ظاهرش را تغییر بده.</small></div><div class="ppd-toolbar-actions"><button type="button" data-ppd-save>ذخیره قالب</button><button type="button" data-ppd-print class="primary">چاپ / PDF</button><button type="button" data-ppd-close aria-label="بستن">×</button></div></div><div class="ppd-workspace"><aside class="ppd-library"><h3>افزودن محتوا</h3><button type="button" data-ppd-add="project">مشخصات اصلی پروژه</button><button type="button" data-ppd-add="project-fields">همه مشخصات پروژه</button><button type="button" data-ppd-add="text">متن دلخواه</button><button type="button" data-ppd-add="line">خط جداکننده</button><h4>فرم‌های ثبت‌شده</h4><div class="ppd-form-library">' + this.projectForms.map((item,index) => '<div class="ppd-form-group"><button type="button" data-ppd-form="' + index + '">' + this.escape((item.definition && (item.definition.Name || item.definition.Title)) || 'فرم کامل') + '<small>' + this.escape((item.event && (item.event.EventTypeName || item.event.EventTypeTitle)) || 'رویداد') + ' · ' + this.escape(this.formatDate(item.createdAt)) + '</small></button>' + ((item.definition && Array.isArray(item.definition.Fields)) ? item.definition.Fields.map((field,fieldIndex) => '<button type="button" class="ppd-field-add" data-ppd-field="' + index + '" data-ppd-field-key="' + this.escape(String(field.ID || field.InformationTypeID || fieldIndex)) + '">+ ' + this.escape((field.InformationType && field.InformationType.Name) || field.LabelOverride || 'فیلد') + '</button>').join('') : '') + '</div>').join('') + '</div></aside><main class="ppd-stage-wrap"><div class="ppd-stage-meta">پیش‌نمایش A4 · ' + this.escape(this.project && (this.project.Code || this.project.ProjectCode) || '') + '</div><div class="ppd-paper" data-ppd-paper><div class="ppd-paper-empty">از پنل «افزودن محتوا» موارد موردنیاز را به این صفحه اضافه کن.</div></div></main><aside class="ppd-properties"><h3>تنظیمات المان</h3><div data-ppd-properties class="ppd-properties-empty">برای تنظیم ظاهر، یک المان را انتخاب کن.</div><p class="ppd-help">برای تغییر ترتیب، المان‌ها را با ماوس یا لمس جابه‌جا کن.</p></aside></div>';
+      document.body.classList.add('ppd-printing');
+      document.body.appendChild(overlay);
+      this.printDesignerElements = this.loadPrintDesignerTemplate();
+      this.printDesignerSelectedId = null;
+      this.bindPrintDesigner(overlay);
+      this.renderPrintDesigner(overlay);
+    },
+
+    bindPrintDesigner: function (overlay) {
+      overlay.addEventListener('click', (event) => {
+        const add = event.target.closest('[data-ppd-add]');
+        const form = event.target.closest('[data-ppd-form]');
+        const fieldButton = event.target.closest('[data-ppd-field]');
+        const close = event.target.closest('[data-ppd-close]');
+        const save = event.target.closest('[data-ppd-save]');
+        const print = event.target.closest('[data-ppd-print]');
+        const element = event.target.closest('[data-ppd-element]');
+        const remove = event.target.closest('[data-ppd-remove]');
+        const move = event.target.closest('[data-ppd-move]');
+        if (close) { overlay.remove(); document.body.classList.remove('ppd-printing'); return; }
+        if (save) { this.savePrintDesignerTemplate(); save.textContent = 'ذخیره شد'; return; }
+        if (print) { window.print(); return; }
+        if (move) {
+          const index = this.printDesignerElements.findIndex(item => item.id === this.printDesignerSelectedId);
+          const next = move.dataset.ppdMove === 'up' ? index - 1 : index + 1;
+          if (index >= 0 && next >= 0 && next < this.printDesignerElements.length) {
+            const swap = this.printDesignerElements[index];
+            this.printDesignerElements[index] = this.printDesignerElements[next];
+            this.printDesignerElements[next] = swap;
+            this.renderPrintDesigner(overlay);
+          }
+          return;
+        }
+        if (remove) {
+          this.printDesignerElements = this.printDesignerElements.filter(item => item.id !== remove.dataset.ppdRemove);
+          this.printDesignerSelectedId = null; this.renderPrintDesigner(overlay); return;
+        }
+        if (add) {
+          const type = add.dataset.ppdAdd;
+          let text = '';
+          if (type === 'text') { text = window.prompt('متن موردنظر را وارد کن:') || ''; if (!text.trim()) return; }
+          this.printDesignerElements.push({id:'ppd-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),type:type,text:text,style:{border:'1px solid #d1d5db',padding:12,background:'#ffffff',fontSize:13,align:'right'}});
+          this.printDesignerSelectedId = this.printDesignerElements[this.printDesignerElements.length-1].id;
+          this.renderPrintDesigner(overlay); return;
+        }
+        if (fieldButton) {
+          const index = Number(fieldButton.dataset.ppdField);
+          const fieldKey = fieldButton.dataset.ppdFieldKey;
+          const item = this.projectForms[index];
+          const field = item && (item.definition.Fields || []).find((entry, i) => String(entry.ID || entry.InformationTypeID || i) === fieldKey);
+          if (!item || !field) return;
+          this.printDesignerElements.push({id:'ppd-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),type:'form-field',sourceIndex:index,fieldKey:fieldKey,title:(field.InformationType && field.InformationType.Name) || 'فیلد',style:{border:'1px solid #d1d5db',padding:10,background:'#ffffff',fontSize:12,align:'right'}});
+          this.printDesignerSelectedId = this.printDesignerElements[this.printDesignerElements.length-1].id;
+          this.renderPrintDesigner(overlay); return;
+        }
+        if (form) {
+          const index = Number(form.dataset.ppdForm);
+          const item = this.projectForms[index];
+          if (!item) return;
+          this.printDesignerElements.push({id:'ppd-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),type:'form',sourceIndex:index,title:(item.definition && (item.definition.Name || item.definition.Title)) || 'فرم ثبت‌شده',style:{border:'1px solid #d1d5db',padding:12,background:'#ffffff',fontSize:12,align:'right'}});
+          this.printDesignerSelectedId = this.printDesignerElements[this.printDesignerElements.length-1].id;
+          this.renderPrintDesigner(overlay); return;
+        }
+        if (element) { this.printDesignerSelectedId = element.dataset.ppdElement; this.renderPrintDesigner(overlay); }
+      });
+      overlay.addEventListener('input', (event) => {
+        const key = event.target.dataset.ppdStyle;
+        if (!key) return;
+        const item = this.printDesignerElements.find(x => x.id === this.printDesignerSelectedId);
+        const node = overlay.querySelector('[data-ppd-element="' + this.escape(item && item.id) + '"]');
+        if (!item || !node) return;
+        item.style[key] = key === 'padding' || key === 'fontSize' ? Number(event.target.value) : event.target.value;
+        if (key === 'padding') node.style.padding = item.style[key] + 'px';
+        if (key === 'fontSize') node.style.fontSize = item.style[key] + 'px';
+        if (key === 'background') node.style.background = item.style[key];
+      });
+      overlay.addEventListener('change', (event) => {
+        const key = event.target.dataset.ppdStyle;
+        if (!key) return;
+        const item = this.printDesignerElements.find(x => x.id === this.printDesignerSelectedId);
+        if (!item) return;
+        item.style[key] = key === 'padding' || key === 'fontSize' ? Number(event.target.value) : event.target.value;
+        this.renderPrintDesigner(overlay);
+      });
+      overlay.addEventListener('dragstart', event => {
+        const el = event.target.closest('[data-ppd-element]');
+        if (!el) return;
+        event.dataTransfer.setData('text/plain', el.dataset.ppdElement);
+        event.dataTransfer.effectAllowed = 'move';
+      });
+      overlay.addEventListener('dragover', event => { if (event.target.closest('[data-ppd-element]') || event.target.closest('[data-ppd-paper]')) event.preventDefault(); });
+      overlay.addEventListener('drop', event => {
+        const target = event.target.closest('[data-ppd-element]');
+        const sourceId = event.dataTransfer.getData('text/plain');
+        if (!sourceId) return;
+        event.preventDefault();
+        const from = this.printDesignerElements.findIndex(x => x.id === sourceId);
+        const to = target ? this.printDesignerElements.findIndex(x => x.id === target.dataset.ppdElement) : this.printDesignerElements.length - 1;
+        if (from < 0 || to < 0 || from === to) return;
+        const moved = this.printDesignerElements.splice(from,1)[0];
+        this.printDesignerElements.splice(to,0,moved);
+        this.printDesignerSelectedId = sourceId;
+        this.renderPrintDesigner(overlay);
+      });
+    },
+
+    loadPrintDesignerTemplate: function () {
+      try {
+        const raw = window.localStorage.getItem('pms-print-template-' + String(this.projectId));
+        const parsed = raw ? JSON.parse(raw) : null;
+        return parsed && parsed.version === 1 && Array.isArray(parsed.elements) ? parsed.elements : [];
+      } catch (error) { return []; }
+    },
+
+    savePrintDesignerTemplate: function () {
+      const key = 'pms-print-template-' + String(this.projectId);
+      const payload = {version:1,orientation:'portrait',elements:this.printDesignerElements};
+      try { window.localStorage.setItem(key, JSON.stringify(payload)); } catch (error) { console.warn('ذخیره قالب چاپ ممکن نشد:', error); }
+    },
+
+    renderPrintDesigner: function (overlay) {
+      const paper = overlay.querySelector('[data-ppd-paper]');
+      const properties = overlay.querySelector('[data-ppd-properties]');
+      const elements = this.printDesignerElements || [];
+      paper.innerHTML = elements.length ? elements.map(item => {
+        const style = item.style || {};
+        return '<article draggable="true" data-ppd-element="' + this.escape(item.id) + '" class="ppd-element ' + (item.id === this.printDesignerSelectedId ? 'is-selected' : '') + '" style="border:' + this.escape(style.border || '0') + ';padding:' + Number(style.padding || 0) + 'px;background:' + this.escape(style.background || '#fff') + ';font-size:' + Number(style.fontSize || 13) + 'px;text-align:' + this.escape(style.align || 'right') + '">' + this.renderPrintDesignerElement(item) + (item.id === this.printDesignerSelectedId ? '<button type="button" class="ppd-element-remove" data-ppd-remove="' + this.escape(item.id) + '" aria-label="حذف">×</button>' : '') + '</article>';
+      }).join('') : '<div class="ppd-paper-empty">از پنل «افزودن محتوا» موارد موردنیاز را به این صفحه اضافه کن.</div>';
+      const selected = elements.find(x => x.id === this.printDesignerSelectedId);
+      if (!selected) { properties.innerHTML = '<div class="ppd-properties-empty">برای تنظیم ظاهر، یک المان را انتخاب کن.</div>'; return; }
+      const s = selected.style || {};
+      properties.innerHTML = '<div class="ppd-order-controls"><button type="button" data-ppd-move="up">انتقال به بالا</button><button type="button" data-ppd-move="down">انتقال به پایین</button></div><label>حاشیه<select data-ppd-style="border"><option value="0" ' + (!s.border || s.border === '0' ? 'selected' : '') + '>بدون کادر</option><option value="1px solid #d1d5db" ' + (s.border === '1px solid #d1d5db' ? 'selected' : '') + '>نازک</option><option value="2px solid #374151" ' + (s.border === '2px solid #374151' ? 'selected' : '') + '>ضخیم</option><option value="1px dashed #9ca3af" ' + (s.border === '1px dashed #9ca3af' ? 'selected' : '') + '>خط‌چین</option></select></label><label>پس‌زمینه<input type="color" data-ppd-style="background" value="' + this.escape(s.background || '#ffffff') + '"></label><label>فاصله داخلی <input type="range" min="0" max="32" value="' + Number(s.padding || 0) + '" data-ppd-style="padding"></label><label>اندازه نوشته <input type="range" min="9" max="24" value="' + Number(s.fontSize || 13) + '" data-ppd-style="fontSize"></label><label>تراز<select data-ppd-style="align"><option value="right" ' + (s.align === 'right' ? 'selected' : '') + '>راست</option><option value="center" ' + (s.align === 'center' ? 'selected' : '') + '>وسط</option><option value="left" ' + (s.align === 'left' ? 'selected' : '') + '>چپ</option></select></label>';
+    },
+
+    renderPrintDesignerElement: function (item) {
+      if (item.type === 'line') return '<hr>';
+      if (item.type === 'text') return '<div>' + this.escape(item.text) + '</div>';
+      if (item.type === 'project') {
+        const p = this.project || {};
+        return '<h2>' + this.escape(p.Name || p.ProjectName || 'مشخصات پروژه') + '</h2><p>کد پروژه: ' + this.escape(p.Code || p.ProjectCode || this.projectId) + '</p><p>وضعیت: ' + this.escape(p.StatusName || p.Status || '-') + '</p>';
+      }
+      if (item.type === 'project-fields') {
+        const p = this.project || {};
+        const rows = Object.keys(p).filter(k => !/^(ID|TenantID|CreatedBy|UpdatedBy|DeletedAt)$/i.test(k) && ['string','number','boolean'].includes(typeof p[k]) && p[k] !== '').slice(0,24);
+        return '<h3>مشخصات پروژه</h3><dl>' + rows.map(k => '<div><dt>' + this.escape(k) + '</dt><dd>' + this.escape(this.informationValue(p[k])) + '</dd></div>').join('') + '</dl>';
+      }
+      const record = this.projectForms[Number(item.sourceIndex)];
+      if (!record) return '';
+      const definition = record.definition || {};
+      const fields = Array.isArray(definition.Fields) ? definition.Fields : [];
+      const values = record.values || {};
+      if (item.type === 'form-field') {
+        const field = fields.find((entry, index) => String(entry.ID || entry.InformationTypeID || index) === String(item.fieldKey));
+        if (!field) return '';
+        const info = field.InformationType || {};
+        const id = String(field.InformationTypeID || info.ID || info.Id || '');
+        const value = values[id];
+        const cols = Array.isArray(info.Columns) ? info.Columns.filter(col => String(col.Status || 'ACTIVE').toUpperCase() === 'ACTIVE') : [];
+        if (cols.length) {
+          const rows = String(info.Cardinality || 'SINGLE').toUpperCase() === 'MULTIPLE' ? (Array.isArray(value) ? value : []) : (value && typeof value === 'object' ? [value] : []);
+          return '<h3>' + this.escape(info.Name || info.Title || 'فیلد') + '</h3><table><thead><tr>' + cols.map(col => '<th>' + this.escape(col.Name || col.Code) + '</th>').join('') + '</tr></thead><tbody>' + rows.map(row => '<tr>' + cols.map(col => '<td>' + this.escape(this.informationValue(row && row[String(col.Code)])) + '</td>').join('') + '</tr>').join('') + '</tbody></table>';
+        }
+        return '<strong>' + this.escape(info.Name || info.Title || 'فیلد') + '</strong><div>' + this.escape(this.informationValue(value)) + '</div>';
+      }
+      const content = fields.slice().sort((a,b) => Number(a.FieldOrder||0)-Number(b.FieldOrder||0)).map(field => {
+        const info = field.InformationType || {};
+        const id = String(field.InformationTypeID || info.ID || info.Id || '');
+        const value = values[id];
+        const columns = Array.isArray(info.Columns) ? info.Columns.filter(col => String(col.Status || 'ACTIVE').toUpperCase() === 'ACTIVE') : [];
+        let output = '<span>-</span>';
+        if (columns.length) {
+          const rows = String(info.Cardinality || 'SINGLE').toUpperCase() === 'MULTIPLE' ? (Array.isArray(value) ? value : []) : (value && typeof value === 'object' ? [value] : []);
+          output = rows.length ? '<table><thead><tr>' + columns.map(col => '<th>' + this.escape(col.Name || col.Code) + '</th>').join('') + '</tr></thead><tbody>' + rows.map(row => '<tr>' + columns.map(col => '<td>' + this.escape(this.informationValue(row && row[String(col.Code)])) + '</td>').join('') + '</tr>').join('') + '</tbody></table>' : '<span>-</span>';
+        } else if (value !== undefined && value !== null && value !== '') output = '<span>' + this.escape(this.informationValue(value)) + '</span>';
+        return '<section><strong>' + this.escape(info.Name || info.Title || info.Code || 'فیلد') + '</strong><div>' + output + '</div></section>';
+      }).join('');
+      return '<h3>' + this.escape(item.title || definition.Name || 'فرم') + '</h3><small>' + this.escape((record.event && (record.event.EventTypeName || record.event.EventTypeTitle)) || 'رویداد') + ' · ' + this.escape(this.formatDate(record.createdAt)) + '</small>' + content;
     },
 
     renderProjectForms: function () {
