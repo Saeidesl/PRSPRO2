@@ -540,6 +540,7 @@
       paper.innerHTML = elements.length ? elements.map(item => {
         const style = item.style || {};
         this.printDesignerImageIndex = 0;
+        this.printDesignerImageOccurrences = Object.create(null);
         this.printDesignerCurrentItem = item;
         const content = this.renderPrintDesignerElement(item);
         this.printDesignerCurrentItem = null;
@@ -581,13 +582,19 @@
     renderPrintDesignerValue: function (value, dataType) {
       if (value === null || value === undefined || value === '') return '-';
       const type = String(dataType || '').toLowerCase();
-      const innerId = String(this.printDesignerImageIndex = (this.printDesignerImageIndex || 0) + 1);
+      const legacyInnerId = String(this.printDesignerImageIndex = (this.printDesignerImageIndex || 0) + 1);
       const id = value && typeof value === 'object' && (value.AttachmentID || value.attachmentId || value.ID || value.Id || value.id);
       const mime = String(value && typeof value === 'object' ? (value.MimeType || value.mimeType || '') : '').toLowerCase();
       if ((type === 'image' || type.indexOf('image/') === 0 || mime.indexOf('image/') === 0) && id) {
+        const attachmentKey = String(id).replace(/[^a-zA-Z0-9_-]/g, '_');
+        this.printDesignerImageOccurrences = this.printDesignerImageOccurrences || Object.create(null);
+        const occurrence = (this.printDesignerImageOccurrences[attachmentKey] || 0) + 1;
+        this.printDesignerImageOccurrences[attachmentKey] = occurrence;
+        const innerId = 'img-' + attachmentKey + '-' + occurrence;
         const name = value.FileName || value.fileName || value.Name || 'تصویر فرم';
         const cached = this.projectFormImageUrls && this.projectFormImageUrls[String(id)];
-        const layout = this.printDesignerCurrentItem && this.printDesignerCurrentItem.innerLayout && this.printDesignerCurrentItem.innerLayout[innerId] || {};
+        const layouts = this.printDesignerCurrentItem && this.printDesignerCurrentItem.innerLayout || {};
+        const layout = layouts[innerId] || layouts[legacyInnerId] || {};
         const style = 'width:' + (Number(layout.width) > 0 ? Number(layout.width) + 'px' : 'auto') + ';max-width:100%;transform:translate(' + Number(layout.x || 0) + 'px,' + Number(layout.y || 0) + 'px)';
         if (cached) return '<img draggable="false" class="ppd-inline-image" data-ppd-inner-image="' + innerId + '" style="' + style + '" src="' + this.escape(cached) + '" alt="' + this.escape(name) + '">';
         return '<span data-ppd-image="' + this.escape(id) + '" data-ppd-inner-image="' + innerId + '" data-ppd-image-name="' + this.escape(name) + '" style="' + style + '">در حال بارگذاری تصویر…</span>';
