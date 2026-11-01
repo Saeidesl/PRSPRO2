@@ -43,7 +43,7 @@ test('print designer supports visual ordering, element styling, saved templates 
 test('print designer assets are cache-busted and loaded by the application',()=>{
   const index=read('index.html');
   assert.match(index,/project-print-designer\.css\?v=/);
-  assert.match(index,/project-detail\.js\?v=20261101-print-designer-inner-image-controls-2/);
+  assert.match(index,/project-detail\.js\?v=20261101-print-designer-table-layout-controls-2/);
 });
 
 
@@ -67,17 +67,7 @@ test('form image attachments are loaded as inline images for project forms and p
  assert.match(module,/prepareProjectFormImages: async function/);
  assert.ok(module.includes(`data:' + data.MimeType + ';base64,'`));
  assert.match(module,/project-form-inline-image/);
- assert.match(module,/renderProjectFormValue\(row && row\[String\(col\.Code\)\], col\.DataType\)/);
-});
-
-test('print designer uses its selectable image renderer for full forms and individual fields',()=>{
- const module=read('js/modules/project-detail.js');
- const start=module.indexOf('renderPrintDesignerElement: function (item) {');
- const end=module.indexOf('renderProjectForms: function ()',start);
- const renderer=module.slice(start,end);
- assert.match(renderer,/renderPrintDesignerValue\(row && row\[String\(col\.Code\)\], col\.DataType\)/);
- assert.match(renderer,/renderPrintDesignerValue\(value, info\.DataType\)/);
- assert.doesNotMatch(renderer,/renderProjectFormValue\(/);
+ assert.match(module,/renderPrintDesignerValue\(row && row\[String\(column\.Code \|\| column\.code\)\], column\.DataType \|\| column\.dataType\)/);
 });
 
 test('print designer renders image attachments as inline images on the A4 canvas',()=>{
@@ -111,4 +101,33 @@ test('print designer exposes independently selectable and adjustable form images
  assert.match(module,/innerLayout\[selection\.imageId\]/);
  assert.match(module,/image\.dataset\.ppdInnerImage/);
  assert.match(css,/ppd-inline-image\[data-ppd-inner-image\]/);
+});
+
+
+test('print designer supports selecting form tables and adjusting overall and individual column widths',()=>{
+ const module=read('js/modules/project-detail.js');
+ const css=read('css/project-print-designer.css');
+ assert.match(module,/renderPrintDesignerTable: function/);
+ assert.match(module,/data-ppd-inner-table/);
+ assert.match(module,/data-ppd-inner-column/);
+ assert.match(module,/printDesignerSelectedTable/);
+ assert.match(module,/data-ppd-table-style="width"/);
+ assert.match(module,/data-ppd-column-width/);
+ assert.match(module,/tableLayout/);
+ assert.match(module,/layout\.columns\[col\.dataset\.ppdColCode\]/);
+ assert.match(module,/field-' \+ String\(item\.fieldKey\)/);
+ assert.match(css,/\.ppd-inner-table/);
+ assert.match(css,/@media print/);
+});
+
+test('print designer uses its selectable image renderer for full forms and individual fields',()=>{
+ const module=read('js/modules/project-detail.js');
+ const start=module.indexOf('renderPrintDesignerElement: function (item) {');
+ const end=module.indexOf('renderProjectForms: function ()',start);
+ const renderer=module.slice(start,end);
+ assert.match(renderer,/renderPrintDesignerTable\('field-'/);
+ assert.match(renderer,/renderPrintDesignerValue\(value, info\.DataType\)/);
+ assert.doesNotMatch(renderer,/renderProjectFormValue\(/);
+ const tableRenderer=module.slice(module.indexOf('renderPrintDesignerTable: function'),module.indexOf('renderPrintDesignerElement: function'));
+ assert.match(tableRenderer,/renderPrintDesignerValue\(row && row\[String\(column\.Code \|\| column\.code\)\], column\.DataType \|\| column\.dataType\)/);
 });
