@@ -43,7 +43,7 @@ test('print designer supports visual ordering, element styling, saved templates 
 test('print designer assets are cache-busted and loaded by the application',()=>{
   const index=read('index.html');
   assert.match(index,/project-print-designer\.css\?v=/);
-  assert.match(index,/project-detail\.js\?v=20261101-print-designer-inline-images-1/);
+  assert.match(index,/project-detail\.js\?v=20261101-print-designer-inner-image-controls-2/);
 });
 
 
@@ -79,4 +79,26 @@ test('print designer renders image attachments as inline images on the A4 canvas
  assert.ok(module.includes("'/attachments/' + encodeURIComponent(id) + '/download'"));
  assert.match(module,/ppd-inline-image/);
  assert.match(css,/ppd-inline-image/);
+});
+
+
+test('print designer exposes independently selectable and adjustable form images',()=>{
+ const module=read('js/modules/project-detail.js');
+ const css=read('css/project-print-designer.css');
+ assert.match(module,/data-ppd-inner-image/);
+ assert.match(module,/draggable="false"/);
+ assert.match(module,/image\.draggable = false/);
+ assert.match(module,/innerImage = event\.target\.closest\('\[data-ppd-inner-image\]'\)/);
+ assert.match(module,/printDesignerSelectedInner/);
+ assert.match(css,/is-inner-selected/);
+ assert.match(module,/data-ppd-inner-style="width"/);
+ assert.match(module,/data-ppd-inner-style="x"/);
+ assert.match(module,/data-ppd-inner-style="y"/);
+ assert.match(module,/pointerdown/);
+ assert.match(module,/parentForControls/);
+ assert.match(module,/this\.printDesignerSelectedInner = \{ elementId: innerDrag\.elementId, imageId: innerDrag\.imageId \}/);
+ assert.match(module,/pointermove/);
+ assert.match(module,/innerLayout\[selection\.imageId\]/);
+ assert.match(module,/image\.dataset\.ppdInnerImage/);
+ assert.match(css,/ppd-inline-image\[data-ppd-inner-image\]/);
 });

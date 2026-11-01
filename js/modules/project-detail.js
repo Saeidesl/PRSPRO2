@@ -316,6 +316,40 @@
     },
 
     bindPrintDesigner: function (overlay) {
+      let innerDrag = null;
+      overlay.addEventListener('pointerdown', event => {
+        const image = event.target.closest('[data-ppd-inner-image]');
+        if (!image || event.button !== 0) return;
+        const article = image.closest('[data-ppd-element]');
+        if (!article) return;
+        innerDrag = { imageId: image.dataset.ppdInnerImage, elementId: article.dataset.ppdElement, startX: event.clientX, startY: event.clientY, x: 0, y: 0, moved: false };
+        this.printDesignerSelectedInner = { elementId: innerDrag.elementId, imageId: innerDrag.imageId };
+        this.printDesignerSelectedId = null;
+        overlay.querySelectorAll('[data-ppd-inner-image].is-inner-selected').forEach(node => node.classList.remove('is-inner-selected'));
+        image.classList.add('is-inner-selected');
+        const properties = overlay.querySelector('[data-ppd-properties]');
+        const parentForControls = this.printDesignerElements.find(x => x.id === innerDrag.elementId);
+        const selectedLayout = parentForControls && parentForControls.innerLayout && parentForControls.innerLayout[innerDrag.imageId] || {};
+        if (properties) properties.innerHTML = '<h4>تنظیم تصویر داخل فرم</h4><label>عرض تصویر (پیکسل)<input type="range" min="40" max="700" step="5" value="' + Number(selectedLayout.width || 280) + '" data-ppd-inner-style="width"></label><label>جابه‌جایی افقی<input type="range" min="-300" max="300" value="' + Number(selectedLayout.x || 0) + '" data-ppd-inner-style="x"></label><label>جابه‌جایی عمودی<input type="range" min="-300" max="300" value="' + Number(selectedLayout.y || 0) + '" data-ppd-inner-style="y"></label><p class="ppd-help">نسبت تصویر حفظ می‌شود؛ تغییرات فقط روی قالب چاپ اثر دارد.</p>';
+        const parent = this.printDesignerElements.find(x => x.id === innerDrag.elementId);
+        const layout = parent && parent.innerLayout && parent.innerLayout[innerDrag.imageId] || {};
+        innerDrag.x = Number(layout.x || 0); innerDrag.y = Number(layout.y || 0);
+        image.setPointerCapture(event.pointerId);
+        event.preventDefault();
+      });
+      overlay.addEventListener('pointermove', event => {
+        if (!innerDrag) return;
+        const dx = event.clientX - innerDrag.startX, dy = event.clientY - innerDrag.startY;
+        if (Math.abs(dx) + Math.abs(dy) > 2) innerDrag.moved = true;
+        const x = Math.max(-300, Math.min(300, innerDrag.x + dx));
+        const y = Math.max(-300, Math.min(300, innerDrag.y + dy));
+        const image = overlay.querySelector('[data-ppd-element="' + this.escape(innerDrag.elementId) + '"] [data-ppd-inner-image="' + this.escape(innerDrag.imageId) + '"]');
+        if (image) image.style.transform = 'translate(' + x + 'px,' + y + 'px)';
+        const parent = this.printDesignerElements.find(item => item.id === innerDrag.elementId);
+        if (parent) { parent.innerLayout = parent.innerLayout || {}; parent.innerLayout[innerDrag.imageId] = Object.assign({}, parent.innerLayout[innerDrag.imageId] || {}, {x:x,y:y}); }
+      });
+      overlay.addEventListener('pointerup', () => { innerDrag = null; });
+      overlay.addEventListener('pointercancel', () => { innerDrag = null; });
       overlay.addEventListener('click', (event) => {
         const add = event.target.closest('[data-ppd-add]');
         const form = event.target.closest('[data-ppd-form]');
@@ -323,10 +357,12 @@
         const close = event.target.closest('[data-ppd-close]');
         const save = event.target.closest('[data-ppd-save]');
         const print = event.target.closest('[data-ppd-print]');
+        const innerImage = event.target.closest('[data-ppd-inner-image]');
         const element = event.target.closest('[data-ppd-element]');
         const remove = event.target.closest('[data-ppd-remove]');
         const move = event.target.closest('[data-ppd-move]');
         if (close) { overlay.remove(); document.body.classList.remove('ppd-printing'); return; }
+        if (innerImage) { event.preventDefault(); event.stopPropagation(); return; }
         if (save) { this.savePrintDesignerTemplate(); save.textContent = 'ذخیره شد'; return; }
         if (print) { window.print(); return; }
         if (move) {
@@ -349,6 +385,7 @@
           let text = '';
           if (type === 'text') { text = window.prompt('متن موردنظر را وارد کن:') || ''; if (!text.trim()) return; }
           this.printDesignerElements.push({id:'ppd-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),type:type,text:text,style:{border:'1px solid #d1d5db',padding:12,background:'#ffffff',fontSize:13,align:'right'}});
+          this.printDesignerSelectedInner = null;
           this.printDesignerSelectedId = this.printDesignerElements[this.printDesignerElements.length-1].id;
           this.renderPrintDesigner(overlay); return;
         }
@@ -370,9 +407,24 @@
           this.printDesignerSelectedId = this.printDesignerElements[this.printDesignerElements.length-1].id;
           this.renderPrintDesigner(overlay); return;
         }
-        if (element) { this.printDesignerSelectedId = element.dataset.ppdElement; this.renderPrintDesigner(overlay); }
+        if (element) { this.printDesignerSelectedInner = null; this.printDesignerSelectedId = element.dataset.ppdElement; this.renderPrintDesigner(overlay); }
       });
       overlay.addEventListener('input', (event) => {
+        const innerKey = event.target.dataset.ppdInnerStyle;
+        if (innerKey) {
+          const selection = this.printDesignerSelectedInner;
+          const parent = (this.printDesignerElements || []).find(x => x.id === (selection && selection.elementId));
+          if (!parent || !selection) return;
+          parent.innerLayout = parent.innerLayout || {};
+          const layout = parent.innerLayout[selection.imageId] || (parent.innerLayout[selection.imageId] = {});
+          layout[innerKey] = Number(event.target.value);
+          const image = overlay.querySelector('[data-ppd-element="' + this.escape(parent.id) + '"] [data-ppd-inner-image="' + this.escape(selection.imageId) + '"]');
+          if (image) {
+            if (innerKey === 'width') { image.style.width = layout.width + 'px'; image.style.maxWidth = '100%'; }
+            if (innerKey === 'x' || innerKey === 'y') image.style.transform = 'translate(' + Number(layout.x || 0) + 'px,' + Number(layout.y || 0) + 'px)';
+          }
+          return;
+        }
         const key = event.target.dataset.ppdStyle;
         if (!key) return;
         const item = this.printDesignerElements.find(x => x.id === this.printDesignerSelectedId);
@@ -392,6 +444,8 @@
         this.renderPrintDesigner(overlay);
       });
       overlay.addEventListener('dragstart', event => {
+        const innerImage = event.target.closest('[data-ppd-inner-image]');
+        if (innerImage) { event.preventDefault(); return; }
         const el = event.target.closest('[data-ppd-element]');
         if (!el) return;
         event.dataTransfer.setData('text/plain', el.dataset.ppdElement);
@@ -433,11 +487,22 @@
       const elements = this.printDesignerElements || [];
       paper.innerHTML = elements.length ? elements.map(item => {
         const style = item.style || {};
-        return '<article draggable="true" data-ppd-element="' + this.escape(item.id) + '" class="ppd-element ' + (item.id === this.printDesignerSelectedId ? 'is-selected' : '') + '" style="border:' + this.escape(style.border || '0') + ';padding:' + Number(style.padding || 0) + 'px;background:' + this.escape(style.background || '#fff') + ';font-size:' + Number(style.fontSize || 13) + 'px;text-align:' + this.escape(style.align || 'right') + '">' + this.renderPrintDesignerElement(item) + (item.id === this.printDesignerSelectedId ? '<button type="button" class="ppd-element-remove" data-ppd-remove="' + this.escape(item.id) + '" aria-label="حذف">×</button>' : '') + '</article>';
+        this.printDesignerImageIndex = 0;
+        this.printDesignerCurrentItem = item;
+        const content = this.renderPrintDesignerElement(item);
+        this.printDesignerCurrentItem = null;
+        return '<article draggable="true" data-ppd-element="' + this.escape(item.id) + '" class="ppd-element ' + (item.id === this.printDesignerSelectedId ? 'is-selected' : '') + '" style="border:' + this.escape(style.border || '0') + ';padding:' + Number(style.padding || 0) + 'px;background:' + this.escape(style.background || '#fff') + ';font-size:' + Number(style.fontSize || 13) + 'px;text-align:' + this.escape(style.align || 'right') + '">' + content + (item.id === this.printDesignerSelectedId ? '<button type="button" class="ppd-element-remove" data-ppd-remove="' + this.escape(item.id) + '" aria-label="حذف">×</button>' : '') + '</article>';
       }).join('') : '<div class="ppd-paper-empty">از پنل «افزودن محتوا» موارد موردنیاز را به این صفحه اضافه کن.</div>';
       this.loadPrintDesignerImages(paper);
+      const innerSelection = this.printDesignerSelectedInner;
+      if (innerSelection) {
+        const parent = elements.find(x => x.id === innerSelection.elementId);
+        const layout = parent && parent.innerLayout && parent.innerLayout[innerSelection.imageId] || {};
+        properties.innerHTML = '<h4>تنظیم تصویر داخل فرم</h4><label>عرض تصویر (پیکسل)<input type="range" min="40" max="700" step="5" value="' + Number(layout.width || 280) + '" data-ppd-inner-style="width"></label><label>جابه‌جایی افقی<input type="range" min="-300" max="300" value="' + Number(layout.x || 0) + '" data-ppd-inner-style="x"></label><label>جابه‌جایی عمودی<input type="range" min="-300" max="300" value="' + Number(layout.y || 0) + '" data-ppd-inner-style="y"></label><p class="ppd-help">نسبت تصویر حفظ می‌شود؛ تغییرات فقط روی قالب چاپ اثر دارد.</p>';
+        return;
+      }
       const selected = elements.find(x => x.id === this.printDesignerSelectedId);
-      if (!selected) { properties.innerHTML = '<div class="ppd-properties-empty">برای تنظیم ظاهر، یک المان را انتخاب کن.</div>'; return; }
+      if (!selected) { properties.innerHTML = '<div class="ppd-properties-empty">برای تنظیم ظاهر، یک المان یا تصویر داخل فرم را انتخاب کن.</div>'; return; }
       const s = selected.style || {};
       properties.innerHTML = '<div class="ppd-order-controls"><button type="button" data-ppd-move="up">انتقال به بالا</button><button type="button" data-ppd-move="down">انتقال به پایین</button></div><label>حاشیه<select data-ppd-style="border"><option value="0" ' + (!s.border || s.border === '0' ? 'selected' : '') + '>بدون کادر</option><option value="1px solid #d1d5db" ' + (s.border === '1px solid #d1d5db' ? 'selected' : '') + '>نازک</option><option value="2px solid #374151" ' + (s.border === '2px solid #374151' ? 'selected' : '') + '>ضخیم</option><option value="1px dashed #9ca3af" ' + (s.border === '1px dashed #9ca3af' ? 'selected' : '') + '>خط‌چین</option></select></label><label>پس‌زمینه<input type="color" data-ppd-style="background" value="' + this.escape(s.background || '#ffffff') + '"></label><label>فاصله داخلی <input type="range" min="0" max="32" value="' + Number(s.padding || 0) + '" data-ppd-style="padding"></label><label>اندازه نوشته <input type="range" min="9" max="24" value="' + Number(s.fontSize || 13) + '" data-ppd-style="fontSize"></label><label>تراز<select data-ppd-style="align"><option value="right" ' + (s.align === 'right' ? 'selected' : '') + '>راست</option><option value="center" ' + (s.align === 'center' ? 'selected' : '') + '>وسط</option><option value="left" ' + (s.align === 'left' ? 'selected' : '') + '>چپ</option></select></label>';
     },
@@ -445,13 +510,16 @@
     renderPrintDesignerValue: function (value, dataType) {
       if (value === null || value === undefined || value === '') return '-';
       const type = String(dataType || '').toLowerCase();
+      const innerId = String(this.printDesignerImageIndex = (this.printDesignerImageIndex || 0) + 1);
       const id = value && typeof value === 'object' && (value.AttachmentID || value.attachmentId || value.ID || value.Id || value.id);
       const mime = String(value && typeof value === 'object' ? (value.MimeType || value.mimeType || '') : '').toLowerCase();
       if ((type === 'image' || type.indexOf('image/') === 0 || mime.indexOf('image/') === 0) && id) {
         const name = value.FileName || value.fileName || value.Name || 'تصویر فرم';
         const cached = this.projectFormImageUrls && this.projectFormImageUrls[String(id)];
-        if (cached) return '<img class="ppd-inline-image" src="' + this.escape(cached) + '" alt="' + this.escape(name) + '">';
-        return '<span data-ppd-image="' + this.escape(id) + '" data-ppd-image-name="' + this.escape(name) + '">در حال بارگذاری تصویر…</span>';
+        const layout = this.printDesignerCurrentItem && this.printDesignerCurrentItem.innerLayout && this.printDesignerCurrentItem.innerLayout[innerId] || {};
+        const style = 'width:' + (Number(layout.width) > 0 ? Number(layout.width) + 'px' : 'auto') + ';max-width:100%;transform:translate(' + Number(layout.x || 0) + 'px,' + Number(layout.y || 0) + 'px)';
+        if (cached) return '<img draggable="false" class="ppd-inline-image" data-ppd-inner-image="' + innerId + '" style="' + style + '" src="' + this.escape(cached) + '" alt="' + this.escape(name) + '">';
+        return '<span data-ppd-image="' + this.escape(id) + '" data-ppd-inner-image="' + innerId + '" data-ppd-image-name="' + this.escape(name) + '" style="' + style + '">در حال بارگذاری تصویر…</span>';
       }
       if (Array.isArray(value)) return value.map(entry => '<div>' + this.renderPrintDesignerValue(entry, dataType) + '</div>').join('');
       if (typeof value === 'object') return this.escape(value.FileName || value.Name || value.Value || JSON.stringify(value));
@@ -471,7 +539,10 @@
           if (!base64 || mime.indexOf('image/') !== 0) throw new Error('invalid image');
           const image = document.createElement('img');
           image.className = 'ppd-inline-image';
+          image.draggable = false;
           image.alt = node.getAttribute('data-ppd-image-name') || 'تصویر فرم';
+          image.dataset.ppdInnerImage = node.dataset.ppdInnerImage || '';
+          image.style.cssText = node.style.cssText;
           image.src = 'data:' + mime + ';base64,' + base64;
           node.replaceWith(image);
         } catch (error) { node.textContent = 'بارگذاری تصویر ناموفق بود'; }
