@@ -76,7 +76,7 @@ test('print designer renders image attachments as inline images on the A4 canvas
  assert.match(module,/renderPrintDesignerValue: function/);
  assert.match(module,/data-ppd-image/);
  assert.match(module,/loadPrintDesignerImages: async function/);
- assert.match(module,/attachments\\/.*download/);
+ assert.ok(module.includes("'/attachments/' + encodeURIComponent(id) + '/download'"));
  assert.match(module,/ppd-inline-image/);
  assert.match(css,/ppd-inline-image/);
 });
