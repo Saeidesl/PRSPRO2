@@ -6,6 +6,7 @@ const root = path.resolve(__dirname, '..');
 const fontCss = fs.readFileSync(path.join(root, 'css', 'fonts.css'), 'utf8');
 const variables = fs.readFileSync(path.join(root, 'css', 'variables.css'), 'utf8');
 const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const fontDirectory = path.join(root, 'fonts');
 
 const weights = [200, 300, 400, 500, 700, 900];
 for (const weight of weights) {
@@ -20,6 +21,7 @@ for (const file of [
   'IRANSansWeb_Black.woff2'
 ]) {
   assert.ok(fontCss.includes('../fonts/' + file), 'Missing font-face reference: ' + file);
+  assert.ok(fs.existsSync(path.join(fontDirectory, file)), 'Missing font asset: fonts/' + file);
 }
 assert.match(variables, /--font-family:\s*["']?IRANSansWeb/);
 assert.match(index, /css\/fonts\.css/);
