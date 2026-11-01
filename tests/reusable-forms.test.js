@@ -142,3 +142,14 @@ test('amendment form sends the source response timestamp for stale edit protecti
   assert.match(events,/this\.amendmentSourceUpdatedAt = String\(option\.dataset\.updatedAt \|\| ''\)/);
   assert.match(events,/ExpectedUpdatedAt: this\.amendmentSourceUpdatedAt/);
 });
+
+test('amending a saved attachment uploads a replacement even when name and size match',()=>{
+  const events=read('js/modules/events.js');
+  const start=events.indexOf('uploadConfiguredFormFile: async function');
+  const end=events.indexOf('createFieldInput: function',start);
+  const upload=events.slice(start,end);
+  assert.match(upload,/input\._pmsUploadedFile === file && input\._pmsUploadedAttachment/);
+  assert.match(upload,/input\._pmsUploadedFile = file/);
+  assert.match(upload,/input\._pmsUploadedAttachment = value/);
+  assert.doesNotMatch(upload,/cached\.FileName === file\.name/);
+});
