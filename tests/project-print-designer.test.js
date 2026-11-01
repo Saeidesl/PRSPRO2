@@ -43,7 +43,7 @@ test('print designer supports visual ordering, element styling, saved templates 
 test('print designer assets are cache-busted and loaded by the application',()=>{
   const index=read('index.html');
   assert.match(index,/project-print-designer\.css\?v=/);
-  assert.match(index,/project-detail\.js\?v=20261101-print-designer-inner-image-controls-2/);
+  assert.match(index,/project-detail\.js\?v=20261101-db-print-templates-1/);
 });
 
 
@@ -111,4 +111,33 @@ test('print designer exposes independently selectable and adjustable form images
  assert.match(module,/innerLayout\[selection\.imageId\]/);
  assert.match(module,/image\.dataset\.ppdInnerImage/);
  assert.match(css,/ppd-inline-image\[data-ppd-inner-image\]/);
+});
+
+test('print templates are stored through the backend API and not browser localStorage',()=>{
+ const module=read('js/modules/project-detail.js');
+ const backendPage=read('pages/print-designer.html');
+ assert.match(module,/Api\.post\('\/print-templates'/);
+ assert.match(module,/Api\.put\('\/print-templates\//);
+ assert.match(module,/Api\.getFresh\('\/print-templates'/);
+ assert.doesNotMatch(module,/localStorage\.(getItem|setItem)\(['"]pms-print-template-/);
+ assert.match(backendPage,/print-template-create/);
+ assert.match(backendPage,/print-template-edit/);
+ assert.match(backendPage,/print-run-preview/);
+});
+
+test('saved print layouts resolve reusable forms by stable FormID across projects',()=>{
+ const module=read('js/modules/project-detail.js');
+ assert.match(module,/formId:String\(item\.formId/);
+ assert.match(module,/this\.projectForms\.find\(entry => item\.formId/);
+});
+
+test('project print preview supports PNG export, native sharing, PDF and direct printing',()=>{
+ const module=read('js/modules/project-detail.js');
+ assert.match(module,/createPrintDesignerImageBlob: async function/);
+ assert.match(module,/exportPrintDesignerImage: async function/);
+ assert.match(module,/sharePrintDesignerOutput: async function/);
+ assert.match(module,/navigator\.share/);
+ assert.match(module,/data-ppd-pdf/);
+ assert.match(module,/window\.print\(\)/);
+ assert.match(module,/printDesignerMode === 'preview'\) return/);
 });
