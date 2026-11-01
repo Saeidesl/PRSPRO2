@@ -279,13 +279,13 @@
       this.projectForms = [];
       this.events = [];
       const results = await Promise.all([
-        window.PMS.Api.getFresh('/projects/' + encodeURIComponent(this.projectId), {trackSync:false}),
-        window.PMS.Api.getFresh('/projects/' + encodeURIComponent(this.projectId) + '/details', {trackSync:false})
+        window.PMS.Api.getFresh('/projects/' + encodeURIComponent(this.projectId), 'print_designer_project_' + this.projectId, {trackSync:false}),
+        window.PMS.Api.getFresh('/projects/' + encodeURIComponent(this.projectId) + '/details', 'print_designer_project_details_' + this.projectId, {trackSync:false})
       ]);
       if (version !== this.loadVersion) return;
-      this.project = this.unwrap(results[0] && results[0].data !== undefined ? results[0].data : results[0]);
+      this.project = this.unwrap(results[0]);
       if (!this.project || typeof this.project !== 'object') throw new Error('مشخصات پروژه دریافت نشد.');
-      this.applyEventDetailsBundle(results[1] && results[1].data !== undefined ? results[1].data : results[1], version);
+      this.applyEventDetailsBundle(results[1], version);
       await this.waitForProjectForms(version);
     },
 
