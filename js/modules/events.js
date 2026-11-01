@@ -2304,7 +2304,7 @@
       };
       // Keep a key for retries of the same logical submission, but rotate it if
       // the user edits any field after a failed request.
-      const requestFingerprint = JSON.stringify(payload);
+      const requestFingerprint = JSON.stringify({ payload, amendmentSourceEventId: this.amendmentMode ? this.amendmentSourceEventId : '', amendmentSourceFormId: this.amendmentMode ? this.amendmentSourceFormId : '', amendmentValues: this.amendmentMode ? formResponses : null });
       if (!this.pendingIdempotencyKey ||
           this.pendingIdempotencyFingerprint !== requestFingerprint) {
         this.pendingIdempotencyKey = 'EVREQ_' + (
@@ -2320,19 +2320,29 @@
       this.setSubmitState(true);
 
       try {
-        const eventResponse = await PMS.Api.post('/events', payload);
-        const eventResult = PMS.Api.extractData(eventResponse) || {};
+        let eventResult = {};
+        if (this.amendmentMode && this.amendmentEventId) {
+          // اگر ایجاد رویداد قبلاً موفق شده و فقط اصلاح پاسخ شکست خورده باشد،
+          // تلاش مجدد باید فقط PUT را اجرا کند و رویداد تکراری نسازد.
+          eventResult = { event: { ID: this.amendmentEventId } };
+        } else {
+          const eventResponse = await PMS.Api.post('/events', payload);
+          eventResult = PMS.Api.extractData(eventResponse) || {};
+        }
         if (this.amendmentMode) {
           const amendmentEvent = eventResult.event || eventResult.Event || eventResult;
-          const amendmentEventId = String(amendmentEvent.ID || amendmentEvent.Id || eventResult.eventId || '');
+          const amendmentEventId = String(
+            this.amendmentEventId ||
+            amendmentEvent.ID || amendmentEvent.Id ||
+            eventResult.eventId || eventResult.EventID || ''
+          );
           const selectedSourceForm = document.getElementById('event-amendment-source-form');
           const selectedOption = selectedSourceForm && selectedSourceForm.options[selectedSourceForm.selectedIndex];
           if (!this.amendmentSourceEventId || !this.amendmentSourceFormId || !amendmentEventId || !selectedOption) {
             throw new Error('رویداد اصلی، فرم مبنا یا شناسه رویداد اصلاحی معتبر نیست.');
           }
           this.amendmentEventId = amendmentEventId;
-          const amendmentValues = await this.collectConfiguredFormResponses(projectId);
-          if (amendmentValues === null) throw new Error('مقادیر فرم اصلاحی کامل نیستند.');
+          const amendmentValues = this.amendmentPendingValues || formResponses;
           const formValues = amendmentValues.find(item => String(item.FormID) === String(this.amendmentSourceFormId));
           if (!formValues) throw new Error('پاسخ فرم اصلاح‌شده جمع‌آوری نشد.');
           await PMS.Api.put('/events/' + encodeURIComponent(this.amendmentSourceEventId) + '/forms/' + encodeURIComponent(this.amendmentSourceFormId), {
