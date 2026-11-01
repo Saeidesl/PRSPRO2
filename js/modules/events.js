@@ -1042,11 +1042,9 @@
         '<div class="event-field event-field-wide"><label for="event-form-description">شرح رویداد</label>' +
         '<textarea id="event-form-description" name="Description" rows="3" placeholder="توضیحات تکمیلی، در صورت نیاز"></textarea></div>' +
         '</div></section>' +
-        '<section class="event-form-section" id="event-amendment-section" hidden><h4 class="event-section-title">انتخاب فرم برای اصلاح</h4>' +
-        '<div class="event-dynamic-grid">' +
-        '<div class="event-field"><label for="event-amendment-source-event">رویداد اصلی</label><select id="event-amendment-source-event"><option value="">ابتدا پروژه را انتخاب کنید</option></select></div>' +
-        '<div class="event-field"><label for="event-amendment-source-form">فرم ثبت‌شده</label><select id="event-amendment-source-form" disabled><option value="">ابتدا رویداد اصلی را انتخاب کنید</option></select></div>' +
-        '</div><p class="event-muted" id="event-amendment-hint">پاسخ فرم انتخاب‌شده پس از ثبت رویداد اصلاحی به‌روزرسانی می‌شود.</p></section>' +
+        '<section class="event-form-section" id="event-amendment-section" hidden><h4 class="event-section-title">فرم مورد اصلاح</h4>' +
+        '<p class="event-muted" id="event-amendment-status" role="status" aria-live="polite">پس از انتخاب پروژه، پاسخ قبلی فرم به‌صورت خودکار پیدا می‌شود.</p>' +
+        '<div hidden aria-hidden="true"><select id="event-amendment-source-event"></select><select id="event-amendment-source-form"></select></div></section>' +
         '<section class="event-form-section" id="event-variant-section" hidden><h4 class="event-section-title">رنگ‌بندی، سایزبندی و مقدار</h4>' +
         '<div id="event-variant-fields" class="event-dynamic-grid"></div></section>' +
         '<section class="event-form-section"><h4 class="event-section-title">اطلاعات اختصاصی رویداد</h4>' +
@@ -1148,11 +1146,6 @@
         }
       };
 
-      const amendmentEventSelect = document.getElementById('event-amendment-source-event');
-      const amendmentFormSelect = document.getElementById('event-amendment-source-form');
-      if (amendmentEventSelect) amendmentEventSelect.addEventListener('change', () => this.loadAmendmentSourceForms(amendmentEventSelect.value));
-      if (amendmentFormSelect) amendmentFormSelect.addEventListener('change', () => this.hydrateAmendmentForm(amendmentFormSelect.value));
-
       typeSelect.addEventListener('change', () => {
         const selectedType = this.findById(this.eventTypes, typeSelect.value);
         this.setAmendmentMode(!!selectedType && (selectedType.IsFormAmendment === true || String(selectedType.IsFormAmendment).toLowerCase() === 'true' || /(EDIT|UPDATE|AMEND|ویرایش|اصلاح)/i.test(String(selectedType.Code || '')+' '+String(selectedType.Name || ''))), projectSelect.value);
@@ -1218,74 +1211,94 @@
       this.amendmentEventId = '';
       this.amendmentPendingValues = null;
       const section = document.getElementById('event-amendment-section');
+      const status = document.getElementById('event-amendment-status');
       const sourceEvent = document.getElementById('event-amendment-source-event');
       const sourceForm = document.getElementById('event-amendment-source-form');
       if (section) section.hidden = !this.amendmentMode;
       if (!this.amendmentMode) return;
-      if (sourceEvent) sourceEvent.innerHTML = '<option value="">انتخاب رویداد اصلی</option>';
-      if (sourceForm) { sourceForm.innerHTML = '<option value="">ابتدا رویداد اصلی را انتخاب کنید</option>'; sourceForm.disabled = true; }
+      if (status) status.textContent = 'در حال یافتن آخرین پاسخ فرم تعیین‌شده برای این پروژه...';
+      if (sourceEvent) sourceEvent.innerHTML = '';
+      if (sourceForm) { sourceForm.innerHTML = ''; sourceForm.disabled = true; }
       this.loadAmendmentSourceEvents(projectId || '');
     },
 
     loadAmendmentSourceEvents: async function (projectId) {
-      const select = document.getElementById('event-amendment-source-event');
-      const formSelect = document.getElementById('event-amendment-source-form');
-      if (!select || !this.amendmentMode) return;
-      select.innerHTML = '<option value="">در حال دریافت رویدادها...</option>';
-      if (formSelect) { formSelect.innerHTML = '<option value="">ابتدا رویداد اصلی را انتخاب کنید</option>'; formSelect.disabled = true; }
-      if (!projectId) { select.innerHTML = '<option value="">ابتدا پروژه را انتخاب کنید</option>'; return; }
+      const sourceEvent = document.getElementById('event-amendment-source-event');
+      const sourceForm = document.getElementById('event-amendment-source-form');
+      const status = document.getElementById('event-amendment-status');
+      if (!sourceEvent || !sourceForm || !this.amendmentMode) return;
+      this.amendmentSourceEventId = '';
+      this.amendmentSourceFormId = '';
+      this.amendmentSourceVersion = 0;
+      this.amendmentSourceUpdatedAt = '';
+      if (!projectId) {
+        if (status) status.textContent = 'ابتدا پروژه را انتخاب کنید.';
+        return;
+      }
+      const selectedType = this.findById(this.eventTypes, document.getElementById('event-form-type').value);
+      const explicitAllowList = selectedType && (selectedType.IsFormAmendment === true || String(selectedType.IsFormAmendment).toLowerCase() === 'true');
+      const allowedFormIds = explicitAllowList
+        ? (Array.isArray(selectedType.AmendableFormIDs) ? selectedType.AmendableFormIDs.map(String) : [])
+        : [];
+      if (explicitAllowList && !allowedFormIds.length) {
+        if (status) status.textContent = 'برای این نوع رویداد هیچ فرم مجازی جهت اصلاح تنظیم نشده است.';
+        return;
+      }
+      if (status) status.textContent = 'در حال جست‌وجوی پاسخ‌های قبلی...';
       try {
         const response = await PMS.Api.get('/projects/' + encodeURIComponent(projectId) + '/events');
-        const rows = this.normalize(PMS.Api.extractData(response));
-        select.innerHTML = '<option value="">انتخاب رویداد اصلی</option>';
-        rows.forEach((item) => {
-          const id = String(item.ID || item.EventID || '');
-          if (!id || (allowedFormIds && allowedFormIds.indexOf(id) === -1)) return;
-          const option = document.createElement('option');
-          option.value = id;
-          option.textContent = (item.EventTypeName || item.TypeName || item.EventTypeCode || 'رویداد') + ' — ' + this.formatDate(item.OccurredAt);
-          select.appendChild(option);
+        const events = this.normalize(PMS.Api.extractData(response)).filter(item => String(item.ID || item.EventID || ''));
+        events.sort((a, b) => {
+          const left = new Date(a.OccurredAt || a.CreatedAt || 0).getTime() || 0;
+          const right = new Date(b.OccurredAt || b.CreatedAt || 0).getTime() || 0;
+          return right - left;
         });
-        if (rows.length === 0) select.innerHTML = '<option value="">رویدادی برای این پروژه پیدا نشد</option>';
+        let match = null;
+        for (const event of events) {
+          const eventId = String(event.ID || event.EventID || '');
+          const formsResponse = await PMS.Api.get('/events/' + encodeURIComponent(eventId) + '/forms');
+          const forms = this.normalize(PMS.Api.extractData(formsResponse));
+          const candidate = forms.find(item => {
+            const definition = item.Definition || {};
+            const formId = String(item.FormID || definition.ID || '');
+            return formId && (!explicitAllowList || allowedFormIds.indexOf(formId) !== -1);
+          });
+          if (candidate) {
+            match = { event, form: candidate, eventId };
+            break;
+          }
+        }
+        if (!match) {
+          if (status) status.textContent = 'برای این پروژه هنوز پاسخی از فرم تعیین‌شده ثبت نشده است؛ ابتدا رویداد ثبت‌کننده آن فرم را ایجاد کنید.';
+          return;
+        }
+        const item = match.form;
+        const definition = item.Definition || {};
+        const formId = String(item.FormID || definition.ID || '');
+        const eventOption = document.createElement('option');
+        eventOption.value = match.eventId;
+        eventOption.textContent = 'رویداد مبنا';
+        sourceEvent.replaceChildren(eventOption);
+        sourceEvent.value = match.eventId;
+        const formOption = document.createElement('option');
+        formOption.value = formId;
+        formOption.textContent = definition.Name || definition.Code || formId;
+        formOption.dataset.version = String(item.FormVersion || definition.Version || 1);
+        formOption.dataset.updatedAt = String(item.UpdatedAt || '');
+        formOption.dataset.response = JSON.stringify(item.Values || {});
+        formOption.dataset.definition = JSON.stringify(definition);
+        sourceForm.replaceChildren(formOption);
+        sourceForm.value = formId;
+        sourceForm.disabled = false;
+        this.amendmentSourceEventId = match.eventId;
+        this.hydrateAmendmentForm(formId);
+        if (status) {
+          const eventName = match.event.EventTypeName || match.event.TypeName || match.event.EventTypeCode || 'رویداد قبلی';
+          status.textContent = 'فرم «' + (definition.Name || definition.Code || 'فرم تعیین‌شده') + '» به‌صورت خودکار از ' + eventName + ' پیدا شد.';
+        }
       } catch (error) {
-        select.innerHTML = '<option value="">دریافت رویدادها ناموفق بود</option>';
-        this.showFormError('دریافت رویدادهای قابل اصلاح ناموفق بود: ' + this.errorMessage(error));
-      }
-    },
-
-    loadAmendmentSourceForms: async function (eventId) {
-      const select = document.getElementById('event-amendment-source-form');
-      if (!select) return;
-      select.disabled = true;
-      select.innerHTML = '<option value="">در حال دریافت فرم‌ها...</option>';
-      this.amendmentSourceEventId = String(eventId || '');
-      this.amendmentSourceFormId = '';
-      if (!eventId) { select.innerHTML = '<option value="">ابتدا رویداد اصلی را انتخاب کنید</option>'; return; }
-      try {
-        const response = await PMS.Api.get('/events/' + encodeURIComponent(eventId) + '/forms');
-        const rows = this.normalize(PMS.Api.extractData(response));
-        select.innerHTML = '<option value="">انتخاب فرم ثبت‌شده</option>';
-        const selectedAmendmentType = this.findById(this.eventTypes, document.getElementById('event-form-type').value);
-        const explicitAllowList = selectedAmendmentType && (selectedAmendmentType.IsFormAmendment === true || String(selectedAmendmentType.IsFormAmendment).toLowerCase() === 'true');
-        const allowedFormIds = explicitAllowList ? (Array.isArray(selectedAmendmentType.AmendableFormIDs) ? selectedAmendmentType.AmendableFormIDs.map(String) : []) : null;
-        rows.forEach((item) => {
-          const definition = item.Definition || {};
-          const id = String(item.FormID || definition.ID || '');
-          if (!id) return;
-          const option = document.createElement('option');
-          option.value = id;
-          option.textContent = definition.Name || definition.Code || id;
-          option.dataset.version = String(item.FormVersion || definition.Version || 1);
-          option.dataset.updatedAt = String(item.UpdatedAt || '');
-          option.dataset.response = JSON.stringify(item.Values || {});
-          option.dataset.definition = JSON.stringify(definition);
-          select.appendChild(option);
-        });
-        select.disabled = false;
-        if (!rows.length) select.innerHTML = '<option value="">این رویداد فرم قابل اصلاح ندارد</option>';
-      } catch (error) {
-        select.innerHTML = '<option value="">دریافت فرم‌ها ناموفق بود</option>';
-        this.showFormError('دریافت فرم ثبت‌شده ناموفق بود: ' + this.errorMessage(error));
+        if (status) status.textContent = 'دریافت پاسخ قبلی ناموفق بود.';
+        this.showFormError('یافتن فرم ثبت‌شده برای اصلاح ناموفق بود: ' + this.errorMessage(error));
       }
     },
 
