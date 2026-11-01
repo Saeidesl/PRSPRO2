@@ -143,3 +143,11 @@ test('project print preview supports PNG export, native sharing, PDF and direct 
  assert.match(module,/window\.print\(\)/);
  assert.match(module,/printDesignerMode === 'preview'\) return/);
 });
+
+
+test('print preview never edits saved layouts and never substitutes another project form',()=>{
+ const module=read('js/modules/project-detail.js');
+ assert.match(module,/if \(this\.printDesignerMode === 'preview'\) return;/);
+ assert.match(module,/const record = item\.formId \? \(matchingRecords\.length \? matchingRecords\[matchingRecords\.length - 1\] : null\) : this\.projectForms\[Number\(item\.sourceIndex\)\]/);
+ assert.match(module,/item\.eventTypeId/);
+});
