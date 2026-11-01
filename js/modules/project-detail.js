@@ -247,9 +247,21 @@
         const print = event.target.closest('[data-ppd-print]');
         const element = event.target.closest('[data-ppd-element]');
         const remove = event.target.closest('[data-ppd-remove]');
+        const move = event.target.closest('[data-ppd-move]');
         if (close) { overlay.remove(); return; }
         if (save) { this.savePrintDesignerTemplate(); save.textContent = 'ذخیره شد'; return; }
         if (print) { window.print(); return; }
+        if (move) {
+          const index = this.printDesignerElements.findIndex(item => item.id === this.printDesignerSelectedId);
+          const next = move.dataset.ppdMove === 'up' ? index - 1 : index + 1;
+          if (index >= 0 && next >= 0 && next < this.printDesignerElements.length) {
+            const swap = this.printDesignerElements[index];
+            this.printDesignerElements[index] = this.printDesignerElements[next];
+            this.printDesignerElements[next] = swap;
+            this.renderPrintDesigner(overlay);
+          }
+          return;
+        }
         if (remove) {
           this.printDesignerElements = this.printDesignerElements.filter(item => item.id !== remove.dataset.ppdRemove);
           this.printDesignerSelectedId = null; this.renderPrintDesigner(overlay); return;
@@ -338,7 +350,7 @@
       const selected = elements.find(x => x.id === this.printDesignerSelectedId);
       if (!selected) { properties.innerHTML = '<div class="ppd-properties-empty">برای تنظیم ظاهر، یک المان را انتخاب کن.</div>'; return; }
       const s = selected.style || {};
-      properties.innerHTML = '<label>حاشیه<select data-ppd-style="border"><option value="0" ' + (!s.border || s.border === '0' ? 'selected' : '') + '>بدون کادر</option><option value="1px solid #d1d5db" ' + (s.border === '1px solid #d1d5db' ? 'selected' : '') + '>نازک</option><option value="2px solid #374151" ' + (s.border === '2px solid #374151' ? 'selected' : '') + '>ضخیم</option><option value="1px dashed #9ca3af" ' + (s.border === '1px dashed #9ca3af' ? 'selected' : '') + '>خط‌چین</option></select></label><label>پس‌زمینه<input type="color" data-ppd-style="background" value="' + this.escape(s.background || '#ffffff') + '"></label><label>فاصله داخلی <input type="range" min="0" max="32" value="' + Number(s.padding || 0) + '" data-ppd-style="padding"></label><label>اندازه نوشته <input type="range" min="9" max="24" value="' + Number(s.fontSize || 13) + '" data-ppd-style="fontSize"></label><label>تراز<select data-ppd-style="align"><option value="right" ' + (s.align === 'right' ? 'selected' : '') + '>راست</option><option value="center" ' + (s.align === 'center' ? 'selected' : '') + '>وسط</option><option value="left" ' + (s.align === 'left' ? 'selected' : '') + '>چپ</option></select></label>';
+      properties.innerHTML = '<div class="ppd-order-controls"><button type="button" data-ppd-move="up">انتقال به بالا</button><button type="button" data-ppd-move="down">انتقال به پایین</button></div><label>حاشیه<select data-ppd-style="border"><option value="0" ' + (!s.border || s.border === '0' ? 'selected' : '') + '>بدون کادر</option><option value="1px solid #d1d5db" ' + (s.border === '1px solid #d1d5db' ? 'selected' : '') + '>نازک</option><option value="2px solid #374151" ' + (s.border === '2px solid #374151' ? 'selected' : '') + '>ضخیم</option><option value="1px dashed #9ca3af" ' + (s.border === '1px dashed #9ca3af' ? 'selected' : '') + '>خط‌چین</option></select></label><label>پس‌زمینه<input type="color" data-ppd-style="background" value="' + this.escape(s.background || '#ffffff') + '"></label><label>فاصله داخلی <input type="range" min="0" max="32" value="' + Number(s.padding || 0) + '" data-ppd-style="padding"></label><label>اندازه نوشته <input type="range" min="9" max="24" value="' + Number(s.fontSize || 13) + '" data-ppd-style="fontSize"></label><label>تراز<select data-ppd-style="align"><option value="right" ' + (s.align === 'right' ? 'selected' : '') + '>راست</option><option value="center" ' + (s.align === 'center' ? 'selected' : '') + '>وسط</option><option value="left" ' + (s.align === 'left' ? 'selected' : '') + '>چپ</option></select></label>';
     },
 
     renderPrintDesignerElement: function (item) {
