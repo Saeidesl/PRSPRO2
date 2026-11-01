@@ -2271,6 +2271,7 @@
 
       const formResponses = await this.collectConfiguredFormResponses(projectId);
       if (formResponses === null) return;
+      this.amendmentPendingValues = this.amendmentMode ? formResponses : null;
 
       const type = this.findById(this.eventTypes, typeId);
       const date = new Date(occurredAt);
