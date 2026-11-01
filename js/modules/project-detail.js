@@ -435,12 +435,46 @@
         const style = item.style || {};
         return '<article draggable="true" data-ppd-element="' + this.escape(item.id) + '" class="ppd-element ' + (item.id === this.printDesignerSelectedId ? 'is-selected' : '') + '" style="border:' + this.escape(style.border || '0') + ';padding:' + Number(style.padding || 0) + 'px;background:' + this.escape(style.background || '#fff') + ';font-size:' + Number(style.fontSize || 13) + 'px;text-align:' + this.escape(style.align || 'right') + '">' + this.renderPrintDesignerElement(item) + (item.id === this.printDesignerSelectedId ? '<button type="button" class="ppd-element-remove" data-ppd-remove="' + this.escape(item.id) + '" aria-label="حذف">×</button>' : '') + '</article>';
       }).join('') : '<div class="ppd-paper-empty">از پنل «افزودن محتوا» موارد موردنیاز را به این صفحه اضافه کن.</div>';
+      this.loadPrintDesignerImages(paper);
       const selected = elements.find(x => x.id === this.printDesignerSelectedId);
       if (!selected) { properties.innerHTML = '<div class="ppd-properties-empty">برای تنظیم ظاهر، یک المان را انتخاب کن.</div>'; return; }
       const s = selected.style || {};
       properties.innerHTML = '<div class="ppd-order-controls"><button type="button" data-ppd-move="up">انتقال به بالا</button><button type="button" data-ppd-move="down">انتقال به پایین</button></div><label>حاشیه<select data-ppd-style="border"><option value="0" ' + (!s.border || s.border === '0' ? 'selected' : '') + '>بدون کادر</option><option value="1px solid #d1d5db" ' + (s.border === '1px solid #d1d5db' ? 'selected' : '') + '>نازک</option><option value="2px solid #374151" ' + (s.border === '2px solid #374151' ? 'selected' : '') + '>ضخیم</option><option value="1px dashed #9ca3af" ' + (s.border === '1px dashed #9ca3af' ? 'selected' : '') + '>خط‌چین</option></select></label><label>پس‌زمینه<input type="color" data-ppd-style="background" value="' + this.escape(s.background || '#ffffff') + '"></label><label>فاصله داخلی <input type="range" min="0" max="32" value="' + Number(s.padding || 0) + '" data-ppd-style="padding"></label><label>اندازه نوشته <input type="range" min="9" max="24" value="' + Number(s.fontSize || 13) + '" data-ppd-style="fontSize"></label><label>تراز<select data-ppd-style="align"><option value="right" ' + (s.align === 'right' ? 'selected' : '') + '>راست</option><option value="center" ' + (s.align === 'center' ? 'selected' : '') + '>وسط</option><option value="left" ' + (s.align === 'left' ? 'selected' : '') + '>چپ</option></select></label>';
     },
 
+    renderPrintDesignerValue: function (value, dataType) {
+      if (value === null || value === undefined || value === '') return '-';
+      const type = String(dataType || '').toLowerCase();
+      const id = value && typeof value === 'object' && (value.AttachmentID || value.attachmentId || value.ID || value.Id || value.id);
+      const mime = String(value && typeof value === 'object' ? (value.MimeType || value.mimeType || '') : '').toLowerCase();
+      if ((type === 'image' || type.indexOf('image/') === 0 || mime.indexOf('image/') === 0) && id) {
+        const name = value.FileName || value.fileName || value.Name || 'تصویر فرم';
+        return '<span data-ppd-image="' + this.escape(id) + '" data-ppd-image-name="' + this.escape(name) + '">در حال بارگذاری تصویر…</span>';
+      }
+      if (Array.isArray(value)) return value.map(entry => '<div>' + this.renderPrintDesignerValue(entry, dataType) + '</div>').join('');
+      if (typeof value === 'object') return this.escape(value.FileName || value.Name || value.Value || JSON.stringify(value));
+      return this.renderPrintDesignerValue(value, info.DataType || info.Type || field.DataType);
+    },
+
+    loadPrintDesignerImages: async function (paper) {
+      if (!paper) return;
+      const nodes = Array.from(paper.querySelectorAll('[data-ppd-image]'));
+      await Promise.all(nodes.map(async node => {
+        const id = node.getAttribute('data-ppd-image');
+        try {
+          const response = await window.PMS.Api.get('/attachments/' + encodeURIComponent(id) + '/download', {trackSync:false});
+          const data = this.unwrap(response);
+          const base64 = data && (data.Base64 || data.base64);
+          const mime = String(data && (data.MimeType || data.mimeType) || 'image/jpeg').toLowerCase();
+          if (!base64 || mime.indexOf('image/') !== 0) throw new Error('invalid image');
+          const image = document.createElement('img');
+          image.className = 'ppd-inline-image';
+          image.alt = node.getAttribute('data-ppd-image-name') || 'تصویر فرم';
+          image.src = 'data:' + mime + ';base64,' + base64;
+          node.replaceWith(image);
+        } catch (error) { node.textContent = 'بارگذاری تصویر ناموفق بود'; }
+      }));
+    },
     renderPrintDesignerElement: function (item) {
       if (item.type === 'line') return '<hr>';
       if (item.type === 'text') return '<div>' + this.escape(item.text) + '</div>';
@@ -721,7 +755,7 @@
           '" data-information-preview="' + (type === 'image' ? 'true' : 'false') + '">' +
           (type === 'image' ? 'پیش‌نمایش' : 'دریافت') + '</button></span>';
       }
-      return this.escape(this.informationValue(value));
+      return this.renderPrintDesignerValue(value, info.DataType || info.Type || field.DataType);
     },
 
     openInformationAttachment: async function (attachmentId, preview) {
