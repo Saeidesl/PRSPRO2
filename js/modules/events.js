@@ -1240,7 +1240,7 @@
         select.innerHTML = '<option value="">انتخاب رویداد اصلی</option>';
         rows.forEach((item) => {
           const id = String(item.ID || item.EventID || '');
-          if (!id || (allowedFormIds && allowedFormIds.indexOf(id) === -1)) return;
+          if (!id) return;
           const option = document.createElement('option');
           option.value = id;
           option.textContent = (item.EventTypeName || item.TypeName || item.EventTypeCode || 'رویداد') + ' — ' + this.formatDate(item.OccurredAt);
@@ -1271,7 +1271,7 @@
         rows.forEach((item) => {
           const definition = item.Definition || {};
           const id = String(item.FormID || definition.ID || '');
-          if (!id) return;
+          if (!id || (explicitAllowList && allowedFormIds.indexOf(id) === -1)) return;
           const option = document.createElement('option');
           option.value = id;
           option.textContent = definition.Name || definition.Code || id;
