@@ -131,3 +131,11 @@ test('print designer uses its selectable image renderer for full forms and indiv
  const tableRenderer=module.slice(module.indexOf('renderPrintDesignerTable: function'),module.indexOf('renderPrintDesignerElement: function'));
  assert.match(tableRenderer,/renderPrintDesignerValue\(row && row\[String\(column\.Code \|\| column\.code\)\], column\.DataType \|\| column\.dataType\)/);
 });
+
+test('print designer image layout ids remain stable by attachment and preserve legacy positional layouts',()=>{
+ const module=read('js/modules/project-detail.js');
+ assert.match(module,/const attachmentKey = String\(id\)\.replace\(\/\[\^a-zA-Z0-9_-\]\/g, '_ '\)/);
+ assert.match(module,/const innerId = 'img-' \+ attachmentKey \+ '-' \+ occurrence/);
+ assert.match(module,/layouts\[innerId\] \|\| layouts\[legacyInnerId\]/);
+ assert.match(module,/printDesignerImageOccurrences = Object\.create\(null\)/);
+});
