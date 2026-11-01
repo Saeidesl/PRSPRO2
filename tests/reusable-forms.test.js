@@ -180,3 +180,17 @@ test('amendment registration automatically finds the latest saved allow-listed f
   assert.doesNotMatch(events,/amendmentEventSelect\.addEventListener/);
   assert.doesNotMatch(events,/amendmentFormSelect\.addEventListener/);
 });
+
+test('project detail replaces scattered information panel with event-backed reusable form records',()=>{
+  const detail=read('js/modules/project-detail.js');
+  const page=read('pages/project-detail.html');
+  assert.match(page,/id="project-forms-list"/);
+  assert.doesNotMatch(page,/id="project-information-list"/);
+  assert.doesNotMatch(detail,/this\.loadProjectInformation\(false\)/);
+  assert.match(detail,/loadProjectForms: async function/);
+  assert.match(detail,/\/events\/' \+ encodeURIComponent\(eventId\) \+ '\/forms/);
+  assert.match(detail,/DefinitionSnapshot|record\.Definition/);
+  assert.match(detail,/renderProjectForms: function/);
+  assert.match(detail,/project-form-table/);
+  assert.match(detail,/projectFormsLoadVersion/);
+});
