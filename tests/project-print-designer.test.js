@@ -69,3 +69,14 @@ test('form image attachments are loaded as inline images for project forms and p
  assert.match(module,/project-form-inline-image/);
  assert.match(module,/renderProjectFormValue\(row && row\[String\(col\.Code\)\], col\.DataType\)/);
 });
+
+test('print designer renders image attachments as inline images on the A4 canvas',()=>{
+ const module=read('js/modules/project-detail.js');
+ const css=read('css/project-print-designer.css');
+ assert.match(module,/renderPrintDesignerValue: function/);
+ assert.match(module,/data-ppd-image/);
+ assert.match(module,/loadPrintDesignerImages: async function/);
+ assert.match(module,/attachments\\/.*download/);
+ assert.match(module,/ppd-inline-image/);
+ assert.match(css,/ppd-inline-image/);
+});
