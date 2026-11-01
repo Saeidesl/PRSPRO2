@@ -624,9 +624,10 @@
         this.printDesignerCurrentItem = item;
         const content = this.renderPrintDesignerElement(item);
         this.printDesignerCurrentItem = null;
-        return '<article draggable="true" data-ppd-element="' + this.escape(item.id) + '" class="ppd-element ' + (item.id === this.printDesignerSelectedId ? 'is-selected' : '') + '" style="border:' + this.escape(style.border || '0') + ';padding:' + Number(style.padding || 0) + 'px;background:' + this.escape(style.background || '#fff') + ';font-size:' + Number(style.fontSize || 13) + 'px;text-align:' + this.escape(style.align || 'right') + '">' + content + (item.id === this.printDesignerSelectedId ? '<button type="button" class="ppd-element-remove" data-ppd-remove="' + this.escape(item.id) + '" aria-label="حذف">×</button>' : '') + '</article>';
+        return '<article draggable="' + (this.printDesignerMode === 'preview' ? 'false' : 'true') + '" data-ppd-element="' + this.escape(item.id) + '" class="ppd-element ' + (item.id === this.printDesignerSelectedId ? 'is-selected' : '') + '" style="border:' + this.escape(style.border || '0') + ';padding:' + Number(style.padding || 0) + 'px;background:' + this.escape(style.background || '#fff') + ';font-size:' + Number(style.fontSize || 13) + 'px;text-align:' + this.escape(style.align || 'right') + '">' + content + (item.id === this.printDesignerSelectedId ? '<button type="button" class="ppd-element-remove" data-ppd-remove="' + this.escape(item.id) + '" aria-label="حذف">×</button>' : '') + '</article>';
       }).join('') : '<div class="ppd-paper-empty">از پنل «افزودن محتوا» موارد موردنیاز را به این صفحه اضافه کن.</div>';
       this.loadPrintDesignerImages(paper);
+      if (this.printDesignerMode === 'preview') return;
       const innerSelection = this.printDesignerSelectedInner;
       if (innerSelection) {
         const parent = elements.find(x => x.id === innerSelection.elementId);
