@@ -467,7 +467,7 @@
         const cols = Array.isArray(info.Columns) ? info.Columns.filter(col => String(col.Status || 'ACTIVE').toUpperCase() === 'ACTIVE') : [];
         if (cols.length) {
           const rows = String(info.Cardinality || 'SINGLE').toUpperCase() === 'MULTIPLE' ? (Array.isArray(value) ? value : []) : (value && typeof value === 'object' ? [value] : []);
-          return '<h3>' + this.escape(info.Name || info.Title || 'فیلد') + '</h3><table><thead><tr>' + cols.map(col => '<th>' + this.escape(col.Name || col.Code) + '</th>').join('') + '</tr></thead><tbody>' + rows.map(row => '<tr>' + cols.map(col => '<td>' + this.escape(this.informationValue(row && row[String(col.Code)])) + '</td>').join('') + '</tr>').join('') + '</tbody></table>';
+          return '<h3>' + this.escape(info.Name || info.Title || 'فیلد') + '</h3><table><thead><tr>' + cols.map(col => '<th>' + this.escape(col.Name || col.Code) + '</th>').join('') + '</tr></thead><tbody>' + rows.map(row => '<tr>' + cols.map(col => '<td>' + this.renderProjectFormValue(row && row[String(col.Code)], col.DataType) + '</td>').join('') + '</tr>').join('') + '</tbody></table>';
         }
         return '<strong>' + this.escape(info.Name || info.Title || 'فیلد') + '</strong><div>' + this.renderProjectFormValue(value, info.DataType) + '</div>';
       }
@@ -479,7 +479,7 @@
         let output = '<span>-</span>';
         if (columns.length) {
           const rows = String(info.Cardinality || 'SINGLE').toUpperCase() === 'MULTIPLE' ? (Array.isArray(value) ? value : []) : (value && typeof value === 'object' ? [value] : []);
-          output = rows.length ? '<table><thead><tr>' + columns.map(col => '<th>' + this.escape(col.Name || col.Code) + '</th>').join('') + '</tr></thead><tbody>' + rows.map(row => '<tr>' + columns.map(col => '<td>' + this.escape(this.informationValue(row && row[String(col.Code)])) + '</td>').join('') + '</tr>').join('') + '</tbody></table>' : '<span>-</span>';
+          output = rows.length ? '<table><thead><tr>' + columns.map(col => '<th>' + this.escape(col.Name || col.Code) + '</th>').join('') + '</tr></thead><tbody>' + rows.map(row => '<tr>' + columns.map(col => '<td>' + this.renderProjectFormValue(row && row[String(col.Code)], col.DataType) + '</td>').join('') + '</tr>').join('') + '</tbody></table>' : '<span>-</span>';
         } else if (value !== undefined && value !== null && value !== '') output = this.renderProjectFormValue(value, info.DataType);
         return '<section><strong>' + this.escape(info.Name || info.Title || info.Code || 'فیلد') + '</strong><div>' + output + '</div></section>';
       }).join('');
