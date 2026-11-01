@@ -227,46 +227,97 @@
 
 
     initPrintDesignerPage: async function () {
-      const select = document.getElementById('print-designer-project-select');
+      const designProject = document.getElementById('print-designer-project-select');
+      const runProject = document.getElementById('print-run-project-select');
+      const templateName = document.getElementById('print-template-name');
+      const templateSelect = document.getElementById('print-template-existing-select');
+      const runTemplate = document.getElementById('print-run-template-select');
       const status = document.getElementById('print-designer-project-status');
-      const launch = document.getElementById('print-designer-launch');
-      if (!select) return;
-      select.addEventListener('change', () => {
-        launch.disabled = !select.value;
-        if (status) status.textContent = select.value ? 'پروژه انتخاب شد؛ برای بارگذاری فرم‌ها ادامه بده.' : '';
-      });
-      launch.addEventListener('click', async () => {
-        if (!select.value) return;
-        launch.disabled = true;
-        if (status) status.textContent = 'در حال دریافت مشخصات و فرم‌های پروژه...';
-        try {
-          await this.loadStandalonePrintProject(select.value);
-          if (status) status.textContent = this.projectForms.length
-            ? 'اطلاعات آماده است؛ می‌توانی طراحی سند را شروع کنی.'
-            : 'پروژه بارگذاری شد؛ هنوز فرمی برای چاپ ثبت نشده است. می‌توانی مشخصات پروژه یا متن دلخواه اضافه کنی.';
-          this.openPrintDesigner(true);
-        } catch (error) {
-          if (status) status.textContent = error.message || 'دریافت اطلاعات پروژه ناموفق بود.';
-        } finally {
-          launch.disabled = !select.value;
-        }
-      });
-      try {
+      const createButton = document.getElementById('print-template-create');
+      const editButton = document.getElementById('print-template-edit');
+      const previewButton = document.getElementById('print-run-preview');
+      if (!designProject || !runProject || !createButton || !previewButton) return;
+
+      const setStatus = message => { if (status) status.textContent = message || ''; };
+      const loadTemplates = async () => {
+        const response = await window.PMS.Api.getFresh('/print-templates', 'PMS_PRINT_TEMPLATES', {trackSync:false});
+        this.printTemplates = this.normalizeArray(response, ['items','Items','templates','Templates']);
+        const options = '<option value="">انتخاب قالب...</option>' + this.printTemplates.map(item =>
+          '<option value="' + this.escape(item.ID) + '">' + this.escape(item.Name) + '</option>'
+        ).join('');
+        if (templateSelect) templateSelect.innerHTML = options;
+        if (runTemplate) runTemplate.innerHTML = options;
+      };
+      const loadProjects = async () => {
         const response = await window.PMS.Api.getCached('/projects', 'PMS_PRINT_DESIGNER_PROJECTS');
         const projects = this.normalizeArray(response, ['items','Items','projects','Projects']);
-        select.innerHTML = '<option value="">انتخاب پروژه...</option>' + projects.map(project => {
+        const options = '<option value="">انتخاب پروژه...</option>' + projects.map(project => {
           const id = project.ID || project.Id || project.ProjectID;
           const code = project.ProjectCode || project.Code || '';
           const title = project.Title || project.Name || project.ProjectName || 'بدون عنوان';
           return '<option value="' + this.escape(id) + '">' + this.escape((code ? code + ' — ' : '') + title) + '</option>';
         }).join('');
+        designProject.innerHTML = options;
+        runProject.innerHTML = options;
         const requested = this.getPrintDesignerProjectId();
-        if (requested && projects.some(p => String(p.ID || p.Id || p.ProjectID) === requested)) {
-          select.value = requested;
-          launch.disabled = false;
-        }
+        if (requested) { designProject.value = requested; runProject.value = requested; }
+      };
+
+      createButton.addEventListener('click', async () => {
+        if (!designProject.value) { setStatus('ابتدا پروژه مرجع طراحی را انتخاب کن.'); return; }
+        createButton.disabled = true;
+        try {
+          setStatus('در حال دریافت پروژه و فرم‌های قابل استفاده...');
+          await this.loadStandalonePrintProject(designProject.value);
+          this.printDesignerTemplateId = '';
+          this.printDesignerTemplateName = String(templateName && templateName.value || '').trim();
+          this.printDesignerElements = [];
+          this.openPrintDesigner(true, 'edit');
+          setStatus('قالب جدید آماده طراحی است.');
+        } catch (error) { setStatus(error.message || 'بارگذاری پروژه ناموفق بود.'); }
+        finally { createButton.disabled = false; }
+      });
+
+      if (editButton) editButton.addEventListener('click', async () => {
+        const selected = this.printTemplates.find(item => String(item.ID) === String(templateSelect && templateSelect.value));
+        if (!selected) { setStatus('قالبی برای ویرایش انتخاب نشده است.'); return; }
+        if (!designProject.value) { setStatus('برای نمایش فرم‌های قابل طراحی، یک پروژه مرجع انتخاب کن.'); return; }
+        editButton.disabled = true;
+        try {
+          setStatus('در حال بارگذاری قالب و پروژه مرجع...');
+          await this.loadStandalonePrintProject(designProject.value);
+          this.printDesignerTemplateId = String(selected.ID);
+          this.printDesignerTemplateName = String(selected.Name || '');
+          this.printDesignerElements = JSON.parse(JSON.stringify(selected.Layout && selected.Layout.elements || []));
+          this.openPrintDesigner(true, 'edit');
+          setStatus('قالب برای ویرایش آماده است.');
+        } catch (error) { setStatus(error.message || 'بارگذاری قالب ناموفق بود.'); }
+        finally { editButton.disabled = false; }
+      });
+
+      previewButton.addEventListener('click', async () => {
+        const projectId = runProject.value;
+        const selected = this.printTemplates.find(item => String(item.ID) === String(runTemplate && runTemplate.value));
+        if (!projectId || !selected) { setStatus('پروژه و قالب چاپ را انتخاب کن.'); return; }
+        previewButton.disabled = true;
+        try {
+          setStatus('در حال آماده‌سازی پیش‌نمایش پروژه...');
+          await this.loadStandalonePrintProject(projectId);
+          this.printDesignerTemplateId = String(selected.ID);
+          this.printDesignerTemplateName = String(selected.Name || '');
+          this.printDesignerElements = JSON.parse(JSON.stringify(selected.Layout && selected.Layout.elements || []));
+          this.openPrintDesigner(true, 'preview');
+          setStatus('پیش‌نمایش آماده است.');
+        } catch (error) { setStatus(error.message || 'ساخت پیش‌نمایش ناموفق بود.'); }
+        finally { previewButton.disabled = false; }
+      });
+
+      try {
+        setStatus('در حال دریافت پروژه‌ها و قالب‌های ذخیره‌شده...');
+        await Promise.all([loadProjects(), loadTemplates()]);
+        setStatus(this.printTemplates.length ? 'قالب‌ها از دیتابیس بارگذاری شدند.' : 'هنوز قالبی ذخیره نشده است؛ ابتدا یک قالب طراحی کن.');
       } catch (error) {
-        if (status) status.textContent = 'فهرست پروژه‌ها دریافت نشد؛ لطفاً صفحه را تازه‌سازی کن.';
+        setStatus(error.message || 'دریافت اطلاعات چاپ‌ساز ناموفق بود.');
       }
     },
 
@@ -300,17 +351,28 @@
       if (this.projectFormsError) throw new Error(this.projectFormsError);
     },
 
-    openPrintDesigner: function (standalone) {
+    openPrintDesigner: function (standalone, mode) {
       const existing = document.getElementById('project-print-designer');
       if (existing) existing.remove();
+      this.printDesignerMode = mode || 'edit';
+      const preview = this.printDesignerMode === 'preview';
       const overlay = document.createElement('section');
       overlay.id = 'project-print-designer';
-      overlay.className = 'project-print-designer' + (standalone ? ' ppd-standalone' : '');
-      overlay.innerHTML = '<div class="ppd-toolbar"><div><strong>طراحی سند چاپی</strong><small>محتوا را اضافه کن، روی صفحه مرتب کن و ظاهرش را تغییر بده.</small></div><div class="ppd-toolbar-actions"><button type="button" data-ppd-save>ذخیره قالب</button><button type="button" data-ppd-print class="primary">چاپ / PDF</button><button type="button" data-ppd-close aria-label="بستن">×</button></div></div><div class="ppd-workspace"><aside class="ppd-library"><h3>افزودن محتوا</h3><button type="button" data-ppd-add="project">مشخصات اصلی پروژه</button><button type="button" data-ppd-add="project-fields">همه مشخصات پروژه</button><button type="button" data-ppd-add="text">متن دلخواه</button><button type="button" data-ppd-add="line">خط جداکننده</button><h4>فرم‌های ثبت‌شده</h4><div class="ppd-form-library">' + this.projectForms.map((item,index) => '<div class="ppd-form-group"><button type="button" data-ppd-form="' + index + '">' + this.escape((item.definition && (item.definition.Name || item.definition.Title)) || 'فرم کامل') + '<small>' + this.escape((item.event && (item.event.EventTypeName || item.event.EventTypeTitle)) || 'رویداد') + ' · ' + this.escape(this.formatDate(item.createdAt)) + '</small></button>' + ((item.definition && Array.isArray(item.definition.Fields)) ? item.definition.Fields.map((field,fieldIndex) => '<button type="button" class="ppd-field-add" data-ppd-field="' + index + '" data-ppd-field-key="' + this.escape(String(field.ID || field.InformationTypeID || fieldIndex)) + '">+ ' + this.escape((field.InformationType && field.InformationType.Name) || field.LabelOverride || 'فیلد') + '</button>').join('') : '') + '</div>').join('') + '</div></aside><main class="ppd-stage-wrap"><div class="ppd-stage-meta">پیش‌نمایش A4 · ' + this.escape(this.project && (this.project.Code || this.project.ProjectCode) || '') + '</div><div class="ppd-paper" data-ppd-paper><div class="ppd-paper-empty">از پنل «افزودن محتوا» موارد موردنیاز را به این صفحه اضافه کن.</div></div></main><aside class="ppd-properties"><h3>تنظیمات المان</h3><div data-ppd-properties class="ppd-properties-empty">برای تنظیم ظاهر، یک المان را انتخاب کن.</div><p class="ppd-help">برای تغییر ترتیب، المان‌ها را با ماوس یا لمس جابه‌جا کن.</p></aside></div>';
+      overlay.className = 'project-print-designer' + (standalone ? ' ppd-standalone' : '') + (preview ? ' ppd-preview' : '');
+      const toolbar = preview
+        ? '<div class="ppd-toolbar"><div><strong>پیش‌نمایش چاپ</strong><small>' + this.escape(this.printDesignerTemplateName || 'قالب چاپ') + ' · ' + this.escape(this.project && (this.project.Code || this.project.ProjectCode) || '') + '</small></div><div class="ppd-toolbar-actions"><button type="button" data-ppd-export-image>ذخیره تصویر</button><button type="button" data-ppd-share>اشتراک‌گذاری</button><button type="button" data-ppd-pdf>ذخیره PDF</button><button type="button" data-ppd-print class="primary">چاپ</button><button type="button" data-ppd-close aria-label="بستن">×</button></div></div>'
+        : '<div class="ppd-toolbar"><div><strong>طراحی قالب چاپ</strong><small>' + this.escape(this.printDesignerTemplateName || 'قالب جدید') + ' · تغییرات را تنظیم و در دیتابیس ذخیره کن.</small></div><div class="ppd-toolbar-actions"><button type="button" data-ppd-save>ذخیره قالب در دیتابیس</button><button type="button" data-ppd-close aria-label="بستن">×</button></div></div>';
+      const library = preview ? '' : '<aside class="ppd-library"><h3>افزودن محتوا</h3><button type="button" data-ppd-add="project">مشخصات اصلی پروژه</button><button type="button" data-ppd-add="project-fields">همه مشخصات پروژه</button><button type="button" data-ppd-add="text">متن دلخواه</button><button type="button" data-ppd-add="line">خط جداکننده</button><h4>فرم‌های ثبت‌شده در پروژه مرجع</h4><div class="ppd-form-library">' + this.projectForms.map((item,index) => {
+        const formId = item.formId || item.FormID || (item.definition && item.definition.ID) || '';
+        return '<div class="ppd-form-group"><button type="button" data-ppd-form="' + index + '">' + this.escape((item.definition && (item.definition.Name || item.definition.Title)) || 'فرم کامل') + '<small>' + this.escape((item.event && (item.event.EventTypeName || item.event.EventTypeTitle)) || 'رویداد') + '</small></button>' + ((item.definition && Array.isArray(item.definition.Fields)) ? item.definition.Fields.map((field,fieldIndex) => '<button type="button" class="ppd-field-add" data-ppd-field="' + index + '" data-ppd-field-key="' + this.escape(String(field.ID || field.InformationTypeID || fieldIndex)) + '">+ ' + this.escape((field.InformationType && field.InformationType.Name) || field.LabelOverride || 'فیلد') + '</button>').join('') : '') + '</div>';
+      }).join('') + '</div></aside>';
+      const properties = preview ? '' : '<aside class="ppd-properties"><h3>تنظیمات المان</h3><div data-ppd-properties class="ppd-properties-empty">برای تنظیم ظاهر، یک المان را انتخاب کن.</div><p class="ppd-help">برای تغییر ترتیب، المان‌ها را با ماوس یا لمس جابه‌جا کن.</p></aside>';
+      overlay.innerHTML = toolbar + '<div class="ppd-workspace">' + library + '<main class="ppd-stage-wrap"><div class="ppd-stage-meta">پیش‌نمایش A4 · ' + this.escape(this.project && (this.project.Code || this.project.ProjectCode) || '') + '</div><div class="ppd-paper" data-ppd-paper><div class="ppd-paper-empty">از پنل «افزودن محتوا» موارد موردنیاز را به این صفحه اضافه کن.</div></div></main>' + properties + '</div>';
       document.body.classList.add('ppd-printing');
       document.body.appendChild(overlay);
-      this.printDesignerElements = this.loadPrintDesignerTemplate();
+      this.printDesignerElements = Array.isArray(this.printDesignerElements) ? this.printDesignerElements : this.loadPrintDesignerTemplate();
       this.printDesignerSelectedId = null;
+      this.printDesignerSelectedInner = null;
       this.bindPrintDesigner(overlay);
       this.renderPrintDesigner(overlay);
     },
@@ -318,6 +380,7 @@
     bindPrintDesigner: function (overlay) {
       let innerDrag = null;
       overlay.addEventListener('pointerdown', event => {
+        if (this.printDesignerMode === 'preview') return;
         const image = event.target.closest('[data-ppd-inner-image]');
         if (!image || event.button !== 0) return;
         const article = image.closest('[data-ppd-element]');
@@ -338,7 +401,7 @@
         event.preventDefault();
       });
       overlay.addEventListener('pointermove', event => {
-        if (!innerDrag) return;
+        if (this.printDesignerMode === 'preview' || !innerDrag) return;
         const dx = event.clientX - innerDrag.startX, dy = event.clientY - innerDrag.startY;
         if (Math.abs(dx) + Math.abs(dy) > 2) innerDrag.moved = true;
         const x = Math.max(-300, Math.min(300, innerDrag.x + dx));
@@ -350,7 +413,7 @@
       });
       overlay.addEventListener('pointerup', () => { innerDrag = null; });
       overlay.addEventListener('pointercancel', () => { innerDrag = null; });
-      overlay.addEventListener('click', (event) => {
+      overlay.addEventListener('click', async (event) => {
         const add = event.target.closest('[data-ppd-add]');
         const form = event.target.closest('[data-ppd-form]');
         const fieldButton = event.target.closest('[data-ppd-field]');
@@ -361,10 +424,16 @@
         const element = event.target.closest('[data-ppd-element]');
         const remove = event.target.closest('[data-ppd-remove]');
         const move = event.target.closest('[data-ppd-move]');
+        const exportImage = event.target.closest('[data-ppd-export-image]');
+        const share = event.target.closest('[data-ppd-share]');
+        const pdf = event.target.closest('[data-ppd-pdf]');
         if (close) { overlay.remove(); document.body.classList.remove('ppd-printing'); return; }
         if (innerImage) { event.preventDefault(); event.stopPropagation(); return; }
-        if (save) { this.savePrintDesignerTemplate(); save.textContent = 'ذخیره شد'; return; }
-        if (print) { window.print(); return; }
+        if (exportImage) { await this.exportPrintDesignerImage(); return; }
+        if (share) { await this.sharePrintDesignerOutput(); return; }
+        if (pdf || print) { window.print(); return; }
+        if (this.printDesignerMode === 'preview') return;
+        if (save) { try { await this.savePrintDesignerTemplate(); save.textContent = 'در دیتابیس ذخیره شد'; } catch (error) { window.alert(error.message || 'ذخیره قالب ناموفق بود.'); } return; }
         if (move) {
           const index = this.printDesignerElements.findIndex(item => item.id === this.printDesignerSelectedId);
           const next = move.dataset.ppdMove === 'up' ? index - 1 : index + 1;
@@ -395,7 +464,7 @@
           const item = this.projectForms[index];
           const field = item && (item.definition.Fields || []).find((entry, i) => String(entry.ID || entry.InformationTypeID || i) === fieldKey);
           if (!item || !field) return;
-          this.printDesignerElements.push({id:'ppd-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),type:'form-field',sourceIndex:index,fieldKey:fieldKey,title:(field.InformationType && field.InformationType.Name) || 'فیلد',style:{border:'1px solid #d1d5db',padding:10,background:'#ffffff',fontSize:12,align:'right'}});
+          this.printDesignerElements.push({id:'ppd-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),type:'form-field',sourceIndex:index,formId:String(item.formId || item.FormID || (item.definition && item.definition.ID) || ''),eventTypeId:String(item.event && (item.event.EventTypeID || item.event.EventTypeId) || ''),fieldKey:fieldKey,title:(field.InformationType && field.InformationType.Name) || 'فیلد',style:{border:'1px solid #d1d5db',padding:10,background:'#ffffff',fontSize:12,align:'right'}});
           this.printDesignerSelectedId = this.printDesignerElements[this.printDesignerElements.length-1].id;
           this.renderPrintDesigner(overlay); return;
         }
@@ -403,7 +472,7 @@
           const index = Number(form.dataset.ppdForm);
           const item = this.projectForms[index];
           if (!item) return;
-          this.printDesignerElements.push({id:'ppd-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),type:'form',sourceIndex:index,title:(item.definition && (item.definition.Name || item.definition.Title)) || 'فرم ثبت‌شده',style:{border:'1px solid #d1d5db',padding:12,background:'#ffffff',fontSize:12,align:'right'}});
+          this.printDesignerElements.push({id:'ppd-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),type:'form',sourceIndex:index,formId:String(item.formId || item.FormID || (item.definition && item.definition.ID) || ''),eventTypeId:String(item.event && (item.event.EventTypeID || item.event.EventTypeId) || ''),title:(item.definition && (item.definition.Name || item.definition.Title)) || 'فرم ثبت‌شده',style:{border:'1px solid #d1d5db',padding:12,background:'#ffffff',fontSize:12,align:'right'}});
           this.printDesignerSelectedId = this.printDesignerElements[this.printDesignerElements.length-1].id;
           this.renderPrintDesigner(overlay); return;
         }
@@ -468,17 +537,81 @@
     },
 
     loadPrintDesignerTemplate: function () {
-      try {
-        const raw = window.localStorage.getItem('pms-print-template-' + String(this.projectId));
-        const parsed = raw ? JSON.parse(raw) : null;
-        return parsed && parsed.version === 1 && Array.isArray(parsed.elements) ? parsed.elements : [];
-      } catch (error) { return []; }
+      return Array.isArray(this.printDesignerElements) ? this.printDesignerElements : [];
     },
 
-    savePrintDesignerTemplate: function () {
-      const key = 'pms-print-template-' + String(this.projectId);
-      const payload = {version:1,orientation:'portrait',elements:this.printDesignerElements};
-      try { window.localStorage.setItem(key, JSON.stringify(payload)); } catch (error) { console.warn('ذخیره قالب چاپ ممکن نشد:', error); }
+    savePrintDesignerTemplate: async function () {
+      const name = String(this.printDesignerTemplateName || '').trim() || String(window.prompt('نام قالب چاپ را وارد کن:') || '').trim();
+      if (!name) throw new Error('برای ذخیره قالب، نام آن را وارد کن.');
+      this.printDesignerTemplateName = name;
+      const payload = {Name:name,Description:'',Layout:{version:2,orientation:'portrait',elements:this.printDesignerElements || []}};
+      const response = this.printDesignerTemplateId
+        ? await window.PMS.Api.put('/print-templates/' + encodeURIComponent(this.printDesignerTemplateId), payload)
+        : await window.PMS.Api.post('/print-templates', payload);
+      const saved = this.unwrap(response) || {};
+      if (saved.ID) this.printDesignerTemplateId = String(saved.ID);
+      if (saved.Name) this.printDesignerTemplateName = String(saved.Name);
+      const list = await window.PMS.Api.getFresh('/print-templates', 'PMS_PRINT_TEMPLATES', {trackSync:false});
+      this.printTemplates = this.normalizeArray(list, ['items','Items','templates','Templates']);
+      ['print-template-existing-select','print-run-template-select'].forEach(id => {
+        const select = document.getElementById(id);
+        if (!select) return;
+        select.innerHTML = '<option value="">انتخاب قالب...</option>' + this.printTemplates.map(item => '<option value="' + this.escape(item.ID) + '">' + this.escape(item.Name) + '</option>').join('');
+        select.value = this.printDesignerTemplateId;
+      });
+      return saved;
+    },
+
+    createPrintDesignerImageBlob: async function () {
+      const paper = document.querySelector('#project-print-designer [data-ppd-paper]');
+      if (!paper) throw new Error('صفحه پیش‌نمایش پیدا نشد.');
+      const clone = paper.cloneNode(true);
+      clone.querySelectorAll('.ppd-element-remove,.is-selected,.is-inner-selected').forEach(node => node.classList.remove('ppd-element-remove','is-selected','is-inner-selected'));
+      const width = Math.max(1, paper.scrollWidth);
+      const height = Math.max(1, paper.scrollHeight);
+      let css = '';
+      Array.from(document.styleSheets).forEach(sheet => {
+        try { Array.from(sheet.cssRules || []).forEach(rule => { css += rule.cssText + '\\n'; }); } catch (error) {}
+      });
+      const xhtml = '<div xmlns="http://www.w3.org/1999/xhtml"><style>' + css + '</style>' + clone.outerHTML + '</div>';
+      const svg = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xhtml="http://www.w3.org/1999/xhtml" width="' + width + '" height="' + height + '"><foreignObject width="100%" height="100%">' + xhtml + '</foreignObject></svg>';
+      const svgBlob = new Blob([svg], {type:'image/svg+xml;charset=utf-8'});
+      const url = URL.createObjectURL(svgBlob);
+      try {
+        const image = new Image();
+        await new Promise((resolve, reject) => { image.onload = resolve; image.onerror = () => reject(new Error('ساخت تصویر پیش‌نمایش در این مرورگر پشتیبانی نشد.')); image.src = url; });
+        const scale = 2;
+        const canvas = document.createElement('canvas');
+        canvas.width = width * scale; canvas.height = height * scale;
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('امکان ساخت تصویر وجود ندارد.');
+        context.scale(scale, scale); context.drawImage(image, 0, 0, width, height);
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+        if (!blob) throw new Error('تبدیل پیش‌نمایش به تصویر ناموفق بود.');
+        return blob;
+      } finally { URL.revokeObjectURL(url); }
+    },
+
+    exportPrintDesignerImage: async function () {
+      const blob = await this.createPrintDesignerImageBlob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'PMS-' + String(this.project && (this.project.Code || this.project.ProjectCode) || this.projectId || 'print') + '.png';
+      document.body.appendChild(link); link.click(); link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      return blob;
+    },
+
+    sharePrintDesignerOutput: async function () {
+      const blob = await this.createPrintDesignerImageBlob();
+      const file = new File([blob], 'PMS-' + String(this.project && (this.project.Code || this.project.ProjectCode) || 'print') + '.png', {type:'image/png'});
+      if (navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))) {
+        await navigator.share({title:'سند پروژه',text:'خروجی چاپ پروژه ' + String(this.project && (this.project.Code || this.project.ProjectCode) || ''),files:[file]});
+        return;
+      }
+      await this.exportPrintDesignerImage();
+      window.alert('این مرورگر اشتراک‌گذاری مستقیم فایل را پشتیبانی نمی‌کند؛ تصویر ذخیره شد تا بتوانی آن را ارسال کنی.');
     },
 
     renderPrintDesigner: function (overlay) {
@@ -491,9 +624,10 @@
         this.printDesignerCurrentItem = item;
         const content = this.renderPrintDesignerElement(item);
         this.printDesignerCurrentItem = null;
-        return '<article draggable="true" data-ppd-element="' + this.escape(item.id) + '" class="ppd-element ' + (item.id === this.printDesignerSelectedId ? 'is-selected' : '') + '" style="border:' + this.escape(style.border || '0') + ';padding:' + Number(style.padding || 0) + 'px;background:' + this.escape(style.background || '#fff') + ';font-size:' + Number(style.fontSize || 13) + 'px;text-align:' + this.escape(style.align || 'right') + '">' + content + (item.id === this.printDesignerSelectedId ? '<button type="button" class="ppd-element-remove" data-ppd-remove="' + this.escape(item.id) + '" aria-label="حذف">×</button>' : '') + '</article>';
+        return '<article draggable="' + (this.printDesignerMode === 'preview' ? 'false' : 'true') + '" data-ppd-element="' + this.escape(item.id) + '" class="ppd-element ' + (item.id === this.printDesignerSelectedId ? 'is-selected' : '') + '" style="border:' + this.escape(style.border || '0') + ';padding:' + Number(style.padding || 0) + 'px;background:' + this.escape(style.background || '#fff') + ';font-size:' + Number(style.fontSize || 13) + 'px;text-align:' + this.escape(style.align || 'right') + '">' + content + (item.id === this.printDesignerSelectedId ? '<button type="button" class="ppd-element-remove" data-ppd-remove="' + this.escape(item.id) + '" aria-label="حذف">×</button>' : '') + '</article>';
       }).join('') : '<div class="ppd-paper-empty">از پنل «افزودن محتوا» موارد موردنیاز را به این صفحه اضافه کن.</div>';
       this.loadPrintDesignerImages(paper);
+      if (this.printDesignerMode === 'preview') return;
       const innerSelection = this.printDesignerSelectedInner;
       if (innerSelection) {
         const parent = elements.find(x => x.id === innerSelection.elementId);
@@ -560,7 +694,8 @@
         const rows = Object.keys(p).filter(k => !/^(ID|TenantID|CreatedBy|UpdatedBy|DeletedAt)$/i.test(k) && ['string','number','boolean'].includes(typeof p[k]) && p[k] !== '').slice(0,24);
         return '<h3>مشخصات پروژه</h3><dl>' + rows.map(k => '<div><dt>' + this.escape(k) + '</dt><dd>' + this.escape(this.informationValue(p[k])) + '</dd></div>').join('') + '</dl>';
       }
-      const record = this.projectForms[Number(item.sourceIndex)];
+      const matchingRecords = item.formId ? this.projectForms.filter(entry => String(entry.formId || entry.FormID || (entry.definition && entry.definition.ID) || '') === String(item.formId) && (!item.eventTypeId || String(entry.event && (entry.event.EventTypeID || entry.event.EventTypeId) || '') === String(item.eventTypeId))) : [];
+      const record = item.formId ? (matchingRecords.length ? matchingRecords[matchingRecords.length - 1] : null) : this.projectForms[Number(item.sourceIndex)];
       if (!record) return '';
       const definition = record.definition || {};
       const fields = Array.isArray(definition.Fields) ? definition.Fields : [];

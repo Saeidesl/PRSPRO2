@@ -20,7 +20,7 @@ function withQueryParam(rawUrl, key, value) {
   return url.toString();
 }
 const routes = [
-  'login', 'dashboard', 'projects', 'project-detail', 'events', 'workflows',
+  'login', 'dashboard', 'projects', 'print-designer', 'project-detail', 'events', 'workflows',
   'project-statuses', 'event-types', 'information-types', 'procurement', 'attachments', 'reports',
   'users', 'departments', 'roles', 'permissions', 'audit', 'settings', 'admin'
 ];
@@ -74,7 +74,7 @@ async function inventoryDialogForms(page) {
       if (rect.width <= 0 || rect.height <= 0) return false;
       for (let node = el; node && node !== document.documentElement; node = node.parentElement) {
         const style = getComputedStyle(node);
-        if (node.hidden || node.getAttribute('aria-hidden') === 'true' || style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false;
+        if ((node.tagName === 'DETAILS' && !node.open) || node.hidden || node.getAttribute('aria-hidden') === 'true' || style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false;
       }
       return true;
     };
@@ -281,7 +281,7 @@ const visible = el => {
         if (rect.width <= 0 || rect.height <= 0) return false;
         for (let node = el; node && node !== document.documentElement; node = node.parentElement) {
           const style = getComputedStyle(node);
-          if (node.hidden || node.getAttribute('aria-hidden') === 'true' || style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false;
+          if ((node.tagName === 'DETAILS' && !node.open) || node.hidden || node.getAttribute('aria-hidden') === 'true' || style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false;
         }
         return true;
       };
@@ -339,7 +339,7 @@ const visible = el => {
         if (rect.width <= 0 || rect.height <= 0) return false;
         for (let node = el; node && node !== document.documentElement; node = node.parentElement) {
           const style = getComputedStyle(node);
-          if (node.hidden || node.getAttribute('aria-hidden') === 'true' || style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false;
+          if ((node.tagName === 'DETAILS' && !node.open) || node.hidden || node.getAttribute('aria-hidden') === 'true' || style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false;
         }
         return true;
       };
@@ -377,7 +377,7 @@ const visible = el => {
           const before = await inventoryDialogForms(page);
           await opener.evaluate(el => el.click());
           await page.waitForFunction((baselineCount) => {
-            const visible = el => { const rect = el.getBoundingClientRect(); if (rect.width <= 0 || rect.height <= 0) return false; for (let node = el; node && node !== document.documentElement; node = node.parentElement) { const style = getComputedStyle(node); if (node.hidden || node.getAttribute('aria-hidden') === 'true' || style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false; } return true; };
+            const visible = el => { const rect = el.getBoundingClientRect(); if (rect.width <= 0 || rect.height <= 0) return false; for (let node = el; node && node !== document.documentElement; node = node.parentElement) { const style = getComputedStyle(node); if ((node.tagName === 'DETAILS' && !node.open) || node.hidden || node.getAttribute('aria-hidden') === 'true' || style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false; } return true; };
             const formCount = Array.from(document.querySelectorAll('form')).filter(visible).length;
             const dialogVisible = Array.from(document.querySelectorAll('.modal-overlay,.modal,[role="dialog"],dialog')).filter(visible).some(dialog => dialog.querySelector('form,input,select,textarea,[contenteditable="true"]'));
             return formCount > baselineCount || dialogVisible;

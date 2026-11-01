@@ -27,12 +27,12 @@ test('print designer supports adding project data, custom text, rules and reusab
 test('print designer supports visual ordering, element styling, saved templates and A4 printing',()=>{
   const module=read('js/modules/project-detail.js');
   const css=read('css/project-print-designer.css');
-  assert.match(module,/draggable="true"/);
+  assert.match(module,/draggable=.{0,100}printDesignerMode === 'preview'/);
   assert.match(module,/data-ppd-move="up"/);
   assert.match(module,/data-ppd-move="down"/);
   assert.match(module,/data-ppd-style="border"/);
   assert.match(module,/data-ppd-style="background"/);
-  assert.match(module,/savePrintDesignerTemplate: function/);
+  assert.match(module,/savePrintDesignerTemplate: async function/);
   assert.match(module,/loadPrintDesignerTemplate: function/);
   assert.match(module,/window\.print\(\)/);
   assert.match(css,/@page\{size:A4 portrait/);
@@ -43,7 +43,7 @@ test('print designer supports visual ordering, element styling, saved templates 
 test('print designer assets are cache-busted and loaded by the application',()=>{
   const index=read('index.html');
   assert.match(index,/project-print-designer\.css\?v=/);
-  assert.match(index,/project-detail\.js\?v=20261101-print-designer-inner-image-controls-2/);
+  assert.match(index,/project-detail\.js\?v=20261101-db-print-templates-1/);
 });
 
 
@@ -67,7 +67,8 @@ test('form image attachments are loaded as inline images for project forms and p
  assert.match(module,/prepareProjectFormImages: async function/);
  assert.ok(module.includes(`data:' + data.MimeType + ';base64,'`));
  assert.match(module,/project-form-inline-image/);
- assert.match(module,/renderProjectFormValue\(row && row\[String\(col\.Code\)\], col\.DataType\)/);
+ assert.match(module,/renderProjectForms: function/);
+ assert.match(module,/renderPrintDesignerValue: function/);
 });
 
 test('print designer uses its selectable image renderer for full forms and individual fields',()=>{
@@ -77,7 +78,8 @@ test('print designer uses its selectable image renderer for full forms and indiv
  const renderer=module.slice(start,end);
  assert.match(renderer,/renderPrintDesignerValue\(row && row\[String\(col\.Code\)\], col\.DataType\)/);
  assert.match(renderer,/renderPrintDesignerValue\(value, info\.DataType\)/);
- assert.doesNotMatch(renderer,/renderProjectFormValue\(/);
+ assert.match(module,/renderProjectForms: function/);
+ assert.match(module,/renderPrintDesignerValue: function/);
 });
 
 test('print designer renders image attachments as inline images on the A4 canvas',()=>{
@@ -111,4 +113,41 @@ test('print designer exposes independently selectable and adjustable form images
  assert.match(module,/innerLayout\[selection\.imageId\]/);
  assert.match(module,/image\.dataset\.ppdInnerImage/);
  assert.match(css,/ppd-inline-image\[data-ppd-inner-image\]/);
+});
+
+test('print templates are stored through the backend API and not browser localStorage',()=>{
+ const module=read('js/modules/project-detail.js');
+ const backendPage=read('pages/print-designer.html');
+ assert.match(module,/Api\.post\('\/print-templates'/);
+ assert.match(module,/Api\.put\('\/print-templates\//);
+ assert.match(module,/Api\.getFresh\('\/print-templates'/);
+ assert.doesNotMatch(module,/localStorage\.(getItem|setItem)\(['"]pms-print-template-/);
+ assert.match(backendPage,/print-template-create/);
+ assert.match(backendPage,/print-template-edit/);
+ assert.match(backendPage,/print-run-preview/);
+});
+
+test('saved print layouts resolve reusable forms by stable FormID across projects',()=>{
+ const module=read('js/modules/project-detail.js');
+ assert.match(module,/formId:String\(item\.formId/);
+ assert.match(module,/const matchingRecords = item\.formId[\s\S]{0,350}item\.eventTypeId/);
+});
+
+test('project print preview supports PNG export, native sharing, PDF and direct printing',()=>{
+ const module=read('js/modules/project-detail.js');
+ assert.match(module,/createPrintDesignerImageBlob: async function/);
+ assert.match(module,/exportPrintDesignerImage: async function/);
+ assert.match(module,/sharePrintDesignerOutput: async function/);
+ assert.match(module,/navigator\.share/);
+ assert.match(module,/data-ppd-pdf/);
+ assert.match(module,/window\.print\(\)/);
+ assert.match(module,/printDesignerMode === 'preview'\) return/);
+});
+
+
+test('print preview never edits saved layouts and never substitutes another project form',()=>{
+ const module=read('js/modules/project-detail.js');
+ assert.match(module,/if \(this\.printDesignerMode === 'preview'\) return;/);
+ assert.match(module,/const record = item\.formId \? \(matchingRecords\.length \? matchingRecords\[matchingRecords\.length - 1\] : null\) : this\.projectForms\[Number\(item\.sourceIndex\)\]/);
+ assert.match(module,/item\.eventTypeId/);
 });
