@@ -762,8 +762,15 @@
           '<div id="et-form-mappings" class="et-field-list"><p class="et-muted">در حال دریافت اتصال‌ها...</p></div>' +
         '</section>' +
 
+        '<section class="et-section" id="et-amendment-settings">' +
+          '<h4>۶. تنظیمات اصلاح فرم‌های ثبت‌شده</h4>' +
+          '<div class="form-group"><label><input id="et-is-form-amendment" name="IsFormAmendment" type="checkbox"> این رویداد برای اصلاح فرم ثبت‌شده است</label>' +
+          '<small class="et-muted">با فعال‌کردن این گزینه، فرم‌های مجاز را مشخص کن. نام و کد نوع رویداد دیگر نقشی در تشخیص اصلاحیه ندارند.</small></div>' +
+          '<div id="et-amendable-form-list" class="et-check-grid" hidden><p class="et-muted">در حال دریافت فرم‌ها...</p></div>' +
+        '</section>' +
+
         '<section class="et-section">' +
-          '<h4>۶. فیلدهای اختصاصی این نوع رویداد</h4>' +
+          '<h4>۷. فیلدهای اختصاصی این نوع رویداد</h4>' +
           '<span class="et-section-description">می‌توانی هنگام تعریف نوع رویداد، فیلدهای مخصوص همان رویداد را هم اضافه کنی. این فیلدها به‌صورت سراسری تعریف نمی‌شوند.</span>' +
           '<div id="et-inline-fields">' +
             '<p class="et-muted">' +
@@ -848,6 +855,7 @@
       setFieldChecked(form, 'TrackVariantQuantity', item.TrackVariantQuantity);
       setFieldChecked(form, 'IsWorkCompletion', item.IsWorkCompletion);
       setFieldChecked(form, 'AllowOnDraft', item.AllowOnDraft);
+      setFieldChecked(form, 'IsFormAmendment', item.IsFormAmendment);
 
       setSelectedCheckboxes(form, 'AllowedDepartmentIDs', item.AllowedDepartmentIDs);
       setSelectedCheckboxes(form, 'AllowedUserIDs', item.AllowedUserIDs);
@@ -928,6 +936,7 @@
             return '<option value="' + escapeAttribute(getId(reusableForm)) + '">' +
               escapeHtml(getName(reusableForm) || reusableForm.Code || getId(reusableForm)) + '</option>';
           }).join('');
+        renderAmendableForms();
         await refreshEventFormMappings();
         if (!activeReusableForms.length) {
           eventFormSelect.innerHTML = '<option value="">ابتدا از بخش مدیریت فرم‌ها یک فرم فعال بساز</option>';
@@ -984,7 +993,30 @@
 
     loadEventFormOptions();
 
-    const connectionTypeField = form.elements.namedItem('ConnectionType');
+    const amendmentEnabledInput = form.querySelector('#et-is-form-amendment');
+    const amendableFormList = form.querySelector('#et-amendable-form-list');
+    function renderAmendableForms() {
+      if (!amendableFormList) return;
+      const selected = new Set(normalizeArray(item && item.AmendableFormIDs).map(String));
+      const html = activeReusableForms.map(function(reusableForm) {
+        const id = String(getId(reusableForm));
+        const checked = selected.has(id) ? ' checked' : '';
+        return '<label class="et-amendable-form-option"><input type="checkbox" name="AmendableFormIDs" value="' +
+          escapeAttribute(id) + '"' + checked + '> ' +
+          escapeHtml(getName(reusableForm) || reusableForm.Code || id) + '</label>';
+      }).join('');
+      amendableFormList.innerHTML = html || '<p class="et-muted">فرم فعال برای انتخاب وجود ندارد.</p>';
+      amendableFormList.hidden = !amendmentEnabledInput.checked;
+    }
+    amendmentEnabledInput.addEventListener('change', function() {
+      amendableFormList.hidden = !amendmentEnabledInput.checked;
+      if (amendmentEnabledInput.checked && connectionTypeField.value !== 'PROJECT') {
+        connectionTypeField.value = 'PROJECT';
+        refreshConnectionTypeSettings();
+      }
+    });
+    
+        const connectionTypeField = form.elements.namedItem('ConnectionType');
     const projectSettingsSection = form.querySelector('#et-project-settings');
     const eventFormSettingsSection = form.querySelector('#et-form-settings');
     const refreshConnectionTypeSettings = function () {
@@ -1070,7 +1102,9 @@
         UseProjectSizes: fieldChecked(form, 'UseProjectSizes'),
         TrackVariantQuantity: fieldChecked(form, 'TrackVariantQuantity'),
         IsWorkCompletion: fieldChecked(form, 'IsWorkCompletion'),
-        AllowOnDraft: fieldChecked(form, 'AllowOnDraft')
+        AllowOnDraft: fieldChecked(form, 'AllowOnDraft'),
+        IsFormAmendment: fieldChecked(form, 'IsFormAmendment'),
+        AmendableFormIDs: fieldChecked(form, 'IsFormAmendment') ? Array.from(form.querySelectorAll('input[name="AmendableFormIDs"]:checked')).map(function(input) { return input.value; }) : []
       };
 
       if (!payload.Name || !payload.Code) {
