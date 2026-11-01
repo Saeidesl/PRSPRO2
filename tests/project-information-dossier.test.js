@@ -36,5 +36,5 @@ test('project dossier exposes revision history with before and after values', ()
 
 test('project detail script cache version is refreshed for the dossier UI', () => {
   const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  assert.match(index, /project-detail\.js\?v=20261101-print-designer-inner-image-controls-2/);
+  assert.match(index, /project-detail\.js\?v=20261101-print-designer-table-layout-controls-1/);
 });
