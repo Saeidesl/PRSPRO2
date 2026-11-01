@@ -37,3 +37,5 @@
 /* Inner form image controls (editor only) */
 .ppd-inline-image[data-ppd-inner-image]{cursor:pointer;outline:1px dashed transparent;outline-offset:3px}.ppd-inline-image[data-ppd-inner-image]:hover{outline-color:#64748b}.ppd-inline-image[data-ppd-inner-image]:active{cursor:move}
 @media print{.ppd-inline-image[data-ppd-inner-image]{outline:0!important}}
+
+.ppd-inline-image[data-ppd-inner-image]{touch-action:none;user-select:none}
