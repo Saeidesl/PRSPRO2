@@ -316,6 +316,32 @@
     },
 
     bindPrintDesigner: function (overlay) {
+      let innerDrag = null;
+      overlay.addEventListener('pointerdown', event => {
+        const image = event.target.closest('[data-ppd-inner-image]');
+        if (!image || event.button !== 0) return;
+        const article = image.closest('[data-ppd-element]');
+        if (!article) return;
+        innerDrag = { imageId: image.dataset.ppdInnerImage, elementId: article.dataset.ppdElement, startX: event.clientX, startY: event.clientY, x: 0, y: 0, moved: false };
+        const parent = this.printDesignerElements.find(x => x.id === innerDrag.elementId);
+        const layout = parent && parent.innerLayout && parent.innerLayout[innerDrag.imageId] || {};
+        innerDrag.x = Number(layout.x || 0); innerDrag.y = Number(layout.y || 0);
+        image.setPointerCapture(event.pointerId);
+        event.preventDefault();
+      });
+      overlay.addEventListener('pointermove', event => {
+        if (!innerDrag) return;
+        const dx = event.clientX - innerDrag.startX, dy = event.clientY - innerDrag.startY;
+        if (Math.abs(dx) + Math.abs(dy) > 2) innerDrag.moved = true;
+        const x = Math.max(-300, Math.min(300, innerDrag.x + dx));
+        const y = Math.max(-300, Math.min(300, innerDrag.y + dy));
+        const image = overlay.querySelector('[data-ppd-element="' + this.escape(innerDrag.elementId) + '"] [data-ppd-inner-image="' + this.escape(innerDrag.imageId) + '"]');
+        if (image) image.style.transform = 'translate(' + x + 'px,' + y + 'px)';
+        const parent = this.printDesignerElements.find(item => item.id === innerDrag.elementId);
+        if (parent) { parent.innerLayout = parent.innerLayout || {}; parent.innerLayout[innerDrag.imageId] = Object.assign({}, parent.innerLayout[innerDrag.imageId] || {}, {x:x,y:y}); }
+      });
+      overlay.addEventListener('pointerup', () => { innerDrag = null; });
+      overlay.addEventListener('pointercancel', () => { innerDrag = null; });
       overlay.addEventListener('click', (event) => {
         const add = event.target.closest('[data-ppd-add]');
         const form = event.target.closest('[data-ppd-form]');
