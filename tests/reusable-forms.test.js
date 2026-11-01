@@ -164,14 +164,19 @@ test('event type settings expose explicit amendment flag and selectable reusable
   assert.match(types,/AmendableFormIDs: fieldChecked/);
 });
 
-test('event amendment mode loads source events without an out-of-scope allow-list and filters source forms by allow-list',()=>{
+test('amendment registration automatically finds the latest saved allow-listed form without manual source selectors',()=>{
   const events=read('js/modules/events.js');
-  assert.match(events,/selectedType\.IsFormAmendment/);
-  assert.match(events,/selectedAmendmentType\.AmendableFormIDs/);
-  const eventLoaderStart=events.indexOf('loadAmendmentSourceEvents: async function');
-  const formLoaderStart=events.indexOf('loadAmendmentSourceForms: async function');
-  const eventLoader=events.slice(eventLoaderStart,formLoaderStart);
-  const formLoader=events.slice(formLoaderStart,events.indexOf('hydrateAmendmentForm: function',formLoaderStart));
-  assert.doesNotMatch(eventLoader,/allowedFormIds/);
-  assert.match(formLoader,/explicitAllowList && allowedFormIds\.indexOf\(id\) === -1/);
+  const start=events.indexOf('loadAmendmentSourceEvents: async function');
+  const end=events.indexOf('hydrateAmendmentForm: function',start);
+  const loader=events.slice(start,end);
+  assert.match(events,/id="event-amendment-status"/);
+  assert.match(events,/id="event-amendment-source-event"><\/select>/);
+  assert.match(events,/id="event-amendment-source-form"><\/select>/);
+  assert.match(loader,/PMS\.Api\.get\('\/projects\/' \+ encodeURIComponent\(projectId\) \+ '\/events'\)/);
+  assert.match(loader,/events\.sort/);
+  assert.match(loader,/PMS\.Api\.get\('\/events\/' \+ encodeURIComponent\(eventId\) \+ '\/forms'\)/);
+  assert.match(loader,/allowedFormIds\.indexOf\(formId\) !== -1/);
+  assert.match(loader,/this\.hydrateAmendmentForm\(formId\)/);
+  assert.doesNotMatch(events,/amendmentEventSelect\.addEventListener/);
+  assert.doesNotMatch(events,/amendmentFormSelect\.addEventListener/);
 });
