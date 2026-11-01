@@ -277,54 +277,72 @@
 
     initPrintOutputPage: async function () {
       const select = document.getElementById('print-output-project-select');
+      const templateSelect = document.getElementById('print-output-template-select');
       const status = document.getElementById('print-output-project-status');
       const launch = document.getElementById('print-output-launch');
       const design = document.getElementById('print-output-open-design');
-      if (!select || !launch) return;
-      select.addEventListener('change', () => {
-        launch.disabled = !select.value;
+      if (!select || !launch || !templateSelect) return;
+
+      const updateAvailability = () => {
+        launch.disabled = !(select.value && templateSelect.value);
         if (design) design.disabled = !select.value;
-        if (status) status.textContent = select.value ? 'پروژه انتخاب شد؛ قالب ذخیره‌شده را می‌توانی برای چاپ آماده کنی.' : '';
+      };
+      select.addEventListener('change', () => {
+        updateAvailability();
+        if (status) status.textContent = select.value ? 'پروژه انتخاب شد؛ حالا قالب چاپ را انتخاب کن.' : '';
+      });
+      templateSelect.addEventListener('change', () => {
+        updateAvailability();
+        if (status) status.textContent = templateSelect.value ? 'قالب انتخاب شد؛ سند آماده ساخت است.' : '';
       });
       if (design) design.addEventListener('click', () => {
         if (select.value) window.location.hash = '#print-design/' + encodeURIComponent(select.value);
       });
       launch.addEventListener('click', async () => {
-        if (!select.value) return;
+        if (!select.value || !templateSelect.value) return;
         launch.disabled = true;
-        if (status) status.textContent = 'در حال آماده‌سازی سند...';
+        if (status) status.textContent = 'در حال آماده‌سازی سند و دریافت اطلاعات پروژه...';
         try {
           await this.loadStandalonePrintProject(select.value);
-          this.printDesignerElements = this.loadPrintDesignerTemplate();
-          if (!this.printDesignerElements.length) {
-            if (status) status.textContent = 'برای این پروژه هنوز قالبی ذخیره نشده است. ابتدا وارد بخش طراحی قالب شو.';
-            return;
+          const response = await window.PMS.Api.get('/print-templates/' + encodeURIComponent(templateSelect.value), {trackSync:false});
+          const saved = this.unwrap(response) || {};
+          const template = saved.Template || (saved.TemplateJSON ? JSON.parse(saved.TemplateJSON) : null);
+          if (!template || Number(template.version) !== 1 || !Array.isArray(template.elements)) {
+            throw new Error('ساختار قالب ذخیره‌شده معتبر نیست.');
           }
-          await this.openPrintOutput();
-          if (status) status.textContent = 'سند آماده چاپ است.';
+          this.printDesignerTemplate = template;
+          this.printDesignerElements = template.elements;
+          await this.openPrintOutput(template);
+          if (status) status.textContent = 'سند با قالب انتخاب‌شده آماده چاپ است.';
         } catch (error) {
           if (status) status.textContent = error.message || 'آماده‌سازی سند ناموفق بود.';
         } finally {
-          launch.disabled = !select.value;
+          updateAvailability();
         }
       });
+
       try {
-        const response = await window.PMS.Api.getCached('/projects', 'PMS_PRINT_OUTPUT_PROJECTS');
-        const projects = this.normalizeArray(response, ['items','Items','projects','Projects']);
-        select.innerHTML = '<option value="">انتخاب پروژه...</option>' + projects.map(project => {
+        const results = await Promise.all([
+          window.PMS.Api.getCached('/projects', 'PMS_PRINT_OUTPUT_PROJECTS'),
+          window.PMS.Api.getFresh('/print-templates', 'PMS_PRINT_TEMPLATES', {trackSync:false})
+        ]);
+        const projects = this.normalizeArray(results[0], ['items','Items','projects','Projects']);
+        const templates = this.normalizeArray(results[1], ['items','Items','templates','Templates']);
+        select.innerHTML = '<option value="">انتخاب پروژه / کد...</option>' + projects.map(project => {
           const id = project.ID || project.Id || project.ProjectID;
           const code = project.ProjectCode || project.Code || '';
           const title = project.Title || project.Name || project.ProjectName || 'بدون عنوان';
           return '<option value="' + this.escape(id) + '">' + this.escape((code ? code + ' — ' : '') + title) + '</option>';
         }).join('');
+        templateSelect.innerHTML = '<option value="">انتخاب قالب چاپ...</option>' + templates.map(template =>
+          '<option value="' + this.escape(template.ID || template.Id) + '">' + this.escape(template.Name || 'قالب بدون نام') + '</option>'
+        ).join('');
+        if (!templates.length && status) status.textContent = 'هنوز قالب چاپ نام‌داری ذخیره نشده است؛ ابتدا از بخش طراحی قالب، یک قالب را ذخیره کن.';
         const requested = this.getPrintOutputProjectId();
-        if (requested && projects.some(p => String(p.ID || p.Id || p.ProjectID) === requested)) {
-          select.value = requested;
-          launch.disabled = false;
-          if (design) design.disabled = false;
-        }
+        if (requested && projects.some(p => String(p.ID || p.Id || p.ProjectID) === requested)) select.value = requested;
+        updateAvailability();
       } catch (error) {
-        if (status) status.textContent = 'فهرست پروژه‌ها دریافت نشد؛ لطفاً صفحه را تازه‌سازی کن.';
+        if (status) status.textContent = 'فهرست پروژه‌ها یا قالب‌های چاپ دریافت نشد؛ لطفاً صفحه را تازه‌سازی کن.';
       }
     },
 
@@ -379,16 +397,17 @@
       this.renderPrintDesigner(overlay);
     },
 
-    openPrintOutput: async function () {
+    openPrintOutput: async function (template) {
       const existing = document.getElementById('project-print-designer');
       if (existing) existing.remove();
       const overlay = document.createElement('section');
       overlay.id = 'project-print-designer';
       overlay.className = 'project-print-designer ppd-output-mode';
-      overlay.innerHTML = '<div class="ppd-toolbar"><div><strong>چاپ اسناد</strong><small>پیش‌نمایش نهایی قالب ذخیره‌شده پروژه</small></div><div class="ppd-toolbar-actions"><button type="button" data-ppd-print class="primary">چاپ / PDF</button><button type="button" data-ppd-close aria-label="بستن">×</button></div></div><div class="ppd-workspace ppd-output-workspace"><main class="ppd-stage-wrap"><div class="ppd-stage-meta">پیش‌نمایش A4 · ' + this.escape(this.project && (this.project.Code || this.project.ProjectCode) || '') + '</div><div class="ppd-paper" data-ppd-paper></div></main><aside class="ppd-properties" data-ppd-properties hidden></aside></div>';
+      const projectLabel = (this.project && (this.project.Code || this.project.ProjectCode)) || '';
+      overlay.innerHTML = '<div class="ppd-toolbar"><div><strong>چاپ اسناد</strong><small>' + this.escape((template && template.name) || (this.printDesignerTemplateMeta && this.printDesignerTemplateMeta.Name) || 'قالب ذخیره‌شده') + ' · ' + this.escape(projectLabel) + '</small></div><div class="ppd-toolbar-actions"><button type="button" data-ppd-print class="primary">چاپ / PDF</button><button type="button" data-ppd-close aria-label="بستن">×</button></div></div><div class="ppd-workspace ppd-output-workspace"><main class="ppd-stage-wrap"><div class="ppd-stage-meta">پیش‌نمایش A4 · ' + this.escape(projectLabel) + '</div><div class="ppd-paper" data-ppd-paper></div></main><aside class="ppd-properties" data-ppd-properties hidden></aside></div>';
       document.body.classList.add('ppd-printing');
       document.body.appendChild(overlay);
-      this.printDesignerElements = this.loadPrintDesignerTemplate();
+      this.printDesignerElements = template && Array.isArray(template.elements) ? template.elements : (this.printDesignerElements || []);
       this.printDesignerSelectedId = null;
       this.printDesignerSelectedInner = null;
       this.printDesignerSelectedTable = null;
@@ -469,7 +488,7 @@
           event.stopPropagation();
           return;
         }
-        if (save) { this.savePrintDesignerTemplate(); save.textContent = 'ذخیره شد'; return; }
+        if (save) { this.savePrintDesignerTemplate(save); return; }
         if (print) { window.print(); return; }
         if (move) {
           const index = this.printDesignerElements.findIndex(item => item.id === this.printDesignerSelectedId);
@@ -501,7 +520,7 @@
           const item = this.projectForms[index];
           const field = item && (item.definition.Fields || []).find((entry, i) => String(entry.ID || entry.InformationTypeID || i) === fieldKey);
           if (!item || !field) return;
-          this.printDesignerElements.push({id:'ppd-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),type:'form-field',sourceIndex:index,fieldKey:fieldKey,title:(field.InformationType && field.InformationType.Name) || 'فیلد',style:{border:'1px solid #d1d5db',padding:10,background:'#ffffff',fontSize:12,align:'right'}});
+          this.printDesignerElements.push({id:'ppd-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),type:'form-field',sourceIndex:index,formId:item.formId,formDefinition:item.definition,fieldKey:fieldKey,title:(field.InformationType && field.InformationType.Name) || 'فیلد',style:{border:'1px solid #d1d5db',padding:10,background:'#ffffff',fontSize:12,align:'right'}});
           this.printDesignerSelectedId = this.printDesignerElements[this.printDesignerElements.length-1].id;
           this.renderPrintDesigner(overlay); return;
         }
@@ -509,7 +528,7 @@
           const index = Number(form.dataset.ppdForm);
           const item = this.projectForms[index];
           if (!item) return;
-          this.printDesignerElements.push({id:'ppd-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),type:'form',sourceIndex:index,title:(item.definition && (item.definition.Name || item.definition.Title)) || 'فرم ثبت‌شده',style:{border:'1px solid #d1d5db',padding:12,background:'#ffffff',fontSize:12,align:'right'}});
+          this.printDesignerElements.push({id:'ppd-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),type:'form',sourceIndex:index,formId:item.formId,formDefinition:item.definition,title:(item.definition && (item.definition.Name || item.definition.Title)) || 'فرم ثبت‌شده',style:{border:'1px solid #d1d5db',padding:12,background:'#ffffff',fontSize:12,align:'right'}});
           this.printDesignerSelectedId = this.printDesignerElements[this.printDesignerElements.length-1].id;
           this.renderPrintDesigner(overlay); return;
         }
@@ -615,10 +634,44 @@
       } catch (error) { return []; }
     },
 
-    savePrintDesignerTemplate: function () {
-      const key = 'pms-print-template-' + String(this.projectId);
-      const payload = {version:1,orientation:'portrait',elements:this.printDesignerElements};
-      try { window.localStorage.setItem(key, JSON.stringify(payload)); } catch (error) { console.warn('ذخیره قالب چاپ ممکن نشد:', error); }
+    savePrintDesignerTemplate: async function (button) {
+      const name = window.prompt('نام قالب چاپی را وارد کن:', '');
+      if (!name || !name.trim()) return;
+      const elements = JSON.parse(JSON.stringify(this.printDesignerElements || []));
+      elements.forEach(item => {
+        if (item.type === 'form' || item.type === 'form-field') {
+          const record = this.projectForms[Number(item.sourceIndex)] ||
+            this.projectForms.find(entry => String(entry.formId) === String(item.formId));
+          if (!item.formId && record) item.formId = record.formId;
+          if (!item.formDefinition && record) item.formDefinition = record.definition;
+          delete item.sourceIndex;
+        }
+      });
+      const payload = {
+        Name: name.trim(),
+        Template: {version:1,orientation:'portrait',elements:elements}
+      };
+      const originalLabel = button ? button.textContent : '';
+      if (button) { button.disabled = true; button.textContent = 'در حال ذخیره...'; }
+      try {
+        const listResponse = await window.PMS.Api.get('/print-templates', {trackSync:false});
+        const existing = this.normalizeArray(listResponse, ['items','Items','templates','Templates'])
+          .find(item => String(item.Name || '').trim().toLocaleLowerCase() === name.trim().toLocaleLowerCase());
+        let response;
+        if (existing) {
+          if (!window.confirm('قالبی با این نام وجود دارد. نسخه قبلی با طراحی فعلی جایگزین شود؟')) return;
+          response = await window.PMS.Api.put('/print-templates/' + encodeURIComponent(existing.ID || existing.Id), payload, {trackSync:false});
+        } else {
+          response = await window.PMS.Api.post('/print-templates', payload, {trackSync:false});
+        }
+        const saved = this.unwrap(response) || {};
+        this.printDesignerTemplateId = saved.ID || saved.Id || this.printDesignerTemplateId || null;
+        if (button) button.textContent = 'قالب ذخیره شد';
+        window.setTimeout(() => { if (button) { button.textContent = originalLabel || 'ذخیره قالب'; button.disabled = false; } }, 1600);
+      } catch (error) {
+        if (button) { button.textContent = originalLabel || 'ذخیره قالب'; button.disabled = false; }
+        window.alert(error && error.message ? error.message : 'ذخیره قالب ناموفق بود.');
+      }
     },
 
     renderPrintDesigner: function (overlay) {
@@ -748,44 +801,52 @@
       if (item.type === 'text') return '<div>' + this.escape(item.text) + '</div>';
       if (item.type === 'project') {
         const p = this.project || {};
-        return '<h2>' + this.escape(p.Name || p.ProjectName || 'مشخصات پروژه') + '</h2><p>کد پروژه: ' + this.escape(p.Code || p.ProjectCode || this.projectId) + '</p><p>وضعیت: ' + this.escape(p.StatusName || p.Status || '-') + '</p>';
+        return '<h2>' + this.escape(p.Name || p.ProjectName || p.Title || 'مشخصات پروژه') + '</h2><p>کد پروژه: ' + this.escape(p.Code || p.ProjectCode || p.ProjectCode || this.projectId) + '</p><p>وضعیت: ' + this.escape(p.StatusName || p.Status || '-') + '</p>';
       }
       if (item.type === 'project-fields') {
         const p = this.project || {};
         const rows = Object.keys(p).filter(k => !/^(ID|TenantID|CreatedBy|UpdatedBy|DeletedAt)$/i.test(k) && ['string','number','boolean'].includes(typeof p[k]) && p[k] !== '').slice(0,24);
         return '<h3>مشخصات پروژه</h3><dl>' + rows.map(k => '<div><dt>' + this.escape(k) + '</dt><dd>' + this.escape(this.informationValue(p[k])) + '</dd></div>').join('') + '</dl>';
       }
-      const record = this.projectForms[Number(item.sourceIndex)];
-      if (!record) return '';
-      const definition = record.definition || {};
-      const fields = Array.isArray(definition.Fields) ? definition.Fields : [];
-      const values = record.values || {};
+      const record = (this.projectForms || []).find(entry => String(entry.formId) === String(item.formId)) ||
+        (item.sourceIndex !== undefined ? this.projectForms[Number(item.sourceIndex)] : null) || null;
+      const definition = item.formDefinition || (record && record.definition) || {};
+      const fields = Array.isArray(definition.Fields) ? definition.Fields : (Array.isArray(definition.fields) ? definition.fields : []);
+      const values = record && record.values || {};
+      const missing = '<span class="ppd-missing-value">اطلاعات وارد نشده</span>';
+      const isEmpty = value => value === undefined || value === null || value === '' ||
+        (Array.isArray(value) && value.length === 0) ||
+        (typeof value === 'object' && !Array.isArray(value) && !Object.keys(value).length);
       if (item.type === 'form-field') {
         const field = fields.find((entry, index) => String(entry.ID || entry.InformationTypeID || index) === String(item.fieldKey));
-        if (!field) return '';
-        const info = field.InformationType || {};
+        if (!field) return '<span class="ppd-missing-value">تعریف فیلد در قالب موجود نیست</span>';
+        const info = field.InformationType || field.informationType || {};
         const id = String(field.InformationTypeID || info.ID || info.Id || '');
         const value = values[id];
         const cols = Array.isArray(info.Columns) ? info.Columns.filter(col => String(col.Status || 'ACTIVE').toUpperCase() === 'ACTIVE') : [];
         if (cols.length) {
           const rows = String(info.Cardinality || 'SINGLE').toUpperCase() === 'MULTIPLE' ? (Array.isArray(value) ? value : []) : (value && typeof value === 'object' ? [value] : []);
-          return '<h3>' + this.escape(info.Name || info.Title || 'فیلد') + '</h3>' + this.renderPrintDesignerTable('field-' + String(item.fieldKey), cols, rows);
+          return '<h3>' + this.escape(info.Name || info.Title || 'فیلد') + '</h3>' + (rows.length ? this.renderPrintDesignerTable('field-' + String(item.fieldKey), cols, rows) : missing);
         }
-        return '<strong>' + this.escape(info.Name || info.Title || 'فیلد') + '</strong><div>' + this.renderPrintDesignerValue(value, info.DataType) + '</div>';
+        return '<strong>' + this.escape(info.Name || info.Title || 'فیلد') + '</strong><div>' + (isEmpty(value) ? missing : this.renderPrintDesignerValue(value, info.DataType)) + '</div>';
       }
-      const content = fields.slice().sort((a,b) => Number(a.FieldOrder||0)-Number(b.FieldOrder||0)).map(field => {
-        const info = field.InformationType || {};
+      const content = fields.slice().sort((a,b) => Number(a.FieldOrder || a.fieldOrder || 0) - Number(b.FieldOrder || b.fieldOrder || 0)).map(field => {
+        const info = field.InformationType || field.informationType || {};
         const id = String(field.InformationTypeID || info.ID || info.Id || '');
         const value = values[id];
         const columns = Array.isArray(info.Columns) ? info.Columns.filter(col => String(col.Status || 'ACTIVE').toUpperCase() === 'ACTIVE') : [];
-        let output = '<span>-</span>';
+        let output = missing;
         if (columns.length) {
           const rows = String(info.Cardinality || 'SINGLE').toUpperCase() === 'MULTIPLE' ? (Array.isArray(value) ? value : []) : (value && typeof value === 'object' ? [value] : []);
-          output = rows.length ? this.renderPrintDesignerTable('field-' + String(field.ID || field.InformationTypeID || info.Code || id), columns, rows) : '<span>-</span>';
-        } else if (value !== undefined && value !== null && value !== '') output = this.renderPrintDesignerValue(value, info.DataType);
-        return '<section><strong>' + this.escape(info.Name || info.Title || info.Code || 'فیلد') + '</strong><div>' + output + '</div></section>';
+          output = rows.length ? this.renderPrintDesignerTable('field-' + String(field.ID || field.InformationTypeID || info.Code || id), columns, rows) : missing;
+        } else if (!isEmpty(value)) {
+          output = this.renderPrintDesignerValue(value, info.DataType);
+        }
+        return '<section><strong>' + this.escape(info.Name || info.Title || info.Code || field.LabelOverride || 'فیلد') + '</strong><div>' + output + '</div></section>';
       }).join('');
-      return '<h3>' + this.escape(item.title || definition.Name || 'فرم') + '</h3><small>' + this.escape((record.event && (record.event.EventTypeName || record.event.EventTypeTitle)) || 'رویداد') + ' · ' + this.escape(this.formatDate(record.createdAt)) + '</small>' + content;
+      const formTitle = item.title || definition.Name || definition.Title || 'فرم';
+      const status = record ? this.escape((record.event && (record.event.EventTypeName || record.event.EventTypeTitle)) || 'اطلاعات فرم') + ' · ' + this.escape(this.formatDate(record.createdAt)) : 'اطلاعات وارد نشده';
+      return '<h3>' + this.escape(formTitle) + '</h3><small>' + status + '</small>' + (content || missing);
     },
 
     renderProjectForms: function () {
