@@ -7,21 +7,18 @@ const path = require('node:path');
 
 const read = (name) => fs.readFileSync(path.join(__dirname, '..', name), 'utf8');
 
-test('one project submit automatically creates a draft when no project code is entered', () => {
+test('new project creation requires a project code and does not create an implicit draft', () => {
   const source = read('js/modules/projects.js');
   assert.doesNotMatch(source, /project-create-draft/);
-  assert.ok(source.includes("draftOnly = modal.dataset.editMode !== 'true' && !project.ProjectCode"));
-  assert.ok(source.includes('${isDraftMode ? "required" : ""}'));
-  assert.ok(!source.includes('${isDraftMode || !isEditMode ? "required" : ""}'));
-  assert.match(source, /RecordState: 'DRAFT'/);
-  assert.ok(source.includes("const selectedAttachmentType = draftOnly ? 'PROFILE'"));
-  assert.match(source, /برای ثبت اولیه، انتخاب تصویر طرح الزامی است/);
-  assert.match(source, /پیش‌نویس پروژه ثبت شد/);
+  assert.match(source, /if \(!project\.ProjectCode\) \{/);
+  assert.match(source, /کد پروژه را وارد کن/);
+  assert.match(source, /New projects always receive a user-entered temporary or final code/);
+  assert.doesNotMatch(source, /RecordState:\s*'DRAFT'/);
 });
 test('draft projects can be reopened and completed through the existing project edit API', () => {
   const source = read('js/modules/projects.js');
   assert.match(source, /modal\.dataset\.draftMode = 'true'/);
-  assert.match(source, /isDraftEditing\) \{\s*project\.RecordState = 'ACTIVE'/);
+  assert.match(source, /if \(isDraftEditing\) project\.RecordState = 'ACTIVE'/);
   assert.match(source, /Api\.put\('\/projects\/' \+ encodeURIComponent\(projectId\), project\)/);
   assert.match(source, /تکمیل و فعال‌سازی پروژه/);
 });
