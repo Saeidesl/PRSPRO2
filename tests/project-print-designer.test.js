@@ -127,5 +127,7 @@ test('print designer uses its selectable image renderer for full forms and indiv
  const renderer=module.slice(start,end);
  assert.match(renderer,/renderPrintDesignerTable\('field-'/);
  assert.match(renderer,/renderPrintDesignerValue\(value, info\.DataType\)/);
- assert.doesNotMatch(renderer,/renderProjectFormValue\(/);\n const tableRenderer=module.slice(module.indexOf('renderPrintDesignerTable: function'),module.indexOf('renderPrintDesignerElement: function'));\n assert.match(tableRenderer,/renderPrintDesignerValue\(row && row\[String\(column\.Code \|\| column\.code\)\], column\.DataType \|\| column\.dataType\)/);
+ assert.doesNotMatch(renderer,/renderProjectFormValue\(/);
+ const tableRenderer=module.slice(module.indexOf('renderPrintDesignerTable: function'),module.indexOf('renderPrintDesignerElement: function'));
+ assert.match(tableRenderer,/renderPrintDesignerValue\(row && row\[String\(column\.Code \|\| column\.code\)\], column\.DataType \|\| column\.dataType\)/);
 });
