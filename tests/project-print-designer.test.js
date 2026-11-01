@@ -102,3 +102,20 @@ test('print designer exposes independently selectable and adjustable form images
  assert.match(module,/image\.dataset\.ppdInnerImage/);
  assert.match(css,/ppd-inline-image\[data-ppd-inner-image\]/);
 });
+
+
+test('print designer supports selecting form tables and adjusting overall and individual column widths',()=>{
+ const module=read('js/modules/project-detail.js');
+ const css=read('css/project-print-designer.css');
+ assert.match(module,/renderPrintDesignerTable: function/);
+ assert.match(module,/data-ppd-inner-table/);
+ assert.match(module,/data-ppd-inner-column/);
+ assert.match(module,/printDesignerSelectedTable/);
+ assert.match(module,/data-ppd-table-style="width"/);
+ assert.match(module,/data-ppd-column-width/);
+ assert.match(module,/tableLayout/);
+ assert.match(module,/layout\.columns\[col\.dataset\.ppdColCode\]/);
+ assert.match(module,/field-' \+ String\(item\.fieldKey\)/);
+ assert.match(css,/\.ppd-inner-table/);
+ assert.match(css,/@media print/);
+});
