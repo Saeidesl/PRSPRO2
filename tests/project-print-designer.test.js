@@ -54,7 +54,7 @@ test('print designer is a standalone sidebar route with project selection',()=>{
  const module=read('js/modules/project-detail.js');
  assert.match(layout,/route: 'print-designer', label: 'چاپ‌ساز'/);
  assert.match(router,/'print-designer': 'pages\/print-designer.html'/);
- assert.match(router,/print-designer: \['PROJECT_VIEW'\]/);
+ assert.match(router,/'print-designer': \['PROJECT_VIEW'\]/);
  assert.match(page,/print-designer-project-select/);
  assert.match(module,/initPrintDesignerPage: async function/);
  assert.match(module,/loadStandalonePrintProject: async function/);
