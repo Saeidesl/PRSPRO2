@@ -67,7 +67,7 @@ test('form image attachments are loaded as inline images for project forms and p
  assert.match(module,/prepareProjectFormImages: async function/);
  assert.ok(module.includes(`data:' + data.MimeType + ';base64,'`));
  assert.match(module,/project-form-inline-image/);
- assert.match(module,/renderProjectFormValue\(row && row\[String\(col\.Code\)\], col\.DataType\)/);
+ assert.match(module,/renderProjectFormValue\(row && row\[String\(column\.Code \|\| column\.code\)\], column\.DataType \|\| column\.dataType\)/);
 });
 
 test('print designer renders image attachments as inline images on the A4 canvas',()=>{
