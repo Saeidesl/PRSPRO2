@@ -27,12 +27,12 @@ test('print designer supports adding project data, custom text, rules and reusab
 test('print designer supports visual ordering, element styling, saved templates and A4 printing',()=>{
   const module=read('js/modules/project-detail.js');
   const css=read('css/project-print-designer.css');
-  assert.match(module,/draggable="true"/);
+  assert.match(module,/draggable=.{0,100}printDesignerMode === 'preview'/);
   assert.match(module,/data-ppd-move="up"/);
   assert.match(module,/data-ppd-move="down"/);
   assert.match(module,/data-ppd-style="border"/);
   assert.match(module,/data-ppd-style="background"/);
-  assert.match(module,/savePrintDesignerTemplate: function/);
+  assert.match(module,/savePrintDesignerTemplate: async function/);
   assert.match(module,/loadPrintDesignerTemplate: function/);
   assert.match(module,/window\.print\(\)/);
   assert.match(css,/@page\{size:A4 portrait/);
