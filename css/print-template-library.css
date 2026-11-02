@@ -107,3 +107,19 @@
   body.pt-printing .pt-print-page:last-child{break-after:auto;page-break-after:auto}
 }
 @media(max-width:700px){.pt-output-preview{padding:6px}.pt-print-page{transform-origin:top right;max-width:100%;}}
+
+
+/* Drawing tools: lines, separators and geometric shapes */
+.pt-toolbar-divider{width:1px;min-height:28px;background:var(--border-color,var(--border,#cbd5e1));margin:0 3px;align-self:center}
+.pt-canvas-element.pt-element-line,.pt-canvas-element.pt-element-divider{padding:0;border:0!important;background:transparent!important}
+.pt-shape-line{position:absolute;left:0;right:0;top:50%;height:0;border-top:1.2px solid currentColor}
+.pt-element-divider .pt-shape-line{border-top-width:2px}
+.pt-canvas-element.pt-element-rectangle,.pt-canvas-element.pt-element-ellipse{padding:0;border:0!important;background:transparent!important}
+.pt-shape-outline{display:block;width:100%;height:100%;box-sizing:border-box;border:1.2px solid currentColor;background:transparent}
+.pt-element-ellipse .pt-shape-outline,.pt-output-ellipse{border-radius:50%}
+.pt-output-shape{padding:0;background:transparent!important;border:0}
+.pt-output-line,.pt-output-divider{height:0!important;min-height:0!important;border-top:1.2px solid currentColor}
+.pt-output-divider{border-top-width:2px}
+.pt-output-rectangle{border:1.2px solid currentColor}
+.pt-output-ellipse{border:1.2px solid currentColor}
+@media(max-width:700px){.pt-toolbar-divider{display:none}}
