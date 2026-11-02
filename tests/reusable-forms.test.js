@@ -129,8 +129,8 @@ test('event entry loads reusable forms without requesting or submitting legacy d
 test('event details retain read-only legacy dynamic data for historical records',()=>{
   const module=read('js/modules/events.js');
   assert.match(module,/PMS\.Api\.get\('\/events\/' \+ encodeURIComponent\(eventId\) \+ '\/data'\)/);
-  assert.match(module,/const dynamicData = this\.extractDataObject\(responses\[1\]\)/);
-  assert.match(module,/this\.dynamicEntries\(dynamicData\)/);
+  assert.match(module,/const legacyDynamicData = this\.extractDataObject\(responses\[1\]\)/);
+  assert.match(module,/this\.legacyDynamicEntries\(legacyDynamicData\)/);
   assert.doesNotMatch(module,/DynamicData:\s*dynamicData/);
 });
 
