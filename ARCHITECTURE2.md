@@ -18,7 +18,7 @@
 ### فهرست و فرم پروژه
 - `pages/projects.html`: صفحه فهرست پروژه‌ها و دکمه ایجاد پروژه.
 - `js/modules/projects.js`: ماژول اصلی پروژه‌ها؛ `Projects.init()`, `Projects.render()`, `Projects.applyFilters()`, `Projects.openCreateForm(project, options)`, `Projects.openProjectEditForm(projectId, options)`.
-- فرم‌ها/مودال‌ها در زمان اجرا ساخته می‌شوند. شناسه‌های شناخته‌شده: `#project-create-modal`, `#project-edit-modal`, `#project-draft-material-specs-modal`, `#project-create-form`.
+- فرم‌ها/مودال‌ها در زمان اجرا ساخته می‌شوند. شناسه‌های شناخته‌شده: `#project-create-modal`, `#project-edit-modal`, `#project-create-form`.
 - `css/project-form.css`: استایل فرم‌های ایجاد/ویرایش و کنترل‌های مرتبط.
 - پیش از تغییر فرم فعلی، همه استفاده‌کنندگان `ProjectCode`, وضعیت پروژه، گردش‌کار، رنگ/سایز و تنظیمات پروژه باید بررسی شوند.
 
