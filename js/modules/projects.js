@@ -321,12 +321,9 @@
             return;
           }
           const editButton = event.target.closest('.project-edit-button');
-          const variantsButton = event.target.closest('.project-color-size-button');
-          const projectId = (editButton || variantsButton) &&
-            (editButton || variantsButton).getAttribute('data-project-id');
+          const projectId = editButton && editButton.getAttribute('data-project-id');
           if (!projectId) return;
-          if (editButton) this.openProjectEditForm(projectId);
-          else if (variantsButton) this.openProjectColorSizeForm(projectId);
+          this.openProjectEditForm(projectId);
         });
         tableContainer.addEventListener('keydown', (event) => {
           const menu = event.target.closest('[data-project-menu]');
@@ -441,17 +438,6 @@
         }
         if (!project) throw new Error('اطلاعات پروژه دریافت نشد.');
 
-        let colors = [];
-        let sizes = [];
-        const rawColorSize = project.ColorSizeJSON || project.colorSizeJSON || project.color_size_json;
-        if (rawColorSize) {
-          try {
-            const parsed = typeof rawColorSize === 'string' ? JSON.parse(rawColorSize) : rawColorSize;
-            colors = Array.isArray(parsed && parsed.colors) ? parsed.colors : [];
-            sizes = Array.isArray(parsed && parsed.sizes) ? parsed.sizes : [];
-          } catch (error) {}
-        }
-
         const title = String(project.Title || project.Name || 'بدون عنوان');
         const code = String(project.ProjectCode || id);
         const currentStep = project.CurrentStepName || project.CurrentStepTitle ||
@@ -465,8 +451,6 @@
           ['تعداد اولیه', project.Quantity],
           ['تاریخ ایجاد', formatDate(project.CreatedAt)],
           ['آخرین به‌روزرسانی', formatDate(project.UpdatedAt)],
-          ['رنگ‌بندی', colors.length ? colors.join('، ') : 'تعریف نشده'],
-          ['سایزبندی', sizes.length ? sizes.join('، ') : 'تعریف نشده'],
           ['توضیحات', project.Description]
         ];
         const rows = details.map(([label, value]) =>
@@ -645,54 +629,6 @@
         }
       } catch (error) {
         alert('دریافت اطلاعات پروژه برای ویرایش ناموفق بود: ' + (this.getErrorMessage(error) || 'خطای نامشخص'));
-      } finally {
-        progress.remove();
-      }
-    },
-
-    openProjectColorSizeForm: async function (projectId) {
-      if (!this.canEditProjects()) {
-        alert('دسترسی ویرایش پروژه را ندارید.');
-        return;
-      }
-
-      const progress = document.createElement('div');
-      progress.className = 'project-create-progress';
-      progress.setAttribute('role', 'status');
-      progress.setAttribute('aria-live', 'polite');
-      progress.innerHTML = '<div class="project-create-progress-card"><div class="project-create-progress-orbit" aria-hidden="true"><span class="project-create-progress-spinner"></span><span class="project-create-progress-spark">✦</span></div><div class="project-create-progress-heading">لطفاً کمی صبر کنید</div><div class="project-create-progress-message">در حال دریافت رنگ‌بندی و سایزبندی پروژه از سرور...</div><div class="project-create-progress-track" aria-hidden="true"><span></span></div><div class="project-create-progress-footnote">لطفاً تا پایان دریافت اطلاعات صبر کنید.</div></div>';
-      document.body.appendChild(progress);
-
-      try {
-        const response = await window.PMS.Api.get('/projects/' + encodeURIComponent(projectId));
-        let project = response;
-        for (let i = 0; i < 3 && project && project.data !== undefined; i += 1) project = project.data;
-        if (project && project.project) project = project.project;
-        if (Array.isArray(project)) project = project[0];
-        if (!project || typeof project !== 'object') throw new Error('اطلاعات پروژه از سرور دریافت نشد.');
-
-        const actualId = project.ID || project.Id || project.id || projectId;
-        const rawColorSize = project.ColorSizeJSON || project.colorSizeJSON || project.ColorSize || project.colorSize;
-        let saved = { colors: [], sizes: [] };
-        try {
-          const parsed = typeof rawColorSize === 'string' ? JSON.parse(rawColorSize || '{}') : (rawColorSize || {});
-          saved.colors = Array.isArray(parsed.colors) ? parsed.colors : [];
-          saved.sizes = Array.isArray(parsed.sizes) ? parsed.sizes : [];
-        } catch (error) {
-          throw new Error('اطلاعات رنگ‌بندی و سایزبندی پروژه معتبر نیست.');
-        }
-
-        const projectModal = {
-          dataset: {
-            colorSizeJson: JSON.stringify(saved),
-            projectId: String(actualId),
-            projectData: JSON.stringify(project)
-          },
-          querySelector: function () { return null; }
-        };
-        this.openColorSizeForm(projectModal);
-      } catch (error) {
-        alert('دریافت رنگ‌بندی و سایزبندی ناموفق بود: ' + this.getErrorMessage(error));
       } finally {
         progress.remove();
       }
@@ -1386,10 +1322,8 @@
 
             <div class="project-form-tools" style="display:flex;gap:10px;flex-wrap:wrap;margin:4px 0 16px;">
               <button type="button" id="new-project-material-specs-button" class="btn btn-secondary">تعریف مصرف ملزومات</button>
-              <button type="button" id="new-project-color-size-button" class="btn btn-secondary">تعریف رنگ‌بندی و سایزبندی</button>
             </div>
             <div id="new-project-material-specs-summary" style="font-size:12px;color:var(--color-text-secondary);margin:-8px 0 14px;">مصرف ملزومات اختیاری است و هنوز تعریف نشده است.</div>
-            <div id="new-project-color-size-summary" style="font-size:12px;color:var(--color-text-secondary);margin:-8px 0 16px;">رنگ‌بندی و سایزبندی اختیاری است و هنوز تعریف نشده است.</div>
 
             <div class="project-form-actions" style="
               display:flex;
@@ -1677,8 +1611,6 @@
         }
       };
 
-      const colorSizeButton = modal.querySelector('#new-project-color-size-button');
-      if (colorSizeButton) colorSizeButton.addEventListener('click', () => this.openColorSizeForm(modal));
       const materialSpecsButton = modal.querySelector('#new-project-material-specs-button');
       if (materialSpecsButton) materialSpecsButton.addEventListener('click', () => this.openDraftMaterialSpecsForm(modal));
 
@@ -1877,16 +1809,6 @@
             if (descriptionInput) descriptionInput.value = preserveEditInputs.description;
             if (notify) notify.checked = preserveEditInputs.notify;
           }
-          let savedColorSize = { colors: [], sizes: [] };
-          try { savedColorSize = typeof editProject.ColorSizeJSON === 'string' ? JSON.parse(editProject.ColorSizeJSON || '{"colors":[],"sizes":[]}') : (editProject.ColorSizeJSON || savedColorSize); } catch (error) {}
-          modal.dataset.colorSizeJson = JSON.stringify({
-            colors: Array.isArray(savedColorSize.colors) ? savedColorSize.colors : [],
-            sizes: Array.isArray(savedColorSize.sizes) ? savedColorSize.sizes : []
-          });
-          const colorSummary = modal.querySelector('#new-project-color-size-summary');
-          if (colorSummary) colorSummary.textContent = (savedColorSize.colors.length || savedColorSize.sizes.length)
-            ? savedColorSize.colors.length + ' رنگ و ' + savedColorSize.sizes.length + ' سایز تعریف شده'
-            : 'رنگ‌بندی و سایزبندی تعریف نشده است.';
           const materialSpecsButtonForEdit = modal.querySelector('#new-project-material-specs-button');
           if (materialSpecsButtonForEdit) materialSpecsButtonForEdit.hidden = true;
           const materialSpecsSummary = modal.querySelector('#new-project-material-specs-summary');
@@ -2040,171 +1962,6 @@
         const summary = projectModal.querySelector('#new-project-material-specs-summary');
         if (summary) summary.textContent = items.length ? items.length + ' نوع ملزوم با مصرف هر واحد تعریف شده است.' : 'مصرف ملزومات تعریف نشده است.';
         close();
-      });
-    },
-
-    openColorSizeForm: function (projectModal) {
-      const existing = document.getElementById('project-color-size-modal');
-      if (existing) existing.remove();
-
-      let saved = { colors: [], sizes: [] };
-      try {
-        saved = JSON.parse(projectModal.dataset.colorSizeJson || '{"colors":[],"sizes":[]}');
-      } catch (error) {}
-
-      const modal = document.createElement('div');
-      modal.id = 'project-color-size-modal';
-      modal.style.cssText = 'position:fixed;inset:0;z-index:10020;background:rgba(0,0,0,.48);display:flex;align-items:center;justify-content:center;padding:16px;direction:rtl;overflow:auto;';
-      modal.innerHTML =
-        '<div role="dialog" aria-modal="true" aria-labelledby="project-color-size-title" style="background:var(--color-surface,#fff);color:var(--color-text,#222);width:100%;max-width:760px;max-height:90vh;overflow:auto;border-radius:14px;padding:20px;box-sizing:border-box;">' +
-          '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px"><h3 id="project-color-size-title" style="margin:0">رنگ‌بندی و سایزبندی پروژه</h3><button type="button" class="btn btn-light" data-color-size-close>بستن</button></div>' +
-          '<p style="font-size:12px;color:var(--color-text-secondary);line-height:1.9;margin:0 0 16px">هر رنگ و هر سایز را در یک ردیف وارد کنید. با دکمه افزودن می‌توانید ردیف جدید بسازید و ردیف‌های اضافی را حذف کنید. مقدار تولید هر ترکیب بعداً در رویدادهای تولید ثبت می‌شود.</p>' +
-          '<form id="project-color-size-form">' +
-            '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px">' +
-              '<section><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px"><strong>رنگ‌ها</strong><button type="button" class="btn btn-secondary" data-color-size-add="colors">+ افزودن رنگ</button></div><div data-color-size-list="colors"></div></section>' +
-              '<section><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px"><strong>سایزها</strong><button type="button" class="btn btn-secondary" data-color-size-add="sizes">+ افزودن سایز</button></div><div data-color-size-list="sizes"></div></section>' +
-            '</div>' +
-            '<div id="project-color-size-error" class="alert alert-danger" hidden style="margin-top:12px"></div>' +
-            '<div style="display:flex;gap:8px;justify-content:flex-start;margin-top:16px;flex-wrap:wrap"><button type="submit" class="btn btn-primary">ذخیره مشخصات</button><button type="button" class="btn btn-light" data-color-size-clear>پاک کردن همه</button></div>' +
-          '</form>' +
-        '</div>';
-      document.body.appendChild(modal);
-
-      const form = modal.querySelector('#project-color-size-form');
-      const errorBox = modal.querySelector('#project-color-size-error');
-      const limits = { colors: { max: 80, label: 'رنگ' }, sizes: { max: 40, label: 'سایز' } };
-
-      const getList = (kind) => modal.querySelector('[data-color-size-list="' + kind + '"]');
-
-      const addRow = (kind, value) => {
-        const list = getList(kind);
-        if (!list || list.querySelectorAll('[data-variant-row]').length >= 100) {
-          errorBox.textContent = 'حداکثر ۱۰۰ ' + limits[kind].label + ' می‌توانید تعریف کنید.';
-          errorBox.hidden = false;
-          return;
-        }
-        const row = document.createElement('div');
-        row.setAttribute('data-variant-row', '1');
-        row.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px;';
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.maxLength = limits[kind].max;
-        input.value = value || '';
-        input.placeholder = kind === 'colors' ? 'مثلاً مشکی' : 'مثلاً XL';
-        input.setAttribute('aria-label', limits[kind].label);
-        input.style.cssText = 'min-width:0;flex:1;width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid var(--color-border,#ddd);border-radius:8px;background:var(--color-surface,#fff);color:inherit;font:inherit;';
-        const remove = document.createElement('button');
-        remove.type = 'button';
-        remove.className = 'btn btn-light';
-        remove.textContent = 'حذف';
-        remove.setAttribute('aria-label', 'حذف ' + limits[kind].label);
-        remove.addEventListener('click', () => {
-          row.remove();
-          if (!list.querySelector('[data-variant-row]')) addRow(kind, '');
-          errorBox.hidden = true;
-        });
-        row.appendChild(input);
-        row.appendChild(remove);
-        list.appendChild(row);
-      };
-
-      const renderList = (kind, values) => {
-        const list = getList(kind);
-        list.replaceChildren();
-        (Array.isArray(values) ? values : []).forEach((value) => addRow(kind, value));
-        if (!list.querySelector('[data-variant-row]')) addRow(kind, '');
-      };
-
-      renderList('colors', saved.colors);
-      renderList('sizes', saved.sizes);
-
-      modal.querySelectorAll('[data-color-size-add]').forEach((button) => {
-        button.addEventListener('click', () => {
-          addRow(button.getAttribute('data-color-size-add'), '');
-          errorBox.hidden = true;
-        });
-      });
-
-      const modalKeyboard = bindProjectModalKeyboard(modal, () => modal.remove());
-      const close = () => modalKeyboard.close();
-      modal.querySelector('[data-color-size-close]').addEventListener('click', close);
-      modal.addEventListener('click', (event) => { if (event.target === modal) close(); });
-      modalKeyboard.focusFirst();
-      modal.querySelector('[data-color-size-clear]').addEventListener('click', () => {
-        renderList('colors', []);
-        renderList('sizes', []);
-        errorBox.hidden = true;
-      });
-
-      form.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const submitButton = form.querySelector('button[type="submit"]');
-        if (submitButton && submitButton.disabled) return;
-        const normalize = (kind) => {
-          const seen = new Set();
-          const values = Array.from(getList(kind).querySelectorAll('input'))
-            .map((input) => input.value.trim())
-            .filter(Boolean);
-          const result = [];
-          for (const value of values) {
-            if (value.length > limits[kind].max) {
-              throw new Error('نام هر ' + limits[kind].label + ' حداکثر ' + limits[kind].max + ' نویسه باشد.');
-            }
-            const key = value.toLocaleLowerCase();
-            if (!seen.has(key)) {
-              seen.add(key);
-              result.push(value);
-            }
-          }
-          if (result.length > 100) {
-            throw new Error('حداکثر ۱۰۰ ' + limits[kind].label + ' می‌توانید تعریف کنید.');
-          }
-          return result;
-        };
-
-        try {
-          const colors = normalize('colors');
-          const sizes = normalize('sizes');
-          const colorSizeJson = JSON.stringify({ colors: colors, sizes: sizes });
-          if (projectModal.dataset.projectId) {
-            const progress = document.createElement('div');
-            progress.className = 'project-create-progress';
-            progress.setAttribute('role', 'status');
-            progress.setAttribute('aria-live', 'polite');
-            progress.innerHTML = '<div class="project-create-progress-card"><div class="project-create-progress-orbit" aria-hidden="true"><span class="project-create-progress-spinner"></span><span class="project-create-progress-spark">✦</span></div><div class="project-create-progress-heading">لطفاً کمی صبر کنید</div><div class="project-create-progress-message">در حال ذخیره رنگ‌بندی و سایزبندی پروژه...</div><div class="project-create-progress-track" aria-hidden="true"><span></span></div><div class="project-create-progress-footnote">لطفاً تا پایان ذخیره‌سازی صبر کنید.</div></div>';
-            document.body.appendChild(progress);
-            if (submitButton) { submitButton.disabled = true; submitButton.textContent = 'در حال ذخیره...'; }
-            try {
-              const projectData = JSON.parse(projectModal.dataset.projectData || '{}');
-              const payload = Object.assign({}, projectData, { ColorSizeJSON: colorSizeJson });
-              await window.PMS.Api.put('/projects/' + encodeURIComponent(projectModal.dataset.projectId), payload);
-              projectModal.dataset.colorSizeJson = colorSizeJson;
-              const cachedProject = this.projects.find((item) => String(item.ID || item.Id || item.id) === String(projectModal.dataset.projectId));
-              if (cachedProject) cachedProject.ColorSizeJSON = colorSizeJson;
-              this.applyFilters();
-              if (window.PMS.Cache && typeof window.PMS.Cache.set === 'function') window.PMS.Cache.set(CACHE_KEY, this.projects);
-              close();
-            } catch (saveError) {
-              errorBox.textContent = 'ذخیره رنگ‌بندی و سایزبندی ناموفق بود: ' + this.getErrorMessage(saveError);
-              errorBox.hidden = false;
-              if (submitButton) { submitButton.disabled = false; submitButton.textContent = 'ذخیره مشخصات'; }
-            } finally {
-              progress.remove();
-            }
-            return;
-          }
-          projectModal.dataset.colorSizeJson = colorSizeJson;
-          const summary = projectModal.querySelector('#new-project-color-size-summary');
-          if (summary) {
-            summary.textContent = (colors.length || sizes.length)
-              ? colors.length + ' رنگ و ' + sizes.length + ' سایز تعریف شده'
-              : 'هنوز رنگ یا سایزی تعریف نشده است.';
-          }
-          close();
-        } catch (error) {
-          errorBox.textContent = error && error.message ? error.message : 'بررسی رنگ‌بندی و سایزبندی ناموفق بود.';
-          errorBox.hidden = false;
-        }
       });
     },
 
@@ -2440,8 +2197,6 @@
           (Array.isArray(routerForAttachments.permissions) &&
             routerForAttachments.permissions.indexOf('ATTACHMENT_UPLOAD') !== -1)));
 
-      let colorSize = { colors: [], sizes: [] };
-      try { colorSize = JSON.parse(modal.dataset.colorSizeJson || '{"colors":[],"sizes":[]}'); } catch (error) {}
       const project = {
         ProjectCode: codeInput.value.trim(),
         Title: titleInput.value.trim(),
@@ -2449,10 +2204,6 @@
         WorkflowID: workflowSelect.value,
         Description: descriptionInput.value.trim(),
         CreatedAt: String((modal.querySelector('#new-project-created-at') || {}).value || '').trim(),
-        ColorSizeJSON: JSON.stringify({
-          colors: Array.isArray(colorSize.colors) ? colorSize.colors : [],
-          sizes: Array.isArray(colorSize.sizes) ? colorSize.sizes : []
-        }),
         AvailableDepartmentIDs: selectedDepartments,
         AllowedUserIDs: selectedUsers,
         NotifyEnabled: !!(notifyInput && notifyInput.checked),
@@ -2861,7 +2612,6 @@
               <button type="button" role="menuitem" data-project-menu-action="project-files" data-project-id="${this.escape(id)}"><span aria-hidden="true">▤</span><span>فایل‌ها</span></button>
               <span class="project-list-card-menu-separator" role="separator"></span>
               <button type="button" role="menuitem" data-project-menu-action="material-specs" data-project-id="${this.escape(id)}"><span aria-hidden="true">◫</span><span>مصرف ملزومات</span></button>
-              <button type="button" role="menuitem" data-project-menu-action="color-size" data-project-id="${this.escape(id)}"><span aria-hidden="true">◈</span><span>رنگ‌بندی و سایزبندی</span></button>
               <span class="project-list-card-menu-separator" role="separator"></span>
               <button type="button" role="menuitem" data-project-menu-action="share" data-project-id="${this.escape(id)}"><span aria-hidden="true">↗</span><span>اشتراک‌گذاری</span></button>
               <button type="button" role="menuitem" data-project-menu-action="print" data-project-id="${this.escape(id)}"><span aria-hidden="true">▣</span><span>ذخیره و چاپ</span></button>
@@ -3057,14 +2807,6 @@
       const planner = window.PMS && window.PMS.MaterialPlanning;
       if (planner && typeof planner.open === 'function') planner.open(projectId);
       else alert('فرم مصرف ملزومات هنوز آماده نیست. صفحه را دوباره بارگذاری کنید.');
-      return;
-    }
-    if (detail.action === 'color-size') {
-      if (window.PMS.Projects && typeof window.PMS.Projects.openProjectColorSizeForm === 'function') {
-        window.PMS.Projects.openProjectColorSizeForm(projectId);
-      } else {
-        alert('فرم رنگ‌بندی و سایزبندی هنوز آماده نیست. صفحه را دوباره بارگذاری کنید.');
-      }
       return;
     }
     if (detail.action === 'print') {
