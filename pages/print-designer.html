@@ -8,6 +8,51 @@
     <h3 class="pt-section-title">قالب‌های ذخیره‌شده</h3>
     <div id="pt-template-list" class="pt-template-list"><div class="pt-empty-state">در حال دریافت قالب‌ها…</div></div>
   </div></section>
+  <section class="card pt-editor-workspace" id="pt-editor-workspace">
+    <div class="card-body">
+      <div class="pt-editor-toolbar">
+        <div><h3 class="pt-section-title">محیط طراحی قالب</h3><p class="text-muted">المان‌ها را اضافه کن، روی صفحه جابه‌جا کن و اندازه و ظاهرشان را تنظیم کن.</p></div>
+        <div class="pt-toolbar-actions">
+          <button type="button" class="btn btn-secondary btn-sm" data-pt-action="undo">واگرد</button>
+          <button type="button" class="btn btn-secondary btn-sm" data-pt-action="redo">ازنو</button>
+          <button type="button" class="btn btn-secondary btn-sm" data-pt-action="add-text">افزودن متن</button>
+          <button type="button" class="btn btn-secondary btn-sm" data-pt-action="add-field">افزودن فیلد داده</button>
+          <button type="button" class="btn btn-secondary btn-sm" data-pt-action="add-table">افزودن جدول</button>
+          <button type="button" class="btn btn-secondary btn-sm" data-pt-action="add-image">جایگاه تصویر</button>
+        </div>
+      </div>
+      <div class="pt-editor-settings">
+        <label>اندازه صفحه <select id="pt-page-size"><option value="A4">A4</option><option value="A5">A5</option><option value="LETTER">Letter</option></select></label>
+        <label>جهت صفحه <select id="pt-page-orientation"><option value="portrait">عمودی</option><option value="landscape">افقی</option></select></label>
+        <span class="text-muted">واحد اندازه‌گذاری: میلی‌متر</span>
+      </div>
+      <div class="pt-editor-layout">
+        <aside class="pt-editor-inspector">
+          <h4>ویژگی‌های المان</h4>
+          <div id="pt-inspector-empty" class="pt-empty-state">برای تنظیم، یک المان را روی صفحه انتخاب کن.</div>
+          <div id="pt-inspector-fields" hidden>
+            <label>عنوان / متن <input id="pt-prop-text" type="text" maxlength="500"></label>
+            <label>منبع داده <select id="pt-prop-binding"><option value="">بدون اتصال</option></select></label>
+            <div class="pt-inspector-grid">
+              <label>موقعیت افقی <input id="pt-prop-x" type="number" min="0" step="1"></label>
+              <label>موقعیت عمودی <input id="pt-prop-y" type="number" min="0" step="1"></label>
+              <label>عرض <input id="pt-prop-width" type="number" min="5" step="1"></label>
+              <label>ارتفاع <input id="pt-prop-height" type="number" min="5" step="1"></label>
+              <label>اندازه قلم <input id="pt-prop-font" type="number" min="7" max="72" step="1"></label>
+              <label>تراز <select id="pt-prop-align"><option value="right">راست</option><option value="center">وسط</option><option value="left">چپ</option></select></label>
+            </div>
+            <div class="pt-inspector-actions">
+              <button type="button" class="btn btn-secondary btn-sm" data-pt-action="duplicate">تکثیر</button>
+              <button type="button" class="btn btn-danger btn-sm" data-pt-action="remove">حذف المان</button>
+            </div>
+          </div>
+          <h4>لایه‌ها</h4><div id="pt-layer-list" class="pt-layer-list"></div>
+        </aside>
+        <div class="pt-canvas-scroll"><div id="pt-design-canvas" class="pt-design-canvas" aria-label="بوم طراحی قالب"><div class="pt-canvas-empty">برای شروع، از نوار ابزار یک المان اضافه کن.</div></div></div>
+      </div>
+      <p id="pt-editor-status" class="pt-status" aria-live="polite">تغییرات چیدمان همراه قالب ذخیره می‌شوند.</p>
+    </div>
+  </section>
   <div class="pt-library-grid">
     <section class="card pt-panel"><div class="card-body">
       <h3 id="pt-editor-title" class="pt-section-title">ساخت قالب جدید</h3>
