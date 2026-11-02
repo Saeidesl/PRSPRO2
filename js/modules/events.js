@@ -768,7 +768,7 @@
         if (!document.getElementById('event-details-modal')) return;
 
         const event = this.extractObject(responses[0]);
-        const dynamicData = this.extractDataObject(responses[1]);
+        const legacyDynamicData = this.extractDataObject(responses[1]);
         const formResponses = this.normalize(responses[2]);
         const project = this.findById(this.projects, event.ProjectID);
         const type = this.findById(this.eventTypes, event.EventTypeID);
@@ -827,7 +827,7 @@
 
         html += '</div><h4 class="event-section-title">اطلاعات اختصاصی رویداد</h4>';
 
-        const values = this.dynamicEntries(dynamicData);
+        const values = this.legacyDynamicEntries(legacyDynamicData);
 
         if (values.length) {
           html +=
@@ -929,7 +929,7 @@
       return {};
     },
 
-    dynamicEntries: function (data) {
+    legacyDynamicEntries: function (data) {
       if (Array.isArray(data)) {
         return data.map(function (item) {
           if (item && typeof item === 'object') {
@@ -2005,7 +2005,7 @@
       }
 
       if (String(this.formsLoadedForTypeId) !== selectedTypeId) {
-        this.showFormError('نوع رویداد تغییر کرده است. منتظر آماده‌شدن فیلدهای آن بمانید.');
+        this.showFormError('نوع رویداد تغییر کرده است. منتظر آماده‌شدن فرم‌های متصل بمانید.');
         return;
       }
 
