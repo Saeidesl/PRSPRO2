@@ -6,8 +6,6 @@
   const state = {
     eventTypes: [],
     search: '',
-    selectedEventTypeId: null,
-    selectedEventTypeName: '',
     departments: [],
     users: [],
     projectStatuses: [],
