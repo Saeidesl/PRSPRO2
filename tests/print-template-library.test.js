@@ -166,3 +166,10 @@ test('print output assets use refreshed cache keys for the current print fixes',
  assert.match(index,/css\/print-template-library\.css\?v=20261102-print-layout-fix-2/);
  assert.match(index,/js\/modules\/print-designer\.js\?v=20261102-print-layout-fix-2/);
 });
+
+
+test('final print document omits the entire automatic form and project header',()=>{
+ const module=read('js/modules/print-designer.js');
+ assert.doesNotMatch(module,/pt-print-heading/);
+ assert.match(module,/dir:\'rtl\'\s*\).*elements\.join\(''\)/);
+});
