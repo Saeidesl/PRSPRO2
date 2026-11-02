@@ -8,7 +8,7 @@
     navItems: [
       { route: 'dashboard', label: 'داشبورد', icon: '⌂', permission: 'REPORT_VIEW' },
       { route: 'projects', label: 'پروژه‌ها', icon: '▣', permission: ['PROJECT_VIEW', 'PROJECT_CREATE'] },
-      { route: 'print-design', label: 'طراحی قالب', icon: '▤', permission: 'PROJECT_VIEW' },
+      { route: 'print-design', label: 'طراحی قالب', icon: '▤', permission: 'SYSTEM_SETTINGS' },
       { route: 'print-output', label: 'چاپ اسناد', icon: '▧', permission: 'PROJECT_VIEW' },
       { route: 'events', label: 'رویدادها', icon: '◈', permission: ['EVENT_VIEW', 'EVENT_CREATE'] },
       { route: 'workflows', label: 'Workflowها', icon: '↔', permission: 'WORKFLOW_MANAGE' },
