@@ -11,6 +11,7 @@
     history: [],
     historyIndex: -1,
     dragState: null,
+    previewMode: false,
     init: function () {
       const route = String(window.location.hash || '').replace(/^#/, '').split('/')[0];
       if (route === 'print-output') this.initOutput();
@@ -178,6 +179,15 @@
       if (action === 'add-image') return this.createElement('image');
       if (action === 'undo') return this.undo();
       if (action === 'redo') return this.redo();
+      if (action === 'preview') {
+        this.previewMode = !this.previewMode;
+        const workspace = document.getElementById('pt-editor-workspace');
+        const button = document.querySelector('[data-pt-action="preview"]');
+        if (workspace) workspace.classList.toggle('pt-preview-mode', this.previewMode);
+        if (button) button.textContent = this.previewMode ? 'بازگشت به ویرایش' : 'پیش‌نمایش';
+        this.setStatus('pt-editor-status', this.previewMode ? 'پیش‌نمایش چیدمان نمونه؛ داده‌های واقعی هنگام انتخاب پروژه در بخش چاپ بازیابی می‌شوند.' : 'به محیط ویرایش برگشتی.');
+        return;
+      }
       if (action === 'remove' && selected) {
         this.definition.elements = this.definition.elements.filter(item => item.id !== selected.id);
         this.selectedElementId = ''; this.renderEditor(); return this.commitHistory();
