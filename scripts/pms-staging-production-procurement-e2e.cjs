@@ -48,7 +48,7 @@ const arr = (x, keys) => { x = unwrap(x); if (Array.isArray(x)) return x; for (c
     const status = statuses.find(x => String(x.Status || 'ACTIVE').toUpperCase() === 'ACTIVE') || statuses[0];
     const stamp = new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14);
     const code = 'QA_E2E_' + stamp;
-    const projectResponse = await api('POST','/projects',{ProjectCode:code,Title:'QA E2E تولید تا تأمین '+stamp,Quantity:10,WorkflowID:idOf(workflow),Description:'TEST DATA — automated staging E2E; '+stamp,ColorSizeJSON:JSON.stringify({colors:[],sizes:[]}),AvailableDepartmentIDs:[idOf(department)],AllowedUserIDs:[],NotifyEnabled:false,Status:status.Code || status.StatusCode || status.Name || status.ID});
+    const projectResponse = await api('POST','/projects',{ProjectCode:code,Title:'QA E2E تولید تا تأمین '+stamp,Quantity:10,WorkflowID:idOf(workflow),Description:'TEST DATA — automated staging E2E; '+stamp,AvailableDepartmentIDs:[idOf(department)],AllowedUserIDs:[],NotifyEnabled:false,Status:status.Code || status.StatusCode || status.Name || status.ID});
     const project = unwrap(projectResponse);
     const projectId = idOf(project && (project.project || project.Project || project));
     if (!projectId) throw new Error('Project create returned no project ID: '+JSON.stringify(projectResponse).slice(0,700));
