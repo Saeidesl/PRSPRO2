@@ -99,6 +99,22 @@
 - آزمون بک‌اند: `tests/print-templates.test.js` برای اعتبارسنجی binding، یکتایی tenant، نسخه‌دهی، resolve اطلاعات مرکزی و snapshot پاسخ فرم، مرز دسترسی و حذف منطقی افزوده شده است.
 - منطق قدیمی محیط طراحی در `ProjectDetail` و CSS قبلی عمداً تا پایان انتقال باقی است؛ routeهای جدید دیگر آن را اجرا نمی‌کنند. حذف کامل legacy در تسک ۴ انجام می‌شود تا پیش از جایگزینی کامل قابلیت‌های ویرایش، عملکرد فعلی از دست نرود.
 
+### 3.2 وضعیت پیاده‌سازی محیط طراحی در تسک ۳ (در حال اجرا)
+
+- `pages/print-designer.html`: محیط طراحی به صفحه کتابخانه افزوده شده است؛ شناسه‌های اصلی شامل `pt-editor-workspace`، `pt-design-canvas`، `pt-inspector-fields`، `pt-layer-list` و کنترل‌های صفحه/جدول/ظاهر هستند.
+- `js/modules/print-designer.js`:
+  - `pageDimensions()` و `syncPageControls()` اندازه و جهت صفحه A4/A5/Letter را مدیریت می‌کنند.
+  - `bindEditor()` تعامل‌های بوم، drag، resize، کنترل‌های پنل، میانبرهای undo/redo و تغییر اندازه صفحه را متصل می‌کند.
+  - `createElement()` و `handleEditorAction()` المان‌های متن، فیلد داده، جدول و جایگاه تصویر را ایجاد می‌کنند؛ تکثیر، حذف، ترتیب لایه و پیش‌نمایش نمونه نیز پشتیبانی می‌شوند.
+  - `applyInspectorChange()` و `renderInspector()` متن، binding، انتخاب پاسخ فرم (LATEST/ALL/EVENT/RESPONSE)، موقعیت، ابعاد، قلم، تراز، رنگ و ساختار چندردیفی جدول را مدیریت می‌کنند.
+  - `renderCanvas()` و `renderLayers()` بوم و فهرست لایه‌ها را نمایش می‌دهند.
+  - `commitHistory()`، `restoreHistory()`، `undo()` و `redo()` تاریخچه ویرایش را تا ۶۰ وضعیت نگه می‌دارند.
+  - تعریف صفحه، عناصر، اندازه/موقعیت، سبک‌ها، binding و جدول‌ها در همان `Definition` نسخه‌دار قالب ذخیره می‌شود؛ API جدید موازی ایجاد نشده است.
+- `css/print-template-library.css`: استایل بوم با واحد میلی‌متر، المان انتخاب‌شده و دستگیره resize، پنل ویژگی‌ها، لایه‌ها، حالت پیش‌نمایش و چیدمان واکنش‌گرا افزوده شده است.
+- `index.html`: نسخه assetها به `20261102-template-editor-5` و `20261102-template-editor-2` تغییر یافته است.
+- `tests/print-template-library.test.js`: تست‌های regression برای parse ماژول، کنترل‌های بوم، جدول چندردیفی، انتخاب پاسخ، رنگ‌ها، ترتیب لایه و پیش‌نمایش افزوده شده‌اند.
+- اعتبارسنجی CI روی commit `09d4ec5e923e56769107bf34307a5721d3300e5e`: workflow «Frontend checks» موفق؛ workflow «PMS cross-repository QA» موفق. یک نقص مستقل در resolve بک‌اند (عدم bind شدن context حلقه bindingها) کشف و در `PRSPRO2BACKEND/PrintTemplateService.js` اصلاح شد؛ آزمون‌های بک‌اند و اعتبارسنجی source در اجرای QA بعدی موفق شدند. انتشار Web App بک‌اند هنوز در حال اجراست و تا تکمیل workflow موفق اعلام نمی‌شود.
+ 
 ### 4. معماری هدف و معیارهای پاک‌سازی
 
 - مدل طراحی تأییدشده: **ترکیبی**؛ بوم آزاد با مختصات واقعی صفحه در کنار بلوک‌های ساختاریافته و تکرارشونده.
