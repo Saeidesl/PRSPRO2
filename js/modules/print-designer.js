@@ -543,10 +543,38 @@
     formatOutputValue: function (value) {
       if (value === null || value === undefined || value === '') return '';
       if (Array.isArray(value)) return value.map(item => this.formatOutputValue(item)).join('، ');
-      if (typeof value === 'object') return Object.keys(value).map(key => this.formatOutputValue(value[key])).filter(Boolean).join(' — ');
+      if (typeof value === 'object') return Object.keys(value).filter(key => !/attachment|mime|filesize/i.test(key))
+        .map(key => this.formatOutputValue(value[key])).filter(Boolean).join(' — ');
       return String(value);
     },
-    renderOutputDocument: function (template, project, data) {
+    findImageAttachment: function (value) {
+      if (!value) return null;
+      if (Array.isArray(value)) {
+        for (const item of value) { const found = this.findImageAttachment(item); if (found) return found; }
+        return null;
+      }
+      if (typeof value !== 'object') return null;
+      const mime = String(value.MimeType || value.mimeType || '').toLowerCase();
+      const id = value.AttachmentID || value.attachmentId || value.ID || value.Id;
+      if (id && (!mime || mime.indexOf('image/') === 0)) return { id: String(id), mime: mime || 'image/jpeg' };
+      for (const key of Object.keys(value)) {
+        const found = this.findImageAttachment(value[key]);
+        if (found) return found;
+      }
+      return null;
+    },
+    loadOutputImage: async function (value) {
+      const attachment = this.findImageAttachment(value);
+      if (!attachment) return '';
+      const response = await PMS.Api.get('/attachments/' + encodeURIComponent(attachment.id) + '/download', { trackSync: false });
+      const file = this.extract(response) || {};
+      const base64 = file.Base64 || file.base64;
+      if (!base64) throw new Error('محتوای تصویر پیوست دریافت نشد.');
+      const mime = String(file.MimeType || file.mimeType || attachment.mime || 'image/jpeg').toLowerCase();
+      if (mime.indexOf('image/') !== 0) throw new Error('فایل متصل‌شده تصویر معتبر نیست.');
+      return 'data:' + mime + ';base64,' + String(base64).replace(/^data:[^,]*;base64,/, '');
+    },
+    renderOutputDocument: async function (template, project, data) {
       const definition = template && template.Definition ? template.Definition : {};
       const page = definition.page || {};
       const sizes = {A4:[210,297],A5:[148,210],LETTER:[216,279]};
@@ -556,12 +584,27 @@
       const height = landscape ? base[0] : base[1];
       const bindings = Object.create(null);
       (definition.bindings || []).forEach(binding => { bindings[binding.id] = binding; });
-      const elements = (definition.elements || []).map(item => {
+      const elements = await Promise.all((definition.elements || []).map(async item => {
         const binding = bindings[item.bindingId];
         const raw = binding ? data[item.bindingId] : null;
+        const imageAttachment = this.findImageAttachment(raw);
+        const isImage = item.type === 'image' || !!imageAttachment;
         const value = binding ? this.formatOutputValue(raw) : (item.text || '');
         const style = 'left:'+Number(item.x||0)+'mm;top:'+Number(item.y||0)+'mm;width:'+Number(item.width||30)+'mm;min-height:'+Number(item.height||15)+'mm;font-size:'+Number(item.fontSize||12)+'pt;text-align:'+this.esc(item.align||'right')+';color:'+this.esc(item.color||'#1f2937')+';background:'+this.esc(item.background||'transparent')+';';
-        if (item.type === 'image') return '<div class="pt-output-element" style="'+style+'"><div class="pt-output-image">تصویر پیوست</div></div>';
+        if (isImage) {
+          let image = '';
+          if (imageAttachment) {
+            try {
+              const src = await this.loadOutputImage(raw);
+              image = '<img class="pt-output-image-content" src="' + src + '" alt="' + this.esc(imageAttachment.id) + '">';
+            } catch (error) {
+              image = '<div class="pt-output-image pt-output-image-error">بارگذاری تصویر ناموفق بود</div>';
+            }
+          } else {
+            image = '<div class="pt-output-image">برای نمایش تصویر، منبع تصویر را به این المان متصل کن.</div>';
+          }
+          return '<div class="pt-output-element pt-output-image-frame" style="'+style+'">'+image+'</div>';
+        }
         if (item.type === 'table') {
           const rows = Array.isArray(raw) ? raw : (item.rows || []);
           const columns = item.columns || [];
@@ -571,14 +614,17 @@
           }).join('');
           return '<div class="pt-output-element pt-output-table" style="'+style+'"><strong>'+this.esc(item.text||'')+'</strong><table><thead><tr>'+columns.map(col=>'<th>'+this.esc(col)+'</th>').join('')+'</tr></thead><tbody>'+tableRows+'</tbody></table></div>';
         }
+        if (item.type === 'line' || item.type === 'divider') return '<div class="pt-output-element pt-output-shape pt-output-'+item.type+'" style="'+style+'" aria-hidden="true"></div>';
+        if (item.type === 'rectangle' || item.type === 'ellipse') return '<div class="pt-output-element pt-output-shape pt-output-'+item.type+'" style="'+style+'" aria-hidden="true"></div>';
         return '<div class="pt-output-element" style="'+style+'">'+this.esc(value)+'</div>';
-      }).join('');
-      return '<article class="pt-print-page" style="width:'+width+'mm;min-height:'+height+'mm" dir="rtl"><header class="pt-print-heading"><strong>'+this.esc(template.Name||'')+'</strong><span>'+this.esc(project.ProjectCode||'')+' — '+this.esc(project.Title||'')+'</span></header>'+elements+'</article>';
+      }));
+      return '<article class="pt-print-page" style="width:'+width+'mm;min-height:'+height+'mm" dir="rtl"><header class="pt-print-heading"><strong>'+this.esc(template.Name||'')+'</strong><span>'+this.esc(project.ProjectCode||'')+' — '+this.esc(project.Title||'')+'</span></header>'+elements.join('')+'</article>';
     },
     printOutput: function () {
       document.body.classList.add('pt-printing');
-      window.print();
-      window.setTimeout(() => document.body.classList.remove('pt-printing'), 500);
+      const images = Array.from(document.querySelectorAll('#pt-output-preview img'));
+      Promise.all(images.map(image => image.decode ? image.decode().catch(() => {}) : Promise.resolve())).then(() => window.print());
+      window.setTimeout(() => document.body.classList.remove('pt-printing'), 1500);
     },
     resolveOutput: async function () {
       const templateId = document.getElementById('pt-output-template').value;
@@ -599,7 +645,7 @@
         const preview = document.getElementById('pt-output-preview');
         const card = document.getElementById('pt-output-preview-card');
         if (!template || !template.Definition) throw new Error('ساختار قالب برای تولید سند در دسترس نیست.');
-        if (preview) preview.innerHTML = this.renderOutputDocument(template, project, data);
+        if (preview) preview.innerHTML = await this.renderOutputDocument(template, project, data);
         if (card) card.hidden = false;
         const printButton = document.getElementById('pt-output-print');
         if (printButton) printButton.hidden = false;
