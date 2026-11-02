@@ -1045,8 +1045,8 @@
         '<section class="event-form-section" id="event-amendment-section" hidden><h4 class="event-section-title">فرم مورد اصلاح</h4>' +
         '<p class="event-muted" id="event-amendment-status" role="status" aria-live="polite">پس از انتخاب پروژه، پاسخ قبلی فرم به‌صورت خودکار پیدا می‌شود.</p>' +
         '<div hidden aria-hidden="true"><select id="event-amendment-source-event"></select><select id="event-amendment-source-form"></select></div></section>' +
-        '<section class="event-form-section" id="event-variant-section" hidden><h4 class="event-section-title">رنگ‌بندی، سایزبندی و مقدار</h4>' +
-        '<div id="event-variant-fields" class="event-dynamic-grid"></div></section>' +
+        '<section class="event-form-section" id="event-quantity-section" hidden><h4 class="event-section-title">مقدار تولید/تحویل</h4>' +
+        '<div id="event-quantity-field" class="event-dynamic-grid"></div></section>' +
         '<section class="event-form-section"><h4 class="event-section-title">اطلاعات اختصاصی رویداد</h4>' +
         '<div id="event-dynamic-fields" class="event-dynamic-grid" aria-live="polite">' +
         '<p class="event-muted">ابتدا نوع رویداد را انتخاب کنید.</p></div></section>' +
@@ -1164,7 +1164,7 @@
         projectSelect.required = !isIndependent;
         if (isIndependent) projectSelect.value = '';
         this.updateSubmitAvailability();
-        this.renderVariantFields();
+        this.renderEventQuantityField();
         this.loadDynamicFields(typeSelect.value);
       });
 
@@ -1172,7 +1172,7 @@
         if (this.amendmentMode) this.loadAmendmentSourceEvents(projectSelect.value);
         refreshDraftEventOptions();
         this.updateSubmitAvailability();
-        this.renderVariantFields();
+        this.renderEventQuantityField();
       });
 
       dateInput.addEventListener('input', () => {
@@ -1356,140 +1356,38 @@
       this.updateSubmitAvailability();
     },
 
-    renderVariantFields: function () {
-      const section = document.getElementById('event-variant-section');
-      const container = document.getElementById('event-variant-fields');
+    renderEventQuantityField: function () {
+      const section = document.getElementById('event-quantity-section');
+      const container = document.getElementById('event-quantity-field');
       const typeInput = document.getElementById('event-form-type');
-      const projectInput = document.getElementById('event-form-project');
-      if (!section || !container || !typeInput || !projectInput) return;
+      if (!section || !container || !typeInput) return;
+
       const type = this.findById(this.eventTypes, typeInput.value);
-      const project = this.findById(this.projects, projectInput.value);
-      const isProjectEvent = !!type && String(type.ConnectionType || 'PROJECT').toUpperCase() !== 'INDEPENDENT';
-      const flag = (value) => value === true || String(value).toLowerCase() === 'true';
-      const useColors = isProjectEvent && flag(type.UseProjectColors);
-      const useSizes = isProjectEvent && flag(type.UseProjectSizes);
-      const trackQuantity = isProjectEvent && flag(type.TrackVariantQuantity);
-      if (!useColors && !useSizes && !trackQuantity) {
-        section.hidden = true;
-        container.replaceChildren();
-        return;
-      }
-      let variants = { colors: [], sizes: [] };
-      try {
-        const parsed = JSON.parse(String(project && project.ColorSizeJSON || '{"colors":[],"sizes":[]}'));
-        if (parsed && typeof parsed === 'object') variants = {
-          colors: Array.isArray(parsed.colors) ? parsed.colors : [],
-          sizes: Array.isArray(parsed.sizes) ? parsed.sizes : []
-        };
-      } catch (error) {}
-      section.hidden = false;
+      const isProjectEvent = !!type &&
+        String(type.ConnectionType || 'PROJECT').toUpperCase() !== 'INDEPENDENT';
+      const trackQuantity = isProjectEvent &&
+        (type.TrackVariantQuantity === true || String(type.TrackVariantQuantity).toLowerCase() === 'true');
+
       container.replaceChildren();
+      section.hidden = !trackQuantity;
+      if (!trackQuantity) return;
 
-      const addRow = () => {
-        const row = document.createElement('div');
-        row.className = 'event-variant-row';
-        row.style.display = 'grid';
-        row.style.gridTemplateColumns = 'repeat(auto-fit, minmax(150px, 1fr))';
-        row.style.gap = '10px';
-        row.style.alignItems = 'end';
-        row.style.marginBottom = '10px';
-        row.dataset.variantRow = '1';
-
-        const addSelect = (name, label, options) => {
-          const wrapper = document.createElement('div');
-          wrapper.className = 'event-field';
-          const inputId = 'event-variant-' + name + '-' + container.querySelectorAll('[data-variant-row]').length;
-          const labelEl = document.createElement('label');
-          labelEl.textContent = label + ' *';
-          labelEl.htmlFor = inputId;
-          const select = document.createElement('select');
-          select.name = name;
-          select.id = inputId;
-          select.dataset.variantField = name;
-          select.required = true;
-          const placeholder = document.createElement('option');
-          placeholder.value = '';
-          placeholder.textContent = 'انتخاب کنید';
-          select.appendChild(placeholder);
-          options.forEach((value) => {
-            const option = document.createElement('option');
-            option.value = String(value);
-            option.textContent = String(value);
-            select.appendChild(option);
-          });
-          wrapper.appendChild(labelEl);
-          wrapper.appendChild(select);
-          row.appendChild(wrapper);
-        };
-
-        if (useColors) addSelect('Color', 'رنگ', variants.colors);
-        if (useSizes) addSelect('Size', 'سایز', variants.sizes);
-        if (trackQuantity) {
-          const wrapper = document.createElement('div');
-          wrapper.className = 'event-field';
-          const label = document.createElement('label');
-          label.textContent = 'مقدار این ترکیب *';
-          const input = document.createElement('input');
-          input.type = 'number';
-          input.min = '1';
-          input.step = '1';
-          input.required = true;
-          input.inputMode = 'numeric';
-          input.dataset.variantField = 'VariantQuantity';
-          wrapper.appendChild(label);
-          wrapper.appendChild(input);
-          row.appendChild(wrapper);
-        }
-
-        const removeWrap = document.createElement('div');
-        removeWrap.className = 'event-field';
-        const remove = document.createElement('button');
-        remove.type = 'button';
-        remove.className = 'btn btn-secondary';
-        remove.textContent = 'حذف ردیف';
-        remove.addEventListener('click', () => {
-          row.remove();
-          updateRemoveButtons();
-        });
-        removeWrap.appendChild(remove);
-        row.appendChild(removeWrap);
-        container.appendChild(row);
-        updateRemoveButtons();
-      };
-
-      const updateRemoveButtons = () => {
-        const rows = Array.from(container.querySelectorAll('[data-variant-row]'));
-        rows.forEach((row) => {
-          const button = row.querySelector('button');
-          if (button) button.disabled = rows.length <= 1;
-        });
-      };
-
-      addRow();
-      const addButton = document.createElement('button');
-      addButton.type = 'button';
-      addButton.className = 'btn btn-secondary';
-      addButton.textContent = 'افزودن ترکیب رنگ/سایز';
-      addButton.addEventListener('click', () => {
-        if (container.querySelectorAll('[data-variant-row]').length >= 500) {
-          this.showFormError('در هر رویداد حداکثر ۵۰۰ ردیف رنگ و سایز قابل ثبت است.');
-          return;
-        }
-        addRow();
-      });
-      container.appendChild(addButton);
-
-      if (!project && isProjectEvent) {
-        const note = document.createElement('p');
-        note.className = 'event-muted';
-        note.textContent = 'ابتدا پروژه را انتخاب کنید تا رنگ‌ها و سایزهای آن نمایش داده شوند.';
-        container.prepend(note);
-      } else if ((useColors && variants.colors.length === 0) || (useSizes && variants.sizes.length === 0)) {
-        const note = document.createElement('p');
-        note.className = 'event-muted';
-        note.textContent = 'برای این پروژه هنوز فهرست رنگ یا سایز تعریف نشده است. مشخصات پروژه را کامل کنید.';
-        container.prepend(note);
-      }
+      const wrapper = document.createElement('div');
+      wrapper.className = 'event-field';
+      const label = document.createElement('label');
+      label.htmlFor = 'event-quantity-input';
+      label.textContent = 'مقدار تولید/تحویل *';
+      const input = document.createElement('input');
+      input.id = 'event-quantity-input';
+      input.type = 'number';
+      input.min = '1';
+      input.step = '1';
+      input.required = true;
+      input.inputMode = 'numeric';
+      input.dataset.eventQuantity = 'true';
+      wrapper.appendChild(label);
+      wrapper.appendChild(input);
+      container.appendChild(wrapper);
     },
 
     loadDynamicFields: async function (eventTypeId) {
@@ -2318,17 +2216,7 @@
         Description: description,
         DynamicData: dynamicData,
         FormResponses: this.amendmentMode ? [] : formResponses,
-        VariantDetails: Array.from(form.querySelectorAll('[data-variant-row]')).map((row) => {
-          const value = (name) => {
-            const input = row.querySelector('[data-variant-field="' + name + '"]');
-            return input ? input.value : '';
-          };
-          return {
-            Color: value('Color'),
-            Size: value('Size'),
-            VariantQuantity: value('VariantQuantity')
-          };
-        }).filter((row) => row.Color || row.Size || row.VariantQuantity !== '')
+        VariantQuantity: (form.querySelector('[data-event-quantity-input]') || {}).value || ''
       };
       // Keep a key for retries of the same logical submission, but rotate it if
       // the user edits any field after a failed request.

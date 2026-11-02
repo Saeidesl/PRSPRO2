@@ -1669,23 +1669,6 @@
         updated.textContent = this.formatDate(project.UpdatedAt);
       }
 
-      let colorSize = { colors: [], sizes: [] };
-      const rawColorSize = project.ColorSizeJSON || project.colorSizeJSON || project.color_size_json;
-      if (rawColorSize) {
-        try {
-          const parsed = typeof rawColorSize === 'string' ? JSON.parse(rawColorSize) : rawColorSize;
-          if (parsed && typeof parsed === 'object') {
-            colorSize.colors = Array.isArray(parsed.colors) ? parsed.colors : [];
-            colorSize.sizes = Array.isArray(parsed.sizes) ? parsed.sizes : [];
-          }
-        } catch (error) {
-          console.warn('خواندن رنگ‌بندی و سایزبندی پروژه انجام نشد.', error);
-        }
-      }
-
-      const colorNames = colorSize.colors.map(function (value) { return String(value || '').trim(); }).filter(Boolean);
-      const sizeNames = colorSize.sizes.map(function (value) { return String(value || '').trim(); }).filter(Boolean);
-
       if (info) {
         info.innerHTML =
           '<div class="detail-list">' +
@@ -1694,8 +1677,6 @@
             this.detailRow('کد پروژه', project.ProjectCode) +
             this.detailRow('عنوان پروژه', project.Title) +
             this.detailRow('تعداد اولیه', project.Quantity) +
-            this.detailRow('رنگ‌بندی', colorNames.length ? colorNames.join('، ') : 'تعریف نشده') +
-            this.detailRow('سایزبندی', sizeNames.length ? sizeNames.join('، ') : 'تعریف نشده') +
             this.detailRow('توضیحات', project.Description) +
             this.detailRow('شناسه فرایند', project.WorkflowID) +
             this.detailRow(
@@ -2117,7 +2098,7 @@
           '<div style="flex:1;min-width:120px;padding:12px;border-radius:10px;background:var(--color-surface-hover)"><div style="font-size:12px;color:var(--color-text-secondary)">مراحل دارای تعداد</div><strong style="display:block;font-size:24px;margin-top:3px">' + ProjectDetail.escape(batches.toLocaleString('fa-IR')) + '</strong></div>' +
         '</div>' +
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px">' + rowsHtml + '</div>' +
-        '<p style="margin:10px 0 0;color:var(--color-text-secondary);font-size:11px">برای محاسبه، نوع رویداد باید به واحد برش مرتبط باشد و گزینه «مقدار تولید/تحویل برای ترکیب انتخاب‌شده ثبت شود» فعال باشد. تکمیل نهایی از نام رویداد پایان/اتمام برش تشخیص داده می‌شود.</p>' +
+        '<p style="margin:10px 0 0;color:var(--color-text-secondary);font-size:11px">برای محاسبه، نوع رویداد باید به واحد برش مرتبط باشد و گزینه ثبت مقدار تولید/تحویل فعال باشد. در هر رویداد فقط تعداد ثبت می‌شود و تکمیل نهایی از نام رویداد پایان/اتمام برش تشخیص داده می‌شود.</p>' +
       '</section>';
     },
 
