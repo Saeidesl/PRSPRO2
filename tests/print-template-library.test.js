@@ -134,3 +134,16 @@ test('drawing toolbar supports editable line, divider, rectangle and ellipse ele
  assert.match(css,/\.pt-output-rectangle/);
  assert.match(css,/\.pt-output-divider/);
 });
+
+
+test('print output resolves secure image attachments and waits for images before printing',()=>{
+ const module=read('js/modules/print-designer.js');
+ const css=read('css/print-template-library.css');
+ assert.match(module,/findImageAttachment: function/);
+ assert.match(module,/loadOutputImage: async function/);
+ assert.match(module,/\/attachments\/.*\/download/);
+ assert.match(module,/await this\.renderOutputDocument/);
+ assert.match(module,/image\.decode/);
+ assert.match(module,/pt-output-image-content/);
+ assert.match(css,/\.pt-output-image-content/);
+});
