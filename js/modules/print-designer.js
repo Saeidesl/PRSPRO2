@@ -621,7 +621,7 @@
         if (item.type === 'rectangle' || item.type === 'ellipse') return '<div class="pt-output-element pt-output-shape pt-output-'+item.type+'" style="'+style+'" aria-hidden="true"></div>';
         return '<div class="pt-output-element" style="'+style+'">'+this.esc(value)+'</div>';
       }));
-      return '<article class="pt-print-page" style="width:'+width+'mm;height:'+height+'mm" dir="rtl"><header class="pt-print-heading"><strong>'+this.esc(template.Name||'')+'</strong><span>'+this.esc(project.ProjectCode||'')+' — '+this.esc(project.Title||'')+'</span></header>'+elements.join('')+'</article>';
+      return '<article class="pt-print-page" style="width:'+width+'mm;height:'+height+'mm" dir="rtl">'+elements.join('')+'</article>';
     },
     printOutput: function () {
       const spec = this.outputPageSpec || { width: 210, height: 297 };
