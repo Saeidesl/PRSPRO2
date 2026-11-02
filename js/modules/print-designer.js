@@ -7,6 +7,10 @@
     definition: null,
     editingId: '',
     busy: false,
+    selectedElementId: '',
+    history: [],
+    historyIndex: -1,
+    dragState: null,
     init: function () {
       const route = String(window.location.hash || '').replace(/^#/, '').split('/')[0];
       if (route === 'print-output') this.initOutput();
@@ -37,6 +41,237 @@
     blankDefinition: function () {
       return { schemaVersion: 1, page: { size: 'A4', orientation: 'portrait' }, elements: [], bindings: [] };
     },
+    pageDimensions: function () {
+      const size = document.getElementById('pt-page-size');
+      const orientation = document.getElementById('pt-page-orientation');
+      const key = size ? size.value : ((this.definition && this.definition.page && this.definition.page.size) || 'A4');
+      const dimensions = { A4: [210,297], A5: [148,210], LETTER: [216,279] }[key] || [210,297];
+      return orientation && orientation.value === 'landscape'
+        ? { width: dimensions[1], height: dimensions[0] }
+        : { width: dimensions[0], height: dimensions[1] };
+    },
+    syncPageControls: function () {
+      const page = this.definition && this.definition.page ? this.definition.page : {};
+      const size = document.getElementById('pt-page-size');
+      const orientation = document.getElementById('pt-page-orientation');
+      if (size) size.value = page.size || 'A4';
+      if (orientation) orientation.value = page.orientation || 'portrait';
+    },
+    bindEditor: function () {
+      const canvas = document.getElementById('pt-design-canvas');
+      if (!canvas || canvas.dataset.bound === '1') return;
+      canvas.dataset.bound = '1';
+      canvas.addEventListener('click', (event) => {
+        const node = event.target.closest('[data-pt-element]');
+        if (node) this.selectElement(node.dataset.ptElement);
+        else { this.selectedElementId = ''; this.renderEditor(); }
+      });
+      canvas.addEventListener('pointerdown', (event) => {
+        const node = event.target.closest('[data-pt-element]');
+        if (!node || event.target.closest('[data-pt-resize]')) return;
+        const item = this.getSelectedOrById(node.dataset.ptElement);
+        if (!item || item.locked) return;
+        const rect = canvas.getBoundingClientRect();
+        const dimensions = this.pageDimensions();
+        this.dragState = { id: item.id, startX: event.clientX, startY: event.clientY,
+          x: Number(item.x || 0), y: Number(item.y || 0),
+          scaleX: dimensions.width / rect.width, scaleY: dimensions.width / rect.width };
+        this.selectElement(item.id, false);
+        event.preventDefault();
+      });
+      canvas.addEventListener('pointerdown', (event) => {
+        const handle = event.target.closest('[data-pt-resize]');
+        if (!handle) return;
+        const node = handle.closest('[data-pt-element]');
+        const item = node && this.getSelectedOrById(node.dataset.ptElement);
+        if (!item) return;
+        const rect = canvas.getBoundingClientRect();
+        const dimensions = this.pageDimensions();
+        this.dragState = { id: item.id, resize: true, startX: event.clientX, startY: event.clientY,
+          width: Number(item.width || 40), height: Number(item.height || 18),
+          scaleX: dimensions.width / rect.width, scaleY: dimensions.width / rect.width };
+        this.selectElement(item.id, false);
+        event.preventDefault();
+      });
+      document.addEventListener('pointermove', (event) => {
+        if (!this.dragState) return;
+        const drag = this.dragState;
+        const item = this.getSelectedOrById(drag.id);
+        if (!item) return;
+        const dx = (event.clientX - drag.startX) * drag.scaleX;
+        const dy = (event.clientY - drag.startY) * drag.scaleY;
+        if (drag.resize) {
+          item.width = Math.max(8, Math.round(drag.width + dx));
+          item.height = Math.max(8, Math.round(drag.height + dy));
+        } else {
+          const dimensions = this.pageDimensions();
+          item.x = Math.max(0, Math.min(dimensions.width - Number(item.width || 30), Math.round(drag.x + dx)));
+          item.y = Math.max(0, Math.min(dimensions.height - Number(item.height || 15), Math.round(drag.y + dy)));
+        }
+        this.renderCanvas();
+        this.renderInspector();
+      });
+      document.addEventListener('pointerup', () => {
+        if (this.dragState) { this.dragState = null; this.commitHistory(); }
+      });
+      document.querySelectorAll('[data-pt-action]').forEach(button => {
+        if (button.dataset.ptBound === '1') return;
+        button.dataset.ptBound = '1';
+        button.addEventListener('click', () => this.handleEditorAction(button.dataset.ptAction));
+      });
+      ['pt-prop-text','pt-prop-binding','pt-prop-x','pt-prop-y','pt-prop-width','pt-prop-height','pt-prop-font','pt-prop-align'].forEach(id => {
+        const input = document.getElementById(id);
+        if (!input || input.dataset.bound === '1') return;
+        input.dataset.bound = '1';
+        input.addEventListener('change', () => this.applyInspectorChange(id, input.value));
+      });
+      ['pt-page-size','pt-page-orientation'].forEach(id => {
+        const input = document.getElementById(id);
+        if (!input || input.dataset.bound === '1') return;
+        input.dataset.bound = '1';
+        input.addEventListener('change', () => {
+          if (!this.definition) this.definition = this.blankDefinition();
+          this.definition.page.size = document.getElementById('pt-page-size').value;
+          this.definition.page.orientation = document.getElementById('pt-page-orientation').value;
+          this.renderCanvas(); this.commitHistory();
+        });
+      });
+    },
+    getSelectedOrById: function (id) {
+      const elements = this.definition && Array.isArray(this.definition.elements) ? this.definition.elements : [];
+      return elements.find(item => String(item.id) === String(id)) || null;
+    },
+    createElement: function (type, overrides) {
+      if (!this.definition) this.definition = this.blankDefinition();
+      const defaults = {
+        id: 'el_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,7),
+        type: type, text: type === 'text' ? 'متن جدید' : (type === 'table' ? 'جدول اطلاعات' : (type === 'image' ? 'جایگاه تصویر' : 'فیلد داده')),
+        x: 15, y: 18 + this.definition.elements.length * 8, width: type === 'table' ? 170 : 65,
+        height: type === 'table' ? 48 : 18, fontSize: 12, align: 'right', bindingId: '',
+        columns: type === 'table' ? ['عنوان','مقدار','توضیحات'] : [], rows: type === 'table' ? [['نمونه ۱','مقدار',''],['نمونه ۲','مقدار','']] : []
+      };
+      const item = Object.assign(defaults, overrides || {});
+      this.definition.elements.push(item);
+      this.selectedElementId = item.id;
+      this.renderEditor();
+      this.commitHistory();
+      return item;
+    },
+    handleEditorAction: function (action) {
+      const selected = this.getSelectedOrById(this.selectedElementId);
+      if (action === 'add-text') return this.createElement('text');
+      if (action === 'add-field') {
+        const binding = this.definition && this.definition.bindings && this.definition.bindings[0];
+        return this.createElement('field', { text: binding ? (binding.label || binding.id) : 'فیلد داده', bindingId: binding ? binding.id : '' });
+      }
+      if (action === 'add-table') {
+        const binding = this.definition && this.definition.bindings && this.definition.bindings.find(item => item.sourceType === 'EVENT_FORM_RESPONSE' || item.selection === 'ALL');
+        return this.createElement('table', { bindingId: binding ? binding.id : '' });
+      }
+      if (action === 'add-image') return this.createElement('image');
+      if (action === 'undo') return this.undo();
+      if (action === 'redo') return this.redo();
+      if (action === 'remove' && selected) {
+        this.definition.elements = this.definition.elements.filter(item => item.id !== selected.id);
+        this.selectedElementId = ''; this.renderEditor(); return this.commitHistory();
+      }
+      if (action === 'duplicate' && selected) {
+        const copy = JSON.parse(JSON.stringify(selected));
+        copy.id = 'el_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,7);
+        copy.x = Number(copy.x || 0) + 6; copy.y = Number(copy.y || 0) + 6;
+        this.definition.elements.push(copy); this.selectedElementId = copy.id;
+        this.renderEditor(); return this.commitHistory();
+      }
+    },
+    selectElement: function (id, render) {
+      this.selectedElementId = id || '';
+      if (render !== false) this.renderEditor();
+      else this.renderInspector();
+      this.renderLayers();
+    },
+    applyInspectorChange: function (id, value) {
+      const item = this.getSelectedOrById(this.selectedElementId);
+      if (!item) return;
+      const map = { 'pt-prop-text':'text','pt-prop-binding':'bindingId','pt-prop-x':'x','pt-prop-y':'y',
+        'pt-prop-width':'width','pt-prop-height':'height','pt-prop-font':'fontSize','pt-prop-align':'align' };
+      const key = map[id];
+      if (!key) return;
+      item[key] = ['x','y','width','height','fontSize'].includes(key) ? Number(value) : value;
+      this.renderCanvas(); this.renderLayers(); this.commitHistory();
+    },
+    renderInspector: function () {
+      const item = this.getSelectedOrById(this.selectedElementId);
+      const empty = document.getElementById('pt-inspector-empty');
+      const fields = document.getElementById('pt-inspector-fields');
+      if (empty) empty.hidden = !!item;
+      if (fields) fields.hidden = !item;
+      if (!item) return;
+      const values = { 'pt-prop-text':item.text || '', 'pt-prop-binding':item.bindingId || '',
+        'pt-prop-x':item.x || 0, 'pt-prop-y':item.y || 0, 'pt-prop-width':item.width || 30,
+        'pt-prop-height':item.height || 15, 'pt-prop-font':item.fontSize || 12, 'pt-prop-align':item.align || 'right' };
+      Object.keys(values).forEach(id => { const node = document.getElementById(id); if (node && document.activeElement !== node) node.value = values[id]; });
+      const binding = document.getElementById('pt-prop-binding');
+      if (binding && binding.dataset.ready !== '1') {
+        binding.innerHTML = '<option value="">بدون اتصال</option>' + ((this.definition && this.definition.bindings) || []).map(source =>
+          '<option value="' + this.esc(source.id) + '">' + this.esc(source.label || source.id) + '</option>').join('');
+        binding.dataset.ready = '1';
+        binding.value = item.bindingId || '';
+      }
+    },
+    renderCanvas: function () {
+      const canvas = document.getElementById('pt-design-canvas');
+      if (!canvas) return;
+      if (!this.definition) this.definition = this.blankDefinition();
+      const dimensions = this.pageDimensions();
+      canvas.style.width = dimensions.width + 'mm';
+      canvas.style.minHeight = dimensions.height + 'mm';
+      canvas.style.aspectRatio = dimensions.width + ' / ' + dimensions.height;
+      const elements = this.definition.elements || [];
+      canvas.innerHTML = elements.length ? elements.map(item => {
+        const style = 'left:' + Number(item.x || 0) + 'mm;top:' + Number(item.y || 0) + 'mm;width:' + Number(item.width || 30) +
+          'mm;height:' + Number(item.height || 15) + 'mm;font-size:' + Number(item.fontSize || 12) + 'pt;text-align:' + this.esc(item.align || 'right');
+        const selected = String(item.id) === String(this.selectedElementId) ? ' is-selected' : '';
+        const label = item.type === 'image' ? '<span class="pt-image-placeholder">▧ تصویر</span>' :
+          (item.type === 'table' ? '<strong>' + this.esc(item.text) + '</strong><table><thead><tr>' +
+            (item.columns || []).map(col => '<th>' + this.esc(col) + '</th>').join('') + '</tr></thead><tbody>' +
+            (item.rows || []).map(row => '<tr>' + row.map(cell => '<td>' + this.esc(cell) + '</td>').join('') + '</tr>').join('') +
+            '</tbody></table>' : this.esc(item.text || ''));
+        return '<div class="pt-canvas-element pt-element-' + this.esc(item.type) + selected + '" data-pt-element="' + this.esc(item.id) +
+          '" style="' + style + '"><div class="pt-element-content">' + label + '</div>' +
+          (selected ? '<button type="button" data-pt-resize aria-label="تغییر اندازه"></button>' : '') + '</div>';
+      }).join('') : '<div class="pt-canvas-empty">برای شروع، از نوار ابزار یک المان اضافه کن.</div>';
+    },
+    renderLayers: function () {
+      const root = document.getElementById('pt-layer-list');
+      if (!root) return;
+      const elements = (this.definition && this.definition.elements) || [];
+      root.innerHTML = elements.length ? elements.map(item => '<button type="button" class="pt-layer-item ' +
+        (String(item.id) === String(this.selectedElementId) ? 'is-active' : '') + '" data-pt-layer="' + this.esc(item.id) + '">' +
+        this.esc(item.text || item.type) + '</button>').join('') : '<p class="text-muted">هنوز المانی وجود ندارد.</p>';
+      root.querySelectorAll('[data-pt-layer]').forEach(button => button.addEventListener('click', () => this.selectElement(button.dataset.ptLayer)));
+    },
+    renderEditor: function () {
+      this.syncPageControls();
+      this.renderCanvas(); this.renderInspector(); this.renderLayers();
+    },
+    commitHistory: function () {
+      if (!this.definition) return;
+      const snapshot = JSON.stringify(this.definition);
+      if (this.history[this.historyIndex] === snapshot) return;
+      this.history = this.history.slice(0, this.historyIndex + 1);
+      this.history.push(snapshot);
+      if (this.history.length > 60) this.history.shift();
+      this.historyIndex = this.history.length - 1;
+      this.setStatus('pt-editor-status', 'تغییرات طراحی ثبت شد؛ برای ماندگاری، قالب را ذخیره کن.');
+    },
+    restoreHistory: function (index) {
+      if (index < 0 || index >= this.history.length) return;
+      this.historyIndex = index;
+      this.definition = JSON.parse(this.history[index]);
+      this.renderEditor();
+    },
+    undo: function () { this.restoreHistory(this.historyIndex - 1); },
+    redo: function () { this.restoreHistory(this.historyIndex + 1); },
     initLibrary: async function () {
       const form = document.getElementById('pt-template-form');
       if (form) form.addEventListener('submit', (event) => { event.preventDefault(); this.saveTemplate(); });
@@ -44,7 +279,10 @@
       if (reset) reset.addEventListener('click', () => this.resetForm());
       const resetSecondary = document.getElementById('pt-template-reset-secondary');
       if (resetSecondary) resetSecondary.addEventListener('click', () => this.resetForm());
+      this.bindEditor();
       await this.loadLibrary();
+      this.syncPageControls();
+      this.renderEditor();
     },
     loadLibrary: async function () {
       this.setStatus('pt-library-status', 'در حال دریافت کتابخانه قالب‌ها و منابع داده…');
@@ -135,6 +373,7 @@
       if (form) form.reset();
       this.editingId = '';
       this.definition = this.blankDefinition();
+      this.history = []; this.historyIndex = -1; this.selectedElementId = '';
       const code = document.getElementById('pt-template-code');
       if (code) code.disabled = false;
       const title = document.getElementById('pt-editor-title');
@@ -148,6 +387,7 @@
         const item = this.extract(response);
         this.editingId = item.ID;
         this.definition = item.Definition || this.blankDefinition();
+        this.history = []; this.historyIndex = -1; this.selectedElementId = '';
         document.getElementById('pt-template-code').value = item.Code || '';
         document.getElementById('pt-template-code').disabled = true;
         document.getElementById('pt-template-name').value = item.Name || '';
@@ -155,6 +395,8 @@
         const title = document.getElementById('pt-editor-title');
         if (title) title.textContent = 'ویرایش قالب: ' + item.Name;
         this.renderBindings();
+        this.renderEditor();
+        this.commitHistory();
         document.getElementById('pt-template-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
       } catch (error) {
         this.setStatus('pt-library-status', error.message || 'دریافت قالب ناموفق بود.', true);
