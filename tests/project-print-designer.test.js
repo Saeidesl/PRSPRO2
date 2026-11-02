@@ -50,19 +50,19 @@ test('print designer assets are cache-busted and loaded by the application',()=>
 });
 
 
-test('print designer is a standalone sidebar route with project selection',()=>{
+test('template library is a standalone sidebar route without project selection',()=>{
  const layout=read('js/components/layout.js');
  const router=read('js/core/router.js');
  const page=read('pages/print-designer.html');
- const module=read('js/modules/project-detail.js');
- assert.match(router,/'print-designer': 'pages\/print-designer.html'/);
- assert.match(router,/'print-designer': \['PROJECT_VIEW'\]/);
- assert.match(page,/print-designer-project-select/);
- assert.match(module,/initPrintDesignerPage: async function/);
- assert.match(module,/loadStandalonePrintProject: async function/);
+ const module=read('js/modules/print-designer.js');
+ assert.match(router,/'print-designer': 'pages\\/print-designer.html'/);
+ assert.match(router,/'print-design': \\['SYSTEM_SETTINGS'\\]/);
+ assert.match(layout,/label: 'طراحی قالب'.*SYSTEM_SETTINGS/);
+ assert.match(page,/pt-template-form/);
+ assert.doesNotMatch(page,/print-designer-project-select/);
+ assert.match(module,/loadLibrary: async function/);
  assert.doesNotMatch(read('pages/project-detail.html'),/project-print-designer-open/);
 });
-
 
 test('form image attachments are loaded as inline images for project forms and print designer',()=>{
  const module=read('js/modules/project-detail.js');
@@ -143,12 +143,12 @@ test('print designer image layout ids remain stable by attachment and preserve l
 });
 
 
-test('template design and document output are separate routes and modes',()=>{
+test('template library and document data output are separate routes and modes',()=>{
  const layout=read('js/components/layout.js');
  const router=read('js/core/router.js');
  const design=read('pages/print-designer.html');
  const output=read('pages/print-output.html');
- const module=read('js/modules/project-detail.js');
+ const module=read('js/modules/print-designer.js');
  assert.match(layout,/label: 'طراحی قالب'/);
  assert.match(layout,/label: 'چاپ اسناد'/);
  assert.ok(router.includes("'print-design': 'pages/print-designer.html'"));
@@ -159,7 +159,6 @@ test('template design and document output are separate routes and modes',()=>{
  assert.match(module,/resolveOutput: async function/);
  assert.ok(module.includes("'/print-templates/' + encodeURIComponent(templateId) + '/resolve'"));
 });
-
 
 test('standalone print designer remains a full-screen layer above the application sidebar',()=>{
  const css=read('css/project-print-designer.css');
