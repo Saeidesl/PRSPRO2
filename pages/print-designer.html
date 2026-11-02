@@ -1,17 +1,16 @@
 <section class="page-section pt-page">
   <div class="page-header">
-    <div><h2>کتابخانه طراحی قالب</h2><p>قالب‌ها را یک‌بار بساز و برای پروژه‌های مختلف استفاده کن. انتخاب پروژه هنگام تولید سند انجام می‌شود.</p></div>
+    <div><h2>قالب‌ساز</h2><p>قالب را طراحی کن، اطلاعات دلخواه را به آن وصل کن و در پایان ذخیره کن.</p></div>
     <button type="button" class="btn btn-primary" id="pt-template-reset">قالب جدید</button>
   </div>
   <p id="pt-library-status" class="pt-status" aria-live="polite">در حال بارگذاری…</p>
-  <section class="card pt-panel"><div class="card-body">
-    <h3 class="pt-section-title">قالب‌های ذخیره‌شده</h3>
+  <details class="card pt-panel pt-saved-templates"><summary>قالب‌های ذخیره‌شده</summary><div class="card-body">
     <div id="pt-template-list" class="pt-template-list"><div class="pt-empty-state">در حال دریافت قالب‌ها…</div></div>
-  </div></section>
+  </div></details>
   <section class="card pt-editor-workspace" id="pt-editor-workspace">
     <div class="card-body">
       <div class="pt-editor-toolbar">
-        <div><h3 class="pt-section-title">محیط طراحی قالب</h3><p class="text-muted">المان‌ها را اضافه کن، روی صفحه جابه‌جا کن و اندازه و ظاهرشان را تنظیم کن.</p></div>
+        <div><h3 class="pt-section-title">مرحله ۱: طراحی صفحه</h3><p class="text-muted">یک ابزار را انتخاب کن؛ سپس آن را روی صفحه جابه‌جا یا بزرگ و کوچک کن.</p></div>
         <div class="pt-toolbar-actions">
           <button type="button" class="btn btn-secondary btn-sm" data-pt-action="undo">واگرد</button>
           <button type="button" class="btn btn-secondary btn-sm" data-pt-action="redo">ازنو</button>
@@ -22,14 +21,14 @@
           <button type="button" class="btn btn-secondary btn-sm" data-pt-action="add-image">جایگاه تصویر</button>
         </div>
       </div>
-      <div class="pt-editor-settings">
+      <div class="pt-editor-settings" aria-label="تنظیمات صفحه">
         <label>اندازه صفحه <select id="pt-page-size"><option value="A4">A4</option><option value="A5">A5</option><option value="LETTER">Letter</option></select></label>
         <label>جهت صفحه <select id="pt-page-orientation"><option value="portrait">عمودی</option><option value="landscape">افقی</option></select></label>
         <span class="text-muted">واحد اندازه‌گذاری: میلی‌متر</span>
       </div>
       <div class="pt-editor-layout">
         <aside class="pt-editor-inspector">
-          <h4>ویژگی‌های المان</h4>
+          <details class="pt-mobile-tools" open><summary>مرحله ۲: تنظیم المان انتخاب‌شده</summary><div class="pt-mobile-tools-body">
           <div id="pt-inspector-empty" class="pt-empty-state">برای تنظیم، یک المان را روی صفحه انتخاب کن.</div>
           <div id="pt-inspector-fields" hidden>
             <label>عنوان / متن <input id="pt-prop-text" type="text" maxlength="500"></label>
@@ -55,12 +54,11 @@
               <button type="button" class="btn btn-secondary btn-sm" data-pt-action="duplicate">تکثیر</button>
               <button type="button" class="btn btn-danger btn-sm" data-pt-action="remove">حذف المان</button>
             </div>
-          </div>
-            <div class="pt-editor-source-picker">
-              <div class="pt-editor-source-heading"><strong>اتصال منبع داده</strong><small id="pt-source-count">در حال دریافت…</small></div>
+          </div></div></details>
+            <details class="pt-editor-source-picker" open><summary><span>مرحله ۳: اتصال اطلاعات</span><small id="pt-source-count">منابع آماده استفاده</small></summary><div class="pt-source-picker-body">
               <div id="pt-editor-source-list" class="pt-editor-source-list"><p class="pt-empty-state">در حال دریافت منابع داده…</p></div>
-            </div>
-          <h4>لایه‌ها</h4><div id="pt-layer-list" class="pt-layer-list"></div>
+            </div></details>
+          <details class="pt-layer-details"><summary>لایه‌های صفحه</summary><div id="pt-layer-list" class="pt-layer-list"></div></details>
         </aside>
         <div class="pt-canvas-scroll"><div id="pt-design-canvas" class="pt-design-canvas" aria-label="بوم طراحی قالب"><div class="pt-canvas-empty">برای شروع، از نوار ابزار یک المان اضافه کن.</div></div></div>
       </div>
@@ -69,7 +67,7 @@
   </section>
   <div class="pt-library-grid">
     <section class="card pt-panel"><div class="card-body">
-      <h3 id="pt-editor-title" class="pt-section-title">ساخت قالب جدید</h3>
+      <h3 id="pt-editor-title" class="pt-section-title">مرحله ۴: نام‌گذاری و ذخیره قالب</h3>
       <form id="pt-template-form">
         <div class="pt-form-grid">
           <div class="form-group"><label for="pt-template-code">کد قالب</label><input id="pt-template-code" name="Code" required maxlength="50" pattern="[A-Za-z0-9_-]{2,50}" placeholder="مثلاً PROJECT_REPORT"></div>
@@ -82,9 +80,9 @@
       </form>
     </div></section>
     <section class="card pt-panel"><div class="card-body">
-      <h3 class="pt-section-title">منابع داده قابل استفاده</h3>
-      <p class="text-muted">فیلدهای پایه پروژه، اطلاعات مرکزی و فیلدهای فرم‌های ثبت‌شده در رویدادها.</p>
-      <div id="pt-source-list" class="pt-source-list"><div class="pt-empty-state">در حال دریافت منابع…</div></div>
+      <h3 class="pt-section-title">راهنمای اتصال اطلاعات</h3>
+      <p class="text-muted">۱) از بخش «اتصال اطلاعات» یک منبع را اضافه کن. ۲) یک المان «فیلد داده» روی صفحه بساز. ۳) از قسمت تنظیم المان، منبع آن را انتخاب کن.</p>
+      <div id="pt-source-list" class="pt-source-list"><div class="pt-empty-state">فهرست منابع در مرحله ۳ نمایش داده می‌شود.</div></div>
     </div></section>
   </div>
 </section>
