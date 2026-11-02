@@ -58,5 +58,5 @@ test('print designer module parses and is loaded exactly once',()=>{
  const module=read('js/modules/print-designer.js');
  assert.doesNotThrow(()=>new vm.Script(module,{filename:'print-designer.js'}));
  const index=read('index.html');
- assert.equal((index.match(/js\\/modules\\/print-designer\\.js/g)||[]).length,1);
+ assert.equal(index.split('js/modules/print-designer.js').length - 1,1);
 });
