@@ -34,3 +34,13 @@
 .pt-editor-workspace.pt-preview-mode .pt-toolbar-actions button:not([data-pt-action=preview]){display:none!important}
 .pt-editor-workspace.pt-preview-mode .pt-editor-layout{display:block}
 .pt-editor-workspace.pt-preview-mode .pt-canvas-scroll{background:transparent;padding:0}
+
+.pt-editor-source-picker{display:grid;gap:8px;padding-top:12px;border-top:1px solid var(--border-color,var(--border,#ddd));min-width:0}
+.pt-editor-source-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px}
+.pt-editor-source-heading small{color:var(--text-muted,#77808d);font-size:11px}
+.pt-editor-source-list{display:grid;gap:6px;max-height:270px;overflow:auto;min-width:0}
+.pt-editor-source-list .pt-source-row{align-items:center;gap:8px;padding:8px;border:1px solid var(--border-color,var(--border,#ddd));border-radius:8px}
+.pt-editor-source-list .pt-source-row>div{min-width:0}
+.pt-editor-source-list .pt-source-row strong,.pt-editor-source-list .pt-source-row small{display:block;overflow-wrap:anywhere}
+.pt-editor-source-list .pt-source-row small{font-size:11px;color:var(--text-muted,#77808d)}
+.pt-editor-source-list .pt-source-row button{flex:0 0 auto}
