@@ -84,5 +84,7 @@ test('visual editor persists page layout and supports editable table rows and la
  assert.match(module,/layer-down/);
  assert.match(module,/previewMode/);
  assert.match(module,/pt-prop-selection/);
+ assert.match(module,/color:' \+ this\.esc\(item\.color/);
+ assert.match(module,/background:' \+ this\.esc\(item\.background/);
  assert.match(module,/Definition: this\.definition/);
 });
