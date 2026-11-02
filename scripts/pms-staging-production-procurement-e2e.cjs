@@ -61,12 +61,59 @@ const arr = (x, keys) => { x = unwrap(x); if (Array.isArray(x)) return x; for (c
     const eventTypeId = idOf(eventType && (eventType.eventType || eventType.EventType || eventType));
     if (!eventTypeId) throw new Error('Event type create returned no ID: '+JSON.stringify(eventTypeResponse).slice(0,700));
     report.created.eventTypeId = eventTypeId;
-    const fieldResponse = await api('POST','/event-types/'+encodeURIComponent(eventTypeId)+'/fields',{Name:'تعداد قطعی آزمایشی',Code:'ConfirmedQuantity',FieldType:'number',IsRequired:true,FieldOrder:1,Status:'ACTIVE'});
-    const field = unwrap(fieldResponse); const fieldId = idOf(field && (field.field || field.Field || field));
-    report.created.eventFieldId = fieldId || null;
-    await api('POST','/event-types/'+encodeURIComponent(eventTypeId)+'/procurement',{Action:'RECALCULATE_CONFIRMED_NEEDS',FieldMap:{ConfirmedQuantity:'ConfirmedQuantity'}});
-    step('configure-cut-event-type',{ok:true,eventTypeId,fieldId:fieldId||null});
-    const eventResponse = await api('POST','/events',{ProjectID:projectId,EventTypeID:eventTypeId,EventTypeVersion:1,OccurredAt:new Date().toISOString(),Description:'QA E2E: ثبت تعداد قطعی ۱۰ عدد',DynamicData:{ConfirmedQuantity:10},VariantDetails:[],IdempotencyKey:'QA_E2E_EVENT_'+stamp});
+    const informationTypeResponse = await api('POST','/information-types',{
+      Code:'QA_CONFIRMED_QTY_'+stamp,
+      Name:'QA تعداد قطعی تأییدشده '+stamp,
+      Description:'TEST DATA; numeric central project information for procurement E2E',
+      Cardinality:'SINGLE',
+      DataType:'number',
+      ValidationRuleJSON:{min:1},
+      OptionsJSON:[],
+      Status:'ACTIVE',
+      ShowOnCard:false
+    });
+    const informationType=unwrap(informationTypeResponse);
+    const informationTypeId=idOf(informationType && (informationType.informationType||informationType.InformationType||informationType));
+    if(!informationTypeId)throw new Error('Central information type create returned no ID: '+JSON.stringify(informationTypeResponse).slice(0,700));
+    report.created.confirmedQuantityInformationTypeId=informationTypeId;
+    const formResponse=await api('POST','/forms',{
+      Code:'QA_CONFIRMED_FORM_'+stamp,
+      Name:'QA فرم تعداد قطعی '+stamp,
+      Description:'TEST DATA; attached reusable form for procurement E2E',
+      Status:'ACTIVE'
+    });
+    const formEntity=unwrap(formResponse);
+    const formId=idOf(formEntity && (formEntity.form||formEntity.Form||formEntity));
+    if(!formId)throw new Error('Reusable form create returned no ID: '+JSON.stringify(formResponse).slice(0,700));
+    await api('POST','/forms/'+encodeURIComponent(formId)+'/fields',{
+      InformationTypeID:informationTypeId,
+      FieldOrder:1,
+      LabelOverride:'تعداد قطعی تأییدشده',
+      IsRequired:true,
+      Status:'ACTIVE'
+    });
+    const fullForm=unwrap(await api('GET','/forms/'+encodeURIComponent(formId)));
+    const formVersion=Number(fullForm.Version||1);
+    await api('POST','/event-types/'+encodeURIComponent(eventTypeId)+'/forms',{
+      FormID:formId,
+      IsRequired:true,
+      FieldOrder:1
+    });
+    report.created.formId=formId;
+    await api('POST','/event-types/'+encodeURIComponent(eventTypeId)+'/procurement',{
+      Action:'RECALCULATE_CONFIRMED_NEEDS',
+      ConfirmedQuantityInformationTypeID:informationTypeId
+    });
+    step('configure-cut-event-type',{ok:true,eventTypeId,informationTypeId,formId,formVersion});
+    const eventResponse = await api('POST','/events',{
+      ProjectID:projectId,
+      EventTypeID:eventTypeId,
+      EventTypeVersion:1,
+      OccurredAt:new Date().toISOString(),
+      Description:'QA E2E: ثبت تعداد قطعی ۱۰ عدد از فرم متصل',
+      FormResponses:[{FormID:formId,FormVersion:formVersion,Values:{[informationTypeId]:10}}],
+      IdempotencyKey:'QA_E2E_EVENT_'+stamp
+    });
     const event = unwrap(eventResponse); const eventObj = event.event || event.Event || event;
     const eventId = idOf(eventObj);
     if (!eventId) throw new Error('Event create returned no event ID: '+JSON.stringify(eventResponse).slice(0,900));
