@@ -390,8 +390,11 @@
         index + '" aria-label="حذف منبع">حذف</button></div>'
       ).join('') : '<p class="pt-empty-state">هنوز منبع داده‌ای انتخاب نشده است.</p>';
       root.querySelectorAll('[data-pt-remove-binding]').forEach(button => button.addEventListener('click', () => {
-        this.definition.bindings.splice(Number(button.dataset.ptRemoveBinding), 1);
-        this.renderBindings();
+        const removed = this.definition.bindings.splice(Number(button.dataset.ptRemoveBinding), 1)[0];
+        if (removed) this.definition.elements.forEach(element => {
+          if (element.bindingId === removed.id) element.bindingId = '';
+        });
+        this.renderBindings(); this.renderEditor(); this.commitHistory();
       }));
     },
     resetForm: function () {
