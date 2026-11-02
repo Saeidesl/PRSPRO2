@@ -92,15 +92,27 @@ test('event entry loads assigned forms, submits FormResponses and displays saved
   assert.match(events,/event-form-group/);
 });
 
-test('assigned forms load independently from legacy event fields',()=>{
+test('event entry loads reusable forms without requesting or submitting legacy dynamic fields',()=>{
   const module=read('js/modules/events.js');
-  const start=module.indexOf('loadDynamicFields: async function');
+  const start=module.indexOf('loadEventForms: async function');
   const end=module.indexOf('updateSubmitAvailability: function',start);
   const loader=module.slice(start,end);
-  assert.ok(loader.indexOf('this.loadConfiguredForms(selectedTypeId)') < loader.indexOf("'/event-types/' + encodeURIComponent(selectedTypeId) + '/fields'"));
-  assert.match(loader,/await configuredFormsLoad/);
+  assert.ok(start>=0 && end>start);
+  assert.match(loader,/this\.loadConfiguredForms\(selectedTypeId\)/);
+  assert.doesNotMatch(loader,/\/event-types\/.*\/fields/);
+  assert.doesNotMatch(module,/loadDynamicFields|renderDynamicFields|data-dynamic-code|DynamicData:/);
+  assert.match(module,/FormResponses:\s*this\.amendmentMode \? \[\] : formResponses/);
+  assert.match(module,/this\.loadConfiguredForms\(selectedTypeId\)/);
   assert.match(module,/Array\.isArray\(data\.forms\)/);
   assert.match(module,/Array\.isArray\(data\.data\)/);
+});
+
+test('event details retain read-only legacy dynamic data for historical records',()=>{
+  const module=read('js/modules/events.js');
+  assert.match(module,/PMS\.Api\.get\('\/events\/' \+ encodeURIComponent\(eventId\) \+ '\/data'\)/);
+  assert.match(module,/const dynamicData = this\.extractDataObject\(responses\[1\]\)/);
+  assert.match(module,/this\.dynamicEntries\(dynamicData\)/);
+  assert.doesNotMatch(module,/DynamicData:\s*dynamicData/);
 });
 
 test('form table rendering separates one-row and repeatable cardinality',()=>{
