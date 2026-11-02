@@ -45,7 +45,7 @@ test('print designer supports visual ordering, element styling, saved templates 
 
 test('print designer assets are cache-busted and loaded by the application',()=>{
   const index=read('index.html');
-  assert.match(index,/project-print-designer\.css\?v=/);
+  assert.match(index,/print-template-library\.css\?v=/);
   assert.match(index,/project-detail\.js\?v=20261101-print-designer-workspace-1/);
 });
 
@@ -55,7 +55,7 @@ test('template library is a standalone sidebar route without project selection',
  const router=read('js/core/router.js');
  const page=read('pages/print-designer.html');
  const module=read('js/modules/print-designer.js');
- assert.match(router,/'print-designer': 'pages\\/print-designer.html'/);
+ assert.ok(router.includes("'print-designer': 'pages/print-designer.html'"));
  assert.ok(router.includes("'print-design': ['SYSTEM_SETTINGS']"));
  assert.match(layout,/label: 'طراحی قالب'.*SYSTEM_SETTINGS/);
  assert.match(page,/pt-template-form/);
