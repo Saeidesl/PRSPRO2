@@ -1,12 +1,17 @@
-<section class="page-section ppd-entry-page ppd-output-entry-page">
+<section class="page-section pt-page">
   <div class="page-header">
-    <div><h2>چاپ اسناد</h2><p>انتخاب پروژه و چاپ سند بر اساس قالب ذخیره‌شده</p></div>
+    <div><h2>تولید و چاپ اسناد</h2><p>یک قالب عمومی را انتخاب کن و داده‌های پروژه موردنظر را برای آن آماده کن.</p></div>
   </div>
-  <div class="card"><div class="card-body ppd-entry-controls">
-    <label for="print-output-project-select">انتخاب پروژه</label>
-    <select id="print-output-project-select"><option value="">در حال دریافت فهرست پروژه‌ها...</option></select>
-    <button type="button" class="btn btn-primary" id="print-output-launch" disabled>نمایش سند آماده چاپ</button>
-    <button type="button" class="btn btn-secondary" id="print-output-open-design" disabled>رفتن به طراحی قالب</button>
-    <p id="print-output-project-status" class="text-muted" aria-live="polite"></p>
-  </div></div>
+  <section class="card"><div class="card-body">
+    <div class="pt-output-controls">
+      <div class="form-group"><label for="pt-output-template">قالب سند</label><select id="pt-output-template"><option value="">در حال دریافت قالب‌ها…</option></select></div>
+      <div class="form-group"><label for="pt-output-project">پروژه</label><select id="pt-output-project"><option value="">در حال دریافت پروژه‌ها…</option></select></div>
+      <button type="button" class="btn btn-primary" id="pt-output-resolve">آماده‌سازی داده سند</button>
+    </div>
+    <p id="pt-output-status" class="pt-status" aria-live="polite"></p>
+  </div></section>
+  <section class="card"><div class="card-body">
+    <h3 class="pt-section-title">داده‌های بازیابی‌شده</h3>
+    <div id="pt-output-data"><div class="pt-empty-state">پس از انتخاب قالب و پروژه، داده‌های قابل استفاده در سند اینجا نمایش داده می‌شوند.</div></div>
+  </div></section>
 </section>
