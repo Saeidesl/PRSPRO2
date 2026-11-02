@@ -135,6 +135,8 @@
       if (form) form.reset();
       this.editingId = '';
       this.definition = this.blankDefinition();
+      const code = document.getElementById('pt-template-code');
+      if (code) code.disabled = false;
       const title = document.getElementById('pt-editor-title');
       if (title) title.textContent = 'ساخت قالب جدید';
       const code = document.getElementById('pt-template-code');
