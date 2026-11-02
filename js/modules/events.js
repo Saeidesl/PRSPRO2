@@ -1045,8 +1045,8 @@
         '<section class="event-form-section" id="event-amendment-section" hidden><h4 class="event-section-title">فرم مورد اصلاح</h4>' +
         '<p class="event-muted" id="event-amendment-status" role="status" aria-live="polite">پس از انتخاب پروژه، پاسخ قبلی فرم به‌صورت خودکار پیدا می‌شود.</p>' +
         '<div hidden aria-hidden="true"><select id="event-amendment-source-event"></select><select id="event-amendment-source-form"></select></div></section>' +
-        '<section class="event-form-section" id="event-variant-section" hidden><h4 class="event-section-title">مقدار تولید/تحویل</h4>' +
-        '<div id="event-variant-fields" class="event-dynamic-grid"></div></section>' +
+        '<section class="event-form-section" id="event-quantity-section" hidden><h4 class="event-section-title">مقدار تولید/تحویل</h4>' +
+        '<div id="event-quantity-field" class="event-dynamic-grid"></div></section>' +
         '<section class="event-form-section"><h4 class="event-section-title">اطلاعات اختصاصی رویداد</h4>' +
         '<div id="event-dynamic-fields" class="event-dynamic-grid" aria-live="polite">' +
         '<p class="event-muted">ابتدا نوع رویداد را انتخاب کنید.</p></div></section>' +
@@ -1164,7 +1164,7 @@
         projectSelect.required = !isIndependent;
         if (isIndependent) projectSelect.value = '';
         this.updateSubmitAvailability();
-        this.renderVariantFields();
+        this.renderEventQuantityField();
         this.loadDynamicFields(typeSelect.value);
       });
 
@@ -1172,7 +1172,7 @@
         if (this.amendmentMode) this.loadAmendmentSourceEvents(projectSelect.value);
         refreshDraftEventOptions();
         this.updateSubmitAvailability();
-        this.renderVariantFields();
+        this.renderEventQuantityField();
       });
 
       dateInput.addEventListener('input', () => {
@@ -1356,9 +1356,9 @@
       this.updateSubmitAvailability();
     },
 
-    renderVariantFields: function () {
-      const section = document.getElementById('event-variant-section');
-      const container = document.getElementById('event-variant-fields');
+    renderEventQuantityField: function () {
+      const section = document.getElementById('event-quantity-section');
+      const container = document.getElementById('event-quantity-field');
       const typeInput = document.getElementById('event-form-type');
       if (!section || !container || !typeInput) return;
 
@@ -1375,16 +1375,16 @@
       const wrapper = document.createElement('div');
       wrapper.className = 'event-field';
       const label = document.createElement('label');
-      label.htmlFor = 'event-variant-quantity';
+      label.htmlFor = 'event-quantity-input';
       label.textContent = 'مقدار تولید/تحویل *';
       const input = document.createElement('input');
-      input.id = 'event-variant-quantity';
+      input.id = 'event-quantity-input';
       input.type = 'number';
       input.min = '1';
       input.step = '1';
       input.required = true;
       input.inputMode = 'numeric';
-      input.dataset.eventVariantQuantity = 'true';
+      input.dataset.eventQuantity = 'true';
       wrapper.appendChild(label);
       wrapper.appendChild(input);
       container.appendChild(wrapper);
@@ -2216,7 +2216,7 @@
         Description: description,
         DynamicData: dynamicData,
         FormResponses: this.amendmentMode ? [] : formResponses,
-        VariantQuantity: (form.querySelector('[data-event-variant-quantity]') || {}).value || ''
+        VariantQuantity: (form.querySelector('[data-event-quantity-input]') || {}).value || ''
       };
       // Keep a key for retries of the same logical submission, but rotate it if
       // the user edits any field after a failed request.
