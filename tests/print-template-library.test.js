@@ -108,3 +108,16 @@ test('mobile template editor presents a guided workflow with collapsible tool pa
  assert.match(css,/\.pt-toolbar-actions\{display:grid/);
  assert.match(css,/\.pt-mobile-tools-body/);
 });
+
+
+test('print output page exposes a real document preview and print action',()=>{
+  const root=path.join(__dirname,'..');
+  const page=fs.readFileSync(path.join(root,'pages/print-output.html'),'utf8');
+  const module=fs.readFileSync(path.join(root,'js/modules/print-designer.js'),'utf8');
+  const styles=fs.readFileSync(path.join(root,'css/print-template-library.css'),'utf8');
+  assert.match(page,/id="pt-output-preview"/);
+  assert.match(page,/id="pt-output-print"/);
+  assert.match(module,/renderOutputDocument/);
+  assert.match(module,/window\.print\(\)/);
+  assert.match(styles,/body\.pt-printing/);
+});
