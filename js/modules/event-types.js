@@ -664,11 +664,9 @@
               '<small class="et-muted">با ثبت این نوع رویداد، پروژه برای واحد یا کاربر مربوطه در بخش «اتمام کار شده» قرار می‌گیرد؛ وضعیت واحدهای دیگر مستقل می‌ماند.</small>' +
             '</div>' +
             '<div class="form-group et-full">' +
-              '<strong>رنگ‌بندی و سایزبندی پروژه</strong>' +
-              '<label style="display:block;margin-top:8px"><input name="UseProjectColors" type="checkbox"> هنگام ثبت این رویداد، رنگ پروژه انتخاب شود</label>' +
-              '<label style="display:block;margin-top:8px"><input name="UseProjectSizes" type="checkbox"> هنگام ثبت این رویداد، سایز پروژه انتخاب شود</label>' +
-              '<label style="display:block;margin-top:8px"><input name="TrackVariantQuantity" type="checkbox"> مقدار تولید/تحویل برای ترکیب انتخاب‌شده ثبت شود</label>' +
-              '<small class="et-muted">فهرست رنگ و سایز از مشخصات همان پروژه خوانده می‌شود. برای ثبت چندمرحله‌ای برش، نوع رویداد را به واحد برش مرتبط کن و گزینه مقدار تولید/تحویل را فعال کن؛ برای نمایش مجموع تجمعی، نام رویدادهای تکمیل را شامل «پایان برش» یا «اتمام برش» بگذار.</small>' +
+              '<strong>مقدار تولید/تحویل</strong>' +
+              '<label style="display:block;margin-top:8px"><input name="TrackVariantQuantity" type="checkbox"> مقدار تولید/تحویل در این رویداد ثبت شود</label>' +
+              '<small class="et-muted">در صورت فعال‌سازی، هنگام ثبت رویداد فقط مقدار عددی دریافت می‌شود. این مقدار در خلاصه تجمعی برش محاسبه خواهد شد.</small>' +
             '</div>' +
 
           '</div>' +
@@ -850,8 +848,6 @@
       setFieldChecked(form, 'AllowAttachments', item.AllowAttachments);
       setFieldChecked(form, 'MovesProjectToStep', item.MovesProjectToStep);
       setFieldChecked(form, 'AllowVoid', item.AllowVoid);
-      setFieldChecked(form, 'UseProjectColors', item.UseProjectColors);
-      setFieldChecked(form, 'UseProjectSizes', item.UseProjectSizes);
       setFieldChecked(form, 'TrackVariantQuantity', item.TrackVariantQuantity);
       setFieldChecked(form, 'IsWorkCompletion', item.IsWorkCompletion);
       setFieldChecked(form, 'AllowOnDraft', item.AllowOnDraft);
@@ -1102,8 +1098,6 @@
         AllowAttachments: fieldChecked(form, 'AllowAttachments'),
         MovesProjectToStep: fieldChecked(form, 'MovesProjectToStep'),
         AllowVoid: fieldChecked(form, 'AllowVoid'),
-        UseProjectColors: fieldChecked(form, 'UseProjectColors'),
-        UseProjectSizes: fieldChecked(form, 'UseProjectSizes'),
         TrackVariantQuantity: fieldChecked(form, 'TrackVariantQuantity'),
         IsWorkCompletion: fieldChecked(form, 'IsWorkCompletion'),
         AllowOnDraft: fieldChecked(form, 'AllowOnDraft'),
@@ -1120,15 +1114,8 @@
         return;
       }
 
-      if (payload.ConnectionType === 'INDEPENDENT' &&
-          (payload.UseProjectColors || payload.UseProjectSizes || payload.TrackVariantQuantity)) {
-        showMessage('برای رویداد مستقل از پروژه، رنگ‌بندی، سایزبندی و ثبت مقدار ترکیب باید غیرفعال باشند.');
-        return;
-      }
-
-      if (payload.TrackVariantQuantity &&
-          !payload.UseProjectColors && !payload.UseProjectSizes) {
-        showMessage('برای ثبت مقدار، انتخاب رنگ یا سایز را هم فعال کن.');
+      if (payload.ConnectionType === 'INDEPENDENT' && payload.TrackVariantQuantity) {
+        showMessage('ثبت مقدار تولید/تحویل فقط برای رویدادهای متصل به پروژه امکان‌پذیر است.');
         return;
       }
 
