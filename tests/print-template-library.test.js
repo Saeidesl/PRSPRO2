@@ -8,11 +8,11 @@ const read=file=>fs.readFileSync(path.join(__dirname,'..',file),'utf8');
 test('template library uses central CRUD and source catalog APIs',()=>{
  const module=read('js/modules/print-designer.js');
  const page=read('pages/print-designer.html');
- assert.match(module,/PMS\.Api\.get\('\\/print-templates'/);
- assert.match(module,/PMS\.Api\.get\('\\/print-templates\\/sources'/);
- assert.match(module,/PMS\.Api\.post\('\\/print-templates'/);
- assert.match(module,/PMS\.Api\.put\('\\/print-templates\\/'/);
- assert.match(module,/PMS\.Api\.delete\('\\/print-templates\\/'/);
+ assert.ok(module.includes("PMS.Api.get('/print-templates')"));
+ assert.ok(module.includes("PMS.Api.get('/print-templates/sources')"));
+ assert.ok(module.includes("PMS.Api.post('/print-templates'"));
+ assert.ok(module.includes("PMS.Api.put('/print-templates/'"));
+ assert.ok(module.includes("PMS.Api.delete('/print-templates/'"));
  assert.match(page,/pt-source-list/);
  assert.match(page,/pt-binding-list/);
 });
@@ -31,17 +31,17 @@ test('document output resolves a shared template against the selected project',(
  const page=read('pages/print-output.html');
  assert.match(page,/pt-output-template/);
  assert.match(page,/pt-output-project/);
- assert.match(module,/PMS\.Api\.post\('\\/print-templates\\/' \+ encodeURIComponent\(templateId\) \+ '\\/resolve'/);
+ assert.ok(module.includes("PMS.Api.post('/print-templates/' + encodeURIComponent(templateId) + '/resolve'"));
  assert.match(module,/resolveOutput: async function/);
 });
 
 test('print routes no longer initialize the project detail module',()=>{
  const router=read('js/core/router.js');
  const index=read('index.html');
- assert.match(router,/'print-design': 'PrintDesigner'/);
- assert.match(router,/'print-output': 'PrintDesigner'/);
- assert.match(index,/js\\/modules\\/print-designer\\.js\\?v=/);
- assert.match(index,/css\\/print-template-library\\.css\\?v=/);
+ assert.ok(router.includes("'print-design': 'PrintDesigner'"));
+ assert.ok(router.includes("'print-output': 'PrintDesigner'"));
+ assert.match(index,/js\/modules\/print-designer\.js\?v=/);
+ assert.match(index,/css\/print-template-library\.css\?v=/);
  assert.doesNotMatch(router,/'print-output': 'ProjectDetail'/);
 });
 
