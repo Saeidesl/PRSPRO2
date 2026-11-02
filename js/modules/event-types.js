@@ -6,9 +6,6 @@
   const state = {
     eventTypes: [],
     search: '',
-    selectedEventTypeId: null,
-    selectedEventTypeName: '',
-    fields: [],
     departments: [],
     users: [],
     projectStatuses: [],
@@ -27,16 +24,6 @@
     { value: 'WAREHOUSE', label: 'انبار' },
     { value: 'ADMIN', label: 'اداری' },
     { value: 'SYSTEM', label: 'سیستم' }
-  ];
-
-  const FIELD_TYPE_OPTIONS = [
-    { value: 'text', label: 'متن' },
-    { value: 'number', label: 'عدد' },
-    { value: 'date', label: 'تاریخ' },
-    { value: 'datetime', label: 'تاریخ و زمان' },
-    { value: 'select', label: 'فهرست انتخابی' },
-    { value: 'textarea', label: 'متن چندخطی' },
-    { value: 'boolean', label: 'بله/خیر' }
   ];
 
   function init() {
@@ -136,14 +123,6 @@
     if (data && Array.isArray(data.items)) return data.items;
     if (data && Array.isArray(data.eventTypes)) return data.eventTypes;
     if (data && data.data) return normalizeEventTypes(data.data);
-    return [];
-  }
-
-  function normalizeFields(data) {
-    if (Array.isArray(data)) return data;
-    if (data && Array.isArray(data.items)) return data.items;
-    if (data && Array.isArray(data.fields)) return data.fields;
-    if (data && data.data) return normalizeFields(data.data);
     return [];
   }
 
@@ -344,10 +323,6 @@
         html += '<button type="button" class="btn btn-sm btn-secondary event-type-edit" data-id="' +
           escapeAttribute(id) + '">ویرایش</button> ';
 
-        html += '<button type="button" class="btn btn-sm btn-secondary event-type-fields" data-id="' +
-          escapeAttribute(id) + '" data-name="' + escapeAttribute(name) +
-          '">فیلدهای پویا</button> ';
-
         html += '<button type="button" class="btn btn-sm btn-secondary event-type-forms" data-id="' +
           escapeAttribute(id) + '" data-name="' + escapeAttribute(name) +
           '">فرم‌های متصل</button> ';
@@ -369,12 +344,6 @@
     container.querySelectorAll('.event-type-edit').forEach(function (button) {
       button.addEventListener('click', function () {
         openEventTypeForm(button.dataset.id);
-      });
-    });
-
-    container.querySelectorAll('.event-type-fields').forEach(function (button) {
-      button.addEventListener('click', function () {
-        loadFields(button.dataset.id, button.dataset.name);
       });
     });
 
@@ -767,28 +736,6 @@
           '<div id="et-amendable-form-list" class="et-check-grid" hidden><p class="et-muted">در حال دریافت فرم‌ها...</p></div>' +
         '</section>' +
 
-        '<section class="et-section">' +
-          '<h4>۷. فیلدهای اختصاصی این نوع رویداد</h4>' +
-          '<span class="et-section-description">می‌توانی هنگام تعریف نوع رویداد، فیلدهای مخصوص همان رویداد را هم اضافه کنی. این فیلدها به‌صورت سراسری تعریف نمی‌شوند.</span>' +
-          '<div id="et-inline-fields">' +
-            '<p class="et-muted">' +
-              (editing
-                ? 'در حال دریافت فیلدهای اختصاصی...'
-                : 'پس از ذخیره نوع رویداد، فیلدهای اختصاصی به همین نوع رویداد متصل خواهند شد.') +
-            '</p>' +
-          '</div>' +
-          '<div class="et-toolbar">' +
-            '<button type="button" class="btn btn-secondary" id="et-add-field" ' +
-              (editing ? '' : 'disabled') +
-              '>+ افزودن فیلد اختصاصی</button>' +
-          '</div>' +
-          '<small class="et-muted" id="et-new-fields-help">' +
-            (editing
-              ? 'فیلد جدید پس از ذخیره فرم به همین نوع رویداد متصل می‌شود.'
-              : 'ابتدا نوع رویداد را ذخیره کن؛ سپس می‌توانی فیلدهای اختصاصی را اضافه کنی.') +
-          '</small>' +
-        '</section>' +
-
         '<div class="modal-actions">' +
           '<button type="submit" class="btn btn-primary">' +
             (editing ? 'ذخیره تغییرات' : 'ثبت نوع رویداد') +
@@ -1058,15 +1005,6 @@
       });
     });
 
-    form.querySelector('#et-add-field').addEventListener('click', function () {
-      if (!eventTypeId) return;
-      openInlineFieldEditor(form, eventTypeId, null);
-    });
-
-    if (editing) {
-      loadInlineFields(eventTypeId, form);
-    }
-
     form.addEventListener('submit', async function (event) {
       event.preventDefault();
 
@@ -1172,7 +1110,7 @@
               }
               showMessage(pendingEventForms.length
                 ? 'نوع رویداد و فرم‌های انتخاب‌شده با موفقیت ثبت شدند.'
-                : 'نوع رویداد ثبت شد. اکنون می‌توانی فیلد اختصاصی اضافه کنی.');
+                : 'نوع رویداد ثبت شد.');
             } catch (mappingError) {
               showMessage('نوع رویداد ثبت شد، اما اتصال یکی از فرم‌ها انجام نشد. از ویرایش نوع رویداد دوباره تلاش کن. ' +
                 (mappingError.message || ''));
@@ -1183,7 +1121,7 @@
             modal.close();
 
             showMessage(
-              'نوع رویداد ثبت شد. برای افزودن فیلد اختصاصی، آن را از فهرست ویرایش کن.'
+              'نوع رویداد ثبت شد.'
             );
           }
         }
@@ -1197,353 +1135,6 @@
         setButtonBusy(saveButton, false);
       }
     });
-  }
-
-  async function loadInlineFields(eventTypeId, form) {
-    const container = form.querySelector('#et-inline-fields');
-    if (!container) return;
-
-    const cacheKey = PMS.Cache.keys.EVENT_FIELDS + '_' + eventTypeId;
-    const cached = PMS.Cache.get(cacheKey);
-
-    if (cached !== null) {
-      state.fields = normalizeFields(cached);
-      renderInlineFields(container, eventTypeId, form);
-    }
-
-    try {
-      const result = await PMS.Api.getCached(
-        '/event-types/' + encodeURIComponent(eventTypeId) + '/fields',
-        cacheKey,
-        {
-          onRefresh: function (data) {
-            state.fields = normalizeFields(data);
-            renderInlineFields(container, eventTypeId, form);
-          },
-          onError: function (error) {
-            console.warn('Inline event fields refresh failed:', error);
-          }
-        }
-      );
-
-      state.fields = normalizeFields(
-        result && result.data !== undefined ? result.data : result
-      );
-
-      renderInlineFields(container, eventTypeId, form);
-    } catch (error) {
-      console.error('Inline event fields loading failed:', error);
-
-      if (cached === null) {
-        container.innerHTML =
-          '<p class="et-muted">دریافت فیلدها ناموفق بود. می‌توانی از دکمه «فیلدهای پویا» در فهرست استفاده کنی.</p>';
-      }
-    }
-  }
-
-  function renderInlineFields(container, eventTypeId, form) {
-    const fields = state.fields.slice().sort(function (a, b) {
-      return Number(a.FieldOrder || 0) - Number(b.FieldOrder || 0);
-    });
-
-    if (!fields.length) {
-      container.innerHTML =
-        '<p class="et-muted">هنوز فیلد اختصاصی برای این نوع رویداد تعریف نشده است.</p>';
-      return;
-    }
-
-    container.innerHTML = '<div class="et-field-list">' +
-      fields.map(function (field) {
-        const active = isActive(field);
-
-        return '<div class="et-field-row">' +
-          '<div>' +
-            '<strong>' + escapeHtml(field.Name || '-') + '</strong>' +
-            '<small>' +
-              escapeHtml(field.Code || '-') + ' | ' +
-              escapeHtml(fieldTypeLabel(field.FieldType)) + ' | ' +
-              (isChecked(field.IsRequired) ? 'اجباری' : 'اختیاری') + ' | ' +
-              (active ? 'فعال' : 'غیرفعال') +
-            '</small>' +
-          '</div>' +
-          '<div class="et-field-row-actions">' +
-            '<button type="button" class="btn btn-sm btn-secondary et-inline-edit" data-id="' +
-              escapeAttribute(getId(field)) + '">ویرایش</button>' +
-            (active
-              ? '<button type="button" class="btn btn-sm btn-secondary et-inline-disable" data-id="' +
-                escapeAttribute(getId(field)) + '">غیرفعال‌سازی</button>'
-              : '') +
-          '</div>' +
-        '</div>';
-      }).join('') +
-      '</div>';
-
-    container.querySelectorAll('.et-inline-edit').forEach(function (button) {
-      button.addEventListener('click', function () {
-        const field = state.fields.find(function (entry) {
-          return String(getId(entry)) === String(button.dataset.id);
-        });
-
-        if (field) openInlineFieldEditor(form, eventTypeId, field);
-      });
-    });
-
-    container.querySelectorAll('.et-inline-disable').forEach(function (button) {
-      button.addEventListener('click', function () {
-        disableInlineField(button.dataset.id, eventTypeId, form);
-      });
-    });
-  }
-
-  function openInlineFieldEditor(parentForm, eventTypeId, field) {
-    if (parentForm.querySelector('#et-inline-field-editor')) {
-      showMessage('ابتدا فرم فیلد باز را ذخیره کن یا ببند.');
-      return;
-    }
-
-    const editing = Boolean(field);
-    const container = parentForm.querySelector('#et-inline-fields');
-
-    const editor = document.createElement('div');
-    editor.id = 'et-inline-field-editor';
-    editor.className = 'et-inline-field';
-
-    const typeOptions = FIELD_TYPE_OPTIONS.map(function (option) {
-      return '<option value="' + escapeAttribute(option.value) + '">' +
-        escapeHtml(option.label) + '</option>';
-    }).join('');
-
-    editor.innerHTML =
-      '<h5>' + (editing ? 'ویرایش فیلد اختصاصی' : 'افزودن فیلد اختصاصی') + '</h5>' +
-      '<form id="et-inline-field-form">' +
-
-        '<div class="et-form-grid">' +
-
-          '<div class="form-group">' +
-            '<label for="eif-name">نام فیلد *</label>' +
-            '<input id="eif-name" name="Name" required maxlength="150">' +
-          '</div>' +
-
-          '<div class="form-group">' +
-            '<label for="eif-code">کد فیلد *</label>' +
-            '<input id="eif-code" name="Code" required maxlength="100">' +
-          '</div>' +
-
-          '<div class="form-group">' +
-            '<label for="eif-type">نوع فیلد *</label>' +
-            '<select id="eif-type" name="FieldType" required>' +
-              typeOptions +
-            '</select>' +
-          '</div>' +
-
-          '<div class="form-group">' +
-            '<label for="eif-order">ترتیب نمایش</label>' +
-            '<input id="eif-order" name="FieldOrder" type="number" min="0" step="1">' +
-          '</div>' +
-
-          '<div class="form-group et-full">' +
-            '<label for="eif-options">گزینه‌ها (برای فهرست انتخابی، هر گزینه در یک خط)</label>' +
-            '<textarea id="eif-options" name="Options" rows="3"></textarea>' +
-          '</div>' +
-
-          '<div class="form-group et-full">' +
-            '<label for="eif-default">مقدار پیش‌فرض</label>' +
-            '<input id="eif-default" name="DefaultValue">' +
-          '</div>' +
-
-          '<div class="form-group et-full">' +
-            '<label for="eif-validation">قاعده اعتبارسنجی (اختیاری)</label>' +
-            '<input id="eif-validation" name="ValidationRule">' +
-          '</div>' +
-
-          '<div class="form-group">' +
-            '<label>' +
-              '<input type="checkbox" name="IsRequired" id="eif-required">' +
-              ' فیلد اجباری است' +
-            '</label>' +
-          '</div>' +
-
-          '<div class="form-group">' +
-            '<label for="eif-status">وضعیت</label>' +
-            '<select id="eif-status" name="Status">' +
-              '<option value="ACTIVE">فعال</option>' +
-              '<option value="INACTIVE">غیرفعال</option>' +
-            '</select>' +
-          '</div>' +
-
-        '</div>' +
-
-        '<div class="et-toolbar">' +
-          '<button type="submit" class="btn btn-primary">' +
-            (editing ? 'ذخیره فیلد' : 'افزودن فیلد') +
-          '</button>' +
-          '<button type="button" class="btn btn-secondary" id="eif-cancel">بستن فرم فیلد</button>' +
-        '</div>' +
-
-      '</form>';
-
-    container.appendChild(editor);
-
-    const form = editor.querySelector('#et-inline-field-form');
-
-    if (field) {
-      setFieldValue(form, 'Name', field.Name);
-      setFieldValue(form, 'Code', field.Code);
-      setFieldValue(form, 'FieldType', field.FieldType || 'text');
-      setFieldValue(form, 'FieldOrder', field.FieldOrder || 0);
-      setFieldValue(form, 'Options', field.Options);
-      setFieldValue(form, 'DefaultValue', field.DefaultValue);
-      setFieldValue(form, 'ValidationRule', field.ValidationRule);
-      setFieldValue(form, 'Status', field.Status || 'ACTIVE');
-      setFieldChecked(form, 'IsRequired', field.IsRequired);
-    } else {
-      setFieldValue(form, 'FieldOrder', state.fields.length + 1);
-      setFieldValue(form, 'FieldType', 'text');
-      setFieldValue(form, 'Status', 'ACTIVE');
-    }
-
-    const typeInput = form.elements.namedItem('FieldType');
-    const optionsInput = form.elements.namedItem('Options');
-
-    function updateOptionsAvailability() {
-      const isSelect = typeInput.value === 'select';
-      optionsInput.disabled = !isSelect;
-
-      if (!isSelect) {
-        optionsInput.value = '';
-      }
-    }
-
-    typeInput.addEventListener('change', updateOptionsAvailability);
-    updateOptionsAvailability();
-
-    form.querySelector('#eif-cancel').addEventListener('click', function () {
-      editor.remove();
-    });
-
-    form.addEventListener('submit', async function (event) {
-      event.preventDefault();
-
-      const saveButton = form.querySelector('[type="submit"]');
-
-      const payload = {
-        Name: fieldValue(form, 'Name').trim(),
-        Code: fieldValue(form, 'Code').trim(),
-        FieldType: fieldValue(form, 'FieldType'),
-        IsRequired: fieldChecked(form, 'IsRequired'),
-        DefaultValue: fieldValue(form, 'DefaultValue'),
-        Options: fieldValue(form, 'Options'),
-        ValidationRule: fieldValue(form, 'ValidationRule'),
-        FieldOrder: Number(fieldValue(form, 'FieldOrder') || 0),
-        Status: fieldValue(form, 'Status')
-      };
-
-      if (!payload.Name || !payload.Code) {
-        showMessage('نام و کد فیلد الزامی است.');
-        return;
-      }
-
-      if (!Number.isFinite(payload.FieldOrder) || payload.FieldOrder < 0) {
-        showMessage('ترتیب نمایش باید صفر یا عددی مثبت باشد.');
-        return;
-      }
-
-      if (payload.FieldType === 'select' && !payload.Options.trim()) {
-        showMessage('برای فیلد انتخابی، گزینه‌ها را وارد کن.');
-        return;
-      }
-
-      setButtonBusy(saveButton, true, 'در حال ذخیره...');
-
-      try {
-        if (editing) {
-          await PMS.Api.put(
-            '/event-fields/' + encodeURIComponent(getId(field)),
-            payload
-          );
-        } else {
-          payload.EventTypeID = eventTypeId;
-
-          await PMS.Api.post(
-            '/event-types/' + encodeURIComponent(eventTypeId) + '/fields',
-            payload
-          );
-        }
-
-        invalidateFieldCache(eventTypeId);
-
-        showMessage(editing ? 'فیلد اختصاصی ویرایش شد.' : 'فیلد اختصاصی اضافه شد.');
-
-        await loadInlineFields(eventTypeId, parentForm);
-      } catch (error) {
-        console.error('Saving inline event field failed:', error);
-        showMessage(error.message || 'ذخیره فیلد اختصاصی ناموفق بود.');
-      } finally {
-        setButtonBusy(saveButton, false);
-      }
-    });
-  }
-
-  async function disableInlineField(fieldId, eventTypeId, form) {
-    const confirmed = window.confirm(
-      'این فیلد غیرفعال می‌شود و اطلاعات رویدادهای قبلی حذف نخواهد شد. ادامه می‌دهی؟'
-    );
-
-    if (!confirmed) return;
-
-    try {
-      await PMS.Api.delete('/event-fields/' + encodeURIComponent(fieldId));
-
-      invalidateFieldCache(eventTypeId);
-
-      showMessage('فیلد اختصاصی غیرفعال شد.');
-
-      await loadInlineFields(eventTypeId, form);
-    } catch (error) {
-      console.error('Disabling inline event field failed:', error);
-      showMessage(error.message || 'غیرفعال‌سازی فیلد ناموفق بود.');
-    }
-  }
-
-  async function loadFields(eventTypeId, eventTypeName) {
-    state.selectedEventTypeId = eventTypeId;
-    state.selectedEventTypeName = eventTypeName || '';
-
-    const cacheKey = PMS.Cache.keys.EVENT_FIELDS + '_' + eventTypeId;
-    const cached = PMS.Cache.get(cacheKey);
-
-    if (cached !== null) {
-      state.fields = normalizeFields(cached);
-      showFieldsModal();
-    }
-
-    try {
-      const result = await PMS.Api.getCached(
-        '/event-types/' + encodeURIComponent(eventTypeId) + '/fields',
-        cacheKey,
-        {
-          onRefresh: function (data) {
-            state.fields = normalizeFields(data);
-            showFieldsModal();
-          },
-          onError: function (error) {
-            console.warn('Event fields refresh failed:', error);
-          }
-        }
-      );
-
-      state.fields = normalizeFields(
-        result && result.data !== undefined ? result.data : result
-      );
-
-      showFieldsModal();
-    } catch (error) {
-      console.error('Event fields loading failed:', error);
-
-      if (cached === null) {
-        showMessage(error.message || 'دریافت فیلدهای پویا ناموفق بود.');
-      }
-    }
   }
 
   async function openEventTypeForms(eventTypeId, eventTypeName) {
@@ -1612,382 +1203,78 @@
       return value && value.data !== undefined ? value.data : value;
     }
 
-    function activeFields(value) {
-      const data = unwrap(value);
-      const list = normalizeFields(data);
-      return list.filter(function (field) {
-        return String(field.Status || 'ACTIVE').toUpperCase() === 'ACTIVE';
-      });
-    }
-
-    function mappingSelect(key, label, fields, selected, required) {
-      const options = ['<option value="">-- انتخاب فیلد --</option>'].concat(fields.map(function (field) {
-        const code = String(field.Code || '');
-        const isSelected = code === String(selected || '') ? ' selected' : '';
-        return '<option value="' + escapeAttribute(code) + '"' + isSelected + '>' +
-          escapeHtml((field.Name || code) + ' (' + code + ')') + '</option>';
-      })).join('');
-      return '<label class="form-group"><span>' + escapeHtml(label) +
-        (required ? ' *' : '') + '</span><select class="form-control" name="' + escapeAttribute(key) +
-        '" data-map-key="' + escapeAttribute(key) + '">' + options + '</select></label>';
-    }
-
     try {
       const results = await Promise.all([
         PMS.Api.get('/event-types/' + encodeURIComponent(eventTypeId) + '/procurement'),
-        PMS.Api.get('/event-types/' + encodeURIComponent(eventTypeId) + '/fields')
+        PMS.Api.get('/information-types')
       ]);
       const settings = unwrap(results[0]) || {};
-      const fields = activeFields(results[1]);
-      const fieldMap = settings.FieldMap && typeof settings.FieldMap === 'object'
-        ? settings.FieldMap : {};
+      const allTypes = normalizeList(unwrap(results[1]), 'informationTypes');
+      const numericTypes = allTypes.filter(function (type) {
+        return isActive(type) &&
+          String(type.DataType || '').toLowerCase() === 'number' &&
+          String(type.Cardinality || 'SINGLE').toUpperCase() === 'SINGLE';
+      });
+      const selectedTypeId = String(settings.ConfirmedQuantityInformationTypeID || '');
       const action = String(settings.Action || 'NONE').toUpperCase();
 
-      let html = '<p class="form-help">این تنظیم مشخص می‌کند ثبت این نوع رویداد، دریافت انبار را ثبت کند یا نیاز قطعی را از تعداد تأییدشده محاسبه کند.</p>' +
+      modal.body.innerHTML =
+        '<p class="form-help">برای محاسبه نیاز قطعی ملزومات، تعداد تأییدشده از اطلاعات مرکزی پروژه و فرم متصل به همین رویداد خوانده می‌شود. ثبت سفارش خرید و رسید از مسیر مستقل تأمین انجام می‌شود.</p>' +
         '<form id="event-type-procurement-form">' +
         '<label class="form-group"><span>عملیات تأمین</span><select class="form-control" name="Action">' +
         '<option value="NONE">بدون عملیات تأمین</option>' +
-        '<option value="RECORD_RECEIPT">ثبت دریافت واقعی از سفارش</option>' +
         '<option value="RECALCULATE_CONFIRMED_NEEDS">محاسبه نیاز قطعی از تعداد تأییدشده</option>' +
         '</select></label>' +
-        '<div id="event-type-procurement-mappings"></div>' +
+        '<label class="form-group" id="confirmed-quantity-type-group"><span>نوع اطلاعات مرکزی تعداد قطعی تأییدشده</span>' +
+        '<select class="form-control" name="ConfirmedQuantityInformationTypeID">' +
+        '<option value="">انتخاب نوع اطلاعات عددی</option>' +
+        numericTypes.map(function (type) {
+          const id = String(getId(type));
+          return '<option value="' + escapeAttribute(id) + '"' +
+            (id === selectedTypeId ? ' selected' : '') + '>' +
+            escapeHtml((type.Name || type.Code || id) + ' (' + (type.Code || id) + ')') +
+            '</option>';
+        }).join('') +
+        '</select><small class="et-muted">این نوع اطلاعات باید در فرم متصل به رویداد قرار گرفته باشد.</small></label>' +
+        (numericTypes.length ? '' : '<p class="alert alert-warning">هیچ نوع اطلاعات مرکزی عددی و تک‌مقداری فعالی برای انتخاب وجود ندارد. ابتدا نوع اطلاعات را در بخش اطلاعات مرکزی تعریف کنید.</p>') +
         '<div class="modal-actions"><button type="submit" class="btn btn-primary">ذخیره تنظیمات</button></div></form>';
 
-      modal.body.innerHTML = html;
       const form = modal.body.querySelector('#event-type-procurement-form');
       const actionInput = form.elements.namedItem('Action');
-      actionInput.value = ['NONE', 'RECORD_RECEIPT', 'RECALCULATE_CONFIRMED_NEEDS'].indexOf(action) >= 0 ? action : 'NONE';
-
-      function renderMappings() {
-        const selectedAction = actionInput.value;
-        const definitions = selectedAction === 'RECORD_RECEIPT'
-            ? [
-                ['PurchaseOrderItemID', 'شناسه ردیف سفارش خرید', true],
-                ['QuantityReceived', 'مقدار دریافت‌شده', true],
-                ['ProjectID', 'شناسه پروژه (اختیاری)', false],
-                ['Notes', 'توضیحات (اختیاری)', false]
-              ] : (selectedAction === 'RECALCULATE_CONFIRMED_NEEDS'
-                ? [['ConfirmedQuantity', 'تعداد قطعی تأییدشده', true]]
-                : []);
-        const container = form.querySelector('#event-type-procurement-mappings');
-        if (!definitions.length) {
-          container.innerHTML = '<p class="form-help">با این گزینه، رویداد هیچ رکورد تأمینی ایجاد نمی‌کند.</p>';
-          return;
-        }
-        container.innerHTML = '<div class="table-wrapper"><table class="data-table"><thead><tr><th>فیلد تأمین</th><th>فیلد پویای رویداد</th></tr></thead><tbody>' +
-          definitions.map(function (def) {
-            return '<tr><td>' + escapeHtml(def[1]) + '</td><td>' +
-              mappingSelect(def[0], def[1], fields, fieldMap[def[0]], def[2]) +
-              '</td></tr>';
-          }).join('') + '</tbody></table></div>';
+      const typeInput = form.elements.namedItem('ConfirmedQuantityInformationTypeID');
+      actionInput.value = action === 'RECALCULATE_CONFIRMED_NEEDS' ? action : 'NONE';
+      const typeGroup = form.querySelector('#confirmed-quantity-type-group');
+      function updateVisibility() {
+        typeGroup.hidden = actionInput.value !== 'RECALCULATE_CONFIRMED_NEEDS';
       }
-
-      actionInput.addEventListener('change', renderMappings);
-      renderMappings();
+      actionInput.addEventListener('change', updateVisibility);
+      updateVisibility();
 
       form.addEventListener('submit', async function (event) {
         event.preventDefault();
         const saveButton = form.querySelector('button[type="submit"]');
         if (saveButton.disabled) return;
-        const selectedAction = actionInput.value;
-        const fieldMapPayload = {};
-        form.querySelectorAll('[data-map-key]').forEach(function (select) {
-          if (select.value) fieldMapPayload[select.dataset.mapKey] = select.value;
-        });
-        const requiredKeys = selectedAction === 'RECORD_RECEIPT'
-          ? ['PurchaseOrderItemID', 'QuantityReceived']
-          : (selectedAction === 'RECALCULATE_CONFIRMED_NEEDS' ? ['ConfirmedQuantity'] : []);
-        const missing = requiredKeys.filter(function (key) { return !fieldMapPayload[key]; });
-        if (missing.length) {
-          showMessage('فیلدهای الزامی را انتخاب کن: ' + missing.join('، '));
+        if (actionInput.value === 'RECALCULATE_CONFIRMED_NEEDS' && !typeInput.value) {
+          showMessage('نوع اطلاعات مرکزی تعداد قطعی تأییدشده را انتخاب کن.');
           return;
         }
-        saveButton.disabled = true;
-        saveButton.textContent = 'در حال ذخیره...';
+        setButtonBusy(saveButton, true, 'در حال ذخیره...');
         try {
           await PMS.Api.post('/event-types/' + encodeURIComponent(eventTypeId) + '/procurement', {
-            Action: selectedAction,
-            FieldMap: fieldMapPayload
+            Action: actionInput.value,
+            ConfirmedQuantityInformationTypeID: actionInput.value === 'RECALCULATE_CONFIRMED_NEEDS' ? typeInput.value : ''
           });
           showMessage('تنظیمات تأمین ذخیره شد.');
           modal.close();
         } catch (error) {
           showMessage(error.message || 'ذخیره تنظیمات تأمین ناموفق بود.');
-          saveButton.disabled = false;
-          saveButton.textContent = 'ذخیره تنظیمات';
+        } finally {
+          setButtonBusy(saveButton, false);
         }
       });
     } catch (error) {
       modal.body.innerHTML = '<div class="alert alert-error">' +
         escapeHtml(error.message || 'دریافت تنظیمات تأمین ناموفق بود.') + '</div>';
-    }
-  }
-
-  function showFieldsModal() {
-    const eventTypeId = state.selectedEventTypeId;
-    const eventTypeName = state.selectedEventTypeName;
-
-    const modal = createModal(
-      'فیلدهای پویا: ' + (eventTypeName || ''),
-      'event-type-fields-modal'
-    );
-
-    let html =
-      '<div class="modal-actions" style="margin-bottom:12px">' +
-        '<button type="button" class="btn btn-primary" id="field-create-button">+ افزودن فیلد</button>' +
-      '</div>';
-
-    const fields = state.fields.slice().sort(function (a, b) {
-      return Number(a.FieldOrder || 0) - Number(b.FieldOrder || 0);
-    });
-
-    if (fields.length === 0) {
-      html += '<div class="table-empty">فیلد پویایی برای این نوع رویداد ثبت نشده است.</div>';
-    } else {
-      html += '<div class="table-wrapper"><table class="data-table"><thead><tr>' +
-        '<th>ترتیب</th><th>نام فیلد</th><th>کد</th><th>نوع</th>' +
-        '<th>اجباری</th><th>مقدار پیش‌فرض</th><th>وضعیت</th><th>عملیات</th>' +
-        '</tr></thead><tbody>';
-
-      fields.forEach(function (field) {
-        const id = getId(field);
-        const active = isActive(field);
-
-        html += '<tr>';
-        html += '<td>' + escapeHtml(String(field.FieldOrder || 0)) + '</td>';
-        html += '<td>' + escapeHtml(field.Name || '-') + '</td>';
-        html += '<td>' + escapeHtml(field.Code || '-') + '</td>';
-        html += '<td>' + escapeHtml(fieldTypeLabel(field.FieldType)) + '</td>';
-        html += '<td>' + (isChecked(field.IsRequired) ? 'بله' : 'خیر') + '</td>';
-        html += '<td>' + escapeHtml(field.DefaultValue || '-') + '</td>';
-        html += '<td>' + renderStatus(field.Status || 'ACTIVE') + '</td>';
-        html += '<td>';
-
-        html += '<button type="button" class="btn btn-sm btn-secondary field-edit" data-id="' +
-          escapeAttribute(id) + '">ویرایش</button> ';
-
-        if (active) {
-          html += '<button type="button" class="btn btn-sm btn-secondary field-disable" data-id="' +
-            escapeAttribute(id) + '">غیرفعال‌سازی</button>';
-        }
-
-        html += '</td></tr>';
-      });
-
-      html += '</tbody></table></div>';
-    }
-
-    modal.body.innerHTML = html;
-
-    modal.body.querySelector('#field-create-button').addEventListener('click', function () {
-      openFieldForm(null);
-    });
-
-    modal.body.querySelectorAll('.field-edit').forEach(function (button) {
-      button.addEventListener('click', function () {
-        const field = state.fields.find(function (entry) {
-          return String(getId(entry)) === String(button.dataset.id);
-        });
-
-        if (field) openFieldForm(field);
-      });
-    });
-
-    modal.body.querySelectorAll('.field-disable').forEach(function (button) {
-      button.addEventListener('click', function () {
-        disableField(button.dataset.id);
-      });
-    });
-  }
-
-  function openFieldForm(field) {
-    const eventTypeId = state.selectedEventTypeId;
-    const editing = Boolean(field);
-
-    const modal = createModal(
-      editing ? 'ویرایش فیلد پویا' : 'افزودن فیلد پویا',
-      'event-field-form-modal'
-    );
-
-    const typeOptions = FIELD_TYPE_OPTIONS.map(function (option) {
-      return '<option value="' + escapeAttribute(option.value) + '">' +
-        escapeHtml(option.label) + '</option>';
-    }).join('');
-
-    modal.body.innerHTML =
-      '<form id="event-field-form">' +
-
-        '<div class="form-group">' +
-          '<label for="ef-name">نام فیلد *</label>' +
-          '<input id="ef-name" name="Name" required maxlength="150">' +
-        '</div>' +
-
-        '<div class="form-group">' +
-          '<label for="ef-code">کد فیلد *</label>' +
-          '<input id="ef-code" name="Code" required maxlength="100">' +
-        '</div>' +
-
-        '<div class="form-group">' +
-          '<label for="ef-type">نوع فیلد *</label>' +
-          '<select id="ef-type" name="FieldType" required>' +
-            typeOptions +
-          '</select>' +
-        '</div>' +
-
-        '<div class="form-group">' +
-          '<label><input type="checkbox" name="IsRequired" id="ef-required"> فیلد اجباری است</label>' +
-        '</div>' +
-
-        '<div class="form-group">' +
-          '<label for="ef-default">مقدار پیش‌فرض</label>' +
-          '<input id="ef-default" name="DefaultValue">' +
-        '</div>' +
-
-        '<div class="form-group">' +
-          '<label for="ef-options">گزینه‌ها (برای فهرست انتخابی، هر گزینه در یک خط)</label>' +
-          '<textarea id="ef-options" name="Options" rows="3"></textarea>' +
-        '</div>' +
-
-        '<div class="form-group">' +
-          '<label for="ef-validation">قاعده اعتبارسنجی (اختیاری)</label>' +
-          '<input id="ef-validation" name="ValidationRule">' +
-        '</div>' +
-
-        '<div class="form-group">' +
-          '<label for="ef-order">ترتیب نمایش</label>' +
-          '<input id="ef-order" name="FieldOrder" type="number" min="0" step="1">' +
-        '</div>' +
-
-        '<div class="form-group">' +
-          '<label for="ef-status">وضعیت</label>' +
-          '<select id="ef-status" name="Status">' +
-            '<option value="ACTIVE">فعال</option>' +
-            '<option value="INACTIVE">غیرفعال</option>' +
-          '</select>' +
-        '</div>' +
-
-        '<div class="modal-actions">' +
-          '<button type="submit" class="btn btn-primary">' +
-            (editing ? 'ذخیره تغییرات' : 'افزودن فیلد') +
-          '</button>' +
-          '<button type="button" class="btn btn-secondary" id="ef-cancel">انصراف</button>' +
-        '</div>' +
-
-      '</form>';
-
-    const form = modal.body.querySelector('#event-field-form');
-
-    if (field) {
-      setFieldValue(form, 'Name', field.Name);
-      setFieldValue(form, 'Code', field.Code);
-      setFieldValue(form, 'FieldType', field.FieldType || 'text');
-      setFieldChecked(form, 'IsRequired', field.IsRequired);
-      setFieldValue(form, 'DefaultValue', field.DefaultValue);
-      setFieldValue(form, 'Options', field.Options);
-      setFieldValue(form, 'ValidationRule', field.ValidationRule);
-      setFieldValue(form, 'FieldOrder', field.FieldOrder || 0);
-      setFieldValue(form, 'Status', field.Status || 'ACTIVE');
-    } else {
-      setFieldValue(form, 'FieldOrder', state.fields.length + 1);
-    }
-
-    form.querySelector('#ef-cancel').addEventListener('click', modal.close);
-
-    form.querySelector('#ef-type').addEventListener('change', function () {
-      const options = form.elements.namedItem('Options');
-      options.disabled = form.elements.namedItem('FieldType').value !== 'select';
-
-      if (options.disabled) {
-        options.value = '';
-      }
-    });
-
-    form.querySelector('#ef-type').dispatchEvent(new Event('change'));
-
-    form.addEventListener('submit', async function (event) {
-      event.preventDefault();
-
-      const saveButton = form.querySelector('[type="submit"]');
-
-      const payload = {
-        Name: fieldValue(form, 'Name').trim(),
-        Code: fieldValue(form, 'Code').trim(),
-        FieldType: fieldValue(form, 'FieldType'),
-        IsRequired: fieldChecked(form, 'IsRequired'),
-        DefaultValue: fieldValue(form, 'DefaultValue'),
-        Options: fieldValue(form, 'Options'),
-        ValidationRule: fieldValue(form, 'ValidationRule'),
-        FieldOrder: Number(fieldValue(form, 'FieldOrder') || 0),
-        Status: fieldValue(form, 'Status')
-      };
-
-      if (!payload.Name || !payload.Code) {
-        showMessage('نام و کد فیلد الزامی است.');
-        return;
-      }
-
-      if (!Number.isFinite(payload.FieldOrder) || payload.FieldOrder < 0) {
-        showMessage('ترتیب نمایش باید صفر یا عددی مثبت باشد.');
-        return;
-      }
-
-      if (payload.FieldType === 'select' && !payload.Options.trim()) {
-        showMessage('برای فیلد انتخابی، گزینه‌ها را وارد کن.');
-        return;
-      }
-
-      setButtonBusy(saveButton, true, 'در حال ذخیره...');
-
-      try {
-        if (editing) {
-          await PMS.Api.put(
-            '/event-fields/' + encodeURIComponent(getId(field)),
-            payload
-          );
-        } else {
-          payload.EventTypeID = eventTypeId;
-
-          await PMS.Api.post(
-            '/event-types/' + encodeURIComponent(eventTypeId) + '/fields',
-            payload
-          );
-        }
-
-        modal.close();
-        invalidateFieldCache(eventTypeId);
-
-        showMessage(editing ? 'فیلد پویا ویرایش شد.' : 'فیلد پویا اضافه شد.');
-
-        await loadFields(eventTypeId, state.selectedEventTypeName);
-      } catch (error) {
-        console.error('Saving event field failed:', error);
-        showMessage(error.message || 'ذخیره فیلد ناموفق بود.');
-      } finally {
-        setButtonBusy(saveButton, false);
-      }
-    });
-  }
-
-  async function disableField(fieldId) {
-    const confirmed = window.confirm(
-      'این فیلد غیرفعال می‌شود و اطلاعات رویدادهای قبلی حذف نخواهد شد. ادامه می‌دهی؟'
-    );
-
-    if (!confirmed) return;
-
-    try {
-      await PMS.Api.delete('/event-fields/' + encodeURIComponent(fieldId));
-
-      invalidateFieldCache(state.selectedEventTypeId);
-      showMessage('فیلد غیرفعال شد.');
-
-      await loadFields(
-        state.selectedEventTypeId,
-        state.selectedEventTypeName
-      );
-    } catch (error) {
-      console.error('Disabling event field failed:', error);
-      showMessage(error.message || 'غیرفعال‌سازی فیلد ناموفق بود.');
     }
   }
 
@@ -2067,18 +1354,6 @@
     }
   }
 
-  function invalidateFieldCache(eventTypeId) {
-    const cacheKey = PMS.Cache.keys.EVENT_FIELDS + '_' + eventTypeId;
-
-    if (PMS.Cache && typeof PMS.Cache.invalidate === 'function') {
-      PMS.Cache.invalidate(cacheKey);
-    }
-
-    if (PMS.Cache && typeof PMS.Cache.remove === 'function') {
-      PMS.Cache.remove(cacheKey);
-    }
-  }
-
   function setButtonBusy(button, busy, label) {
     if (!button) return;
 
@@ -2099,14 +1374,6 @@
   function categoryLabel(value) {
     const option = CATEGORY_OPTIONS.find(function (item) {
       return item.value === String(value || '').toUpperCase();
-    });
-
-    return option ? option.label : (value || '-');
-  }
-
-  function fieldTypeLabel(value) {
-    const option = FIELD_TYPE_OPTIONS.find(function (item) {
-      return item.value === String(value || '').toLowerCase();
     });
 
     return option ? option.label : (value || '-');

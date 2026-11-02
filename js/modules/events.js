@@ -10,7 +10,6 @@
     events: [],
     projects: [],
     eventTypes: [],
-    eventFields: [],
     formDefinitions: [],
     formsReady: true,
     formsRequestId: 0,
@@ -19,11 +18,6 @@
     escapeHandlerBound: false,
     pendingIdempotencyKey: '',
     pendingIdempotencyFingerprint: '',
-    fieldsRequestId: 0,
-    fieldsLoading: false,
-    fieldsReady: false,
-    fieldsError: false,
-    fieldsLoadedForTypeId: '',
     searchTimer: null,
     preselectedProjectId: '',
     amendmentMode: false,
@@ -774,7 +768,7 @@
         if (!document.getElementById('event-details-modal')) return;
 
         const event = this.extractObject(responses[0]);
-        const dynamicData = this.extractDataObject(responses[1]);
+        const legacyDynamicData = this.extractDataObject(responses[1]);
         const formResponses = this.normalize(responses[2]);
         const project = this.findById(this.projects, event.ProjectID);
         const type = this.findById(this.eventTypes, event.EventTypeID);
@@ -833,7 +827,7 @@
 
         html += '</div><h4 class="event-section-title">اطلاعات اختصاصی رویداد</h4>';
 
-        const values = this.dynamicEntries(dynamicData);
+        const values = this.legacyDynamicEntries(legacyDynamicData);
 
         if (values.length) {
           html +=
@@ -935,7 +929,7 @@
       return {};
     },
 
-    dynamicEntries: function (data) {
+    legacyDynamicEntries: function (data) {
       if (Array.isArray(data)) {
         return data.map(function (item) {
           if (item && typeof item === 'object') {
@@ -1003,15 +997,13 @@
       if (this.modalOpen || this.submitting) return;
 
       this.modalOpen = true;
-      this.eventFields = [];
       this.formDefinitions = [];
       this.formsReady = true;
       this.formsRequestId++;
-      this.fieldsLoading = false;
-      this.fieldsReady = false;
-      this.fieldsError = false;
-      this.fieldsLoadedForTypeId = '';
-      this.fieldsRequestId++;
+      this.eventFormsLoading = false;
+      this.eventFormsReady = false;
+      this.eventFormsError = false;
+      this.formsLoadedForTypeId = '';
 
       const previousFocus = document.activeElement;
       const modal = document.createElement('div');
@@ -1047,9 +1039,6 @@
         '<div hidden aria-hidden="true"><select id="event-amendment-source-event"></select><select id="event-amendment-source-form"></select></div></section>' +
         '<section class="event-form-section" id="event-quantity-section" hidden><h4 class="event-section-title">مقدار تولید/تحویل</h4>' +
         '<div id="event-quantity-field" class="event-dynamic-grid"></div></section>' +
-        '<section class="event-form-section"><h4 class="event-section-title">اطلاعات اختصاصی رویداد</h4>' +
-        '<div id="event-dynamic-fields" class="event-dynamic-grid" aria-live="polite">' +
-        '<p class="event-muted">ابتدا نوع رویداد را انتخاب کنید.</p></div></section>' +
         '<section class="event-form-section" id="event-configured-forms-section" hidden><h4 class="event-section-title">فرم‌های اطلاعات تکمیلی</h4>' +
         '<div id="event-configured-forms" class="event-dynamic-grid" aria-live="polite"></div></section>' +
         '<div id="event-submit-progress" class="event-submit-progress" hidden role="status" aria-live="polite">' +
@@ -1142,7 +1131,7 @@
         const selectedOption = typeSelect.options[typeSelect.selectedIndex];
         if (selectedOption && selectedOption.disabled) {
           typeSelect.value = '';
-          this.loadDynamicFields('');
+          this.loadEventForms('');
         }
       };
 
@@ -1165,7 +1154,7 @@
         if (isIndependent) projectSelect.value = '';
         this.updateSubmitAvailability();
         this.renderEventQuantityField();
-        this.loadDynamicFields(typeSelect.value);
+        this.loadEventForms(typeSelect.value);
       });
 
       projectSelect.addEventListener('change', () => {
@@ -1390,116 +1379,36 @@
       container.appendChild(wrapper);
     },
 
-    loadDynamicFields: async function (eventTypeId) {
-      const container = document.getElementById('event-dynamic-fields');
-      const modalError = document.getElementById('event-form-error');
-
-      const requestId = ++this.fieldsRequestId;
+    loadEventForms: async function (eventTypeId) {
       const selectedTypeId = String(eventTypeId || '');
-
-      this.eventFields = [];
       this.formDefinitions = [];
       this.formsReady = !selectedTypeId;
-      this.fieldsLoading = Boolean(selectedTypeId);
-      this.fieldsReady = false;
-      this.fieldsError = false;
-      this.fieldsLoadedForTypeId = '';
-
+      this.eventFormsReady = !selectedTypeId;
+      this.eventFormsLoading = Boolean(selectedTypeId);
+      this.eventFormsError = false;
+      this.formsLoadedForTypeId = '';
       this.updateSubmitAvailability();
 
-      if (modalError) {
-        modalError.hidden = true;
-        modalError.textContent = '';
-      }
-
-      if (!container) {
-        this.fieldsLoading = false;
-        this.fieldsReady = false;
-        this.fieldsError = true;
-        this.updateSubmitAvailability();
-        return;
-      }
-
+      const section = document.getElementById('event-configured-forms-section');
+      const container = document.getElementById('event-configured-forms');
       if (!selectedTypeId) {
-        container.innerHTML =
-          '<p class="event-muted">ابتدا نوع رویداد را انتخاب کنید.</p>';
-
-        this.fieldsLoading = false;
-        this.fieldsReady = false;
-        this.fieldsError = false;
-        this.fieldsLoadedForTypeId = '';
-        this.formDefinitions = [];
-        this.formsReady = true;
-        const formSection = document.getElementById('event-configured-forms-section');
-        if (formSection) formSection.hidden = true;
-
+        if (section) section.hidden = true;
+        if (container) container.replaceChildren();
+        this.eventFormsLoading = false;
+        this.eventFormsReady = false;
         this.updateSubmitAvailability();
         return;
       }
 
-      container.innerHTML =
-        '<div class="event-inline-loading"><span class="event-spinner" aria-hidden="true"></span>' +
-        '<span>در حال آماده‌سازی فیلدهای این رویداد...</span></div>';
-
-      // Load reusable forms independently from legacy event fields. A failure
-      // in the latter must not prevent forms assigned to this event type from
-      // appearing in the event-entry modal.
-      const configuredFormsLoad = this.loadConfiguredForms(selectedTypeId);
-
-      try {
-        const response = await PMS.Api.get(
-          '/event-types/' + encodeURIComponent(selectedTypeId) + '/fields'
-        );
-
-        if (requestId !== this.fieldsRequestId ||
-            !document.getElementById('event-create-modal')) {
-          return;
-        }
-
-        const currentTypeSelect = document.getElementById('event-form-type');
-
-        if (!currentTypeSelect ||
-            String(currentTypeSelect.value || '') !== selectedTypeId) {
-          return;
-        }
-
-        const fields = this.normalize(
-          PMS.Api.extractData(response)
-        ).filter(function (field) {
-          return String(field.Status || 'ACTIVE').toUpperCase() === 'ACTIVE';
-        });
-
-        this.eventFields = fields;
-        this.renderDynamicFields(fields);
-        await configuredFormsLoad;
-
-        this.fieldsLoading = false;
-        this.fieldsReady = true;
-        this.fieldsError = false;
-        this.fieldsLoadedForTypeId = selectedTypeId;
-
-        this.updateSubmitAvailability();
-      } catch (error) {
-        if (requestId !== this.fieldsRequestId ||
-            !document.getElementById('event-create-modal')) {
-          return;
-        }
-
-        this.fieldsLoading = false;
-        this.fieldsReady = false;
-        this.fieldsError = true;
-        this.fieldsLoadedForTypeId = '';
-        this.eventFields = [];
-
-        container.innerHTML = '';
-
-        this.showFormError(
-          'دریافت فیلدهای نوع رویداد ناموفق بود: ' +
-          this.errorMessage(error)
-        );
-
-        this.updateSubmitAvailability();
-      }
+      this.eventFormsLoading = true;
+      this.eventFormsReady = false;
+      this.eventFormsError = false;
+      await this.loadConfiguredForms(selectedTypeId);
+      this.eventFormsLoading = false;
+      this.eventFormsReady = this.formsReady;
+      this.eventFormsError = !this.formsReady;
+      this.formsLoadedForTypeId = this.formsReady ? selectedTypeId : '';
+      this.updateSubmitAvailability();
     },
 
     updateSubmitAvailability: function () {
@@ -1529,8 +1438,8 @@
 
       const typeMatchesLoadedFields = Boolean(
         typeSelected &&
-        this.fieldsLoadedForTypeId &&
-        String(typeInput.value) === String(this.fieldsLoadedForTypeId)
+        this.formsLoadedForTypeId &&
+        String(typeInput.value) === String(this.formsLoadedForTypeId)
       );
 
       const amendmentReady = !this.amendmentMode || Boolean(
@@ -1542,77 +1451,14 @@
         projectSelected &&
         typeSelected &&
         dateSelected &&
-        this.fieldsReady &&
-        !this.fieldsLoading &&
-        !this.fieldsError &&
+        this.eventFormsReady &&
+        !this.eventFormsLoading &&
+        !this.eventFormsError &&
         this.formsReady &&
         typeMatchesLoadedFields;
 
       button.disabled = !canSubmit;
       button.setAttribute('aria-disabled', String(!canSubmit));
-    },
-
-    renderDynamicFields: function (fields) {
-      const container = document.getElementById('event-dynamic-fields');
-      if (!container) return;
-
-      if (!fields.length) {
-        container.innerHTML =
-          '<p class="event-muted">برای این نوع رویداد فیلد اختصاصی تعریف نشده است.</p>';
-        return;
-      }
-
-      container.replaceChildren();
-
-      fields.sort(function (a, b) {
-        return Number(a.FieldOrder || 0) - Number(b.FieldOrder || 0);
-      });
-
-      fields.forEach((field, index) => {
-        const code = String(field.Code || '');
-        const type = String(field.FieldType || 'text').toLowerCase();
-        const required = Events.isRequired(field);
-        const label = (field.Name || code) + (required ? ' *' : '');
-        const wrapper = document.createElement('div');
-
-        wrapper.className = 'event-field';
-
-        if (type === 'boolean') {
-          const labelElement = document.createElement('label');
-          labelElement.className = 'event-checkbox-label';
-
-          const input = document.createElement('input');
-          input.type = 'checkbox';
-          input.dataset.dynamicCode = code;
-          input.id = 'event-dynamic-' + index;
-
-          labelElement.htmlFor = input.id;
-          labelElement.appendChild(input);
-          labelElement.appendChild(document.createTextNode(label));
-
-          wrapper.appendChild(labelElement);
-        } else {
-          const labelElement = document.createElement('label');
-          labelElement.textContent = label;
-          labelElement.htmlFor = 'event-dynamic-' + index;
-
-          const input = Events.createFieldInput(field, type);
-          input.dataset.dynamicCode = code;
-          input.id = 'event-dynamic-' + index;
-          input.required = required;
-
-          if (field.DefaultValue !== null &&
-              field.DefaultValue !== undefined &&
-              String(field.DefaultValue) !== '') {
-            input.value = String(field.DefaultValue);
-          }
-
-          wrapper.appendChild(labelElement);
-          wrapper.appendChild(input);
-        }
-
-        container.appendChild(wrapper);
-      });
     },
 
     loadConfiguredForms: async function (eventTypeId) {
@@ -2072,7 +1918,7 @@
         if (type === 'number') input.step = 'any';
       }
 
-      input.name = 'dynamic_' + (field.Code || '');
+      input.name = 'form_' + (field.Code || '');
 
       return input;
     },
@@ -2148,18 +1994,18 @@
         return;
       }
 
-      if (this.fieldsLoading) {
-        this.showFormError('فیلدهای نوع رویداد هنوز در حال بارگذاری هستند. کمی صبر کنید.');
+      if (this.eventFormsLoading) {
+        this.showFormError('فرم‌های متصل هنوز در حال بارگذاری هستند. کمی صبر کنید.');
         return;
       }
 
-      if (this.fieldsError || !this.fieldsReady) {
-        this.showFormError('فیلدهای نوع رویداد آماده نیستند. نوع رویداد را دوباره انتخاب کنید.');
+      if (this.eventFormsError || !this.eventFormsReady) {
+        this.showFormError('فرم‌های متصل آماده نیستند. نوع رویداد را دوباره انتخاب کنید.');
         return;
       }
 
-      if (String(this.fieldsLoadedForTypeId) !== selectedTypeId) {
-        this.showFormError('نوع رویداد تغییر کرده است. منتظر آماده‌شدن فیلدهای آن بمانید.');
+      if (String(this.formsLoadedForTypeId) !== selectedTypeId) {
+        this.showFormError('نوع رویداد تغییر کرده است. منتظر آماده‌شدن فرم‌های متصل بمانید.');
         return;
       }
 
@@ -2169,31 +2015,6 @@
       const typeId = typeInput.value;
       const occurredAt = dateInput.value;
       const description = descriptionInput.value.trim();
-      const dynamicData = {};
-
-      for (const input of form.querySelectorAll('[data-dynamic-code]')) {
-        const code = input.dataset.dynamicCode;
-        if (!code) continue;
-
-        if (input.type === 'checkbox') {
-          dynamicData[code] = input.checked;
-          continue;
-        }
-
-        const value = input.value;
-
-        if (input.required && String(value).trim() === '') {
-          input.reportValidity();
-          input.focus();
-          return;
-        }
-
-        if (String(value).trim() !== '') {
-          dynamicData[code] =
-            input.type === 'number' ? Number(value) : value;
-        }
-      }
-
       const formResponses = await this.collectConfiguredFormResponses(projectId);
       if (formResponses === null) return;
       this.amendmentPendingValues = this.amendmentMode ? formResponses : null;
@@ -2214,7 +2035,6 @@
         EventTypeVersion: type ? Number(type.Version || 1) : 1,
         OccurredAt: date.toISOString(),
         Description: description,
-        DynamicData: dynamicData,
         FormResponses: this.amendmentMode ? [] : formResponses,
         VariantQuantity: (form.querySelector('[data-event-quantity-input]') || {}).value || ''
       };
@@ -2472,14 +2292,12 @@
       if (modal) modal.remove();
 
       this.modalOpen = false;
-      this.eventFields = [];
-      this.fieldsLoading = false;
-      this.fieldsReady = false;
-      this.fieldsError = false;
-      this.fieldsLoadedForTypeId = '';
+      this.eventFormsLoading = false;
+      this.eventFormsReady = false;
+      this.eventFormsError = false;
+      this.formsLoadedForTypeId = '';
 
       // پاسخ درخواست قبلی دیگر نباید وضعیت فرم را تغییر دهد.
-      this.fieldsRequestId++;
     },
 
     creatorValue: function (event) {
