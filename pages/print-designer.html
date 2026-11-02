@@ -1,12 +1,34 @@
-<section class="page-section ppd-entry-page">
+<section class="page-section pt-page">
   <div class="page-header">
-    <div><h2>طراحی قالب</h2><p>قالب چاپی پروژه را بساز، ویرایش کن و ذخیره کن. چاپ نهایی از بخش «چاپ اسناد» انجام می‌شود.</p></div>
+    <div><h2>کتابخانه طراحی قالب</h2><p>قالب‌ها را یک‌بار بساز و برای پروژه‌های مختلف استفاده کن. انتخاب پروژه هنگام تولید سند انجام می‌شود.</p></div>
+    <button type="button" class="btn btn-primary" id="pt-template-reset">قالب جدید</button>
   </div>
-  <div class="card"><div class="card-body ppd-entry-controls">
-    <label for="print-designer-project-select">انتخاب پروژه</label>
-    <select id="print-designer-project-select"><option value="">در حال دریافت فهرست پروژه‌ها...</option></select>
-    <button type="button" class="btn btn-primary" id="print-designer-launch" disabled>ورود به محیط طراحی</button>
-    <p id="print-designer-project-status" class="text-muted" aria-live="polite"></p>
-    <div id="project-forms-loading" hidden></div><div id="project-forms-error" hidden></div><div id="project-forms-retry" hidden></div><div id="project-forms-list" hidden></div>
-  </div></div>
+  <p id="pt-library-status" class="pt-status" aria-live="polite">در حال بارگذاری…</p>
+  <section class="card pt-panel"><div class="card-body">
+    <h3 class="pt-section-title">قالب‌های ذخیره‌شده</h3>
+    <div id="pt-template-list" class="pt-template-list"><div class="pt-empty-state">در حال دریافت قالب‌ها…</div></div>
+  </div></section>
+  <div class="pt-library-grid">
+    <section class="card pt-panel"><div class="card-body">
+      <h3 id="pt-editor-title" class="pt-section-title">ساخت قالب جدید</h3>
+      <form id="pt-template-form">
+        <div class="pt-form-grid">
+          <div class="form-group"><label for="pt-template-code">کد قالب</label><input id="pt-template-code" name="Code" required maxlength="50" pattern="[A-Za-z0-9_-]{2,50}" placeholder="مثلاً PROJECT_REPORT"></div>
+          <div class="form-group"><label for="pt-template-name">نام قالب</label><input id="pt-template-name" name="Name" required maxlength="150" placeholder="مثلاً گزارش مشخصات پروژه"></div>
+          <div class="form-group pt-span"><label for="pt-template-description">توضیحات</label><textarea id="pt-template-description" name="Description" rows="2" maxlength="1000"></textarea></div>
+        </div>
+        <div><h4 class="pt-section-title">منابع متصل به قالب</h4><p class="text-muted">این منابع به شناسه پایدار اطلاعات و فرم متصل می‌شوند؛ مقدار واقعی هنگام انتخاب پروژه بازیابی می‌شود.</p><div id="pt-binding-list" class="pt-binding-list"></div></div>
+        <div class="form-actions"><button type="submit" class="btn btn-primary">ذخیره قالب</button><button type="button" class="btn btn-secondary" id="pt-template-reset-secondary">انصراف از ویرایش</button></div>
+        <p id="pt-form-status" class="pt-status" aria-live="polite"></p>
+      </form>
+    </div></section>
+    <section class="card pt-panel"><div class="card-body">
+      <h3 class="pt-section-title">منابع داده قابل استفاده</h3>
+      <p class="text-muted">فیلدهای پایه پروژه، اطلاعات مرکزی و فیلدهای فرم‌های ثبت‌شده در رویدادها.</p>
+      <div id="pt-source-list" class="pt-source-list"><div class="pt-empty-state">در حال دریافت منابع…</div></div>
+    </div></section>
+  </div>
 </section>
+<script>
+  (function(){var b=document.getElementById('pt-template-reset-secondary');if(b)b.addEventListener('click',function(){if(window.PMS&&window.PMS.Modules&&window.PMS.Modules.PrintDesigner)window.PMS.Modules.PrintDesigner.resetForm();});})();
+</script>
