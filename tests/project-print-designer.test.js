@@ -56,7 +56,7 @@ test('template library is a standalone sidebar route without project selection',
  const page=read('pages/print-designer.html');
  const module=read('js/modules/print-designer.js');
  assert.match(router,/'print-designer': 'pages\\/print-designer.html'/);
- assert.match(router,/'print-design': \\['SYSTEM_SETTINGS'\\]/);
+ assert.ok(router.includes("'print-design': ['SYSTEM_SETTINGS']"));
  assert.match(layout,/label: 'طراحی قالب'.*SYSTEM_SETTINGS/);
  assert.match(page,/pt-template-form/);
  assert.doesNotMatch(page,/print-designer-project-select/);
