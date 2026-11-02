@@ -69,6 +69,36 @@
 - bindingها باید بر شناسه پایدار منبع متکی باشند، نه متن عنوان یا index آرایه. برای فرم‌های ثبت‌شده، snapshot همان پاسخ/نسخه مبناست. انتخاب پاسخ در صورت چند بار ثبت‌شدن یک فرم باید قابل تعریف باشد (آخرین پاسخ، پاسخ مشخص یا مجموعه پاسخ‌ها).
 - قالب فقط تعریف چیدمان و binding را نگه می‌دارد؛ هرگز داده یک پروژه را داخل قالب عمومی ذخیره نمی‌کند. داده پروژه فقط هنگام resolve/preview/output خوانده می‌شود.
 
+### 3.1 قرارداد اجرایی پیاده‌سازی‌شده در تسک ۲
+
+- بک‌اند:
+  - `PrintTemplateRepository.js`: شیت `36_PrintTemplates` را در صورت نبود، به‌صورت افزایشی ایجاد می‌کند؛ ستون‌های موجود را جابه‌جا یا حذف نمی‌کند. عملیات فهرست/خواندن/ایجاد/ویرایش از `GoogleSheetsRepository` عبور می‌کند.
+  - `PrintTemplateValidator.js`: نسخه ساختار، اندازه/جهت صفحه، شناسه یکتای bindingها، نوع منبع، allow-list فیلدهای پروژه، شناسه فرم/فیلد و روش انتخاب پاسخ را اعتبارسنجی می‌کند؛ سقف JSON برابر ۴۵۰۰۰ نویسه است.
+  - `PrintTemplateService.js`: `list`, `get`, `sources`, `create`, `update`, `deactivate`, `resolve`. قالب‌ها tenant-scoped هستند؛ حذف منطقی و audit ثبت می‌شود؛ Version با هر ویرایش افزایش می‌یابد.
+  - `Router.js`:
+    - `GET /print-templates`: فهرست قالب‌های tenant؛ مجوز `SYSTEM_SETTINGS` یا `PROJECT_VIEW`.
+    - `GET /print-templates/sources`: فهرست منابع قابل اتصال؛ مجوز `SYSTEM_SETTINGS`.
+    - `GET /print-templates/:templateId`: دریافت قالب؛ مجوز `SYSTEM_SETTINGS` یا `PROJECT_VIEW`.
+    - `POST /print-templates`: ایجاد؛ مجوز `SYSTEM_SETTINGS`.
+    - `PUT /print-templates/:templateId`: ویرایش و افزایش نسخه؛ مجوز `SYSTEM_SETTINGS`.
+    - `DELETE /print-templates/:templateId`: غیرفعال‌سازی منطقی؛ مجوز `SYSTEM_SETTINGS`.
+    - `POST /print-templates/:templateId/resolve` با payload `{ ProjectID }`: بازیابی داده برای پروژه مجاز؛ مجوز `PROJECT_VIEW`.
+  - ساختار ذخیره‌سازی شیت: `ID,TenantID,Code,Name,Description,Status,Version,DefinitionJSON,CreatedBy,CreatedAt,UpdatedBy,UpdatedAt`.
+  - ساختار Definition: `{schemaVersion:1,page:{size,orientation},elements:[],bindings:[]}`. bindingهای فعلی: `PROJECT_FIELD`، `PROJECT_INFORMATION`، `EVENT_FORM_FIELD` و `EVENT_FORM_RESPONSE`. انتخاب پاسخ فرم: `LATEST`، `ALL`، `EVENT` یا `RESPONSE`.
+  - خروجی resolve شامل `template`، خلاصه `project`، نگاشت `data` بر اساس شناسه binding و `resolvedAt` است. داده پروژه داخل Definition ذخیره نمی‌شود.
+  - شیت در اولین استفاده به‌صورت افزایشی ساخته می‌شود؛ اجرای دستی setup برای ساخت شیت جدید الزامی نیست. تعریف آن در `DatabaseSetup.js` نیز ثبت شده تا در بررسی سلامت دیتابیس حضور داشته باشد.
+- فرانت‌اند:
+  - `js/modules/print-designer.js`: ماژول مستقل کتابخانه قالب و صفحه آماده‌سازی داده؛ عملیات CRUD، نمایش منابع، افزودن/حذف binding و resolve.
+  - `css/print-template-library.css`: استایل مستقل کتابخانه و خروجی داده.
+  - `pages/print-designer.html`: کتابخانه مرکزی و فرم ایجاد/ویرایش قالب، بدون انتخاب پروژه.
+  - `pages/print-output.html`: انتخاب قالب و پروژه و نمایش داده resolveشده.
+  - `js/core/router.js`: routeهای طراحی به `PrintDesigner` و مجوز `SYSTEM_SETTINGS`؛ route چاپ به همین ماژول با مجوز `PROJECT_VIEW`.
+  - `js/components/layout.js`: منوی طراحی قالب فقط برای `SYSTEM_SETTINGS`؛ چاپ اسناد برای کاربران دارای `PROJECT_VIEW`.
+  - `index.html`: بارگذاری ماژول و CSS جدید با cache-busting.
+  - `tests/print-template-library.test.js` و به‌روزرسانی قراردادهای route در `tests/project-print-designer.test.js`.
+- آزمون بک‌اند: `tests/print-templates.test.js` برای اعتبارسنجی binding، یکتایی tenant، نسخه‌دهی، resolve اطلاعات مرکزی و snapshot پاسخ فرم، مرز دسترسی و حذف منطقی افزوده شده است.
+- منطق قدیمی محیط طراحی در `ProjectDetail` و CSS قبلی عمداً تا پایان انتقال باقی است؛ routeهای جدید دیگر آن را اجرا نمی‌کنند. حذف کامل legacy در تسک ۴ انجام می‌شود تا پیش از جایگزینی کامل قابلیت‌های ویرایش، عملکرد فعلی از دست نرود.
+
 ### 4. معماری هدف و معیارهای پاک‌سازی
 
 - مدل طراحی تأییدشده: **ترکیبی**؛ بوم آزاد با مختصات واقعی صفحه در کنار بلوک‌های ساختاریافته و تکرارشونده.
