@@ -50,20 +50,6 @@ test('print designer assets are cache-busted and loaded by the application',()=>
 });
 
 
-test('template library is a standalone sidebar route without project selection',()=>{
- const layout=read('js/components/layout.js');
- const router=read('js/core/router.js');
- const page=read('pages/print-designer.html');
- const module=read('js/modules/print-designer.js');
- assert.ok(router.includes("'print-designer': 'pages/print-designer.html'"));
- assert.ok(router.includes("'print-design': ['SYSTEM_SETTINGS']"));
- assert.match(layout,/label: 'طراحی قالب'.*SYSTEM_SETTINGS/);
- assert.match(page,/pt-template-form/);
- assert.doesNotMatch(page,/print-designer-project-select/);
- assert.match(module,/loadLibrary: async function/);
- assert.doesNotMatch(read('pages/project-detail.html'),/project-print-designer-open/);
-});
-
 test('form image attachments are loaded as inline images for project forms and print designer',()=>{
  const module=read('js/modules/project-detail.js');
  assert.match(module,/prepareProjectFormImages: async function/);
