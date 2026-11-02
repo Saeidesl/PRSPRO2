@@ -68,7 +68,7 @@ test('visual editor module parses and exposes canvas interactions',()=>{
  const css=read('css/print-template-library.css');
  assert.doesNotThrow(()=>new vm.Script(module,{filename:'print-designer.js'}));
  for(const token of ['bindEditor: function','createElement: function','renderCanvas: function','renderInspector: function','commitHistory: function','undo: function','redo: function','pointermove','pointerup','data-pt-resize']) assert.ok(module.includes(token),token);
- for(const id of ['pt-design-canvas','pt-inspector-fields','pt-page-size','pt-page-orientation','pt-prop-columns','pt-prop-rows','pt-layer-list']) assert.ok(page.includes(id),id);
+ for(const id of ['pt-design-canvas','pt-inspector-fields','pt-page-size','pt-page-orientation','pt-prop-columns','pt-prop-rows','pt-prop-color','pt-prop-background','pt-layer-list']) assert.ok(page.includes(id),id);
  assert.match(css,/\.pt-design-canvas\{position:relative/);
  assert.match(css,/\.pt-canvas-element\.is-selected/);
  assert.match(css,/\.pt-editor-layout/);
