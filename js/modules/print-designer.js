@@ -119,7 +119,7 @@
         button.dataset.ptBound = '1';
         button.addEventListener('click', () => this.handleEditorAction(button.dataset.ptAction));
       });
-      ['pt-prop-text','pt-prop-binding','pt-prop-x','pt-prop-y','pt-prop-width','pt-prop-height','pt-prop-font','pt-prop-align'].forEach(id => {
+      ['pt-prop-text','pt-prop-binding','pt-prop-x','pt-prop-y','pt-prop-width','pt-prop-height','pt-prop-font','pt-prop-align','pt-prop-columns','pt-prop-rows'].forEach(id => {
         const input = document.getElementById(id);
         if (!input || input.dataset.bound === '1') return;
         input.dataset.bound = '1';
@@ -194,9 +194,13 @@
       if (!item) return;
       const map = { 'pt-prop-text':'text','pt-prop-binding':'bindingId','pt-prop-x':'x','pt-prop-y':'y',
         'pt-prop-width':'width','pt-prop-height':'height','pt-prop-font':'fontSize','pt-prop-align':'align' };
-      const key = map[id];
-      if (!key) return;
-      item[key] = ['x','y','width','height','fontSize'].includes(key) ? Number(value) : value;
+      if (id === 'pt-prop-columns') item.columns = String(value).split('|').map(part => part.trim()).filter(Boolean);
+      else if (id === 'pt-prop-rows') item.rows = String(value).split(/\r?\n/).filter(line => line.trim()).map(line => line.split('|').map(part => part.trim()));
+      else {
+        const key = map[id];
+        if (!key) return;
+        item[key] = ['x','y','width','height','fontSize'].includes(key) ? Number(value) : value;
+      }
       this.renderCanvas(); this.renderLayers(); this.commitHistory();
     },
     renderInspector: function () {
@@ -211,12 +215,17 @@
         'pt-prop-height':item.height || 15, 'pt-prop-font':item.fontSize || 12, 'pt-prop-align':item.align || 'right' };
       Object.keys(values).forEach(id => { const node = document.getElementById(id); if (node && document.activeElement !== node) node.value = values[id]; });
       const binding = document.getElementById('pt-prop-binding');
-      if (binding && binding.dataset.ready !== '1') {
+      if (binding) {
         binding.innerHTML = '<option value="">بدون اتصال</option>' + ((this.definition && this.definition.bindings) || []).map(source =>
           '<option value="' + this.esc(source.id) + '">' + this.esc(source.label || source.id) + '</option>').join('');
-        binding.dataset.ready = '1';
         binding.value = item.bindingId || '';
       }
+      const tableProperties = document.getElementById('pt-table-properties');
+      if (tableProperties) tableProperties.hidden = item.type !== 'table';
+      const columns = document.getElementById('pt-prop-columns');
+      const rows = document.getElementById('pt-prop-rows');
+      if (columns) columns.value = (item.columns || []).join(' | ');
+      if (rows) rows.value = (item.rows || []).map(row => row.join(' | ')).join('\n');
     },
     renderCanvas: function () {
       const canvas = document.getElementById('pt-design-canvas');
