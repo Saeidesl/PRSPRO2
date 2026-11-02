@@ -3,6 +3,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
 const test=require('node:test');
+const vm=require('node:vm');
 const read=file=>fs.readFileSync(path.join(__dirname,'..',file),'utf8');
 
 test('template library uses central CRUD and source catalog APIs',()=>{
@@ -51,4 +52,11 @@ test('template library stylesheet is responsive and uses application theme varia
  assert.match(css,/@media\(max-width:560px\)/);
  assert.match(css,/var\(--text-secondary/);
  assert.match(css,/var\(--border-color/);
+});
+
+test('print designer module parses and is loaded exactly once',()=>{
+ const module=read('js/modules/print-designer.js');
+ assert.doesNotThrow(()=>new vm.Script(module,{filename:'print-designer.js'}));
+ const index=read('index.html');
+ assert.equal((index.match(/js\\/modules\\/print-designer\\.js/g)||[]).length,1);
 });
