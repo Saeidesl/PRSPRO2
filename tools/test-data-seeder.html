@@ -40,9 +40,6 @@ function dataOf(r){return window.PMS.Api.extractData(r)}
 function listOf(r){const d=dataOf(r);if(Array.isArray(d))return d;if(d&&Array.isArray(d.items))return d.items;if(d&&Array.isArray(d.data))return d.data;return []}
 function pick(obj,...keys){for(const k of keys){if(obj&&obj[k]!==undefined&&obj[k]!==null)return obj[k]}return ''}
 function dateIso(daysAgo,offsetMinutes){return new Date(Date.now()-(daysAgo*86400000)+(offsetMinutes||0)*60000).toISOString()}
-function optionsOf(field){let o=pick(field,'Options','options');if(Array.isArray(o))return o;try{const x=JSON.parse(String(o||''));if(Array.isArray(x))return x}catch(e){}return String(o||'').split(',').map(x=>x.trim()).filter(Boolean)}
-function dynamicValue(field,index){const type=String(pick(field,'FieldType','fieldType')||'text').toLowerCase();if(type==='number')return (index+1)*10;if(type==='boolean')return index%2===0;if(type==='date')return new Date(Date.now()-index*86400000).toISOString().slice(0,10);if(type==='datetime')return dateIso(index);if(type==='select'){const opts=optionsOf(field).map(x=>x&&typeof x==='object'&&x.value!==undefined?String(x.value):String(x));return opts.length?opts[index%opts.length]:null}return 'داده آزمایشی '+(index+1)}
-function dynamicData(fields,index){const out={};(fields||[]).forEach(f=>{const code=String(pick(f,'Code','code')||'').trim();if(!code)return;const required=String(pick(f,'IsRequired','isRequired')).toUpperCase()==='TRUE';const type=String(pick(f,'FieldType','fieldType')||'text').toLowerCase();const supported=['text','textarea','number','boolean','date','datetime','select'].includes(type);if(!supported){if(required)throw new Error('نوع فیلد اجباری پشتیبانی نمی‌شود: '+pick(f,'Name','name')+' ('+type+')');return}let value=dynamicValue(f,index);if(value===null||value===''){if(required)throw new Error('برای فیلد اجباری گزینه معتبر وجود ندارد: '+pick(f,'Name','name'));return}out[code]=value});return out}
 function withTimeout(promise,label,ms){return new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error(label+' بیش از '+Math.round(ms/1000)+' ثانیه طول کشید؛ ارتباط با سرور پاسخ نداده است.')),ms);promise.then(value=>{clearTimeout(timer);resolve(value)},error=>{clearTimeout(timer);reject(error)})})}
 async function apiGet(path){status('در حال دریافت اطلاعات از سرور: '+path);log('درخواست اطلاعات: '+path);return dataOf(await withTimeout(PMS.Api.get(path),'دریافت '+path,30000))}
 async function apiPost(path,body){status('در حال ثبت اطلاعات در سرور: '+path);return dataOf(await withTimeout(PMS.Api.post(path,body),'ثبت '+path,30000))}
@@ -97,12 +94,8 @@ async function run(){
   const steps=listOf(stepResponse);
   const projectTypes=types.filter(t=>String(pick(t,'ConnectionType','connectionType')||'PROJECT').toUpperCase()!=='INDEPENDENT'&&String(pick(t,'Status','status')||'ACTIVE').toUpperCase()==='ACTIVE');
   if(!projectTypes.length)throw new Error('نوع رویداد فعال و مرتبط با پروژه پیدا نشد.');
-  const fieldMap={};
-  status('مرحله ۳ از ۴: بررسی فیلدهای اجباری انواع رویداد…');
-  for(const t of projectTypes){try{fieldMap[idOf(t)]=listOf(await apiGet('/event-types/'+encodeURIComponent(idOf(t))+'/fields')).filter(f=>String(pick(f,'Status','status')||'ACTIVE').toUpperCase()==='ACTIVE')}catch(e){fieldMap[idOf(t)]=[];log('هشدار: فیلدهای نوع '+pick(t,'Name','name')+' خوانده نشد: '+e.message)}}
+  status('مرحله ۳ از ۴: آماده‌سازی رویدادها با مسیر استاندارد فرم‌های متصل…');
   const orderedTypes=eventTypeSort(projectTypes,steps);
-  // Validate every event type's dynamic fields before creating any records.
-  orderedTypes.forEach(t=>{try{dynamicData(fieldMap[idOf(t)]||[],0)}catch(e){throw new Error('پیش‌بررسی نوع رویداد «'+pick(t,'Name','name')+'» ناموفق بود؛ هنوز هیچ پروژه‌ای ساخته نشده است. '+e.message)}});
   const count=Math.max(1,Math.min(50,Number($('projectCount').value)||1));
   const perProject=Math.max(10,Math.min(20,Number($('eventsPerProject').value)||10));
   const withFiles=$('withAttachments').checked;
@@ -128,8 +121,7 @@ async function run(){
      if(stopped)break;
      const type=orderedTypes[j%orderedTypes.length];
      try{
-      const fields=fieldMap[idOf(type)]||[];
-      const payload={ProjectID:pid,EventTypeID:idOf(type),EventTypeVersion:Number(pick(type,'Version','version'))||1,OccurredAt:dateIso((perProject-j)*2,(i%24)*60),Description:'رویداد آزمایشی '+(j+1)+' از '+perProject+' برای '+code+'؛ مرحله '+pick(type,'Name','name'),DynamicData:dynamicData(fields,j+i)};
+      const payload={ProjectID:pid,EventTypeID:idOf(type),EventTypeVersion:Number(pick(type,'Version','version'))||1,OccurredAt:dateIso((perProject-j)*2,(i%24)*60),Description:'رویداد آزمایشی '+(j+1)+' از '+perProject+' برای '+code+'؛ مرحله '+pick(type,'Name','name')};
       const evRes=await apiPost('/events',payload);const ev=successEntity(evRes,'event');const eid=idOf(ev,'event');if(!eid)throw new Error('پاسخ ثبت رویداد شناسه ندارد');
       report.eventsCreated++;log('  رویداد '+(j+1)+' ثبت شد: '+pick(type,'Name','name'));
       if(withFiles&&j===Math.min(4,perProject-1)&&i%5===1){try{await uploadAttachment('EVENT',eid,code+'-event-'+(j+1)+'.pdf','application/pdf',pdf);report.attachmentsCreated++;log('  پیوست PDF به رویداد اضافه شد')}catch(e){report.failures.push(code+' پیوست رویداد: '+e.message);log('  خطای پیوست رویداد: '+e.message)}}
