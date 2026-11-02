@@ -121,3 +121,16 @@ test('print output page exposes a real document preview and print action',()=>{
   assert.match(module,/window\.print\(\)/);
   assert.match(styles,/body\.pt-printing/);
 });
+
+
+test('drawing toolbar supports editable line, divider, rectangle and ellipse elements in editor and print output',()=>{
+ const module=read('js/modules/print-designer.js');
+ const page=read('pages/print-designer.html');
+ const css=read('css/print-template-library.css');
+ for(const action of ['add-line','add-divider','add-rectangle','add-ellipse']) assert.ok(page.includes('data-pt-action="'+action+'"'),action);
+ for(const type of ['line','divider','rectangle','ellipse']) { assert.ok(module.includes("createElement('"+type+"'"),type); assert.ok(module.includes('pt-output-'+type),type+' output'); }
+ assert.match(module,/pt-shape-outline/);
+ assert.match(module,/pt-shape-line/);
+ assert.match(css,/\.pt-output-rectangle/);
+ assert.match(css,/\.pt-output-divider/);
+});
