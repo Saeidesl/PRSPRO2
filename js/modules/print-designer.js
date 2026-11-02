@@ -331,18 +331,34 @@
     },
     loadLibrary: async function () {
       this.setStatus('pt-library-status', 'در حال دریافت کتابخانه قالب‌ها و منابع داده…');
-      try {
-        const results = await Promise.all([
-          PMS.Api.get('/print-templates'),
-          PMS.Api.get('/print-templates/sources')
-        ]);
-        this.templates = this.list(results[0]);
-        this.sources = this.extract(results[1]) || { projectFields: [], informationTypes: [], forms: [] };
+      const results = await Promise.allSettled([
+        PMS.Api.get('/print-templates'),
+        PMS.Api.get('/print-templates/sources')
+      ]);
+      if (results[0].status === 'fulfilled') {
+        this.templates = this.list(results[0].value);
         this.renderLibrary();
         this.setStatus('pt-library-status', this.templates.length ? this.templates.length + ' قالب در کتابخانه وجود دارد.' : 'هنوز قالبی ساخته نشده است.');
-      } catch (error) {
-        this.setStatus('pt-library-status', error.message || 'دریافت کتابخانه قالب‌ها ناموفق بود.', true);
+      } else {
+        this.templates = [];
+        this.renderLibrary();
+        this.setStatus('pt-library-status', results[0].reason && results[0].reason.message || 'دریافت کتابخانه قالب‌ها ناموفق بود.', true);
       }
+      if (results[1].status === 'fulfilled') {
+        const sources = this.extract(results[1].value) || {};
+        this.sources = {
+          projectFields: Array.isArray(sources.projectFields) ? sources.projectFields : [],
+          informationTypes: Array.isArray(sources.informationTypes) ? sources.informationTypes : [],
+          forms: Array.isArray(sources.forms) ? sources.forms : []
+        };
+        this.sourceError = '';
+      } else {
+        this.sources = { projectFields: [], informationTypes: [], forms: [] };
+        this.sourceError = results[1].reason && results[1].reason.message || 'دریافت منابع داده ناموفق بود.';
+      }
+      this.renderSources();
+      this.renderBindings();
+      this.renderInspector();
     },
     renderLibrary: function () {
       const list = document.getElementById('pt-template-list');
@@ -362,8 +378,8 @@
       this.renderBindings();
     },
     renderSources: function () {
-      const root = document.getElementById('pt-source-list');
-      if (!root) return;
+      const roots = ['pt-source-list','pt-editor-source-list'].map(id => document.getElementById(id)).filter(Boolean);
+      if (!roots.length) return;
       const groups = [];
       (this.sources.projectFields || []).forEach(source => groups.push({
         key: 'project|' + source.field, label: source.label, detail: 'اطلاعات پایه پروژه',
@@ -379,15 +395,21 @@
         binding: { id: 'form_' + form.ID + '_' + field.ID, sourceType: 'EVENT_FORM_FIELD',
           formId: form.ID, fieldId: field.ID, informationTypeId: field.InformationTypeID, selection: 'LATEST' }
       })));
-      root.innerHTML = groups.length ? groups.map((item, index) =>
-        '<div class="pt-source-row"><div><strong>' + this.esc(item.label) + '</strong><small>' + this.esc(item.detail) +
-        '</small></div><button type="button" class="btn btn-secondary btn-sm" data-pt-add-source="' + index + '">افزودن</button></div>'
-      ).join('') : '<p class="pt-empty-state">منبع داده فعالی پیدا نشد.</p>';
-      root.querySelectorAll('[data-pt-add-source]').forEach(button => button.addEventListener('click', () => {
-        const index = Number(button.dataset.ptAddSource);
-        const item = groups[index];
-        if (item) this.addBinding(item.binding, item.label);
-      }));
+      const markup = this.sourceError
+        ? '<p class="pt-empty-state is-error">' + this.esc(this.sourceError) + '</p>'
+        : (groups.length ? groups.map((item, index) =>
+          '<div class="pt-source-row"><div><strong>' + this.esc(item.label) + '</strong><small>' + this.esc(item.detail) +
+          '</small></div><button type="button" class="btn btn-secondary btn-sm" data-pt-add-source="' + index + '">اتصال</button></div>'
+        ).join('') : '<p class="pt-empty-state">منبع داده فعالی پیدا نشد. اطلاعات مرکزی یا فرم فعال تعریف کن.</p>');
+      roots.forEach(root => {
+        root.innerHTML = markup;
+        root.querySelectorAll('[data-pt-add-source]').forEach(button => button.addEventListener('click', () => {
+          const item = groups[Number(button.dataset.ptAddSource)];
+          if (item) this.addBinding(item.binding, item.label);
+        }));
+      });
+      const count = document.getElementById('pt-source-count');
+      if (count) count.textContent = this.sourceError ? 'خطا در دریافت منابع' : (groups.length + ' منبع قابل اتصال');
     },
     addBinding: function (binding, label) {
       if (!this.definition) this.definition = this.blankDefinition();
@@ -396,8 +418,8 @@
         return;
       }
       this.definition.bindings.push(Object.assign({}, binding, { label: label }));
-      this.renderBindings(); this.renderInspector(); this.commitHistory();
-      this.setStatus('pt-form-status', 'منبع داده به قالب اضافه شد؛ پس از ذخیره در قالب باقی می‌ماند.');
+      this.renderBindings(); this.renderInspector(); this.renderCanvas(); this.commitHistory();
+      this.setStatus('pt-form-status', 'منبع داده متصل شد؛ اکنون از فهرست ویژگی‌های المان آن را انتخاب کن.');
     },
     renderBindings: function () {
       const root = document.getElementById('pt-binding-list');
