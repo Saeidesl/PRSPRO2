@@ -159,9 +159,9 @@ test('a non-topmost dialog ignores keyboard events', () => {
 });
 
 test('project dialogs are wired to the shared keyboard controller', () => {
-  assert.match(source, /project-draft-material-specs-modal/);
+  assert.doesNotMatch(source, /project-draft-material-specs-modal|openDraftMaterialSpecsForm|projectMaterialSpecs/);
   assert.doesNotMatch(source, /project-color-size-modal|openColorSizeForm|openProjectColorSizeForm/);
-  assert.equal((source.match(/bindProjectModalKeyboard\(modal, \(\) => modal\.remove\(\)\)/g) || []).length, 1);
+  assert.equal((source.match(/bindProjectModalKeyboard\(modal, \(\) => modal\.remove\(\)\)/g) || []).length, 0);
   assert.match(source, /let settingsModalKeyboard = null/);
   assert.match(source, /settingsModalKeyboard = bindProjectModalKeyboard\(settingsModal/);
   assert.match(source, /settingsModalKeyboard\.destroy\(\)/);
