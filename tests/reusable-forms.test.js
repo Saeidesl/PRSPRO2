@@ -59,6 +59,25 @@ test('event assignment view uses existing event form APIs and prevents duplicate
   assert.match(module,/mappingRequest/);
 });
 
+test('event type procurement settings select a numeric central information type and never map dynamic fields',()=>{
+  const module=read('js/modules/event-types.js');
+  const start=module.indexOf('async function openProcurementSettings');
+  const end=module.indexOf('function createModal',start);
+  const settings=module.slice(start,end);
+  assert.ok(start>=0 && end>start);
+  assert.match(settings,/PMS\.Api\.get\('\/information-types'\)/);
+  assert.match(settings,/DataType \|\| ''\)\.toLowerCase\(\) === 'number'/);
+  assert.match(settings,/ConfirmedQuantityInformationTypeID/);
+  assert.doesNotMatch(settings,/RECORD_RECEIPT|FieldMap|\/event-types\/.*\/fields/);
+  assert.doesNotMatch(module,/event-type-fields|loadInlineFields|openFieldForm|showFieldsModal/);
+});
+
+test('test data seeder does not create dynamic event data',()=>{
+  const seeder=read('tools/test-data-seeder.html');
+  assert.doesNotMatch(seeder,/\/event-types\/.*\/fields/);
+  assert.doesNotMatch(seeder,/DynamicData|dynamicData|fieldMap/);
+});
+
 test('event type management can attach and detach reusable forms',()=>{
   const module=read('js/modules/event-types.js');
   assert.match(module,/event-type-forms/);
