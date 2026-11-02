@@ -348,7 +348,6 @@
         openEventTypeForm(button.dataset.id);
       });
     });
-    });
 
     container.querySelectorAll('.event-type-forms').forEach(function (button) {
       button.addEventListener('click', function () {
@@ -1113,7 +1112,7 @@
               }
               showMessage(pendingEventForms.length
                 ? 'نوع رویداد و فرم‌های انتخاب‌شده با موفقیت ثبت شدند.'
-                : 'نوع رویداد ثبت شد. اکنون می‌توانی فیلد اختصاصی اضافه کنی.');
+                : 'نوع رویداد ثبت شد.');
             } catch (mappingError) {
               showMessage('نوع رویداد ثبت شد، اما اتصال یکی از فرم‌ها انجام نشد. از ویرایش نوع رویداد دوباره تلاش کن. ' +
                 (mappingError.message || ''));
@@ -1124,7 +1123,7 @@
             modal.close();
 
             showMessage(
-              'نوع رویداد ثبت شد. برای افزودن فیلد اختصاصی، آن را از فهرست ویرایش کن.'
+              'نوع رویداد ثبت شد.'
             );
           }
         }
