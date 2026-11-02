@@ -92,3 +92,19 @@ test('visual editor persists page layout and supports editable table rows and la
  assert.match(module,/background:' \+ this\.esc\(item\.background/);
  assert.match(module,/Definition: this\.definition/);
 });
+
+test('mobile template editor presents a guided workflow with collapsible tool panels',()=>{
+ const page=read('pages/print-designer.html');
+ const css=read('css/print-template-library.css');
+ assert.match(page,/مرحله ۱: طراحی صفحه/);
+ assert.match(page,/مرحله ۲: تنظیم المان انتخاب‌شده/);
+ assert.match(page,/مرحله ۳: اتصال اطلاعات/);
+ assert.match(page,/مرحله ۴: نام‌گذاری و ذخیره قالب/);
+ assert.match(page,/<details class="pt-saved-templates"/);
+ assert.match(page,/<details class="pt-mobile-tools"/);
+ assert.match(page,/<details class="pt-editor-source-picker"/);
+ assert.match(page,/<details class="pt-layer-details"/);
+ assert.match(css,/@media\(max-width:700px\)/);
+ assert.match(css,/\.pt-toolbar-actions\{display:grid/);
+ assert.match(css,/\.pt-mobile-tools-body/);
+});
