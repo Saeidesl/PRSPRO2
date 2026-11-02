@@ -1000,10 +1000,10 @@
       this.formDefinitions = [];
       this.formsReady = true;
       this.formsRequestId++;
-      this.fieldsLoading = false;
-      this.fieldsReady = false;
-      this.fieldsError = false;
-      this.fieldsLoadedForTypeId = '';
+      this.eventFormsLoading = false;
+      this.eventFormsReady = false;
+      this.eventFormsError = false;
+      this.formsLoadedForTypeId = '';
 
       const previousFocus = document.activeElement;
       const modal = document.createElement('div');
@@ -1383,10 +1383,10 @@
       const selectedTypeId = String(eventTypeId || '');
       this.formDefinitions = [];
       this.formsReady = !selectedTypeId;
-      this.fieldsReady = !selectedTypeId;
-      this.fieldsLoading = Boolean(selectedTypeId);
-      this.fieldsError = false;
-      this.fieldsLoadedForTypeId = '';
+      this.eventFormsReady = !selectedTypeId;
+      this.eventFormsLoading = Boolean(selectedTypeId);
+      this.eventFormsError = false;
+      this.formsLoadedForTypeId = '';
       this.updateSubmitAvailability();
 
       const section = document.getElementById('event-configured-forms-section');
@@ -1394,20 +1394,20 @@
       if (!selectedTypeId) {
         if (section) section.hidden = true;
         if (container) container.replaceChildren();
-        this.fieldsLoading = false;
-        this.fieldsReady = false;
+        this.eventFormsLoading = false;
+        this.eventFormsReady = false;
         this.updateSubmitAvailability();
         return;
       }
 
-      this.fieldsLoading = true;
-      this.fieldsReady = false;
-      this.fieldsError = false;
+      this.eventFormsLoading = true;
+      this.eventFormsReady = false;
+      this.eventFormsError = false;
       await this.loadConfiguredForms(selectedTypeId);
-      this.fieldsLoading = false;
-      this.fieldsReady = this.formsReady;
-      this.fieldsError = !this.formsReady;
-      this.fieldsLoadedForTypeId = this.formsReady ? selectedTypeId : '';
+      this.eventFormsLoading = false;
+      this.eventFormsReady = this.formsReady;
+      this.eventFormsError = !this.formsReady;
+      this.formsLoadedForTypeId = this.formsReady ? selectedTypeId : '';
       this.updateSubmitAvailability();
     },
 
@@ -1438,8 +1438,8 @@
 
       const typeMatchesLoadedFields = Boolean(
         typeSelected &&
-        this.fieldsLoadedForTypeId &&
-        String(typeInput.value) === String(this.fieldsLoadedForTypeId)
+        this.formsLoadedForTypeId &&
+        String(typeInput.value) === String(this.formsLoadedForTypeId)
       );
 
       const amendmentReady = !this.amendmentMode || Boolean(
@@ -1451,9 +1451,9 @@
         projectSelected &&
         typeSelected &&
         dateSelected &&
-        this.fieldsReady &&
-        !this.fieldsLoading &&
-        !this.fieldsError &&
+        this.eventFormsReady &&
+        !this.eventFormsLoading &&
+        !this.eventFormsError &&
         this.formsReady &&
         typeMatchesLoadedFields;
 
@@ -1918,7 +1918,7 @@
         if (type === 'number') input.step = 'any';
       }
 
-      input.name = 'dynamic_' + (field.Code || '');
+      input.name = 'form_' + (field.Code || '');
 
       return input;
     },
@@ -1994,17 +1994,17 @@
         return;
       }
 
-      if (this.fieldsLoading) {
-        this.showFormError('فیلدهای نوع رویداد هنوز در حال بارگذاری هستند. کمی صبر کنید.');
+      if (this.eventFormsLoading) {
+        this.showFormError('فرم‌های متصل هنوز در حال بارگذاری هستند. کمی صبر کنید.');
         return;
       }
 
-      if (this.fieldsError || !this.fieldsReady) {
-        this.showFormError('فیلدهای نوع رویداد آماده نیستند. نوع رویداد را دوباره انتخاب کنید.');
+      if (this.eventFormsError || !this.eventFormsReady) {
+        this.showFormError('فرم‌های متصل آماده نیستند. نوع رویداد را دوباره انتخاب کنید.');
         return;
       }
 
-      if (String(this.fieldsLoadedForTypeId) !== selectedTypeId) {
+      if (String(this.formsLoadedForTypeId) !== selectedTypeId) {
         this.showFormError('نوع رویداد تغییر کرده است. منتظر آماده‌شدن فیلدهای آن بمانید.');
         return;
       }
@@ -2292,14 +2292,12 @@
       if (modal) modal.remove();
 
       this.modalOpen = false;
-      this.eventFields = [];
-      this.fieldsLoading = false;
-      this.fieldsReady = false;
-      this.fieldsError = false;
-      this.fieldsLoadedForTypeId = '';
+      this.eventFormsLoading = false;
+      this.eventFormsReady = false;
+      this.eventFormsError = false;
+      this.formsLoadedForTypeId = '';
 
       // پاسخ درخواست قبلی دیگر نباید وضعیت فرم را تغییر دهد.
-      this.fieldsRequestId++;
     },
 
     creatorValue: function (event) {
