@@ -151,11 +151,12 @@
     },
     createElement: function (type, overrides) {
       if (!this.definition) this.definition = this.blankDefinition();
+      const shapeTypes = ['line','divider','rectangle','ellipse'];
       const defaults = {
         id: 'el_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,7),
-        type: type, text: type === 'text' ? 'متن جدید' : (type === 'table' ? 'جدول اطلاعات' : (type === 'image' ? 'جایگاه تصویر' : 'فیلد داده')),
-        x: 15, y: 18 + this.definition.elements.length * 8, width: type === 'table' ? 170 : 65,
-        height: type === 'table' ? 48 : 18, fontSize: 12, align: 'right', bindingId: '',
+        type: type, text: type === 'text' ? 'متن جدید' : (type === 'table' ? 'جدول اطلاعات' : (type === 'image' ? 'جایگاه تصویر' : (shapeTypes.includes(type) ? '' : 'فیلد داده'))),
+        x: 15, y: 18 + this.definition.elements.length * 8, width: type === 'table' ? 170 : (type === 'line' || type === 'divider' ? 100 : 65),
+        height: type === 'line' || type === 'divider' ? 1 : (type === 'table' ? 48 : (type === 'rectangle' || type === 'ellipse' ? 35 : 18)), fontSize: 12, align: 'right', bindingId: '',
         columns: type === 'table' ? ['عنوان','مقدار','توضیحات'] : [], rows: type === 'table' ? [['نمونه ۱','مقدار',''],['نمونه ۲','مقدار','']] : []
       };
       const item = Object.assign(defaults, overrides || {});
@@ -177,6 +178,10 @@
         return this.createElement('table', { bindingId: binding ? binding.id : '' });
       }
       if (action === 'add-image') return this.createElement('image');
+      if (action === 'add-line') return this.createElement('line', { text: '' });
+      if (action === 'add-divider') return this.createElement('divider', { text: '' });
+      if (action === 'add-rectangle') return this.createElement('rectangle', { text: '' });
+      if (action === 'add-ellipse') return this.createElement('ellipse', { text: '' });
       if (action === 'undo') return this.undo();
       if (action === 'redo') return this.redo();
       if (action === 'preview') {
@@ -276,11 +281,13 @@
         const style = 'left:' + Number(item.x || 0) + 'mm;top:' + Number(item.y || 0) + 'mm;width:' + Number(item.width || 30) +
           'mm;height:' + Number(item.height || 15) + 'mm;font-size:' + Number(item.fontSize || 12) + 'pt;text-align:' + this.esc(item.align || 'right') + ';color:' + this.esc(item.color || 'black') + ';background:' + this.esc(item.background || 'transparent');
         const selected = String(item.id) === String(this.selectedElementId) ? ' is-selected' : '';
-        const label = item.type === 'image' ? '<span class="pt-image-placeholder">▧ تصویر</span>' :
-          (item.type === 'table' ? '<strong>' + this.esc(item.text) + '</strong><table><thead><tr>' +
+        const label = item.type === 'line' || item.type === 'divider' ? '<span class="pt-shape-line" aria-hidden="true"></span>' :
+          (item.type === 'rectangle' || item.type === 'ellipse' ? '<span class="pt-shape-outline" aria-hidden="true"></span>' :
+          (item.type === 'image' ? '<span class="pt-image-placeholder">▧ تصویر</span>' :
+          (item.type === 'table' ? '<strong>' + this.esc(item.text) + '</strong><table><thead><tr>'
             (item.columns || []).map(col => '<th>' + this.esc(col) + '</th>').join('') + '</tr></thead><tbody>' +
             (item.rows || []).map(row => '<tr>' + row.map(cell => '<td>' + this.esc(cell) + '</td>').join('') + '</tr>').join('') +
-            '</tbody></table>' : this.esc(item.text || ''));
+            '</tbody></table>' : this.esc(item.text || ''))));
         return '<div class="pt-canvas-element pt-element-' + this.esc(item.type) + selected + '" data-pt-element="' + this.esc(item.id) +
           '" style="' + style + '"><div class="pt-element-content">' + label + '</div>' +
           (selected ? '<button type="button" data-pt-resize aria-label="تغییر اندازه"></button>' : '') + '</div>';
