@@ -2098,7 +2098,7 @@
           '<div style="flex:1;min-width:120px;padding:12px;border-radius:10px;background:var(--color-surface-hover)"><div style="font-size:12px;color:var(--color-text-secondary)">مراحل دارای تعداد</div><strong style="display:block;font-size:24px;margin-top:3px">' + ProjectDetail.escape(batches.toLocaleString('fa-IR')) + '</strong></div>' +
         '</div>' +
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px">' + rowsHtml + '</div>' +
-        '<p style="margin:10px 0 0;color:var(--color-text-secondary);font-size:11px">برای محاسبه، نوع رویداد باید به واحد برش مرتبط باشد و گزینه «مقدار تولید/تحویل برای ترکیب انتخاب‌شده ثبت شود» فعال باشد. تکمیل نهایی از نام رویداد پایان/اتمام برش تشخیص داده می‌شود.</p>' +
+        '<p style="margin:10px 0 0;color:var(--color-text-secondary);font-size:11px">برای محاسبه، نوع رویداد باید به واحد برش مرتبط باشد و گزینه ثبت مقدار تولید/تحویل فعال باشد. در هر رویداد فقط تعداد ثبت می‌شود و تکمیل نهایی از نام رویداد پایان/اتمام برش تشخیص داده می‌شود.</p>' +
       '</section>';
     },
 
