@@ -42,6 +42,8 @@
       if (form) form.addEventListener('submit', (event) => { event.preventDefault(); this.saveTemplate(); });
       const reset = document.getElementById('pt-template-reset');
       if (reset) reset.addEventListener('click', () => this.resetForm());
+      const resetSecondary = document.getElementById('pt-template-reset-secondary');
+      if (resetSecondary) resetSecondary.addEventListener('click', () => this.resetForm());
       await this.loadLibrary();
     },
     loadLibrary: async function () {
