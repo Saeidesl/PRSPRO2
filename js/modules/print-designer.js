@@ -12,6 +12,7 @@
     historyIndex: -1,
     dragState: null,
     previewMode: false,
+    outputPageSpec: { width: 210, height: 297 },
     init: function () {
       const route = String(window.location.hash || '').replace(/^#/, '').split('/')[0];
       if (route === 'print-output') this.initOutput();
@@ -583,6 +584,7 @@
       const landscape = String(page.orientation || 'portrait').toLowerCase() === 'landscape';
       const width = landscape ? base[1] : base[0];
       const height = landscape ? base[0] : base[1];
+      this.outputPageSpec = { width: width, height: height };
       const bindings = Object.create(null);
       (definition.bindings || []).forEach(binding => { bindings[binding.id] = binding; });
       const elements = await Promise.all((definition.elements || []).map(async item => {
@@ -602,7 +604,7 @@
               image = '<div class="pt-output-image pt-output-image-error">بارگذاری تصویر ناموفق بود</div>';
             }
           } else {
-            image = '<div class="pt-output-image">برای نمایش تصویر، منبع تصویر را به این المان متصل کن.</div>';
+            image = '<div class="pt-output-image pt-output-image-empty" aria-hidden="true"></div>';
           }
           return '<div class="pt-output-element pt-output-image-frame" style="'+style+'">'+image+'</div>';
         }
@@ -619,14 +621,22 @@
         if (item.type === 'rectangle' || item.type === 'ellipse') return '<div class="pt-output-element pt-output-shape pt-output-'+item.type+'" style="'+style+'" aria-hidden="true"></div>';
         return '<div class="pt-output-element" style="'+style+'">'+this.esc(value)+'</div>';
       }));
-      return '<article class="pt-print-page" style="width:'+width+'mm;min-height:'+height+'mm" dir="rtl"><header class="pt-print-heading"><strong>'+this.esc(template.Name||'')+'</strong><span>'+this.esc(project.ProjectCode||'')+' — '+this.esc(project.Title||'')+'</span></header>'+elements.join('')+'</article>';
+      return '<article class="pt-print-page" style="width:'+width+'mm;height:'+height+'mm" dir="rtl"><header class="pt-print-heading"><strong>'+this.esc(template.Name||'')+'</strong><span>'+this.esc(project.ProjectCode||'')+' — '+this.esc(project.Title||'')+'</span></header>'+elements.join('')+'</article>';
     },
     printOutput: function () {
+      const spec = this.outputPageSpec || { width: 210, height: 297 };
+      let printStyle = document.getElementById('pt-output-page-rule');
+      if (!printStyle) {
+        printStyle = document.createElement('style');
+        printStyle.id = 'pt-output-page-rule';
+        document.head.appendChild(printStyle);
+      }
+      printStyle.textContent = '@page{size:'+spec.width+'mm '+spec.height+'mm;margin:0}';
       document.body.classList.add('pt-printing');
       const images = Array.from(document.querySelectorAll('#pt-output-preview img'));
       Promise.all(images.map(image => image.decode ? image.decode().catch(() => {}) : Promise.resolve())).then(() => {
         window.print();
-        window.setTimeout(() => document.body.classList.remove('pt-printing'), 1000);
+        window.setTimeout(() => document.body.classList.remove('pt-printing'), 1500);
       });
     },
     resolveOutput: async function () {
