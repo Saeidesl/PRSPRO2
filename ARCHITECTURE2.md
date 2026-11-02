@@ -18,7 +18,7 @@
 ### فهرست و فرم پروژه
 - `pages/projects.html`: صفحه فهرست پروژه‌ها و دکمه ایجاد پروژه.
 - `js/modules/projects.js`: ماژول اصلی پروژه‌ها؛ `Projects.init()`, `Projects.render()`, `Projects.applyFilters()`, `Projects.openCreateForm(project, options)`, `Projects.openProjectEditForm(projectId, options)`.
-- فرم‌ها/مودال‌ها در زمان اجرا ساخته می‌شوند. شناسه‌های شناخته‌شده: `#project-create-modal`, `#project-edit-modal`, `#project-color-size-modal`, `#project-draft-material-specs-modal`, `#project-create-form`.
+- فرم‌ها/مودال‌ها در زمان اجرا ساخته می‌شوند. شناسه‌های شناخته‌شده: `#project-create-modal`, `#project-edit-modal`, `#project-draft-material-specs-modal`, `#project-create-form`.
 - `css/project-form.css`: استایل فرم‌های ایجاد/ویرایش و کنترل‌های مرتبط.
 - پیش از تغییر فرم فعلی، همه استفاده‌کنندگان `ProjectCode`, وضعیت پروژه، گردش‌کار، رنگ/سایز و تنظیمات پروژه باید بررسی شوند.
 
@@ -72,7 +72,7 @@
 ### payloadها و سازگاری با UI فعلی
 - تمام درخواست‌ها از `window.PMS.Api` در `js/core/api.js` عبور می‌کنند؛ پس از ذخیره، cache پرونده‌ها و پروژه‌های مرتبط invalidate می‌شود.
 - فرم فعلی پروژه همچنان قرارداد فعلی شامل `ProjectCode`, `WorkflowID`, `AvailableDepartmentIDs` را ارسال می‌کند. فرم پیش‌تولید هرگز `POST /projects` را با کد خالی فراخوانی نمی‌کند.
-- رنگ/سایز در فرم پرونده با ساختار `{colors:[], sizes:[]}` مدیریت می‌شود؛ هنگام ایجاد اجرای تولید، snapshot همان نسخه به `ColorSizeJSON` پروژه کپی می‌شود.
+- رنگ‌بندی و سایزبندی به‌عنوان اطلاعات مرکزی پروژه از طریق فرم‌های متصل به رویداد ثبت می‌شوند؛ پاسخ فرم و تاریخچه آن در ساختار اطلاعات مرکزی پروژه نگهداری می‌شود و دیگر در فیلد مستقل `ColorSizeJSON` پروژه ذخیره نمی‌شود.
 - تأیید، اطلاعات تولید را در یک فرم جمع‌آوری کرده و یک درخواست idempotent می‌فرستد؛ دوبارکلیک مهار و خطای قابل بازیابی نمایش داده می‌شود.
 - سفارش تکراری از پرونده تأییدشده، اجرای جدید می‌سازد. اجراهای قبلی فقط خواندنی‌اند و تاریخچه آن‌ها قابل بازنویسی نیست.
 
