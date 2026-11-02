@@ -557,3 +557,14 @@
   - بک‌اند: chore/system-cleanup روی Commit d245feb8c142b199e4c3a1739a0ab1b76ce4f97d؛ ۲۳ Commit جلو و بدون Commit عقب از main.
 - وضعیت GitHub: هنوز Pull Request ایجاد نشده؛ merge و deploy انجام نشده است.
 - گام بعدی: ایجاد دو Pull Request مستقل به main، یکی برای فرانت‌اند و یکی برای بک‌اند. این اقدام main را تغییر نمی‌دهد و merge انجام نخواهد شد.
+
+### ثبت وضعیت Pull Requestها پس از فاز ۴
+- تاریخ: 2026-11-02
+- فرانت‌اند: Draft PR شماره 147 — https://github.com/Saeidesl/PRSPRO2/pull/147
+- بک‌اند: Draft PR شماره 85 — https://github.com/Saeidesl/PRSPRO2BACKEND/pull/85
+- هر دو PR به main هدف‌گذاری شده‌اند؛ هیچ‌کدام merge نشده‌اند.
+- این دو PR به‌صورت Draft باز شده‌اند تا ابتدا بازبینی و تست واقعی staging انجام شود.
+- وضعیت شاخه‌ها هنگام ایجاد PR:
+  - Frontend head: 1eab2f3364c0009748cf5823d35b9cdfbe775381
+  - Backend head: d245feb8c142b199e4c3a1739a0ab1b76ce4f97d
+- وضعیت نهایی مورد: **فازهای ۱ تا ۴ اجرا و ثبت شده‌اند؛ ۶۸ آزمون هدفمند موفق؛ دو PR در وضعیت Draft؛ merge و deploy انجام نشده است.**
