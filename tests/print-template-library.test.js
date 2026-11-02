@@ -100,7 +100,7 @@ test('mobile template editor presents a guided workflow with collapsible tool pa
  assert.match(page,/مرحله ۲: تنظیم المان انتخاب‌شده/);
  assert.match(page,/مرحله ۳: اتصال اطلاعات/);
  assert.match(page,/مرحله ۴: نام‌گذاری و ذخیره قالب/);
- assert.match(page,/<details class="pt-saved-templates"/);
+ assert.match(page,/<details class="[^"]*pt-saved-templates"/);
  assert.match(page,/<details class="pt-mobile-tools"/);
  assert.match(page,/<details class="pt-editor-source-picker"/);
  assert.match(page,/<details class="pt-layer-details"/);
