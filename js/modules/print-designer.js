@@ -114,6 +114,13 @@
       document.addEventListener('pointerup', () => {
         if (this.dragState) { this.dragState = null; this.commitHistory(); }
       });
+      document.addEventListener('keydown', (event) => {
+        if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+        const tag = event.target && event.target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+        if (event.key.toLowerCase() === 'z') { event.preventDefault(); event.shiftKey ? this.redo() : this.undo(); }
+        if (event.key.toLowerCase() === 'y') { event.preventDefault(); this.redo(); }
+      });
       document.querySelectorAll('[data-pt-action]').forEach(button => {
         if (button.dataset.ptBound === '1') return;
         button.dataset.ptBound = '1';
@@ -174,6 +181,16 @@
       if (action === 'remove' && selected) {
         this.definition.elements = this.definition.elements.filter(item => item.id !== selected.id);
         this.selectedElementId = ''; this.renderEditor(); return this.commitHistory();
+      }
+      if ((action === 'layer-up' || action === 'layer-down') && selected) {
+        const list = this.definition.elements;
+        const index = list.findIndex(item => item.id === selected.id);
+        const target = action === 'layer-up' ? index + 1 : index - 1;
+        if (target >= 0 && target < list.length) {
+          const swap = list[target]; list[target] = list[index]; list[index] = swap;
+          this.renderEditor(); this.commitHistory();
+        }
+        return;
       }
       if (action === 'duplicate' && selected) {
         const copy = JSON.parse(JSON.stringify(selected));
@@ -360,7 +377,7 @@
         return;
       }
       this.definition.bindings.push(Object.assign({}, binding, { label: label }));
-      this.renderBindings();
+      this.renderBindings(); this.renderInspector(); this.commitHistory();
       this.setStatus('pt-form-status', 'منبع داده به قالب اضافه شد؛ پس از ذخیره در قالب باقی می‌ماند.');
     },
     renderBindings: function () {
@@ -387,7 +404,7 @@
       if (code) code.disabled = false;
       const title = document.getElementById('pt-editor-title');
       if (title) title.textContent = 'ساخت قالب جدید';
-      this.renderBindings();
+      this.renderBindings(); this.renderEditor(); this.commitHistory();
       this.setStatus('pt-form-status', '');
     },
     editTemplate: async function (id) {
