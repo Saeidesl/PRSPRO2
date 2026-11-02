@@ -1320,10 +1320,6 @@
               <small style="display:block;margin-top:5px;color:var(--color-text-secondary);">این گزینه به‌صورت پیش‌فرض فعال است.</small>
             </div>
 
-            <div class="project-form-tools" style="display:flex;gap:10px;flex-wrap:wrap;margin:4px 0 16px;">
-              <button type="button" id="new-project-material-specs-button" class="btn btn-secondary">تعریف مصرف ملزومات</button>
-            </div>
-            <div id="new-project-material-specs-summary" style="font-size:12px;color:var(--color-text-secondary);margin:-8px 0 14px;">مصرف ملزومات اختیاری است و هنوز تعریف نشده است.</div>
 
             <div class="project-form-actions" style="
               display:flex;
@@ -1611,9 +1607,6 @@
         }
       };
 
-      const materialSpecsButton = modal.querySelector('#new-project-material-specs-button');
-      if (materialSpecsButton) materialSpecsButton.addEventListener('click', () => this.openDraftMaterialSpecsForm(modal));
-
       closeButton.addEventListener('click', closeModal);
       cancelButton.addEventListener('click', closeModal);
 
@@ -1809,10 +1802,6 @@
             if (descriptionInput) descriptionInput.value = preserveEditInputs.description;
             if (notify) notify.checked = preserveEditInputs.notify;
           }
-          const materialSpecsButtonForEdit = modal.querySelector('#new-project-material-specs-button');
-          if (materialSpecsButtonForEdit) materialSpecsButtonForEdit.hidden = true;
-          const materialSpecsSummary = modal.querySelector('#new-project-material-specs-summary');
-          if (materialSpecsSummary) materialSpecsSummary.textContent = 'برای مدیریت نسخه‌های مصرف ملزومات از دکمه «مصرف ملزومات» روی کارت پروژه استفاده کنید.';
           const fileHelpForEdit = modal.querySelector('#new-project-file-help');
           if (fileHelpForEdit) fileHelpForEdit.textContent = 'برای افزودن فایل جدید، آن را انتخاب کنید؛ فایل‌های فعلی در همین فرم قابل مشاهده و مدیریت هستند.';
           this.loadProjectEditAttachments(modal, editProjectId);
@@ -1900,69 +1889,6 @@
       }
 
       // در حالت ویرایش نیز کد پروژه و گردش کار قفل هستند و فقط سایر اطلاعات مجاز تغییر می‌کنند.
-    },
-
-    openDraftMaterialSpecsForm: function (projectModal) {
-      const existing = document.getElementById('project-draft-material-specs-modal');
-      if (existing) existing.remove();
-      let saved = [];
-      try { saved = JSON.parse(projectModal.dataset.projectMaterialSpecs || '[]'); } catch (error) {}
-      const modal = document.createElement('div');
-      modal.id = 'project-draft-material-specs-modal';
-      modal.style.cssText = 'position:fixed;inset:0;z-index:10030;background:var(--color-overlay,rgba(0,0,0,.48));display:flex;align-items:center;justify-content:center;padding:12px;direction:rtl;overflow:auto;';
-      modal.innerHTML = '<div role="dialog" aria-modal="true" aria-labelledby="project-draft-material-specs-title" style="background:var(--color-surface);color:var(--color-text);width:100%;max-width:820px;max-height:92vh;overflow:auto;border-radius:12px;padding:18px;box-sizing:border-box"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><h3 id="project-draft-material-specs-title">مصرف ملزومات برای هر واحد محصول</h3><button type="button" class="btn btn-light" data-draft-specs-close>بستن</button></div><p style="color:var(--color-text-secondary);font-size:12px;line-height:1.9">برای هر ملزوم، مقدار مصرف یک واحد محصول را وارد کنید. پس از ثبت تعداد قطعی تولید، سیستم کل نیاز را با احتساب درصد ضایعات محاسبه می‌کند. این فرم سفارش خرید ثبت نمی‌کند.</p><form id="project-draft-material-specs-form"><div id="project-draft-material-specs-rows"></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button type="button" class="btn btn-secondary" id="project-draft-material-specs-add">+ افزودن ملزوم</button><button type="submit" class="btn btn-primary">ذخیره مصرف ملزومات</button></div><div id="project-draft-material-specs-error" class="alert alert-danger" hidden style="margin-top:12px"></div></form></div>';
-      document.body.appendChild(modal);
-      const rows = modal.querySelector('#project-draft-material-specs-rows');
-      const error = modal.querySelector('#project-draft-material-specs-error');
-      const addRow = (item) => {
-        const row = document.createElement('div');
-        row.setAttribute('data-draft-material-spec-row', '1');
-        row.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;border:1px solid var(--color-border);border-radius:8px;padding:12px;margin-top:10px';
-        row.innerHTML = '<label>نام ملزوم *<input name="ItemName" required maxlength="160" style="display:block;width:100%;box-sizing:border-box;margin-top:5px"></label><label>واحد اندازه‌گیری *<input name="Unit" required maxlength="40" placeholder="متر، عدد، کیلوگرم..." style="display:block;width:100%;box-sizing:border-box;margin-top:5px"></label><label>مصرف برای هر واحد محصول *<input name="ConsumptionPerUnit" type="number" min="0.0001" step="0.0001" required style="display:block;width:100%;box-sizing:border-box;margin-top:5px"></label><label>ضایعات مجاز (%)<input name="WastagePercent" type="number" min="0" max="100" step="0.1" value="0" style="display:block;width:100%;box-sizing:border-box;margin-top:5px"></label><label style="grid-column:1/-1">توضیحات<input name="Notes" maxlength="500" style="display:block;width:100%;box-sizing:border-box;margin-top:5px"></label><button type="button" class="btn btn-light" data-draft-spec-remove>حذف ملزوم</button>';
-        ['ItemName','Unit','ConsumptionPerUnit','WastagePercent','Notes'].forEach((name) => {
-          if (item && item[name] !== undefined) row.querySelector('[name="' + name + '"]').value = item[name];
-        });
-        row.querySelector('[data-draft-spec-remove]').addEventListener('click', () => row.remove());
-        rows.appendChild(row);
-      };
-      (saved.length ? saved : [{}]).forEach(addRow);
-      modal.querySelector('#project-draft-material-specs-add').addEventListener('click', () => addRow({}));
-      const modalKeyboard = bindProjectModalKeyboard(modal, () => modal.remove());
-      const close = () => modalKeyboard.close();
-      modal.querySelector('[data-draft-specs-close]').addEventListener('click', close);
-      modal.addEventListener('click', (event) => { if (event.target === modal) close(); });
-      modalKeyboard.focusFirst();
-      modal.querySelector('#project-draft-material-specs-form').addEventListener('submit', (event) => {
-        event.preventDefault();
-        const items = Array.from(rows.querySelectorAll('[data-draft-material-spec-row]')).map((row) => {
-          const get = (name) => row.querySelector('[name="' + name + '"]').value.trim();
-          return { ItemName: get('ItemName'), Unit: get('Unit'), ConsumptionPerUnit: Number(get('ConsumptionPerUnit')), WastagePercent: Number(get('WastagePercent') || 0), Notes: get('Notes') };
-        });
-        if (items.some((item) => !item.ItemName || !item.Unit || !Number.isFinite(item.ConsumptionPerUnit) || item.ConsumptionPerUnit <= 0 || !Number.isFinite(item.WastagePercent) || item.WastagePercent < 0 || item.WastagePercent > 100)) {
-          error.textContent = 'نام ملزوم، واحد اندازه‌گیری، مصرف مثبت و درصد ضایعات بین صفر تا ۱۰۰ را بررسی کنید.';
-          error.hidden = false;
-          return;
-        }
-        if (items.some((item) => item.ItemName.length > 160 || item.Unit.length > 40 || item.Notes.length > 500)) {
-          error.textContent = 'طول نام ملزوم، واحد اندازه‌گیری یا توضیحات بیش از حد مجاز است.';
-          error.hidden = false;
-          return;
-        }
-        const seen = new Set();
-        for (const item of items) {
-          const duplicateKey = item.ItemName.toLocaleLowerCase() + '|' + item.Unit.toLocaleLowerCase();
-          if (seen.has(duplicateKey)) {
-            error.textContent = 'نام و واحد یکسان را دوبار وارد نکنید.';
-            error.hidden = false;
-            return;
-          }
-          seen.add(duplicateKey);
-        }
-        projectModal.dataset.projectMaterialSpecs = JSON.stringify(items);
-        const summary = projectModal.querySelector('#new-project-material-specs-summary');
-        if (summary) summary.textContent = items.length ? items.length + ' نوع ملزوم با مصرف هر واحد تعریف شده است.' : 'مصرف ملزومات تعریف نشده است.';
-        close();
-      });
     },
 
     normalizeWorkflows: function (response) {
@@ -2348,21 +2274,6 @@
         updateProgress('پروژه ذخیره شد. در حال تکمیل اطلاعات وابسته...', 'loading');
 
         let attachmentWarning = '';
-        let materialSpecsWarning = '';
-        let draftMaterialSpecs = [];
-        try { draftMaterialSpecs = JSON.parse(modal.dataset.projectMaterialSpecs || '[]'); } catch (error) {}
-        if (draftMaterialSpecs.length) {
-          let savedSpecs = 0;
-          try {
-            for (let i = 0; i < draftMaterialSpecs.length; i++) {
-              updateProgress('پروژه ثبت شد؛ در حال ثبت مشخصات مصرف ملزومات (' + (i + 1) + ' از ' + draftMaterialSpecs.length + ')...', 'loading');
-              await window.PMS.Api.post('/projects/' + encodeURIComponent(createdId) + '/material-specifications', draftMaterialSpecs[i]);
-              savedSpecs++;
-            }
-          } catch (specError) {
-            materialSpecsWarning = ' پروژه ایجاد شد، اما ثبت همه مشخصات مصرف ملزومات ناموفق بود (' + savedSpecs + ' از ' + draftMaterialSpecs.length + '): ' + this.getErrorMessage(specError);
-          }
-        }
         if (selectedFile) {
           updateProgress('پروژه ثبت شد؛ در حال بارگذاری فایل پیوست...', 'loading');
           try {
@@ -2407,7 +2318,7 @@
         }
         modal.remove();
 
-        alert('پروژه با موفقیت ثبت شد.' + attachmentWarning + materialSpecsWarning);
+        alert('پروژه با موفقیت ثبت شد.' + attachmentWarning);
 
         // Refresh the list only when the user is allowed to view projects.
         const router = window.PMS.Router;
