@@ -284,7 +284,7 @@
         const label = item.type === 'line' || item.type === 'divider' ? '<span class="pt-shape-line" aria-hidden="true"></span>' :
           (item.type === 'rectangle' || item.type === 'ellipse' ? '<span class="pt-shape-outline" aria-hidden="true"></span>' :
           (item.type === 'image' ? '<span class="pt-image-placeholder">▧ تصویر</span>' :
-          (item.type === 'table' ? '<strong>' + this.esc(item.text) + '</strong><table><thead><tr>'
+          (item.type === 'table' ? '<strong>' + this.esc(item.text) + '</strong><table><thead><tr>' +
             (item.columns || []).map(col => '<th>' + this.esc(col) + '</th>').join('') + '</tr></thead><tbody>' +
             (item.rows || []).map(row => '<tr>' + row.map(cell => '<td>' + this.esc(cell) + '</td>').join('') + '</tr>').join('') +
             '</tbody></table>' : this.esc(item.text || ''))));
