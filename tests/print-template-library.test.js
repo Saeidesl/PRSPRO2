@@ -159,3 +159,10 @@ test('print output hides image helper copy and uses exact page size without forc
  assert.match(styles,/\.pt-section-title\{display:none!important\}/);
  assert.match(styles,/page-break-after:auto!important/);
 });
+
+
+test('print output assets use refreshed cache keys for the current print fixes',()=>{
+ const index=read('index.html');
+ assert.match(index,/css\/print-template-library\.css\?v=20261102-print-layout-fix-2/);
+ assert.match(index,/js\/modules\/print-designer\.js\?v=20261102-print-layout-fix-2/);
+});
