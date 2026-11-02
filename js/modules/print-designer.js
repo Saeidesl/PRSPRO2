@@ -555,7 +555,8 @@
       }
       if (typeof value !== 'object') return null;
       const mime = String(value.MimeType || value.mimeType || '').toLowerCase();
-      const id = value.AttachmentID || value.attachmentId || value.ID || value.Id;
+      const explicitAttachmentId = value.AttachmentID || value.attachmentId || value.attachmentID;
+      const id = explicitAttachmentId || ((mime.indexOf('image/') === 0) ? (value.ID || value.Id) : '');
       if (id && (!mime || mime.indexOf('image/') === 0)) return { id: String(id), mime: mime || 'image/jpeg' };
       for (const key of Object.keys(value)) {
         const found = this.findImageAttachment(value[key]);
@@ -623,8 +624,10 @@
     printOutput: function () {
       document.body.classList.add('pt-printing');
       const images = Array.from(document.querySelectorAll('#pt-output-preview img'));
-      Promise.all(images.map(image => image.decode ? image.decode().catch(() => {}) : Promise.resolve())).then(() => window.print());
-      window.setTimeout(() => document.body.classList.remove('pt-printing'), 1500);
+      Promise.all(images.map(image => image.decode ? image.decode().catch(() => {}) : Promise.resolve())).then(() => {
+        window.print();
+        window.setTimeout(() => document.body.classList.remove('pt-printing'), 1000);
+      });
     },
     resolveOutput: async function () {
       const templateId = document.getElementById('pt-output-template').value;
