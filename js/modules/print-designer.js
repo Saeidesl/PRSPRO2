@@ -126,7 +126,7 @@
         button.dataset.ptBound = '1';
         button.addEventListener('click', () => this.handleEditorAction(button.dataset.ptAction));
       });
-      ['pt-prop-text','pt-prop-binding','pt-prop-x','pt-prop-y','pt-prop-width','pt-prop-height','pt-prop-font','pt-prop-align','pt-prop-columns','pt-prop-rows','pt-prop-color','pt-prop-background'].forEach(id => {
+      ['pt-prop-text','pt-prop-binding','pt-prop-selection','pt-prop-x','pt-prop-y','pt-prop-width','pt-prop-height','pt-prop-font','pt-prop-align','pt-prop-columns','pt-prop-rows','pt-prop-color','pt-prop-background'].forEach(id => {
         const input = document.getElementById(id);
         if (!input || input.dataset.bound === '1') return;
         input.dataset.bound = '1';
@@ -211,7 +211,10 @@
       if (!item) return;
       const map = { 'pt-prop-text':'text','pt-prop-binding':'bindingId','pt-prop-x':'x','pt-prop-y':'y',
         'pt-prop-width':'width','pt-prop-height':'height','pt-prop-font':'fontSize','pt-prop-align':'align','pt-prop-color':'color','pt-prop-background':'background' };
-      if (id === 'pt-prop-columns') item.columns = String(value).split('|').map(part => part.trim()).filter(Boolean);
+      if (id === 'pt-prop-selection') {
+        const source = (this.definition.bindings || []).find(binding => binding.id === item.bindingId);
+        if (source && ['EVENT_FORM_FIELD','EVENT_FORM_RESPONSE'].includes(source.sourceType)) source.selection = value;
+      } else if (id === 'pt-prop-columns') item.columns = String(value).split('|').map(part => part.trim()).filter(Boolean);
       else if (id === 'pt-prop-rows') item.rows = String(value).split(/\r?\n/).filter(line => line.trim()).map(line => line.split('|').map(part => part.trim()));
       else {
         const key = map[id];
@@ -239,6 +242,12 @@
       }
       const tableProperties = document.getElementById('pt-table-properties');
       if (tableProperties) tableProperties.hidden = item.type !== 'table';
+      const selectionWrap = document.getElementById('pt-selection-wrap');
+      const selectedBinding = (this.definition.bindings || []).find(source => source.id === item.bindingId);
+      const supportsSelection = selectedBinding && ['EVENT_FORM_FIELD','EVENT_FORM_RESPONSE'].includes(selectedBinding.sourceType);
+      if (selectionWrap) selectionWrap.hidden = !supportsSelection;
+      const selectionInput = document.getElementById('pt-prop-selection');
+      if (selectionInput && supportsSelection) selectionInput.value = selectedBinding.selection || 'LATEST';
       const columns = document.getElementById('pt-prop-columns');
       const rows = document.getElementById('pt-prop-rows');
       if (columns) columns.value = (item.columns || []).join(' | ');
