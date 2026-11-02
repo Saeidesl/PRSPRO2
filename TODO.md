@@ -113,6 +113,13 @@
 - `css/print-template-library.css`: استایل بوم با واحد میلی‌متر، المان انتخاب‌شده و دستگیره resize، پنل ویژگی‌ها، لایه‌ها، حالت پیش‌نمایش و چیدمان واکنش‌گرا افزوده شده است.
 - `index.html`: نسخه assetها به `20261102-template-editor-5` و `20261102-template-editor-2` تغییر یافته است.
 - `tests/print-template-library.test.js`: تست‌های regression برای parse ماژول، کنترل‌های بوم، جدول چندردیفی، انتخاب پاسخ، رنگ‌ها، ترتیب لایه و پیش‌نمایش افزوده شده‌اند.
+- اصلاح اتصال داده پس از بازخورد کاربر:
+  - `pages/print-designer.html`: فهرست منابع به داخل پنل طراح منتقل شد و خارج از بخش ویژگی‌های المان قرار گرفت تا حتی پیش از انتخاب المان نیز در دسترس باشد.
+  - `js/modules/print-designer.js`: `renderSources()` فهرست منابع را هم در پنل اصلی و هم در محیط طراحی نمایش می‌دهد؛ اتصال منبع از همان پنل انجام می‌شود. `loadLibrary()` درخواست کتابخانه و منابع را مستقل مدیریت می‌کند تا شکست یک درخواست مانع نمایش دیگری نشود و خطای دریافت منابع به‌جای وضعیت بارگذاری بی‌پایان نمایش داده شود.
+  - `css/print-template-library.css`: ظاهر پنل اتصال منابع در کنار ویژگی‌های طراحی افزوده شد.
+  - `index.html`: cache-busting به `template-editor-6` و `template-editor-3` به‌روزرسانی شد.
+  - `tests/print-template-library.test.js`: بررسی‌های رگرسیون برای پنل اتصال منبع و مدیریت خطای دریافت منابع افزوده شد.
+  - CI commit `dd6ea3560600511a8513a09d507167c5774026e2`: «Frontend checks» و «PMS cross-repository QA» هر دو موفق شدند؛ build و انتشار GitHub Pages هنوز در حال اجراست.
 - اعتبارسنجی CI روی commit `09d4ec5e923e56769107bf34307a5721d3300e5e`: workflow «Frontend checks» موفق؛ workflow «PMS cross-repository QA» موفق. یک نقص مستقل در resolve بک‌اند (عدم bind شدن context حلقه bindingها) کشف و در `PRSPRO2BACKEND/PrintTemplateService.js` اصلاح شد؛ آزمون‌های بک‌اند و اعتبارسنجی source در اجرای QA بعدی موفق شدند. انتشار Web App بک‌اند هنوز در حال اجراست و تا تکمیل workflow موفق اعلام نمی‌شود.
  
 ### 4. معماری هدف و معیارهای پاک‌سازی
