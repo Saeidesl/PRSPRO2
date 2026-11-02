@@ -94,8 +94,18 @@ async function run(){
   const steps=listOf(stepResponse);
   const projectTypes=types.filter(t=>String(pick(t,'ConnectionType','connectionType')||'PROJECT').toUpperCase()!=='INDEPENDENT'&&String(pick(t,'Status','status')||'ACTIVE').toUpperCase()==='ACTIVE');
   if(!projectTypes.length)throw new Error('نوع رویداد فعال و مرتبط با پروژه پیدا نشد.');
-  status('مرحله ۳ از ۴: آماده‌سازی رویدادها با مسیر استاندارد فرم‌های متصل…');
-  const orderedTypes=eventTypeSort(projectTypes,steps);
+  status('مرحله ۳ از ۴: بررسی فرم‌های اجباری انواع رویداد…');
+  const eligibleProjectTypes=[];
+  for(const t of projectTypes){
+    try{
+      const mappings=listOf(await apiGet('/event-types/'+encodeURIComponent(idOf(t))+'/forms'));
+      const hasRequired=mappings.some(m=>m.IsRequired===true||String(m.IsRequired).toLowerCase()==='true');
+      if(!hasRequired)eligibleProjectTypes.push(t);
+      else log('رد نوع رویداد '+pick(t,'Name','name')+'؛ فرم اجباری دارد و این ابزار پاسخ فرم تولید نمی‌کند.');
+    }catch(e){log('رد نوع رویداد '+pick(t,'Name','name')+'؛ اتصال فرم‌ها خوانده نشد: '+e.message)}
+  }
+  if(!eligibleProjectTypes.length)throw new Error('نوع رویداد فعالی که بدون فرم اجباری قابل ثبت باشد پیدا نشد.');
+  const orderedTypes=eventTypeSort(eligibleProjectTypes,steps);
   const count=Math.max(1,Math.min(50,Number($('projectCount').value)||1));
   const perProject=Math.max(10,Math.min(20,Number($('eventsPerProject').value)||10));
   const withFiles=$('withAttachments').checked;
@@ -103,7 +113,7 @@ async function run(){
   status('مرحله ۴ از ۴: آماده‌سازی برای ساخت داده‌ها…');
   const total=count*(perProject+1);let progress=0;$('progress').max=total;$('progress').value=0;
   log('گردش کار انتخاب‌شده: '+pick(workflow,'Name','name')+' ('+workflowId+')');
-  log('تعداد انواع رویداد مرتبط و فعال: '+projectTypes.length+'؛ پروژه‌های موجود: '+projects.length);
+  log('تعداد انواع رویداد مرتبط، فعال و بدون فرم اجباری: '+eligibleProjectTypes.length+'؛ پروژه‌های موجود: '+projects.length);
   const knownCodes=new Set(projects.map(p=>String(pick(p,'ProjectCode','projectCode'))));
   const png=makePng(),pdf=makePdf();
   for(let i=1;i<=count;i++){
