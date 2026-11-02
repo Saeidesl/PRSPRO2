@@ -5,12 +5,15 @@ const path=require('node:path');
 const test=require('node:test');
 const read=file=>fs.readFileSync(path.join(__dirname,'..',file),'utf8');
 
-test('standalone print designer route exposes its page module',()=>{
+test('standalone print template library route uses its independent module',()=>{
   const page=read('pages/print-designer.html');
-  const module=read('js/modules/project-detail.js');
-  assert.match(page,/print-designer-project-select/);
-  assert.match(module,/openPrintDesigner: function/);
-  assert.match(module,/bindPrintDesigner: function/);
+  const module=read('js/modules/print-designer.js');
+  const router=read('js/core/router.js');
+  assert.match(page,/pt-template-form/);
+  assert.match(page,/pt-source-list/);
+  assert.match(module,/initLibrary: async function/);
+  assert.match(module,/PMS\.Api\.post\('\/print-templates'/);
+  assert.match(router,/'print-design': 'PrintDesigner'/);
 });
 
 test('print designer supports adding project data, custom text, rules and reusable form snapshots',()=>{
@@ -150,14 +153,11 @@ test('template design and document output are separate routes and modes',()=>{
  assert.match(layout,/label: 'چاپ اسناد'/);
  assert.ok(router.includes("'print-design': 'pages/print-designer.html'"));
  assert.ok(router.includes("'print-output': 'pages/print-output.html'"));
- assert.match(design,/ذخیره کن/);
- assert.match(output,/print-output-project-select/);
- assert.match(module,/openPrintOutput: async function/);
- assert.match(module,/ppd-output-mode/);
- assert.ok(module.includes("this.loadPrintDesignerTemplate()"));
- assert.match(module,/data-ppd-print/);
- const editor=module.slice(module.indexOf('openPrintDesigner: function'),module.indexOf('openPrintOutput: async function'));
- assert.doesNotMatch(editor,/data-ppd-print/);
+ assert.match(design,/ذخیره قالب/);
+ assert.match(output,/pt-output-template/);
+ assert.match(output,/pt-output-project/);
+ assert.match(module,/resolveOutput: async function/);
+ assert.ok(module.includes("'/print-templates/' + encodeURIComponent(templateId) + '/resolve'"));
 });
 
 
