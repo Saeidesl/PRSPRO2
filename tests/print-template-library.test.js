@@ -60,3 +60,27 @@ test('print designer module parses and is loaded exactly once',()=>{
  const index=read('index.html');
  assert.equal(index.split('js/modules/print-designer.js').length - 1,1);
 });
+
+
+test('visual editor module parses and exposes canvas interactions',()=>{
+ const module=read('js/modules/print-designer.js');
+ const page=read('pages/print-designer.html');
+ const css=read('css/print-template-library.css');
+ assert.doesNotThrow(()=>new vm.Script(module,{filename:'print-designer.js'}));
+ for(const token of ['bindEditor: function','createElement: function','renderCanvas: function','renderInspector: function','commitHistory: function','undo: function','redo: function','pointermove','pointerup','data-pt-resize']) assert.ok(module.includes(token),token);
+ for(const id of ['pt-design-canvas','pt-inspector-fields','pt-page-size','pt-page-orientation','pt-prop-columns','pt-prop-rows','pt-layer-list']) assert.ok(page.includes(id),id);
+ assert.match(css,/\.pt-design-canvas\{position:relative/);
+ assert.match(css,/\.pt-canvas-element\.is-selected/);
+ assert.match(css,/\.pt-editor-layout/);
+});
+
+test('visual editor persists page layout and supports editable table rows and layer order',()=>{
+ const module=read('js/modules/print-designer.js');
+ assert.match(module,/definition\.elements\.push\(item\)/);
+ assert.match(module,/definition\.page\.size/);
+ assert.match(module,/pt-prop-rows/);
+ assert.match(module,/pt-prop-columns/);
+ assert.match(module,/layer-up/);
+ assert.match(module,/layer-down/);
+ assert.match(module,/Definition: this\.definition/);
+});
