@@ -34,6 +34,10 @@
           <div id="pt-inspector-fields" hidden>
             <label>عنوان / متن <input id="pt-prop-text" type="text" maxlength="500"></label>
             <label>منبع داده <select id="pt-prop-binding"><option value="">بدون اتصال</option></select></label>
+            <div class="pt-editor-source-picker">
+              <div class="pt-editor-source-heading"><strong>اتصال منبع داده</strong><small id="pt-source-count">در حال دریافت…</small></div>
+              <div id="pt-editor-source-list" class="pt-editor-source-list"><p class="pt-empty-state">در حال دریافت منابع داده…</p></div>
+            </div>
             <label id="pt-selection-wrap" hidden>نحوه انتخاب پاسخ فرم <select id="pt-prop-selection"><option value="LATEST">آخرین پاسخ</option><option value="ALL">همه پاسخ‌ها (ردیف‌های تکرارشونده)</option><option value="EVENT">رویداد مشخص</option><option value="RESPONSE">پاسخ مشخص</option></select></label>
             <div class="pt-inspector-grid">
               <label>موقعیت افقی <input id="pt-prop-x" type="number" min="0" step="1"></label>
