@@ -147,3 +147,15 @@ test('print output resolves secure image attachments and waits for images before
  assert.match(module,/pt-output-image-content/);
  assert.match(css,/\.pt-output-image-content/);
 });
+
+
+test('print output hides image helper copy and uses exact page size without forcing a trailing blank page',()=>{
+ const module=read('js/modules/print-designer.js');
+ const styles=read('css/print-template-library.css');
+ assert.match(module,/pt-output-image-empty/);
+ assert.doesNotMatch(module,/برای نمایش تصویر، منبع تصویر را به این المان متصل کن/);
+ assert.match(module,/@page/);
+ assert.match(module,/height:\'+height\+'mm/);
+ assert.match(styles,/\.pt-section-title\{display:none!important\}/);
+ assert.match(styles,/page-break-after:auto!important/);
+});
