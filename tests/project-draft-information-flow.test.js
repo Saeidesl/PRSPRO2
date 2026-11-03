@@ -43,7 +43,7 @@ test('project list and detail distinguish drafts from production projects', () =
 
 test('project assets use cache-busting for the unified project entry', () => {
   const source = read('index.html');
-  assert.match(source, /projects\.js\?v=20261103-project-workflow-picker-mainline-1/);
+  assert.match(source, /projects\.js\?v=20261103-repeat-reference-copy-result-1/);
   assert.match(source, /project-detail\.js\?v=20261103-reference-conflict-resolution-1/);
 });
 
