@@ -38,3 +38,17 @@ test('workflow module cache version is refreshed', () => {
   const html = read('index.html');
   assert.match(html, /js\/modules\/workflows\.js\?v=20261103-workflow-rules-modal-feedback-1/);
 });
+
+test('event registration displays current workflow step requirements', () => {
+  const source = read('js/modules/events.js');
+  assert.match(source, /event-workflow-progress-section/);
+  assert.match(source, /loadWorkflowProgress: async function/);
+  assert.match(source, /\/workflow-progress/);
+  assert.match(source, /پیشرفت مرحله گردش‌کار/);
+  assert.match(source, /پروژه مرجع/);
+});
+
+test('event module cache version is refreshed for workflow progress', () => {
+  const html = read('index.html');
+  assert.match(html, /js\/modules\/events\.js\?v=20261103-workflow-event-progress-1/);
+});
