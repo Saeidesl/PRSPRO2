@@ -128,7 +128,9 @@ test('drawing toolbar supports editable line, divider, rectangle and ellipse ele
  const page=read('pages/print-designer.html');
  const css=read('css/print-template-library.css');
  for(const action of ['add-line','add-divider','add-rectangle','add-ellipse']) assert.ok(page.includes('data-pt-action="'+action+'"'),action);
- for(const type of ['line','divider','rectangle','ellipse']) { assert.ok(module.includes("createElement('"+type+"'"),type); assert.ok(module.includes('pt-output-'+type),type+' output'); }
+ for(const type of ['line','divider','rectangle','ellipse']) assert.ok(module.includes("createElement('"+type+"'"),type);
+ assert.match(module,/pt-output-\\'\\+item\\.type/);
+ assert.match(module,/item\\.type === 'rectangle' \\|\\| item\\.type === 'ellipse'/);
  assert.match(module,/pt-shape-outline/);
  assert.match(module,/pt-shape-line/);
  assert.match(css,/\.pt-output-rectangle/);
@@ -163,8 +165,8 @@ test('print output hides image helper copy and uses exact page size without forc
 
 test('print output assets use refreshed cache keys for the current print fixes',()=>{
  const index=read('index.html');
- assert.match(index,/css\/print-template-library\.css\?v=20261102-print-layout-fix-2/);
- assert.match(index,/js\/modules\/print-designer\.js\?v=20261102-print-layout-fix-2/);
+ assert.match(index,/css\/print-template-library\.css\?v=20261102-remove-print-header-1/);
+ assert.match(index,/js\/modules\/print-designer\.js\?v=20261102-remove-print-header-1/);
 });
 
 
