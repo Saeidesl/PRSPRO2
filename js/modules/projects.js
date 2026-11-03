@@ -1763,7 +1763,9 @@
         const referenceWrap = modal.querySelector('#new-project-reference-wrap');
         const referenceProjects = Array.isArray(lookupData.referenceProjects) ? lookupData.referenceProjects : [];
         const referenceTypes = Array.isArray(lookupData.informationTypes) ? lookupData.informationTypes : [];
-        if (referenceSelect) referenceSelect.innerHTML = '<option value="">انتخاب پروژه مرجع</option>' + referenceProjects.map((item) => '<option value="' + this.escape(item.ID) + '">' + this.escape([item.ProjectCode, item.Title].filter(Boolean).join(' — ')) + '</option>').join('');
+        if (referenceSelect) referenceSelect.innerHTML = referenceProjects.length
+          ? '<option value="">انتخاب پروژه مرجع</option>' + referenceProjects.map((item) => '<option value="' + this.escape(item.ID) + '">' + this.escape([item.ProjectCode, item.Title].filter(Boolean).join(' — ')) + '</option>').join('')
+          : '<option value="">هیچ پروژه فعالی برای انتخاب پیدا نشد</option>';
         const syncReferenceVisibility = () => {
           const selectedWorkflow = workflows.find((item) => String(item.ID || item.Id || item.id) === String(workflowSelect.value));
           const isRepeat = String(selectedWorkflow && (selectedWorkflow.WorkflowType || selectedWorkflow.workflowType) || '').toUpperCase() === 'REPEAT';
@@ -1894,7 +1896,7 @@
         }
         const lookupCacheKey = isEditMode
           ? 'dashboard_project_lookups_v1'
-          : 'project-form-lookups-v1-' + (lookupHash >>> 0).toString(36);
+          : 'project-form-lookups-v2-' + (lookupHash >>> 0).toString(36);
         const lookupPath = isEditMode ? '/project-dashboard/lookups' : '/project-form/lookups';
 
         // Creation needs create-authorized lookups; editing uses the read-only
