@@ -9,6 +9,8 @@
   const Events = {
     events: [],
     projects: [],
+    workflowProgress: null,
+    workflowProgressRequestId: 0,
     eventTypes: [],
     formDefinitions: [],
     formsReady: true,
@@ -1034,6 +1036,7 @@
         '<div class="event-field event-field-wide"><label for="event-form-description">شرح رویداد</label>' +
         '<textarea id="event-form-description" name="Description" rows="3" placeholder="توضیحات تکمیلی، در صورت نیاز"></textarea></div>' +
         '</div></section>' +
+        '<section class="event-form-section" id="event-workflow-progress-section" hidden><h4 class="event-section-title">پیشرفت مرحله گردش‌کار</h4><div id="event-workflow-progress" class="event-muted" role="status" aria-live="polite"></div></section>' +
         '<section class="event-form-section" id="event-amendment-section" hidden><h4 class="event-section-title">فرم مورد اصلاح</h4>' +
         '<p class="event-muted" id="event-amendment-status" role="status" aria-live="polite">پس از انتخاب پروژه، پاسخ قبلی فرم به‌صورت خودکار پیدا می‌شود.</p>' +
         '<div hidden aria-hidden="true"><select id="event-amendment-source-event"></select><select id="event-amendment-source-form"></select></div></section>' +
@@ -1158,6 +1161,7 @@
       });
 
       projectSelect.addEventListener('change', () => {
+        this.loadWorkflowProgress(projectSelect.value);
         if (this.amendmentMode) this.loadAmendmentSourceEvents(projectSelect.value);
         refreshDraftEventOptions();
         this.updateSubmitAvailability();
@@ -1185,10 +1189,61 @@
       });
 
       refreshDraftEventOptions();
+      this.loadWorkflowProgress(projectSelect.value);
       this.updateSubmitAvailability();
 
       const firstInput = document.getElementById('event-form-project');
       if (firstInput) firstInput.focus();
+    },
+
+    loadWorkflowProgress: async function (projectId) {
+      const section = document.getElementById('event-workflow-progress-section');
+      const container = document.getElementById('event-workflow-progress');
+      const requestId = ++this.workflowProgressRequestId;
+      this.workflowProgress = null;
+      if (!section || !container) return;
+      if (!projectId) {
+        section.hidden = true;
+        container.replaceChildren();
+        return;
+      }
+      section.hidden = false;
+      container.textContent = 'در حال بررسی قواعد و پیشرفت مرحله...';
+      try {
+        const response = await PMS.Api.get('/projects/' + encodeURIComponent(projectId) + '/workflow-progress');
+        if (requestId !== this.workflowProgressRequestId ||
+            !document.getElementById('event-create-modal')) return;
+        const data = PMS.Api.extractData(response) || {};
+        this.workflowProgress = data;
+        container.replaceChildren();
+        if (!data.configured) {
+          section.hidden = true;
+          return;
+        }
+        const summary = document.createElement('p');
+        summary.textContent = (data.stepName ? 'مرحله: ' + data.stepName + ' — ' : '') +
+          (data.stageComplete ? 'تمام الزامات این مرحله تکمیل شده است.' :
+            'رویدادهای اجباری باقی‌مانده: ' + (data.remaining || []).filter(item =>
+              item.requirementMode === 'REQUIRED' || item.requirementMode === 'REFERENCE'
+            ).length);
+        container.appendChild(summary);
+        const list = document.createElement('ul');
+        list.style.margin = '8px 0 0';
+        list.style.paddingInlineStart = '20px';
+        (data.rules || []).forEach(function(rule) {
+          const item = document.createElement('li');
+          const status = rule.satisfied ? 'تکمیل‌شده' :
+            rule.requirementMode === 'OPTIONAL' ? 'اختیاری' :
+            rule.requirementMode === 'REFERENCE' ? 'در انتظار اطلاعات مرجع' :
+            rule.requirementMode === 'NOT_REQUIRED' ? 'غیرضروری' : 'باقی‌مانده';
+          item.textContent = (rule.eventTypeName || rule.eventTypeId) + ' — ' + status;
+          list.appendChild(item);
+        });
+        container.appendChild(list);
+      } catch (error) {
+        if (requestId !== this.workflowProgressRequestId) return;
+        container.textContent = 'وضعیت گردش‌کار دریافت نشد؛ کنترل نهایی هنگام ثبت رویداد در سرور انجام می‌شود.';
+      }
     },
 
     setAmendmentMode: function (enabled, projectId) {
