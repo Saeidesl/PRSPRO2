@@ -30,7 +30,6 @@
   function init() {
     bindEvents();
     loadWorkflows();
-    loadEventTypes();
 
     // This module is loaded by pages/workflows.html. Initialize its section
     // only after the workflow page has been inserted into the document.
