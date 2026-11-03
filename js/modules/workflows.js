@@ -772,23 +772,13 @@
   }
 
   async function showStepEventRules(workflow, step) {
-    if (!state.eventTypes.length) await loadEventTypes();
     const workflowId = getId(workflow);
     const stepId = getId(step);
-    let rules = [];
+    let loadedRules = [];
     let sequenceMode = 'STRICT';
-    try {
-      const response = await PMS.Api.get('/workflows/' + encodeURIComponent(workflowId) +
-        '/steps/' + encodeURIComponent(stepId) + '/event-rules');
-      const data = PMS.Api.extractData(response) || {};
-      rules = Array.isArray(data.items) ? data.items : [];
-      if (rules.length) sequenceMode = String(rules[0].SequenceMode || 'STRICT').toUpperCase();
-    } catch (error) {
-      showMessage(error.message || 'دریافت قواعد رویداد این مرحله ناموفق بود.', 'danger');
-      return;
-    }
 
-    openModal({
+    // Open immediately so a slow API response never makes the button appear inert.
+    const overlay = openModal({
       title: 'تنظیم رویدادهای مرحله',
       content: `
         <div class="card" style="margin-bottom:16px;background:var(--color-surface-alt)">
@@ -799,53 +789,49 @@
             </div>
           </div>
         </div>
-        <div class="form-group">
-          <label for="workflow-rule-sequence">روش ترتیب رویدادها در این مرحله</label>
-          <select id="workflow-rule-sequence" class="form-control">
-            <option value="STRICT" ${sequenceMode === 'STRICT' ? 'selected' : ''}>ترتیب اجباری و دقیق</option>
-            <option value="FREE" ${sequenceMode === 'FREE' ? 'selected' : ''}>ترتیب آزاد</option>
-            <option value="GROUPED" ${sequenceMode === 'GROUPED' ? 'selected' : ''}>ترکیبی؛ گروه‌ها به‌ترتیب و رویدادهای هر گروه آزاد</option>
-          </select>
-          <small>در هر مرحله فقط یک روش ترتیب قابل استفاده است.</small>
+        <div id="workflow-rule-loading" class="loading-state" role="status" aria-live="polite">
+          در حال دریافت تنظیمات رویدادها...
         </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:16px 0 10px">
-          <h4 style="margin:0">رویدادهای این مرحله</h4>
-          <button type="button" id="workflow-rule-add" class="btn btn-light btn-sm">+ افزودن رویداد</button>
+        <div id="workflow-rule-editor" hidden>
+          <div class="form-group">
+            <label for="workflow-rule-sequence">روش ترتیب رویدادها در این مرحله</label>
+            <select id="workflow-rule-sequence" class="form-control">
+              <option value="STRICT">ترتیب اجباری و دقیق</option>
+              <option value="FREE">ترتیب آزاد</option>
+              <option value="GROUPED">ترکیبی؛ گروه‌ها به‌ترتیب و رویدادهای هر گروه آزاد</option>
+            </select>
+            <small>در هر مرحله فقط یک روش ترتیب قابل استفاده است.</small>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:16px 0 10px">
+            <h4 style="margin:0">رویدادهای این مرحله</h4>
+            <button type="button" id="workflow-rule-add" class="btn btn-light btn-sm">+ افزودن رویداد</button>
+          </div>
+          <div id="workflow-rule-rows"></div>
+          <div class="alert alert-info" style="margin-top:12px">
+            «از پروژه مرجع» فقط اطلاعات مرجع را نمایش می‌دهد و رویداد اجرایی جدید ثبت نمی‌کند.
+          </div>
         </div>
-        <div id="workflow-rule-rows"></div>
-        ${state.eventTypes.length ? '' : '<div class="alert alert-warning">انواع رویداد بارگذاری نشدند یا دسترسی لازم وجود ندارد.</div>'}
-        <div class="alert alert-info" style="margin-top:12px">
-          «از پروژه مرجع» فقط اطلاعات مرجع را نمایش می‌دهد و رویداد اجرایی جدید ثبت نمی‌کند.
-        </div>
-        <div id="workflow-rule-message" class="alert" hidden></div>
+        <div id="workflow-rule-message" class="alert" hidden role="alert"></div>
         <div class="modal-footer" style="display:flex;gap:8px;flex-wrap:wrap">
-          <button type="button" id="workflow-rule-save" class="btn btn-primary">ذخیره قواعد</button>
-          <button type="button" class="btn btn-light" data-close-modal>انصراف</button>
+          <button type="button" id="workflow-rule-save" class="btn btn-primary" disabled>ذخیره قواعد</button>
+          <button type="button" class="btn btn-light" data-close-modal>بستن</button>
         </div>
       `,
-      onReady: function(overlay) {
-        const rows = overlay.querySelector('#workflow-rule-rows');
-        const sequence = overlay.querySelector('#workflow-rule-sequence');
-        rules.forEach(function(rule) { appendRuleRow(rows, rule, sequence.value); });
-        sequence.addEventListener('change', function() {
-          updateRuleSequenceVisibility(rows, sequence.value);
-        });
-        overlay.querySelector('#workflow-rule-add').addEventListener('click', function() {
-          appendRuleRow(rows, {}, sequence.value);
-        });
-        overlay.querySelector('#workflow-rule-save').addEventListener('click', async function() {
-          if (state.rulesSaving) return;
+      onReady: function(modalOverlay) {
+        modalOverlay.querySelector('#workflow-rule-save').addEventListener('click', async function() {
+          if (state.rulesSaving || this.disabled) return;
+          const rows = modalOverlay.querySelector('#workflow-rule-rows');
+          const sequence = modalOverlay.querySelector('#workflow-rule-sequence');
           const payloadRules = [];
           rows.querySelectorAll('.workflow-event-rule-row').forEach(function(row) {
             const eventTypeId = row.querySelector('[data-field="event-type"]').value;
             if (!eventTypeId) return;
             const requirementMode = row.querySelector('[data-field="requirement"]').value;
-            const dataSource = requirementMode === 'REFERENCE' ? 'SOURCE_PROJECT' :
-              requirementMode === 'NOT_REQUIRED' ? 'NONE' : 'NEW_EVENT';
             payloadRules.push({
               EventTypeID: eventTypeId,
               RequirementMode: requirementMode,
-              DataSource: dataSource,
+              DataSource: requirementMode === 'REFERENCE' ? 'SOURCE_PROJECT' :
+                requirementMode === 'NOT_REQUIRED' ? 'NONE' : 'NEW_EVENT',
               SequenceMode: sequence.value,
               EventOrder: sequence.value === 'STRICT' ?
                 Number(row.querySelector('[data-field="event-order"]').value || 0) : 0,
@@ -855,6 +841,7 @@
                 Number(row.querySelector('[data-field="group-order"]').value || 0) : 0
             });
           });
+
           const saveButton = this;
           state.rulesSaving = true;
           saveButton.disabled = true;
@@ -863,11 +850,11 @@
             await PMS.Api.put('/workflows/' + encodeURIComponent(workflowId) +
               '/steps/' + encodeURIComponent(stepId) + '/event-rules', { rules: payloadRules });
             invalidateCache(BOOTSTRAP_CACHE_KEY);
-            closeModal(overlay);
+            closeModal(modalOverlay);
             showMessage('قواعد رویداد مرحله ذخیره شد.', 'success');
             await loadWorkflows();
           } catch (error) {
-            const message = overlay.querySelector('#workflow-rule-message');
+            const message = modalOverlay.querySelector('#workflow-rule-message');
             message.textContent = error.message || 'ذخیره قواعد ناموفق بود.';
             message.className = 'alert alert-danger';
             message.hidden = false;
@@ -881,6 +868,53 @@
         });
       }
     });
+
+    try {
+      if (!state.eventTypes.length) await loadEventTypes();
+      const response = await PMS.Api.get('/workflows/' + encodeURIComponent(workflowId) +
+        '/steps/' + encodeURIComponent(stepId) + '/event-rules');
+      const data = PMS.Api.extractData(response) || {};
+      loadedRules = Array.isArray(data.items) ? data.items :
+        Array.isArray(data.rules) ? data.rules : [];
+      if (loadedRules.length) {
+        sequenceMode = String(loadedRules[0].SequenceMode || loadedRules[0].sequenceMode || 'STRICT').toUpperCase();
+      }
+
+      if (!overlay.isConnected) return;
+      const loading = overlay.querySelector('#workflow-rule-loading');
+      const editor = overlay.querySelector('#workflow-rule-editor');
+      const rows = overlay.querySelector('#workflow-rule-rows');
+      const sequence = overlay.querySelector('#workflow-rule-sequence');
+      const addButton = overlay.querySelector('#workflow-rule-add');
+      const saveButton = overlay.querySelector('#workflow-rule-save');
+      const message = overlay.querySelector('#workflow-rule-message');
+
+      sequence.value = sequenceMode;
+      loadedRules.forEach(function(rule) { appendRuleRow(rows, rule, sequence.value); });
+      sequence.addEventListener('change', function() {
+        updateRuleSequenceVisibility(rows, sequence.value);
+      });
+      addButton.addEventListener('click', function() {
+        appendRuleRow(rows, {}, sequence.value);
+      });
+
+      loading.hidden = true;
+      editor.hidden = false;
+      saveButton.disabled = false;
+      if (!state.eventTypes.length) {
+        message.textContent = 'فهرست انواع رویداد دریافت نشد؛ دسترسی یا تنظیمات انواع رویداد را بررسی کنید.';
+        message.className = 'alert alert-warning';
+        message.hidden = false;
+      }
+    } catch (error) {
+      if (!overlay.isConnected) return;
+      const loading = overlay.querySelector('#workflow-rule-loading');
+      const message = overlay.querySelector('#workflow-rule-message');
+      if (loading) loading.hidden = true;
+      message.textContent = error.message || 'دریافت تنظیمات رویداد این مرحله ناموفق بود.';
+      message.className = 'alert alert-danger';
+      message.hidden = false;
+    }
   }
 
   async function publishWorkflow(workflow) {
