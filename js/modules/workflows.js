@@ -18,9 +18,11 @@
 
   const state = {
     workflows: [],
+    eventTypes: [],
     search: '',
     loading: false,
     saving: false,
+    rulesSaving: false,
     loadRequestId: 0,
     stepRequestId: 0
   };
@@ -28,6 +30,7 @@
   function init() {
     bindEvents();
     loadWorkflows();
+    loadEventTypes();
 
     // This module is loaded by pages/workflows.html. Initialize its section
     // only after the workflow page has been inserted into the document.
@@ -77,6 +80,7 @@
           onRefresh: function (data) {
             if (requestId !== state.loadRequestId) return;
             state.workflows = normalizeWorkflows(data && data.workflows);
+            state.eventTypes = normalizeEventTypes(data && data.eventTypes);
             if (PMS.Cache) PMS.Cache.set(CACHE_KEY, state.workflows);
             render();
             setVisible('workflows-loading', false);
@@ -91,6 +95,7 @@
 
       if (requestId !== state.loadRequestId) return;
       state.workflows = normalizeWorkflows(result.data && result.data.workflows);
+      state.eventTypes = normalizeEventTypes(result.data && result.data.eventTypes);
       if (PMS.Cache) PMS.Cache.set(CACHE_KEY, state.workflows);
       render();
       if (!result.refreshing) setVisible('workflows-loading', false);
@@ -117,6 +122,23 @@
     if (data && Array.isArray(data.steps)) return data.steps;
     if (data && Array.isArray(data.data)) return data.data;
     return [];
+  }
+
+  function normalizeEventTypes(data) {
+    if (Array.isArray(data)) return data;
+    if (data && Array.isArray(data.items)) return data.items;
+    if (data && Array.isArray(data.eventTypes)) return data.eventTypes;
+    return [];
+  }
+
+  async function loadEventTypes() {
+    try {
+      const response = await PMS.Api.get('/event-types');
+      state.eventTypes = normalizeEventTypes(PMS.Api.extractData(response));
+    } catch (error) {
+      state.eventTypes = [];
+      console.warn('دریافت انواع رویداد برای تنظیم گردش کار ناموفق بود:', error);
+    }
   }
 
   function getValue(item, upper, lower) {
@@ -217,6 +239,8 @@
           loadWorkflowSteps(workflow);
         } else if (this.dataset.action === 'add-step') {
           showCreateStepModal(workflow);
+        } else if (this.dataset.action === 'publish-workflow') {
+          publishWorkflow(workflow);
         }
       });
     });
@@ -226,7 +250,11 @@
     const id = getId(workflow);
     const name = getName(workflow);
     const code = getCode(workflow);
-    const version = getValue(workflow, 'Version', 'version') || '1';
+    const version = getValue(workflow, 'PublishedVersion', 'publishedVersion') || getValue(workflow, 'Version', 'version') || '1';
+    const workflowType = String(getValue(workflow, 'WorkflowType', 'workflowType') || 'INITIAL').toUpperCase();
+    const lifecycle = String(getValue(workflow, 'LifecycleState', 'lifecycleState') || 'DRAFT').toUpperCase();
+    const typeLabel = workflowType === 'REPEAT' ? 'تولید تکراری' : 'تولید اولیه';
+    const lifecycleLabel = lifecycle === 'PUBLISHED' ? 'منتشرشده' : 'پیش‌نویس';
 
     return `
       <article class="workflow-card card"
@@ -258,11 +286,15 @@
               </div>
               <div>
                 <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:4px">
-                  نسخه
+                  مسیر
                 </div>
-                <div style="font-size:13px">
-                  ${escapeHtml(version)}
+                <div style="font-size:13px">${escapeHtml(typeLabel)}</div>
+              </div>
+              <div>
+                <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:4px">
+                  وضعیت نسخه
                 </div>
+                <div style="font-size:13px">${escapeHtml(lifecycleLabel)} · ${escapeHtml(version)}</div>
               </div>
             </div>
           </div>
@@ -279,6 +311,10 @@
                     data-action="add-step"
                     data-id="${escapeAttribute(id)}">
               + افزودن مرحله
+            </button>
+            <button type="button" class="btn btn-light btn-sm"
+                    data-action="publish-workflow" data-id="${escapeAttribute(id)}">
+              انتشار نسخه
             </button>
           </div>
         </div>
@@ -324,6 +360,14 @@
             </small>
           </div>
 
+          <div class="form-group">
+            <label for="workflow-type">نوع مسیر تولید</label>
+            <select class="form-control" id="workflow-type" name="WorkflowType">
+              <option value="INITIAL">تولید اولیه</option>
+              <option value="REPEAT">تولید تکراری</option>
+            </select>
+          </div>
+
           <div id="workflow-form-message" class="alert" hidden></div>
 
           <div class="modal-footer"
@@ -342,6 +386,7 @@
 
           const name = form.elements.Name.value.trim();
           const code = form.elements.Code.value.trim();
+          const workflowType = form.elements.WorkflowType.value || 'INITIAL';
 
           if (!name || !code) {
             showFormMessage(
@@ -361,7 +406,8 @@
           try {
             await PMS.Api.post('/workflows', {
               Name: name,
-              Code: code
+              Code: code,
+              WorkflowType: workflowType
             });
 
             invalidateCache(CACHE_KEY);
