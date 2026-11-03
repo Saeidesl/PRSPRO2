@@ -982,7 +982,9 @@
         return '<article class="project-information-item">' +
           '<div class="project-information-item-head"><div><strong>' + this.escape(name) + '</strong><small>' +
           (multi ? 'جدولی' : 'تک‌مقداری') + (record.Revision ? ' · نسخه ' + this.escape(record.Revision) : '') +
-          '</small></div><div class="project-information-actions">' +
+          '</small>' +
+          (record.ReferenceSyncLog ? '<small class="project-reference-sync-state">' + (record.ReferenceSyncLog.Action === 'CONFLICT' ? 'تعارض همگام‌سازی؛ نیازمند بررسی' : (record.ReferenceSyncLog.Action === 'SYNCED' ? 'همگام‌سازی شده' : (record.ReferenceSyncLog.Action === 'SKIPPED_FILE' ? 'فایل نیازمند انتقال امن است' : 'وضعیت همگام‌سازی: ' + this.escape(record.ReferenceSyncLog.Action || 'نامشخص')))) + '</small>' : '') +
+          '</div><div class="project-information-actions">' +
           (canEdit ? '<button type="button" class="btn btn-sm btn-light" data-project-info-edit="' + this.escape(type.ID || record.InformationTypeID) + '">' + (hasValue ? 'ویرایش' : 'ثبت اطلاعات') + '</button>' : '') +
           (canEdit && hasValue && !(this.project && this.project.SourceProjectID) ? '<button type="button" class="btn btn-sm ' + (record.IsApproved ? 'btn-success' : 'btn-light') + '" data-project-info-approve="' + this.escape(type.ID || record.InformationTypeID) + '" ' + (record.IsApproved ? 'disabled' : '') + '>' + (record.IsApproved ? 'نسخه تأییدشده' : 'تأیید نسخه مرجع') + '</button>' : '') +
           '<button type="button" class="btn btn-sm btn-light" data-project-info-history="' + this.escape(type.ID || record.InformationTypeID) + '">تاریخچه</button>' +
