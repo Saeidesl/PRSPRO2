@@ -729,7 +729,7 @@
     const requirement = String(getValue(rule, 'RequirementMode', 'requirementMode') || 'REQUIRED').toUpperCase();
     const row = document.createElement('div');
     row.className = 'workflow-event-rule-row';
-    row.style.cssText = 'display:grid;grid-template-columns:minmax(170px,2fr) minmax(135px,1fr) minmax(95px,.8fr) minmax(80px,.6fr) auto;gap:8px;align-items:end;padding:12px;border:1px solid var(--color-border);border-radius:10px;margin-bottom:10px';
+    row.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:8px;align-items:end;padding:12px;border:1px solid var(--color-border);border-radius:10px;margin-bottom:10px';
     row.innerHTML = `
       <div class="form-group" style="margin:0">
         <label>نوع رویداد</label>
