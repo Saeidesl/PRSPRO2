@@ -1750,7 +1750,15 @@
           if (referenceSelect) referenceSelect.required = isRepeat;
           const policyContainer = modal.querySelector('#new-project-reference-policies');
           if (policyContainer && isRepeat && !policyContainer.dataset.rendered) {
-            policyContainer.innerHTML = referenceTypes.map((type) => '<label style="display:grid;grid-template-columns:minmax(0,1fr) minmax(145px,190px);gap:10px;align-items:center;margin-top:9px;font-size:13px;"><span>' + this.escape(type.Name || type.Code || type.ID) + '</span><select class="form-control" data-reference-override="' + this.escape(type.ID) + '"><option value="LIVE_SYNC">همگام‌سازی زنده</option><option value="INITIAL_COPY">فقط کپی اولیه</option><option value="INDEPENDENT" selected>مستقل</option></select></label>').join('');
+            let savedPolicies = {};
+            try { savedPolicies = typeof project.ReferencePolicyJSON === 'string' ? JSON.parse(project.ReferencePolicyJSON || '{}') : (project.ReferencePolicyJSON || {}); } catch (policyError) {}
+            policyContainer.innerHTML = referenceTypes.map((type) => {
+              const selected = String(savedPolicies[type.ID] || 'INDEPENDENT').toUpperCase();
+              return '<label style="display:grid;grid-template-columns:minmax(0,1fr) minmax(145px,190px);gap:10px;align-items:center;margin-top:9px;font-size:13px;"><span>' + this.escape(type.Name || type.Code || type.ID) + '</span><select class="form-control" data-reference-override="' + this.escape(type.ID) + '">' +
+                '<option value="LIVE_SYNC"' + (selected === 'LIVE_SYNC' ? ' selected' : '') + '>همگام‌سازی زنده</option>' +
+                '<option value="INITIAL_COPY"' + (selected === 'INITIAL_COPY' ? ' selected' : '') + '>فقط کپی اولیه</option>' +
+                '<option value="INDEPENDENT"' + (selected === 'INDEPENDENT' ? ' selected' : '') + '>مستقل</option></select></label>';
+            }).join('');
             policyContainer.dataset.rendered = 'true';
           }
           if (policyContainer) policyContainer.hidden = !isRepeat;
