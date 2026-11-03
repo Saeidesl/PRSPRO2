@@ -97,6 +97,7 @@
       if (requestId !== state.loadRequestId) return;
       state.workflows = normalizeWorkflows(result.data && result.data.workflows);
       if (result.data && Array.isArray(result.data.eventTypes)) state.eventTypes = normalizeEventTypes(result.data.eventTypes);
+      if (result.data && Array.isArray(result.data.informationTypes)) state.informationTypes = result.data.informationTypes;
       if (PMS.Cache) PMS.Cache.set(CACHE_KEY, state.workflows);
       render();
       if (!result.refreshing) setVisible('workflows-loading', false);
