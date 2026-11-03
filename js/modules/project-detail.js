@@ -987,6 +987,7 @@
           '</div><div class="project-information-actions">' +
           (canEdit ? '<button type="button" class="btn btn-sm btn-light" data-project-info-edit="' + this.escape(type.ID || record.InformationTypeID) + '">' + (hasValue ? 'ویرایش' : 'ثبت اطلاعات') + '</button>' : '') +
           (canEdit && hasValue && !(this.project && this.project.SourceProjectID) ? '<button type="button" class="btn btn-sm ' + (record.IsApproved ? 'btn-success' : 'btn-light') + '" data-project-info-approve="' + this.escape(type.ID || record.InformationTypeID) + '" ' + (record.IsApproved ? 'disabled' : '') + '>' + (record.IsApproved ? 'نسخه تأییدشده' : 'تأیید نسخه مرجع') + '</button>' : '') +
+          (canEdit && record.ReferenceSyncLog && record.ReferenceSyncLog.Action === 'CONFLICT' ? '<div class="project-reference-conflict-actions"><button type="button" class="btn btn-sm btn-primary" data-project-reference-resolve="USE_SOURCE" data-information-type="' + this.escape(type.ID || record.InformationTypeID) + '">اعمال نسخه مرجع</button><button type="button" class="btn btn-sm btn-light" data-project-reference-resolve="KEEP_LOCAL" data-information-type="' + this.escape(type.ID || record.InformationTypeID) + '">حفظ اطلاعات محلی</button></div>' : '') +
           '<button type="button" class="btn btn-sm btn-light" data-project-info-history="' + this.escape(type.ID || record.InformationTypeID) + '">تاریخچه</button>' +
           (canEdit && hasValue ? '<button type="button" class="btn btn-sm btn-danger" data-project-info-delete="' + this.escape(type.ID || record.InformationTypeID) + '">حذف</button>' : '') +
           '</div></div><div class="project-information-item-content">' + content + '</div></article>';
@@ -1010,6 +1011,28 @@
         } catch (err) {
           alert(err && err.message ? err.message : 'تأیید نسخه انجام نشد.');
           btn.disabled = false;
+        }
+      }));
+      container.querySelectorAll('[data-project-reference-resolve]').forEach(btn => btn.addEventListener('click', async () => {
+        const typeId = String(btn.dataset.informationType || '');
+        const record = this.projectInformation.find(item => String(item.InformationTypeID) === typeId);
+        const log = record && record.ReferenceSyncLog;
+        const decision = String(btn.dataset.projectReferenceResolve || '').toUpperCase();
+        if (!record || !log || log.Action !== 'CONFLICT' || ['USE_SOURCE', 'KEEP_LOCAL'].indexOf(decision) === -1) return;
+        const promptText = decision === 'USE_SOURCE'
+          ? 'اطلاعات محلی این پروژه با نسخه تأییدشده مرجع جایگزین شود؟'
+          : 'اطلاعات فعلی این پروژه حفظ شود و از همگام‌سازی همین نسخه مرجع صرف‌نظر شود؟';
+        if (!confirm(promptText)) return;
+        container.querySelectorAll('[data-project-reference-resolve]').forEach(action => { action.disabled = true; });
+        try {
+          await window.PMS.Api.post('/projects/' + encodeURIComponent(this.projectId) + '/information/' + encodeURIComponent(typeId) + '/resolve-reference', {
+            Decision: decision,
+            ExpectedTargetRevision: Number(log.TargetRevision || 0)
+          });
+          await this.loadProjectInformation(true);
+        } catch (err) {
+          alert(err && err.message ? err.message : 'تعیین تکلیف تعارض انجام نشد.');
+          container.querySelectorAll('[data-project-reference-resolve]').forEach(action => { action.disabled = false; });
         }
       }));
       container.querySelectorAll('[data-project-info-history]').forEach(btn => btn.addEventListener('click', () => {
