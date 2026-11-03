@@ -36,5 +36,5 @@ test('workflow editor supports strict, free, grouped order and publication', () 
 
 test('workflow module cache version is refreshed', () => {
   const html = read('index.html');
-  assert.match(html, /js\/modules\/workflows\.js\?v=20261103-workflow-rules-ui-1/);
+  assert.match(html, /js\/modules\/workflows\.js\?v=20261103-workflow-rules-modal-feedback-1/);
 });
