@@ -43,8 +43,8 @@ test('project list and detail distinguish drafts from production projects', () =
 
 test('project assets use cache-busting for the unified project entry', () => {
   const source = read('index.html');
-  assert.match(source, /projects\.js\?v=20261031-manual-project-code-1/);
-  assert.match(source, /project-detail\.js\?v=20261101-print-designer-workspace-1/);
+  assert.match(source, /projects\.js\?v=20261103-repeat-reference-policy-3/);
+  assert.match(source, /project-detail\.js\?v=20261103-reference-conflict-resolution-1/);
 });
 
 

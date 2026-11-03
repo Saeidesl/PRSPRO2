@@ -982,8 +982,12 @@
         return '<article class="project-information-item">' +
           '<div class="project-information-item-head"><div><strong>' + this.escape(name) + '</strong><small>' +
           (multi ? 'جدولی' : 'تک‌مقداری') + (record.Revision ? ' · نسخه ' + this.escape(record.Revision) : '') +
-          '</small></div><div class="project-information-actions">' +
+          '</small>' +
+          (record.ReferenceSyncLog ? '<small class="project-reference-sync-state">' + (record.ReferenceSyncLog.Action === 'CONFLICT' ? 'تعارض همگام‌سازی؛ نیازمند بررسی' : (record.ReferenceSyncLog.Action === 'SYNCED' ? 'همگام‌سازی شده' : (record.ReferenceSyncLog.Action === 'SKIPPED_FILE' ? 'فایل نیازمند انتقال امن است' : 'وضعیت همگام‌سازی: ' + this.escape(record.ReferenceSyncLog.Action || 'نامشخص')))) + '</small>' : '') +
+          '</div><div class="project-information-actions">' +
           (canEdit ? '<button type="button" class="btn btn-sm btn-light" data-project-info-edit="' + this.escape(type.ID || record.InformationTypeID) + '">' + (hasValue ? 'ویرایش' : 'ثبت اطلاعات') + '</button>' : '') +
+          (canEdit && hasValue && !(this.project && this.project.SourceProjectID) ? '<button type="button" class="btn btn-sm ' + (record.IsApproved ? 'btn-success' : 'btn-light') + '" data-project-info-approve="' + this.escape(type.ID || record.InformationTypeID) + '" ' + (record.IsApproved ? 'disabled' : '') + '>' + (record.IsApproved ? 'نسخه تأییدشده' : 'تأیید نسخه مرجع') + '</button>' : '') +
+          (canEdit && record.ReferenceSyncLog && record.ReferenceSyncLog.Action === 'CONFLICT' ? '<div class="project-reference-conflict-actions"><button type="button" class="btn btn-sm btn-primary" data-project-reference-resolve="USE_SOURCE" data-information-type="' + this.escape(type.ID || record.InformationTypeID) + '">اعمال نسخه مرجع</button><button type="button" class="btn btn-sm btn-light" data-project-reference-resolve="KEEP_LOCAL" data-information-type="' + this.escape(type.ID || record.InformationTypeID) + '">حفظ اطلاعات محلی</button></div>' : '') +
           '<button type="button" class="btn btn-sm btn-light" data-project-info-history="' + this.escape(type.ID || record.InformationTypeID) + '">تاریخچه</button>' +
           (canEdit && hasValue ? '<button type="button" class="btn btn-sm btn-danger" data-project-info-delete="' + this.escape(type.ID || record.InformationTypeID) + '">حذف</button>' : '') +
           '</div></div><div class="project-information-item-content">' + content + '</div></article>';
@@ -991,6 +995,45 @@
       container.querySelectorAll('[data-project-info-edit]').forEach(btn => btn.addEventListener('click', () => {
         const record = this.projectInformation.find(item => String(item.InformationTypeID) === String(btn.dataset.projectInfoEdit));
         if (record) this.openProjectInformationForm(record);
+      }));
+      container.querySelectorAll('[data-project-info-approve]').forEach(btn => btn.addEventListener('click', async () => {
+        const record = this.projectInformation.find(item => String(item.InformationTypeID) === String(btn.dataset.projectInfoApprove));
+        if (!record || record.IsApproved || !confirm('نسخه فعلی این اطلاعات تأیید و به پروژه‌های تکراری متصل همگام شود؟')) return;
+        btn.disabled = true;
+        try {
+          const response = await window.PMS.Api.post('/projects/' + encodeURIComponent(this.projectId) + '/information/' + encodeURIComponent(record.InformationTypeID) + '/approve', {});
+          const result = response && response.data !== undefined ? response.data : response;
+          const sync = Array.isArray(result && result.sync) ? result.sync : [];
+          const conflicts = sync.filter(item => item.status === 'CONFLICT').length;
+          const synced = sync.filter(item => item.status === 'SYNCED').length;
+          alert('نسخه تأیید شد. همگام‌سازی موفق: ' + synced + ' مورد؛ تعارض نیازمند بررسی: ' + conflicts + ' مورد.');
+          await this.loadProjectInformation(true);
+        } catch (err) {
+          alert(err && err.message ? err.message : 'تأیید نسخه انجام نشد.');
+          btn.disabled = false;
+        }
+      }));
+      container.querySelectorAll('[data-project-reference-resolve]').forEach(btn => btn.addEventListener('click', async () => {
+        const typeId = String(btn.dataset.informationType || '');
+        const record = this.projectInformation.find(item => String(item.InformationTypeID) === typeId);
+        const log = record && record.ReferenceSyncLog;
+        const decision = String(btn.dataset.projectReferenceResolve || '').toUpperCase();
+        if (!record || !log || log.Action !== 'CONFLICT' || ['USE_SOURCE', 'KEEP_LOCAL'].indexOf(decision) === -1) return;
+        const promptText = decision === 'USE_SOURCE'
+          ? 'اطلاعات محلی این پروژه با نسخه تأییدشده مرجع جایگزین شود؟'
+          : 'اطلاعات فعلی این پروژه حفظ شود و از همگام‌سازی همین نسخه مرجع صرف‌نظر شود؟';
+        if (!confirm(promptText)) return;
+        container.querySelectorAll('[data-project-reference-resolve]').forEach(action => { action.disabled = true; });
+        try {
+          await window.PMS.Api.post('/projects/' + encodeURIComponent(this.projectId) + '/information/' + encodeURIComponent(typeId) + '/resolve-reference', {
+            Decision: decision,
+            ExpectedTargetRevision: Number(log.TargetRevision || 0)
+          });
+          await this.loadProjectInformation(true);
+        } catch (err) {
+          alert(err && err.message ? err.message : 'تعیین تکلیف تعارض انجام نشد.');
+          container.querySelectorAll('[data-project-reference-resolve]').forEach(action => { action.disabled = false; });
+        }
       }));
       container.querySelectorAll('[data-project-info-history]').forEach(btn => btn.addEventListener('click', () => {
         const record = this.projectInformation.find(item => String(item.InformationTypeID) === String(btn.dataset.projectInfoHistory));

@@ -19,6 +19,7 @@
   const state = {
     workflows: [],
     eventTypes: [],
+    informationTypes: [],
     search: '',
     loading: false,
     saving: false,
@@ -80,6 +81,7 @@
             if (requestId !== state.loadRequestId) return;
             state.workflows = normalizeWorkflows(data && data.workflows);
             if (data && Array.isArray(data.eventTypes)) state.eventTypes = normalizeEventTypes(data.eventTypes);
+      if (data && Array.isArray(data.informationTypes)) state.informationTypes = data.informationTypes;
             if (PMS.Cache) PMS.Cache.set(CACHE_KEY, state.workflows);
             render();
             setVisible('workflows-loading', false);
@@ -95,6 +97,7 @@
       if (requestId !== state.loadRequestId) return;
       state.workflows = normalizeWorkflows(result.data && result.data.workflows);
       if (result.data && Array.isArray(result.data.eventTypes)) state.eventTypes = normalizeEventTypes(result.data.eventTypes);
+      if (result.data && Array.isArray(result.data.informationTypes)) state.informationTypes = result.data.informationTypes;
       if (PMS.Cache) PMS.Cache.set(CACHE_KEY, state.workflows);
       render();
       if (!result.refreshing) setVisible('workflows-loading', false);
@@ -367,6 +370,13 @@
             </select>
           </div>
 
+
+          <div id="workflow-repeat-policy" class="form-group" hidden>
+            <label>سیاست اطلاعات مرجع برای پروژه‌های تکراری</label>
+            <small style="display:block;margin:4px 0 10px;color:var(--color-text-muted)">این تنظیم پیش‌فرض پروژه‌های جدیدی است که با این فرآیند ساخته می‌شوند.</small>
+            <div id="workflow-repeat-policy-fields"></div>
+          </div>
+
           <div id="workflow-form-message" class="alert" hidden></div>
 
           <div class="modal-footer"
@@ -378,6 +388,29 @@
       `,
       onReady: function (overlay) {
         const form = overlay.querySelector('#workflow-create-form');
+        const workflowTypeSelect = form.elements.WorkflowType;
+        const policyWrap = overlay.querySelector('#workflow-repeat-policy');
+        const policyFields = overlay.querySelector('#workflow-repeat-policy-fields');
+        function renderRepeatPolicyFields() {
+          const isRepeat = workflowTypeSelect.value === 'REPEAT';
+          policyWrap.hidden = !isRepeat;
+          if (!isRepeat || policyFields.dataset.rendered === 'true') return;
+          const types = Array.isArray(state.informationTypes) ? state.informationTypes : [];
+          if (!types.length) {
+            policyFields.innerHTML = '<div class="alert alert-warning">فهرست اطلاعات مرکزی در دسترس نیست؛ تنظیم سیاست را بعداً از طریق ویرایش فرآیند انجام دهید.</div>';
+            return;
+          }
+          policyFields.innerHTML = types.map(function(type) {
+            return '<div class="form-group" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(150px,220px);gap:10px;align-items:center">' +
+              '<label style="margin:0">' + escapeHtml(type.Name || type.Code || type.ID) + '</label>' +
+              '<select class="form-control" data-reference-type="' + escapeAttribute(type.ID) + '">' +
+              '<option value="LIVE_SYNC">همگام‌سازی زنده</option><option value="INITIAL_COPY">فقط کپی اولیه</option><option value="INDEPENDENT" selected>مستقل</option></select></div>';
+          }).join('');
+          policyFields.dataset.rendered = 'true';
+        }
+        workflowTypeSelect.addEventListener('change', renderRepeatPolicyFields);
+        renderRepeatPolicyFields();
+
 
         form.addEventListener('submit', async function (event) {
           event.preventDefault();
@@ -406,7 +439,8 @@
             await PMS.Api.post('/workflows', {
               Name: name,
               Code: code,
-              WorkflowType: workflowType
+              WorkflowType: workflowType,
+              RepeatReferencePolicyJSON: workflowType === 'REPEAT' ? Array.from(form.querySelectorAll('[data-reference-type]')).reduce(function(result, select) { result[select.dataset.referenceType] = select.value; return result; }, {}) : {}
             });
 
             invalidateCache(CACHE_KEY);
