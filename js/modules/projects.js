@@ -2383,7 +2383,14 @@
         }
         modal.remove();
 
-        alert('پروژه با موفقیت ثبت شد.' + attachmentWarning);
+        const referenceSummary = created.ReferenceCopySummary || {};
+        const copiedReferenceCount = Array.isArray(referenceSummary.copied) ? referenceSummary.copied.length : 0;
+        const skippedReferenceFiles = Array.isArray(referenceSummary.skippedFiles) ? referenceSummary.skippedFiles.length : 0;
+        const referenceCopyMessage = referenceSummary && created.SourceProjectID
+          ? ' اطلاعات مرکزی منتقل‌شده: ' + copiedReferenceCount + ' مورد.' +
+            (skippedReferenceFiles ? ' فایل/تصویر منتقل‌نشده: ' + skippedReferenceFiles + ' مورد؛ انتقال امن فایل هنوز پشتیبانی نمی‌شود.' : '')
+          : '';
+        alert('پروژه با موفقیت ثبت شد.' + referenceCopyMessage + attachmentWarning);
 
         // Refresh the list only when the user is allowed to view projects.
         const router = window.PMS.Router;
