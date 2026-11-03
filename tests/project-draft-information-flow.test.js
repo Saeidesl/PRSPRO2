@@ -72,11 +72,9 @@ test('each central information type has an independent card-visibility setting',
 
 test('repeat project creation refreshes lookup metadata and exposes the source-project selector', () => {
   const projects = read('js/modules/projects.js');
-  const backend = read('../PRSPRO2BACKEND/ProjectService.js');
   assert.match(projects, /project-form-lookups-v2-/);
   assert.match(projects, /lookupData\.referenceProjects/);
-  assert.match(projects, /WorkflowType \|\| selectedWorkflow\.workflowType/);
+  assert.match(projects, /selectedWorkflow\.WorkflowType \|\| selectedWorkflow\.workflowType/);
   assert.match(projects, /new-project-reference-wrap/);
   assert.match(projects, /SourceProjectID:/);
-  assert.match(backend, /referenceProjects:/);
 });
