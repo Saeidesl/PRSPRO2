@@ -50,6 +50,8 @@
 - `js/modules/workflow-department-assignments.js` (نام فایل/ماژول در زمان اجرای تسک از index و صفحه workflow تأیید شود): اتصال دپارتمان‌ها به مراحل.
 - `js/modules/events.js`: مسیر اصلی ثبت/نمایش رویدادها، انتخاب پروژه و EventType، فرم‌های پویا، اصلاح فرم و idempotency؛ باید همان مسیر توسعه یابد.
   - `js/modules/events.js`: `Events.openForm()` فرم ثبت فعلی را می‌سازد؛ انتخاب پروژه/نوع رویداد در listenerهای `projectSelect` و `typeSelect` مدیریت می‌شود؛ `Events.submitForm()` payload اصلی را به `POST /events` می‌فرستد. وضعیت قواعد مرحله باید از API پیشرفت Workflow خوانده و در همین فرم نمایش داده شود؛ کنترل نهایی همیشه سمت Backend است.
+  - `js/modules/events.js`: `Events.loadWorkflowProgress(projectId)` به تغییر پروژه متصل شد؛ پیشرفت و وضعیت هر رویداد در همان فرم اصلی ثبت رویداد نمایش داده می‌شود. کنترل نهایی قواعد در Backend است.
+  - `index.html`: cache-busting ماژول رویداد به `20261103-workflow-event-progress-1` به‌روزرسانی شد؛ تست‌های رگرسیون در `tests/workflow-management.test.js` و `tests/workflow-event-enforcement.test.js` اضافه شدند.
 
 - `js/modules/event-types.js`: مدیریت EventType و فیلدهای پویا؛ تعریف نوع رویداد مستقل از الزام استفاده آن در Workflow باقی بماند.
 - `js/modules/projects.js`: `Projects.init()`, `Projects.render()`, `Projects.openCreateForm(project, options)`, `Projects.openProjectEditForm(projectId, options)`; تخصیص Workflow از همین جریان فعلی پروژه حفظ شود.
