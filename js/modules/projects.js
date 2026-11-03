@@ -1255,6 +1255,12 @@
               </small>
             </div>
 
+            <div id="new-project-reference-wrap" class="filter-group form-group project-form-field" hidden style="margin-bottom:16px;">
+              <label for="new-project-reference">پروژه اصلی / مرجع <span style="color:var(--color-danger);">*</span></label>
+              <select id="new-project-reference" name="SourceProjectID" style="width:100%;box-sizing:border-box;"><option value="">انتخاب پروژه مرجع</option></select>
+              <small style="display:block;margin-top:6px;color:var(--color-text-secondary);">اطلاعات مرجع بر اساس سیاست گردش‌کار تولید تکراری استفاده می‌شود؛ رویدادها و سوابق تولید مستقل می‌مانند.</small>
+            </div>
+
             <div class="filter-group form-group project-form-field" style="margin-bottom:20px;">
               <label for="new-project-description">
                 توضیحات
@@ -1731,6 +1737,19 @@
           ? String(workflows[0].ID || workflows[0].Id || workflows[0].id || '')
           : '';
 
+        const referenceSelect = modal.querySelector('#new-project-reference');
+        const referenceWrap = modal.querySelector('#new-project-reference-wrap');
+        const referenceProjects = Array.isArray(lookupData.referenceProjects) ? lookupData.referenceProjects : [];
+        if (referenceSelect) referenceSelect.innerHTML = '<option value="">انتخاب پروژه مرجع</option>' + referenceProjects.map((item) => '<option value="' + this.escape(item.ID) + '">' + this.escape([item.ProjectCode, item.Title].filter(Boolean).join(' — ')) + '</option>').join('');
+        const syncReferenceVisibility = () => {
+          const selectedWorkflow = workflows.find((item) => String(item.ID || item.Id || item.id) === String(workflowSelect.value));
+          const isRepeat = String(selectedWorkflow && (selectedWorkflow.WorkflowType || selectedWorkflow.workflowType) || '').toUpperCase() === 'REPEAT';
+          if (referenceWrap) referenceWrap.hidden = !isRepeat;
+          if (referenceSelect) referenceSelect.required = isRepeat;
+        };
+        if (!workflowSelect.dataset.referencePolicyBound) { workflowSelect.dataset.referencePolicyBound = 'true'; workflowSelect.addEventListener('change', syncReferenceVisibility); }
+        syncReferenceVisibility();
+
         departmentsSelect.innerHTML = departments.map((department) => {
           const id = department.ID || department.Id || department.id;
           const name = department.Name || department.Title || department.Code || id;
@@ -2128,6 +2147,7 @@
         Title: titleInput.value.trim(),
         Quantity: quantityInput.value.trim() === '' ? '' : Number(quantityInput.value),
         WorkflowID: workflowSelect.value,
+        SourceProjectID: String((modal.querySelector('#new-project-reference') || {}).value || ''),
         Description: descriptionInput.value.trim(),
         CreatedAt: String((modal.querySelector('#new-project-created-at') || {}).value || '').trim(),
         AvailableDepartmentIDs: selectedDepartments,
@@ -2168,6 +2188,13 @@
       if (!project.WorkflowID) {
         this.showFormError(modal, 'یک گردش کار انتخاب کن.');
         workflowSelect.focus();
+        return;
+      }
+      const selectedWorkflow = (this.workflows || []).find((item) => String(item.ID || item.Id || item.id) === String(project.WorkflowID));
+      if (String(selectedWorkflow && (selectedWorkflow.WorkflowType || selectedWorkflow.workflowType) || '').toUpperCase() === 'REPEAT' && !project.SourceProjectID) {
+        this.showFormError(modal, 'برای تولید تکراری، پروژه مرجع را انتخاب کن.');
+        const referenceSelect = modal.querySelector('#new-project-reference');
+        if (referenceSelect) referenceSelect.focus();
         return;
       }
 
