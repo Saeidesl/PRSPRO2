@@ -984,6 +984,7 @@
           (multi ? 'جدولی' : 'تک‌مقداری') + (record.Revision ? ' · نسخه ' + this.escape(record.Revision) : '') +
           '</small></div><div class="project-information-actions">' +
           (canEdit ? '<button type="button" class="btn btn-sm btn-light" data-project-info-edit="' + this.escape(type.ID || record.InformationTypeID) + '">' + (hasValue ? 'ویرایش' : 'ثبت اطلاعات') + '</button>' : '') +
+          (canEdit && hasValue && !(this.project && this.project.SourceProjectID) ? '<button type="button" class="btn btn-sm ' + (record.IsApproved ? 'btn-success' : 'btn-light') + '" data-project-info-approve="' + this.escape(type.ID || record.InformationTypeID) + '" ' + (record.IsApproved ? 'disabled' : '') + '>' + (record.IsApproved ? 'نسخه تأییدشده' : 'تأیید نسخه مرجع') + '</button>' : '') +
           '<button type="button" class="btn btn-sm btn-light" data-project-info-history="' + this.escape(type.ID || record.InformationTypeID) + '">تاریخچه</button>' +
           (canEdit && hasValue ? '<button type="button" class="btn btn-sm btn-danger" data-project-info-delete="' + this.escape(type.ID || record.InformationTypeID) + '">حذف</button>' : '') +
           '</div></div><div class="project-information-item-content">' + content + '</div></article>';
@@ -991,6 +992,23 @@
       container.querySelectorAll('[data-project-info-edit]').forEach(btn => btn.addEventListener('click', () => {
         const record = this.projectInformation.find(item => String(item.InformationTypeID) === String(btn.dataset.projectInfoEdit));
         if (record) this.openProjectInformationForm(record);
+      }));
+      container.querySelectorAll('[data-project-info-approve]').forEach(btn => btn.addEventListener('click', async () => {
+        const record = this.projectInformation.find(item => String(item.InformationTypeID) === String(btn.dataset.projectInfoApprove));
+        if (!record || record.IsApproved || !confirm('نسخه فعلی این اطلاعات تأیید و به پروژه‌های تکراری متصل همگام شود؟')) return;
+        btn.disabled = true;
+        try {
+          const response = await window.PMS.Api.post('/projects/' + encodeURIComponent(this.projectId) + '/information/' + encodeURIComponent(record.InformationTypeID) + '/approve', {});
+          const result = response && response.data !== undefined ? response.data : response;
+          const sync = Array.isArray(result && result.sync) ? result.sync : [];
+          const conflicts = sync.filter(item => item.status === 'CONFLICT').length;
+          const synced = sync.filter(item => item.status === 'SYNCED').length;
+          alert('نسخه تأیید شد. همگام‌سازی موفق: ' + synced + ' مورد؛ تعارض نیازمند بررسی: ' + conflicts + ' مورد.');
+          await this.loadProjectInformation(true);
+        } catch (err) {
+          alert(err && err.message ? err.message : 'تأیید نسخه انجام نشد.');
+          btn.disabled = false;
+        }
       }));
       container.querySelectorAll('[data-project-info-history]').forEach(btn => btn.addEventListener('click', () => {
         const record = this.projectInformation.find(item => String(item.InformationTypeID) === String(btn.dataset.projectInfoHistory));
