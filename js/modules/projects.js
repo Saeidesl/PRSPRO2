@@ -1259,6 +1259,7 @@
               <label for="new-project-reference">پروژه اصلی / مرجع <span style="color:var(--color-danger);">*</span></label>
               <select id="new-project-reference" name="SourceProjectID" style="width:100%;box-sizing:border-box;"><option value="">انتخاب پروژه مرجع</option></select>
               <small style="display:block;margin-top:6px;color:var(--color-text-secondary);">اطلاعات مرجع بر اساس سیاست گردش‌کار تولید تکراری استفاده می‌شود؛ رویدادها و سوابق تولید مستقل می‌مانند.</small>
+              <div id="new-project-reference-policies" style="margin-top:12px;"></div>
             </div>
 
             <div class="filter-group form-group project-form-field" style="margin-bottom:20px;">
@@ -1740,12 +1741,19 @@
         const referenceSelect = modal.querySelector('#new-project-reference');
         const referenceWrap = modal.querySelector('#new-project-reference-wrap');
         const referenceProjects = Array.isArray(lookupData.referenceProjects) ? lookupData.referenceProjects : [];
+        const referenceTypes = Array.isArray(lookupData.informationTypes) ? lookupData.informationTypes : [];
         if (referenceSelect) referenceSelect.innerHTML = '<option value="">انتخاب پروژه مرجع</option>' + referenceProjects.map((item) => '<option value="' + this.escape(item.ID) + '">' + this.escape([item.ProjectCode, item.Title].filter(Boolean).join(' — ')) + '</option>').join('');
         const syncReferenceVisibility = () => {
           const selectedWorkflow = workflows.find((item) => String(item.ID || item.Id || item.id) === String(workflowSelect.value));
           const isRepeat = String(selectedWorkflow && (selectedWorkflow.WorkflowType || selectedWorkflow.workflowType) || '').toUpperCase() === 'REPEAT';
           if (referenceWrap) referenceWrap.hidden = !isRepeat;
           if (referenceSelect) referenceSelect.required = isRepeat;
+          const policyContainer = modal.querySelector('#new-project-reference-policies');
+          if (policyContainer && isRepeat && !policyContainer.dataset.rendered) {
+            policyContainer.innerHTML = referenceTypes.map((type) => '<label style="display:grid;grid-template-columns:minmax(0,1fr) minmax(145px,190px);gap:10px;align-items:center;margin-top:9px;font-size:13px;"><span>' + this.escape(type.Name || type.Code || type.ID) + '</span><select class="form-control" data-reference-override="' + this.escape(type.ID) + '"><option value="LIVE_SYNC">همگام‌سازی زنده</option><option value="INITIAL_COPY">فقط کپی اولیه</option><option value="INDEPENDENT" selected>مستقل</option></select></label>').join('');
+            policyContainer.dataset.rendered = 'true';
+          }
+          if (policyContainer) policyContainer.hidden = !isRepeat;
         };
         if (!workflowSelect.dataset.referencePolicyBound) { workflowSelect.dataset.referencePolicyBound = 'true'; workflowSelect.addEventListener('change', syncReferenceVisibility); }
         syncReferenceVisibility();
@@ -2148,6 +2156,7 @@
         Quantity: quantityInput.value.trim() === '' ? '' : Number(quantityInput.value),
         WorkflowID: workflowSelect.value,
         SourceProjectID: String((modal.querySelector('#new-project-reference') || {}).value || ''),
+        ReferencePolicyJSON: Array.from(modal.querySelectorAll('[data-reference-override]')).reduce((result, select) => { result[select.dataset.referenceOverride] = select.value; return result; }, {}),
         Description: descriptionInput.value.trim(),
         CreatedAt: String((modal.querySelector('#new-project-created-at') || {}).value || '').trim(),
         AvailableDepartmentIDs: selectedDepartments,
