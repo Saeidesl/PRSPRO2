@@ -8,7 +8,7 @@
 - Frontend: `Saeidesl/PRSPRO2`، شاخه مجاز `feature/design-case-preproduction`.
 - Backend: `Saeidesl/PRSPRO2BACKEND`، شاخه مجاز `feature/design-case-preproduction`.
 - `main` نباید مستقیماً تغییر کند.
-- در زمان کشف، شاخه Frontend نسبت به `main` دارای ۲ commit جلو و ۴۲۴ commit عقب بود؛ شاخه Backend نیز ۱۲۴ commit عقب و بدون commit جلو بود. بنابراین کد قابلیت پروژه تکراری/اطلاعات مرکزی که در `main` بررسی شد، در شاخه مجاز فعلی حاضر نیست و پیش از پیاده‌سازی باید baseline به‌صورت کنترل‌شده همگام شود.
+- در زمان کشف، شاخه Frontend دارای ۲ commit جلو و ۴۲۴ commit عقب و شاخه Backend دارای ۱۲۴ commit عقب بود. اکنون هر دو شاخه با `main` همگام‌اند؛ Frontend شامل merge commit `b9f75de0b9d81ce23a206cea0b9a2cffc4bb8edd` و Backend شامل merge commit `4ebfe4445405b5e9e78364a754715931d9352d72` است. `main` تغییر نکرده است.
 - `ARCHITECTURE.md` فرانت‌اند موجود است؛ `TODO4.md` در شاخه مجاز وجود نداشت و این فایل برای فاز حاضر ایجاد شد.
 
 ### مدل داده و جریان مورد انتظار
@@ -27,7 +27,9 @@
   - فرم گردش‌کار REPEAT، انتخاب پروژه مرجع با `#new-project-reference` و انتخاب سیاست هر نوع اطلاعات با `[data-reference-override]`.
   - payload ایجاد پروژه شامل `WorkflowID`, `SourceProjectID`, `ReferencePolicyJSON` و سایر فیلدهای پروژه است.
 - `js/modules/project-detail.js`
-  - نمایش اطلاعات مرکزی پروژه از API اطلاعات پروژه؛ وضعیت همگام‌سازی و تعارض‌های مرجع در همین صفحه نمایش داده می‌شوند.
+  - نمایش اطلاعات مرکزی پروژه از API اطلاعات پروژه؛ وضعیت همگام‌سازی و تعارض‌های مرجع در همین صفحه نمایش داده می‌شوند. اقدام دستی «تأیید نسخه مرجع» حذف شده؛ حل تعارض فقط بین استفاده از مقدار جاری منبع یا حفظ مقدار محلی انجام می‌شود.
+- `js/modules/projects.js`
+  - پس از ایجاد پروژه، تعداد اطلاعات مرکزی منتقل‌شده و تعداد فایل/تصویرهای منتقل‌نشده از `ReferenceCopySummary` به کاربر اعلام می‌شود.
 - `js/modules/information-types.js`
   - تعریف انواع اطلاعات مرکزی و ستون‌های چندردیفی/پویا.
 - `index.html`
@@ -37,11 +39,11 @@
 - `ProjectService.js`
   - `projectFormLookups(params)`: ارائه `referenceProjects` و `informationTypes` متناسب با Tenant و دسترسی کاربر.
   - `create(project, params)`: اعتبارسنجی Workflow از نوع REPEAT، کنترل مالکیت/دسترسی پروژه مرجع، ادغام سیاست‌ها، ایجاد پروژه جدید و کپی اطلاعات مرکزی منتخب.
-  - منطق فعلی مشاهده‌شده در `main` کپی اولیه را فقط برای `INITIAL_COPY` انجام می‌دهد و به وجود سابقه `APPROVED` وابسته است؛ نبود این سابقه باعث رد شدن بی‌صدای ردیف می‌شود. این وابستگی با تصمیم محصول (عدم نیاز به تأیید دستی) ناسازگار است.
+  - `create(project, params)` اکنون برای سیاست‌های `INITIAL_COPY` و `LIVE_SYNC` مقدار جاری فعال `ValueJSON` را بدون وابستگی به سابقه `APPROVED` کپی می‌کند؛ آرایه‌ها/ردیف‌های چندگانه بدون تغییر حفظ می‌شوند. برای `LIVE_SYNC` رکورد اولیه `SYNCED` در `38_ProjectReferenceSyncLog` ایجاد می‌شود تا همگام‌سازی‌های بعدی idempotent باشند. نتیجه کپی در `created.ReferenceCopySummary` برمی‌گردد.
 - `ProjectInformationService.js`
   - `list`, `get`, `save`, `approve`, `_syncApprovedReference_`, `_isFileBased_`.
-  - مقدار جاری در `ValueJSON` ذخیره می‌شود؛ تاریخچه در `ProjectInformationRepository` ثبت می‌شود.
-  - منطق فعلی مشاهده‌شده در `main` فایل/تصویر را از کپی اولیه و همگام‌سازی زنده مستثنا می‌کند؛ انتقال امن پیوست‌ها باید جداگانه ارزیابی شود و نباید با کپی metadata نامعتبر انجام شود.
+  - مقدار جاری در `ValueJSON` ذخیره می‌شود؛ تاریخچه در `ProjectInformationRepository` ثبت می‌شود. `save` پس از ثبت موفق، `_syncLiveReference_` را برای همگام‌سازی زنده فرزندان فراخوانی می‌کند؛ تعارض با مقایسه revision جاری منبع/مقصد کنترل می‌شود و دیگر به تأیید دستی وابسته نیست.
+  - اطلاعاتی که نوع داده یا ستون فعال آن `image`/`file` باشد فعلاً با وضعیت `SKIPPED_FILE` گزارش می‌شود؛ انتقال امن پیوست‌ها در محدوده فعلی پیاده‌سازی نشده و نباید metadata پیوست پروژه مرجع به مقصد کپی شود.
 - `ProjectInformationRepository.js`
   - شیت‌های `30_ProjectInformation`, `31_ProjectInformationHistory`, `38_ProjectReferenceSyncLog`.
   - توابع `findByProject`, `findAnyByProjectAndType`, `findByProjectAndType`, `insert`, `update`, `findHistory`, `insertHistory`, `getAllSyncLogs`, `insertSyncLog`.
