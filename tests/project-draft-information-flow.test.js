@@ -43,7 +43,7 @@ test('project list and detail distinguish drafts from production projects', () =
 
 test('project assets use cache-busting for the unified project entry', () => {
   const source = read('index.html');
-  assert.match(source, /projects\.js\?v=20261103-project-workflow-picker-mainline-1/);
+  assert.match(source, /projects\.js\?v=20261103-repeat-reference-picker-1/);
   assert.match(source, /project-detail\.js\?v=20261103-reference-conflict-resolution-1/);
 });
 
@@ -68,4 +68,15 @@ test('each central information type has an independent card-visibility setting',
   assert.match(ui, /این تنظیم برای هر نوع اطلاعات جداگانه است/);
   assert.match(cards, /\(Array\.isArray\(project\.CardInformation\) \? project\.CardInformation : \[\]\)\.map/);
   assert.match(cards, /info\.Name/);
+});
+
+test('repeat project creation refreshes lookup metadata and exposes the source-project selector', () => {
+  const projects = read('js/modules/projects.js');
+  const backend = read('../PRSPRO2BACKEND/ProjectService.js');
+  assert.match(projects, /project-form-lookups-v2-/);
+  assert.match(projects, /lookupData\.referenceProjects/);
+  assert.match(projects, /WorkflowType \|\| selectedWorkflow\.workflowType/);
+  assert.match(projects, /new-project-reference-wrap/);
+  assert.match(projects, /SourceProjectID:/);
+  assert.match(backend, /referenceProjects:/);
 });
