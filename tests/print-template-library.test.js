@@ -155,7 +155,7 @@ test('print output hides image helper copy and uses exact page size without forc
  assert.match(module,/pt-output-image-empty/);
  assert.doesNotMatch(module,/برای نمایش تصویر، منبع تصویر را به این المان متصل کن/);
  assert.match(module,/@page/);
- assert.match(module,/height:\'+height\+'mm/);
+ assert.ok(module.includes("height:'+height+'mm"), 'output page uses the configured physical page height');
  assert.match(styles,/\.pt-section-title\{display:none!important\}/);
  assert.match(styles,/page-break-after:auto!important/);
 });
@@ -171,5 +171,5 @@ test('print output assets use refreshed cache keys for the current print fixes',
 test('final print document omits the entire automatic form and project header',()=>{
  const module=read('js/modules/print-designer.js');
  assert.doesNotMatch(module,/pt-print-heading/);
- assert.match(module,/dir:\'rtl\'\s*\).*elements\.join\(''\)/);
+ assert.ok(module.includes("dir=\"rtl\">'+elements.join('')"), 'final document is rendered RTL from configured elements');
 });
