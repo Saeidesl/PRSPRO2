@@ -80,7 +80,7 @@
           onRefresh: function (data) {
             if (requestId !== state.loadRequestId) return;
             state.workflows = normalizeWorkflows(data && data.workflows);
-            state.eventTypes = normalizeEventTypes(data && data.eventTypes);
+            if (data && Array.isArray(data.eventTypes)) state.eventTypes = normalizeEventTypes(data.eventTypes);
             if (PMS.Cache) PMS.Cache.set(CACHE_KEY, state.workflows);
             render();
             setVisible('workflows-loading', false);
@@ -95,7 +95,7 @@
 
       if (requestId !== state.loadRequestId) return;
       state.workflows = normalizeWorkflows(result.data && result.data.workflows);
-      state.eventTypes = normalizeEventTypes(result.data && result.data.eventTypes);
+      if (result.data && Array.isArray(result.data.eventTypes)) state.eventTypes = normalizeEventTypes(result.data.eventTypes);
       if (PMS.Cache) PMS.Cache.set(CACHE_KEY, state.workflows);
       render();
       if (!result.refreshing) setVisible('workflows-loading', false);
