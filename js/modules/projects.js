@@ -1733,9 +1733,30 @@
               return '<option value="' + this.escape(id) + '">' + this.escape(name) + '</option>';
             }).join('')
           : '<option value="">گردش کار فعالی پیدا نشد</option>';
-        // New projects always start with the first available workflow.
-        workflowSelect.value = workflows.length
-          ? String(workflows[0].ID || workflows[0].Id || workflows[0].id || '')
+        // Keep the workflow field visible and usable in the existing create-project flow.
+        const workflowField = modal.querySelector('[data-project-workflow-field]');
+        if (!isEditMode && workflowField) {
+          workflowField.hidden = false;
+          workflowField.removeAttribute('hidden');
+          workflowField.style.setProperty('display', 'block', 'important');
+          workflowField.style.setProperty('visibility', 'visible', 'important');
+          workflowSelect.disabled = false;
+          workflowSelect.removeAttribute('aria-hidden');
+          workflowSelect.removeAttribute('tabindex');
+          workflowSelect.tabIndex = 0;
+        }
+
+        // Respect the saved default when it is still available; otherwise use the first published workflow.
+        let savedWorkflowId = '';
+        try {
+          savedWorkflowId = String(localStorage.getItem('pms_default_project_workflow_v1') || '');
+        } catch (storageError) {}
+        const preferredWorkflow = workflows.find((workflow) =>
+          String(workflow.ID || workflow.Id || workflow.id || '') === savedWorkflowId
+        );
+        const defaultWorkflow = preferredWorkflow || workflows[0];
+        workflowSelect.value = defaultWorkflow
+          ? String(defaultWorkflow.ID || defaultWorkflow.Id || defaultWorkflow.id || '')
           : '';
 
         const referenceSelect = modal.querySelector('#new-project-reference');
