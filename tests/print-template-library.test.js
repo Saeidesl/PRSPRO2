@@ -129,7 +129,7 @@ test('drawing toolbar supports editable line, divider, rectangle and ellipse ele
  const css=read('css/print-template-library.css');
  for(const action of ['add-line','add-divider','add-rectangle','add-ellipse']) assert.ok(page.includes('data-pt-action="'+action+'"'),action);
  for(const type of ['line','divider','rectangle','ellipse']) assert.ok(module.includes("createElement('"+type+"'"),type);
- assert.ok(module.includes("'pt-output-'+item.type"), 'print output maps shape types to output classes');
+ assert.ok(module.includes("pt-output-shape pt-output-"+"'+item.type"), 'print output maps shape types to output classes');
  assert.match(module,/item\\.type === 'rectangle' \\|\\| item\\.type === 'ellipse'/);
  assert.match(module,/pt-shape-outline/);
  assert.match(module,/pt-shape-line/);
