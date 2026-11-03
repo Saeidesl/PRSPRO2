@@ -21,7 +21,7 @@ test('workflow steps expose a reusable event rule editor', () => {
   assert.match(source, /تنظیم رویدادها/);
   assert.match(source, /\/steps\/.*\/event-rules/);
   assert.match(source, /RequirementMode: requirementMode/);
-  assert.match(source, /DataSource: dataSource/);
+  assert.match(source, /DataSource:\s*requirementMode\s*===\s*'REFERENCE'/);
   assert.match(source, /SequenceMode: sequence\.value/);
 });
 
