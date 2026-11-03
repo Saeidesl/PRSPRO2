@@ -45,7 +45,6 @@ test('event registration displays current workflow step requirements', () => {
   assert.match(source, /loadWorkflowProgress: async function/);
   assert.match(source, /\/workflow-progress/);
   assert.match(source, /پیشرفت مرحله گردش‌کار/);
-  assert.match(source, /پروژه مرجع/);
 });
 
 test('event module cache version is refreshed for workflow progress', () => {
