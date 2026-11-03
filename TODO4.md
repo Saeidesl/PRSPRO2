@@ -34,6 +34,8 @@
   - تعریف انواع اطلاعات مرکزی و ستون‌های چندردیفی/پویا.
 - `index.html`
   - بارگذاری ماژول‌ها و cache-busting فایل‌های تغییرکرده.
+- `.github/workflows/deploy-pages-staging.yml`
+  - root تولید از `main` حفظ می‌شود؛ مسیر `/staging/` فرانت‌اند شاخه `feature/design-case-preproduction` را با API آزمایشی منتشر می‌کند.
 
 ### فایل‌ها و توابع Backend
 - `ProjectService.js`
