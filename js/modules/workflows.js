@@ -18,9 +18,11 @@
 
   const state = {
     workflows: [],
+    eventTypes: [],
     search: '',
     loading: false,
     saving: false,
+    rulesSaving: false,
     loadRequestId: 0,
     stepRequestId: 0
   };
@@ -77,6 +79,7 @@
           onRefresh: function (data) {
             if (requestId !== state.loadRequestId) return;
             state.workflows = normalizeWorkflows(data && data.workflows);
+            if (data && Array.isArray(data.eventTypes)) state.eventTypes = normalizeEventTypes(data.eventTypes);
             if (PMS.Cache) PMS.Cache.set(CACHE_KEY, state.workflows);
             render();
             setVisible('workflows-loading', false);
@@ -91,6 +94,7 @@
 
       if (requestId !== state.loadRequestId) return;
       state.workflows = normalizeWorkflows(result.data && result.data.workflows);
+      if (result.data && Array.isArray(result.data.eventTypes)) state.eventTypes = normalizeEventTypes(result.data.eventTypes);
       if (PMS.Cache) PMS.Cache.set(CACHE_KEY, state.workflows);
       render();
       if (!result.refreshing) setVisible('workflows-loading', false);
@@ -117,6 +121,23 @@
     if (data && Array.isArray(data.steps)) return data.steps;
     if (data && Array.isArray(data.data)) return data.data;
     return [];
+  }
+
+  function normalizeEventTypes(data) {
+    if (Array.isArray(data)) return data;
+    if (data && Array.isArray(data.items)) return data.items;
+    if (data && Array.isArray(data.eventTypes)) return data.eventTypes;
+    return [];
+  }
+
+  async function loadEventTypes() {
+    try {
+      const response = await PMS.Api.get('/event-types');
+      state.eventTypes = normalizeEventTypes(PMS.Api.extractData(response));
+    } catch (error) {
+      state.eventTypes = [];
+      console.warn('دریافت انواع رویداد برای تنظیم گردش کار ناموفق بود:', error);
+    }
   }
 
   function getValue(item, upper, lower) {
@@ -217,6 +238,8 @@
           loadWorkflowSteps(workflow);
         } else if (this.dataset.action === 'add-step') {
           showCreateStepModal(workflow);
+        } else if (this.dataset.action === 'publish-workflow') {
+          publishWorkflow(workflow);
         }
       });
     });
@@ -226,7 +249,11 @@
     const id = getId(workflow);
     const name = getName(workflow);
     const code = getCode(workflow);
-    const version = getValue(workflow, 'Version', 'version') || '1';
+    const version = getValue(workflow, 'PublishedVersion', 'publishedVersion') || getValue(workflow, 'Version', 'version') || '1';
+    const workflowType = String(getValue(workflow, 'WorkflowType', 'workflowType') || 'INITIAL').toUpperCase();
+    const lifecycle = String(getValue(workflow, 'LifecycleState', 'lifecycleState') || 'DRAFT').toUpperCase();
+    const typeLabel = workflowType === 'REPEAT' ? 'تولید تکراری' : 'تولید اولیه';
+    const lifecycleLabel = lifecycle === 'PUBLISHED' ? 'منتشرشده' : 'پیش‌نویس';
 
     return `
       <article class="workflow-card card"
@@ -258,11 +285,15 @@
               </div>
               <div>
                 <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:4px">
-                  نسخه
+                  مسیر
                 </div>
-                <div style="font-size:13px">
-                  ${escapeHtml(version)}
+                <div style="font-size:13px">${escapeHtml(typeLabel)}</div>
+              </div>
+              <div>
+                <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:4px">
+                  وضعیت نسخه
                 </div>
+                <div style="font-size:13px">${escapeHtml(lifecycleLabel)} · ${escapeHtml(version)}</div>
               </div>
             </div>
           </div>
@@ -279,6 +310,10 @@
                     data-action="add-step"
                     data-id="${escapeAttribute(id)}">
               + افزودن مرحله
+            </button>
+            <button type="button" class="btn btn-light btn-sm"
+                    data-action="publish-workflow" data-id="${escapeAttribute(id)}">
+              انتشار نسخه
             </button>
           </div>
         </div>
@@ -324,6 +359,14 @@
             </small>
           </div>
 
+          <div class="form-group">
+            <label for="workflow-type">نوع مسیر تولید</label>
+            <select class="form-control" id="workflow-type" name="WorkflowType">
+              <option value="INITIAL">تولید اولیه</option>
+              <option value="REPEAT">تولید تکراری</option>
+            </select>
+          </div>
+
           <div id="workflow-form-message" class="alert" hidden></div>
 
           <div class="modal-footer"
@@ -342,6 +385,7 @@
 
           const name = form.elements.Name.value.trim();
           const code = form.elements.Code.value.trim();
+          const workflowType = form.elements.WorkflowType.value || 'INITIAL';
 
           if (!name || !code) {
             showFormMessage(
@@ -361,7 +405,8 @@
           try {
             await PMS.Api.post('/workflows', {
               Name: name,
-              Code: code
+              Code: code,
+              WorkflowType: workflowType
             });
 
             invalidateCache(CACHE_KEY);
@@ -571,6 +616,12 @@
           <td>${escapeHtml(getName(step))}</td>
           <td>${escapeHtml(getCode(step))}</td>
           <td>${renderStatus(getStatus(step))}</td>
+          <td>
+            <button type="button" class="btn btn-light btn-sm"
+                    data-action="edit-step-rules" data-step-id="${escapeAttribute(getId(step))}">
+              تنظیم رویدادها
+            </button>
+          </td>
         </tr>
       `;
     }).join('');
@@ -610,6 +661,7 @@
                   <th>نام مرحله</th>
                   <th>کد مرحله</th>
                   <th>وضعیت</th>
+                  <th>قواعد رویداد</th>
                 </tr>
               </thead>
               <tbody>${rows}</tbody>
@@ -637,6 +689,14 @@
         </div>
       `,
       onReady: function (overlay) {
+        overlay.querySelectorAll('[data-action="edit-step-rules"]').forEach(function(button) {
+          button.addEventListener('click', function() {
+            const step = sortedSteps.find(function(item) {
+              return getId(item) === String(button.dataset.stepId || '');
+            });
+            if (step) showStepEventRules(workflow, step);
+          });
+        });
         overlay.querySelector('#steps-add-button').addEventListener(
           'click',
           function () {
@@ -651,6 +711,191 @@
   // ------------------------------------------
   // پنجره‌های محاوره‌ای
   // ------------------------------------------
+
+
+  function eventTypeOptions(selectedId) {
+    return '<option value="">انتخاب نوع رویداد...</option>' + state.eventTypes.map(function(item) {
+      const id = getId(item);
+      const name = getName(item);
+      const code = getCode(item);
+      return '<option value="' + escapeAttribute(id) + '"' +
+        (String(id) === String(selectedId || '') ? ' selected' : '') + '>' +
+        escapeHtml(name + (code && code !== '-' ? ' · ' + code : '')) + '</option>';
+    }).join('');
+  }
+
+  function appendRuleRow(container, rule, sequenceMode) {
+    rule = rule || {};
+    const requirement = String(getValue(rule, 'RequirementMode', 'requirementMode') || 'REQUIRED').toUpperCase();
+    const row = document.createElement('div');
+    row.className = 'workflow-event-rule-row';
+    row.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:8px;align-items:end;padding:12px;border:1px solid var(--color-border);border-radius:10px;margin-bottom:10px';
+    row.innerHTML = `
+      <div class="form-group" style="margin:0">
+        <label>نوع رویداد</label>
+        <select class="form-control" data-field="event-type">${eventTypeOptions(getValue(rule, 'EventTypeID', 'eventTypeId'))}</select>
+      </div>
+      <div class="form-group" style="margin:0">
+        <label>الزام</label>
+        <select class="form-control" data-field="requirement">
+          <option value="REQUIRED" ${requirement === 'REQUIRED' ? 'selected' : ''}>اجباری</option>
+          <option value="OPTIONAL" ${requirement === 'OPTIONAL' ? 'selected' : ''}>اختیاری</option>
+          <option value="REFERENCE" ${requirement === 'REFERENCE' ? 'selected' : ''}>از پروژه مرجع</option>
+          <option value="NOT_REQUIRED" ${requirement === 'NOT_REQUIRED' ? 'selected' : ''}>غیرضروری</option>
+        </select>
+      </div>
+      <div class="form-group workflow-rule-strict" style="margin:0">
+        <label>ترتیب</label>
+        <input class="form-control" data-field="event-order" type="number" min="1" step="1"
+               value="${escapeAttribute(getValue(rule, 'EventOrder', 'eventOrder') || '')}" placeholder="۱">
+      </div>
+      <div class="form-group workflow-rule-grouped" style="margin:0">
+        <label>گروه</label>
+        <input class="form-control" data-field="group-key" type="text" maxlength="60"
+               value="${escapeAttribute(getValue(rule, 'GroupKey', 'groupKey') || '')}" placeholder="مثلاً آماده‌سازی">
+        <input class="form-control" data-field="group-order" type="number" min="1" step="1"
+               value="${escapeAttribute(getValue(rule, 'GroupOrder', 'groupOrder') || '')}" placeholder="ترتیب گروه" style="margin-top:5px">
+      </div>
+      <button type="button" class="btn btn-light btn-sm" data-remove-rule aria-label="حذف رویداد">حذف</button>
+    `;
+    const remove = row.querySelector('[data-remove-rule]');
+    remove.addEventListener('click', function() { row.remove(); });
+    container.appendChild(row);
+    updateRuleSequenceVisibility(container, sequenceMode);
+  }
+
+  function updateRuleSequenceVisibility(container, sequenceMode) {
+    const strict = sequenceMode === 'STRICT';
+    const grouped = sequenceMode === 'GROUPED';
+    container.querySelectorAll('.workflow-rule-strict').forEach(function(el) { el.hidden = !strict; });
+    container.querySelectorAll('.workflow-rule-grouped').forEach(function(el) { el.hidden = !grouped; });
+  }
+
+  async function showStepEventRules(workflow, step) {
+    if (!state.eventTypes.length) await loadEventTypes();
+    const workflowId = getId(workflow);
+    const stepId = getId(step);
+    let rules = [];
+    let sequenceMode = 'STRICT';
+    try {
+      const response = await PMS.Api.get('/workflows/' + encodeURIComponent(workflowId) +
+        '/steps/' + encodeURIComponent(stepId) + '/event-rules');
+      const data = PMS.Api.extractData(response) || {};
+      rules = Array.isArray(data.items) ? data.items : [];
+      if (rules.length) sequenceMode = String(rules[0].SequenceMode || 'STRICT').toUpperCase();
+    } catch (error) {
+      showMessage(error.message || 'دریافت قواعد رویداد این مرحله ناموفق بود.', 'danger');
+      return;
+    }
+
+    openModal({
+      title: 'تنظیم رویدادهای مرحله',
+      content: `
+        <div class="card" style="margin-bottom:16px;background:var(--color-surface-alt)">
+          <div class="card-body" style="padding:12px">
+            <strong>${escapeHtml(getName(workflow))}</strong>
+            <div style="font-size:13px;color:var(--color-text-muted);margin-top:4px">
+              مرحله: ${escapeHtml(getName(step))} · ${escapeHtml(getCode(step))}
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="workflow-rule-sequence">روش ترتیب رویدادها در این مرحله</label>
+          <select id="workflow-rule-sequence" class="form-control">
+            <option value="STRICT" ${sequenceMode === 'STRICT' ? 'selected' : ''}>ترتیب اجباری و دقیق</option>
+            <option value="FREE" ${sequenceMode === 'FREE' ? 'selected' : ''}>ترتیب آزاد</option>
+            <option value="GROUPED" ${sequenceMode === 'GROUPED' ? 'selected' : ''}>ترکیبی؛ گروه‌ها به‌ترتیب و رویدادهای هر گروه آزاد</option>
+          </select>
+          <small>در هر مرحله فقط یک روش ترتیب قابل استفاده است.</small>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:16px 0 10px">
+          <h4 style="margin:0">رویدادهای این مرحله</h4>
+          <button type="button" id="workflow-rule-add" class="btn btn-light btn-sm">+ افزودن رویداد</button>
+        </div>
+        <div id="workflow-rule-rows"></div>
+        ${state.eventTypes.length ? '' : '<div class="alert alert-warning">انواع رویداد بارگذاری نشدند یا دسترسی لازم وجود ندارد.</div>'}
+        <div class="alert alert-info" style="margin-top:12px">
+          «از پروژه مرجع» فقط اطلاعات مرجع را نمایش می‌دهد و رویداد اجرایی جدید ثبت نمی‌کند.
+        </div>
+        <div id="workflow-rule-message" class="alert" hidden></div>
+        <div class="modal-footer" style="display:flex;gap:8px;flex-wrap:wrap">
+          <button type="button" id="workflow-rule-save" class="btn btn-primary">ذخیره قواعد</button>
+          <button type="button" class="btn btn-light" data-close-modal>انصراف</button>
+        </div>
+      `,
+      onReady: function(overlay) {
+        const rows = overlay.querySelector('#workflow-rule-rows');
+        const sequence = overlay.querySelector('#workflow-rule-sequence');
+        rules.forEach(function(rule) { appendRuleRow(rows, rule, sequence.value); });
+        sequence.addEventListener('change', function() {
+          updateRuleSequenceVisibility(rows, sequence.value);
+        });
+        overlay.querySelector('#workflow-rule-add').addEventListener('click', function() {
+          appendRuleRow(rows, {}, sequence.value);
+        });
+        overlay.querySelector('#workflow-rule-save').addEventListener('click', async function() {
+          if (state.rulesSaving) return;
+          const payloadRules = [];
+          rows.querySelectorAll('.workflow-event-rule-row').forEach(function(row) {
+            const eventTypeId = row.querySelector('[data-field="event-type"]').value;
+            if (!eventTypeId) return;
+            const requirementMode = row.querySelector('[data-field="requirement"]').value;
+            const dataSource = requirementMode === 'REFERENCE' ? 'SOURCE_PROJECT' :
+              requirementMode === 'NOT_REQUIRED' ? 'NONE' : 'NEW_EVENT';
+            payloadRules.push({
+              EventTypeID: eventTypeId,
+              RequirementMode: requirementMode,
+              DataSource: dataSource,
+              SequenceMode: sequence.value,
+              EventOrder: sequence.value === 'STRICT' ?
+                Number(row.querySelector('[data-field="event-order"]').value || 0) : 0,
+              GroupKey: sequence.value === 'GROUPED' ?
+                row.querySelector('[data-field="group-key"]').value.trim() : '',
+              GroupOrder: sequence.value === 'GROUPED' ?
+                Number(row.querySelector('[data-field="group-order"]').value || 0) : 0
+            });
+          });
+          const saveButton = this;
+          state.rulesSaving = true;
+          saveButton.disabled = true;
+          saveButton.textContent = 'در حال ذخیره...';
+          try {
+            await PMS.Api.put('/workflows/' + encodeURIComponent(workflowId) +
+              '/steps/' + encodeURIComponent(stepId) + '/event-rules', { rules: payloadRules });
+            invalidateCache(BOOTSTRAP_CACHE_KEY);
+            closeModal(overlay);
+            showMessage('قواعد رویداد مرحله ذخیره شد.', 'success');
+            await loadWorkflows();
+          } catch (error) {
+            const message = overlay.querySelector('#workflow-rule-message');
+            message.textContent = error.message || 'ذخیره قواعد ناموفق بود.';
+            message.className = 'alert alert-danger';
+            message.hidden = false;
+          } finally {
+            state.rulesSaving = false;
+            if (saveButton.isConnected) {
+              saveButton.disabled = false;
+              saveButton.textContent = 'ذخیره قواعد';
+            }
+          }
+        });
+      }
+    });
+  }
+
+  async function publishWorkflow(workflow) {
+    const name = getName(workflow);
+    if (!window.confirm('نسخه فعلی گردش‌کار «' + name + '» منتشر شود؟')) return;
+    try {
+      await PMS.Api.post('/workflows/' + encodeURIComponent(getId(workflow)) + '/publish', {});
+      invalidateCache(CACHE_KEY);
+      invalidateCache(BOOTSTRAP_CACHE_KEY);
+      showMessage('نسخه گردش‌کار با موفقیت منتشر شد.', 'success');
+      await loadWorkflows();
+    } catch (error) {
+      showMessage(error.message || 'انتشار گردش‌کار ناموفق بود.', 'danger');
+    }
+  }
 
   function openModal(config) {
     const oldModal = document.querySelector('.workflow-modal-overlay');
