@@ -18,17 +18,17 @@ test('project creators can load their own draft projects without PROJECT_VIEW', 
 
 test('project event types remain selectable for users who can create projects', () => {
   const source = read('js/modules/events.js');
-  assert.ok(source.includes("const canAccessProjectOptions ="));
+  assert.ok(source.includes("this.canAccessProjectOptions = isAdmin ||"));
   assert.ok(source.includes("permissions.indexOf('PROJECT_CREATE') !== -1;"));
-  assert.ok(source.includes("(!canAccessProjectOptions && isProjectEvent)"));
+  assert.ok(source.includes("if (isProjectEvent && !self.canAccessProjectOptions) return;"));
   assert.ok(source.includes("option.dataset.allowOnDraft = String(type.AllowOnDraft"));
 });
 
 
 test('draft project event types stay visible while disallowed types are disabled with an explanation', () => {
   const source = read('js/modules/events.js');
-  assert.match(source, /option\.disabled = blocked/);
-  assert.match(source, /option\.hidden = false/);
+  assert.match(source, /option\.disabled = !!reason/);
+  assert.match(source, /restricted\.push\(option\)/);
   assert.match(source, /غیرمجاز برای پیش‌نویس/);
   assert.match(source, /selectedType\.AllowOnDraft/);
 });
