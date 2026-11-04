@@ -1761,7 +1761,6 @@
         const referenceSelect = modal.querySelector('#new-project-reference');
         const referenceWrap = modal.querySelector('#new-project-reference-wrap');
         const referenceProjects = Array.isArray(lookupData.referenceProjects) ? lookupData.referenceProjects : [];
-        const referenceTypes = Array.isArray(lookupData.informationTypes) ? lookupData.informationTypes : [];
         if (referenceSelect) referenceSelect.innerHTML = '<option value="">انتخاب پروژه مرجع</option>' + referenceProjects.map((item) => '<option value="' + this.escape(item.ID) + '">' + this.escape([item.ProjectCode, item.Title].filter(Boolean).join(' — ')) + '</option>').join('');
         const syncReferenceVisibility = () => {
           const selectedWorkflow = workflows.find((item) => String(item.ID || item.Id || item.id) === String(workflowSelect.value));
