@@ -2285,6 +2285,17 @@
       }
       const buildProjectAttachmentName = (projectCode, originalFile) => String(originalFile && originalFile.name || 'project-file');
 
+      if (String(selectedWorkflow && (selectedWorkflow.WorkflowType || selectedWorkflow.workflowType) || '').toUpperCase() === 'REPEAT') {
+        let operationId = String(modal.dataset.referenceCopyOperationId || '');
+        if (!operationId) {
+          operationId = window.crypto && typeof window.crypto.randomUUID === 'function'
+            ? window.crypto.randomUUID()
+            : 'RPC_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+          modal.dataset.referenceCopyOperationId = operationId;
+        }
+        project.ReferenceCopyOperationID = operationId;
+      }
+
       this.isSaving = true;
       submitButton.disabled = true;
       submitButton.textContent = modal.dataset.editMode === 'true' ? 'در حال ذخیره...' : 'در حال ثبت...';
@@ -2373,6 +2384,11 @@
           }
           const unfinished = referenceCopyPlan.filter((item) => ['PENDING', 'FAILED', 'PROCESSING'].indexOf(String(item.status)) !== -1);
           if (unfinished.length) throw new Error('کپی اطلاعات هنوز کامل نشده است. برای ادامه دوباره ثبت را بزنید.');
+          created.ReferenceCopySummary = {
+            copied: referenceCopyPlan.filter((item) => item.status === 'COPIED'),
+            skippedFiles: referenceCopyPlan.filter((item) => item.status === 'SKIPPED_FILE'),
+            pending: unfinished.length
+          };
         }
 
         let attachmentWarning = '';
