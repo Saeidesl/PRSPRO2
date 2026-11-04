@@ -28,7 +28,7 @@ test('project event types remain selectable for users who can create projects', 
 test('draft project event types stay visible while disallowed types are disabled with an explanation', () => {
   const source = read('js/modules/events.js');
   assert.match(source, /option\.disabled = !!reason/);
-  assert.match(source, /restricted\.push\(option\)/);
+  assert.match(source, /\(reason \? restricted : available\)\.push\(option\)/);
   assert.match(source, /غیرمجاز برای پیش‌نویس/);
   assert.match(source, /selectedType\.AllowOnDraft/);
 });
