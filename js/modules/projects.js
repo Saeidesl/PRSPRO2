@@ -2439,9 +2439,12 @@
         const referenceSummary = created.ReferenceCopySummary || {};
         const copiedReferenceCount = Array.isArray(referenceSummary.copied) ? referenceSummary.copied.length : 0;
         const skippedReferenceFiles = Array.isArray(referenceSummary.skippedFiles) ? referenceSummary.skippedFiles.length : 0;
+        const skippedReferenceNames = Array.isArray(referenceSummary.skippedFiles)
+          ? referenceSummary.skippedFiles.map((item) => String(item.name || 'فایل غیرتصویری')).join('، ')
+          : '';
         const referenceCopyMessage = referenceSummary && created.SourceProjectID
           ? ' اطلاعات مرکزی منتقل‌شده: ' + copiedReferenceCount + ' مورد.' +
-            (skippedReferenceFiles ? ' فایل/تصویر منتقل‌نشده: ' + skippedReferenceFiles + ' مورد؛ انتقال امن فایل هنوز پشتیبانی نمی‌شود.' : '')
+            (skippedReferenceFiles ? ' موارد فایل غیرتصویری خارج از محدوده انتقال: ' + skippedReferenceNames + '.' : '')
           : '';
         alert('پروژه با موفقیت ثبت شد.' + referenceCopyMessage + attachmentWarning);
 
