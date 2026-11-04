@@ -227,3 +227,18 @@ test('project detail replaces scattered information panel with event-backed reus
   assert.match(detail,/project-form-table/);
   assert.match(detail,/projectFormsLoadVersion/);
 });
+
+
+test('event form supports quick and full display modes without discarding optional values',()=>{
+  const events=read('js/modules/events.js');
+  const css=read('css/events.css');
+  assert.match(events,/data-form-mode="quick"/);
+  assert.match(events,/data-form-mode="full"/);
+  assert.match(events,/updateFormMode: function/);
+  assert.match(events,/dataset\.quickHidden/);
+  assert.match(events,/dataset\.visibilityHidden === 'true'/);
+  assert.match(events,/hasRequiredColumns/);
+  assert.match(events,/اطلاعات واردشده پاک نمی‌شود/);
+  assert.match(css,/content: attr\(data-label\)/);
+  assert.match(css,/\.event-modal-table tr\[data-form-row\] td::before/);
+});
