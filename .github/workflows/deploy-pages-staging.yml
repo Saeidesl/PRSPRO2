@@ -33,6 +33,29 @@ jobs:
           test -f js/core/api.js
           echo "Main branch frontend is ready for GitHub Pages."
 
+      - name: Cancel confirmed stale Pages deployment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const staleDeployment = '424ed19809722b366732fbca6a30431d5130d66e';
+            try {
+              await github.request(
+                'POST /repos/{owner}/{repo}/pages/deployments/{pages_deployment_id}/cancel',
+                {
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pages_deployment_id: staleDeployment
+                }
+              );
+              core.info(`Cancelled stale Pages deployment ${staleDeployment}.`);
+            } catch (error) {
+              if (error.status === 404) {
+                core.info('The stale Pages deployment is already cleared.');
+              } else {
+                throw error;
+              }
+            }
+
       - name: Upload production Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
