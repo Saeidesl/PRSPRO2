@@ -1418,6 +1418,25 @@
         container.replaceChildren();
         return;
       }
+
+      const selectedProject = this.findById(this.projects, selectedProjectId);
+      const isDraftWithoutWorkflow = !!selectedProject && (
+        String(selectedProject.RecordState || 'ACTIVE').toUpperCase() === 'DRAFT' ||
+        !String(selectedProject.WorkflowID || '').trim() ||
+        !String(selectedProject.CurrentStepID || '').trim()
+      );
+      if (isDraftWithoutWorkflow) {
+        // Drafts and projects without a configured current workflow have no
+        // workflow-rule endpoint requirement; the server remains authoritative.
+        this.workflowProgress = { configured: false, rules: [], remaining: [], stageComplete: true };
+        this.workflowProgressLoading = false;
+        this.workflowProgressError = false;
+        this.refreshEventTypeOptions();
+        section.hidden = true;
+        container.replaceChildren();
+        return;
+      }
+
       section.hidden = false;
       container.textContent = 'در حال بررسی قواعد و پیشرفت مرحله...';
       try {
