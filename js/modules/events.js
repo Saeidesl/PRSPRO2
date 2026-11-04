@@ -1861,9 +1861,10 @@
           wrapper.dataset.formId = String(form.ID || mapping.FormID);
           wrapper.dataset.infoTypeId = typeId;
           wrapper.dataset.cardinality = cardinality;
-          const mappingRequired = mapping.IsRequired === true || String(mapping.IsRequired).toLowerCase() === 'true';
-          const hasRequiredColumns = columns.some(column => column.IsRequired === true || String(column.IsRequired).toLowerCase() === 'true');
-          wrapper.dataset.formRequired = String(required || mappingRequired || hasRequiredColumns);
+          // Quick mode is driven by field-level requiredness only.
+          // A required form mapping requires a response, not every field in that form.
+          // Required table columns are validated only when the user adds a row.
+          wrapper.dataset.formRequired = String(required);
           const visibilityRule = field.VisibilityRule || this.parseVisibilityRule(field.VisibilityRuleJSON);
           wrapper.dataset.visibilityRule = JSON.stringify(visibilityRule || {});
           if (columns.length) {
