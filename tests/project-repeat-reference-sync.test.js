@@ -31,3 +31,17 @@ test('staging deployment publishes the current feature frontend without changing
   assert.match(workflow, /path: _site$/m);
   assert.match(workflow, /AKfycbw-o15vVNFbnfqhVYV6PtpDOTt4jURF5QKEahvnENkZp2hOPlek1Hj55T2tBnypfPCb/);
 });
+
+
+test('repeat project form applies workflow reference policies as defaults and allows project overrides', () => {
+  const projects = fs.readFileSync(path.join(root, 'js/modules/projects.js'), 'utf8');
+  assert.match(projects, /selectedWorkflow\.PublishedRepeatReferencePolicyJSON \|\| selectedWorkflow\.RepeatReferencePolicyJSON/);
+  assert.match(projects, /savedPolicies\[typeId\] \|\| workflowPolicies\[typeId\]/);
+  assert.match(projects, /workflowSelect\.addEventListener\('change', syncReferenceVisibility\)/);
+});
+
+test('project form lookups expose repeat workflow reference policies to the frontend', () => {
+  const backend = fs.readFileSync(path.join(root, '..', 'PRSPRO2BACKEND', 'ProjectService.js'), 'utf8');
+  assert.match(backend, /RepeatReferencePolicyJSON: item\.RepeatReferencePolicyJSON/);
+  assert.match(backend, /PublishedRepeatReferencePolicyJSON: item\.PublishedRepeatReferencePolicyJSON/);
+});
