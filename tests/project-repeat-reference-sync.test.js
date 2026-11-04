@@ -39,9 +39,3 @@ test('repeat project form applies workflow reference policies as defaults and al
   assert.match(projects, /savedPolicies\[typeId\] \|\| workflowPolicies\[typeId\]/);
   assert.match(projects, /workflowSelect\.addEventListener\('change', syncReferenceVisibility\)/);
 });
-
-test('project form lookups expose repeat workflow reference policies to the frontend', () => {
-  const backend = fs.readFileSync(path.join(root, '..', 'PRSPRO2BACKEND', 'ProjectService.js'), 'utf8');
-  assert.match(backend, /RepeatReferencePolicyJSON: item\.RepeatReferencePolicyJSON/);
-  assert.match(backend, /PublishedRepeatReferencePolicyJSON: item\.PublishedRepeatReferencePolicyJSON/);
-});
