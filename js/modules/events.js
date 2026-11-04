@@ -22,6 +22,7 @@
     pendingIdempotencyFingerprint: '',
     searchTimer: null,
     preselectedProjectId: '',
+    entryMode: 'all',
     amendmentMode: false,
     amendmentSourceEventId: '',
     amendmentSourceFormId: '',
@@ -46,7 +47,12 @@
         createButton.hidden = !canCreateEvents;
       }
 
-      this.load();
+      this.load().then(function () {
+        if (Events.preselectedProjectId) {
+          Events.entryMode = 'project';
+          Events.openForm();
+        }
+      });
     },
 
     bindEvents: function () {
@@ -98,6 +104,46 @@
           return;
         }
 
+        const projectEntry = target.closest('[data-event-entry="project"]');
+        if (projectEntry) {
+          event.preventDefault();
+          const panel = document.getElementById('events-project-entry-panel');
+          if (panel) {
+            panel.hidden = false;
+            Events.renderRecentProjects();
+            const search = document.getElementById('events-project-search');
+            if (search) search.focus();
+            panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+          return;
+        }
+        if (target.closest('[data-event-entry-close]')) {
+          const panel = document.getElementById('events-project-entry-panel');
+          if (panel) panel.hidden = true;
+          return;
+        }
+        if (target.closest('[data-event-entry="my-work"]')) {
+          event.preventDefault();
+          const queue = document.getElementById('event-project-queues');
+          if (queue) queue.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          return;
+        }
+        if (target.closest('[data-event-entry="independent"]')) {
+          event.preventDefault();
+          Events.entryMode = 'independent';
+          Events.preselectedProjectId = '';
+          Events.openForm();
+          return;
+        }
+        const recentProjectAction = target.closest('.event-recent-project-action');
+        if (recentProjectAction) {
+          event.preventDefault();
+          Events.entryMode = 'project';
+          Events.preselectedProjectId = String(recentProjectAction.dataset.projectId || '');
+          Events.openForm();
+          return;
+        }
+
         const queueTab = target.closest('.event-queue-tab');
         if (queueTab) {
           event.preventDefault();
@@ -144,6 +190,13 @@
           });
         }
       });
+
+      const projectSearch = document.getElementById('events-project-search');
+      if (projectSearch) {
+        projectSearch.addEventListener('input', function () {
+          Events.renderRecentProjects();
+        });
+      }
 
       const searchInput = document.getElementById('event-search');
 
@@ -391,6 +444,40 @@
       fillSelect(typeFilter, 'همه انواع', types);
       fillSelect(creatorFilter, 'همه ثبت‌کنندگان', creators);
       fillSelect(departmentFilter, 'همه واحدها', departments);
+      this.renderRecentProjects();
+    },
+
+    renderRecentProjects: function () {
+      const container = document.getElementById('events-recent-projects');
+      if (!container) return;
+      const searchInput = document.getElementById('events-project-search');
+      const query = String(searchInput && searchInput.value || '').trim().toLocaleLowerCase('fa');
+      const projects = this.projects.filter(function (project) {
+        const id = Events.idOf(project);
+        const label = [project.ProjectCode, project.Title, project.Name, project.ProjectName, id]
+          .filter(Boolean).join(' ').toLocaleLowerCase('fa');
+        return id && (!query || label.includes(query));
+      }).slice(0, 12);
+      if (!projects.length) {
+        container.innerHTML = '<p class="event-queue-empty">' +
+          Events.escape(query ? 'پروژه‌ای با این مشخصات پیدا نشد.' : 'پروژه‌ای برای نمایش در دسترس نیست.') +
+          '</p>';
+        return;
+      }
+      container.innerHTML = projects.map(function (project) {
+        const id = Events.idOf(project);
+        const code = project.ProjectCode || id;
+        const title = project.Title || project.Name || project.ProjectName || 'بدون عنوان';
+        const step = project.CurrentStepName || project.WorkflowStepName || '';
+        const status = project.CurrentStepStatus || project.Status || '';
+        return '<article class="event-recent-project-card">' +
+          '<div class="event-recent-project-main"><strong>' + Events.escape(code) + '</strong>' +
+          '<span>' + Events.escape(title) + '</span>' +
+          (step ? '<small>' + Events.escape(step) + '</small>' : '') +
+          (status ? '<small class="event-recent-project-status">' + Events.escape(status) + '</small>' : '') +
+          '</div><button type="button" class="btn btn-primary event-recent-project-action" data-project-id="' +
+          Events.escape(id) + '">ادامه و ثبت رویداد</button></article>';
+      }).join('');
     },
 
     uniqueValues: function (items) {
@@ -997,6 +1084,7 @@
 
     openForm: async function () {
       if (this.modalOpen || this.submitting) return;
+      if (this.preselectedProjectId) this.entryMode = 'project';
 
       this.modalOpen = true;
       this.formDefinitions = [];
@@ -1094,7 +1182,9 @@
 
         if (!id ||
             String(type.Status || 'ACTIVE').toUpperCase() !== 'ACTIVE' ||
-            (!canAccessProjectOptions && isProjectEvent)) {
+            (!canAccessProjectOptions && isProjectEvent) ||
+            (Events.entryMode === 'project' && !isProjectEvent) ||
+            (Events.entryMode === 'independent' && isProjectEvent)) {
           return;
         }
 
@@ -2333,6 +2423,7 @@
     },
 
     closeForm: function (force) {
+      this.entryMode = 'all';
       this.pendingIdempotencyKey = '';
       this.pendingIdempotencyFingerprint = '';
       if (this.submitting && !force) return;
