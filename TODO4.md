@@ -13,7 +13,7 @@
 - `js/modules/projects.js`:
   - فرم ایجاد پروژه، انتخاب `SourceProjectID` و ثبت پروژه از مسیر موجود `POST /projects`.
   - پس از ایجاد، `ReferenceCopyPlan` را می‌خواند و برای هر نوع اطلاعات با وضعیت `PENDING/FAILED` مسیر موجود `POST /projects/:projectId/reference-copy/:typeId` را فراخوانی می‌کند.
-  - `renderReferenceCopyProgress(items)` وضعیت هر بخش را به کاربر نشان می‌دهد؛ انواع تصویری اکنون از Backend با وضعیت `PENDING` وارد همین جریان می‌شوند و پس از انتقال `COPIED` خواهند شد؛ اسناد غیرتصویری خارج از محدوده همچنان `SKIPPED_FILE` می‌مانند.
+  - `renderReferenceCopyProgress(items)` وضعیت هر بخش را به کاربر نشان می‌دهد؛ انواع اطلاعات دارای تصویر و فاقد فیلد فایل، و تصویر نمایه پروژه با شناسه داخلی `__PROJECT_PROFILE_IMAGE__` از Backend با وضعیت `PENDING` وارد همین جریان می‌شوند و پس از انتقال `COPIED` خواهند شد؛ اسناد غیرتصویری خارج از محدوده همچنان `SKIPPED_FILE` می‌مانند.
 - در این مرحله تغییری در Frontend لازم نبود؛ همان endpoint و progress/resume موجود استفاده می‌شود.
 - `index.html`: نسخه cache-busting ماژول `js/modules/projects.js` پس از تغییر به‌روز شود.
 - `tests/project-repeat-reference-sync.test.js` و `tests/project-draft-information-flow.test.js`: آزمون‌های قرارداد کپی مرجع و نسخه دارایی‌ها.
