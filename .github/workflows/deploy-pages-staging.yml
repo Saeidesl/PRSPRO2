@@ -1,0 +1,44 @@
+name: Publish frontend to GitHub Pages (MAIN)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages-manual-fallback
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main frontend
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Verify production entry points
+        run: |
+          test -f index.html
+          test -f js/core/api.js
+          echo "Main branch frontend is ready for GitHub Pages."
+
+      - name: Upload production Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - name: Publish main branch to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
