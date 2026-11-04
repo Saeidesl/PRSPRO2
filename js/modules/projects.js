@@ -2153,11 +2153,33 @@
       const updateProgress = (message, state) => {
         if (!progressBox || !progressText) return;
         progressText.textContent = message;
-        if (state === 'error') {
-          progressBox.hidden = true;
-          return;
-        }
+        if (state === 'error') { progressBox.hidden = true; return; }
         progressBox.hidden = false;
+      };
+      const renderReferenceCopyProgress = (items) => {
+        if (!progressBox) return;
+        const card = progressBox.querySelector('.project-create-progress-card');
+        if (!card) return;
+        let list = card.querySelector('[data-reference-copy-progress]');
+        if (!list) {
+          list = document.createElement('div');
+          list.setAttribute('data-reference-copy-progress', 'true');
+          list.style.cssText = 'display:grid;gap:7px;margin-top:16px;text-align:right;max-height:210px;overflow:auto;';
+          card.insertBefore(list, card.querySelector('.project-create-progress-track'));
+        }
+        list.replaceChildren();
+        (items || []).forEach((item) => {
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;justify-content:space-between;gap:10px;font-size:12px;line-height:1.6;';
+          const name = document.createElement('span');
+          name.textContent = String(item.name || 'اطلاعات مرکزی');
+          const status = document.createElement('span');
+          const labels = { PENDING: 'در انتظار', FAILED: 'ناموفق', COPIED: 'کپی شد', INDEPENDENT: 'مستقل', EMPTY: 'بدون اطلاعات', SKIPPED_FILE: 'فایل منتقل نشد', PROCESSING: 'در حال پردازش' };
+          status.textContent = labels[item.status] || item.status || 'در انتظار';
+          status.style.cssText = 'white-space:nowrap;color:' + (item.status === 'FAILED' ? 'var(--color-danger)' : item.status === 'COPIED' ? 'var(--color-success)' : 'var(--color-text-secondary)');
+          row.append(name, status);
+          list.appendChild(row);
+        });
       };
       const routerForAttachments = window.PMS.Router;
       const canUploadProjectAttachment = !!(routerForAttachments &&
@@ -2309,19 +2331,49 @@
           return;
         }
 
-        const response = await window.PMS.Api.post('/projects', project);
-
-        const created = this.extractCreatedProject(response);
-
-        if (!created || !(created.ID || created.Id || created.id)) {
-          throw new Error(
-            this.getErrorMessage(response) ||
-            'پاسخ سرور برای ثبت پروژه معتبر نیست.'
-          );
+        let created = null;
+        let referenceCopyPlan = [];
+        const resumedProjectId = String(modal.dataset.referenceCopyProjectId || '');
+        if (resumedProjectId) {
+          created = { ID: resumedProjectId, SourceProjectID: project.SourceProjectID };
+          try { referenceCopyPlan = JSON.parse(modal.dataset.referenceCopyPlan || '[]'); } catch (planError) { referenceCopyPlan = []; }
+          updateProgress('ادامه کپی اطلاعات پروژه ثبت‌شده...', 'loading');
+        } else {
+          const response = await window.PMS.Api.post('/projects', project);
+          created = this.extractCreatedProject(response);
+          if (!created || !(created.ID || created.Id || created.id)) {
+            throw new Error(this.getErrorMessage(response) || 'پاسخ سرور برای ثبت پروژه معتبر نیست.');
+          }
+          const newId = String(created.ID || created.Id || created.id);
+          modal.dataset.referenceCopyProjectId = newId;
+          referenceCopyPlan = Array.isArray(created.ReferenceCopyPlan) ? created.ReferenceCopyPlan : [];
+          modal.dataset.referenceCopyPlan = JSON.stringify(referenceCopyPlan);
+          updateProgress('پروژه ثبت شد. در حال آماده‌سازی انتقال اطلاعات مرکزی...', 'loading');
         }
 
         const createdId = String(created.ID || created.Id || created.id);
-        updateProgress('پروژه ذخیره شد. در حال تکمیل اطلاعات وابسته...', 'loading');
+        if (created.SourceProjectID && referenceCopyPlan.length) {
+          renderReferenceCopyProgress(referenceCopyPlan);
+          for (let i = 0; i < referenceCopyPlan.length; i += 1) {
+            const item = referenceCopyPlan[i];
+            if (['PENDING', 'FAILED'].indexOf(String(item.status)) === -1) continue;
+            updateProgress('در حال کپی اطلاعات «' + item.name + '» (' + (i + 1) + ' از ' + referenceCopyPlan.length + ')...', 'loading');
+            try {
+              const copyResponse = await window.PMS.Api.post('/projects/' + encodeURIComponent(createdId) + '/reference-copy/' + encodeURIComponent(item.informationTypeId), {});
+              if (copyResponse && copyResponse.success === false) throw new Error(this.getErrorMessage(copyResponse) || 'کپی این بخش ناموفق بود.');
+              const copyData = copyResponse && copyResponse.data ? copyResponse.data : {};
+              if (Array.isArray(copyData.items)) referenceCopyPlan = copyData.items;
+              else item.status = copyData.item && copyData.item.status || 'COPIED';
+              modal.dataset.referenceCopyPlan = JSON.stringify(referenceCopyPlan);
+              renderReferenceCopyProgress(referenceCopyPlan);
+            } catch (copyError) {
+              modal.dataset.referenceCopyPlan = JSON.stringify(referenceCopyPlan);
+              throw new Error('پروژه ثبت شده است؛ کپی «' + item.name + '» کامل نشد. با زدن «ادامه کپی اطلاعات» دوباره تلاش کنید. ' + this.getErrorMessage(copyError));
+            }
+          }
+          const unfinished = referenceCopyPlan.filter((item) => ['PENDING', 'FAILED', 'PROCESSING'].indexOf(String(item.status)) !== -1);
+          if (unfinished.length) throw new Error('کپی اطلاعات هنوز کامل نشده است. برای ادامه دوباره ثبت را بزنید.');
+        }
 
         let attachmentWarning = '';
         if (selectedFile) {
