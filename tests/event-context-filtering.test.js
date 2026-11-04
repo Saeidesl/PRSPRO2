@@ -11,6 +11,8 @@ test('project event choices wait for the selected project workflow context', () 
   assert.match(source, /refreshEventTypeOptions: function \(\)/);
   assert.match(source, /workflowProgressProjectId !== projectId \|\| self\.workflowProgressLoading/);
   assert.match(source, /ابتدا پروژه را انتخاب کنید/);
+  assert.match(source, /isDraftWithoutWorkflow/);
+  assert.match(source, /if \(isDraftWithoutWorkflow\)/);
   assert.match(source, /GET|workflow-progress/);
   assert.match(source, /PMS\.Api\.get\('\/projects\/' \+ encodeURIComponent\(selectedProjectId\) \+ '\/workflow-progress'\)/);
 });
