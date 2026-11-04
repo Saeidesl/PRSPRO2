@@ -211,3 +211,36 @@
 - تسک ۱ — کشف ساختار: `TODO.md`، `ARCHITECTURE.md` و فایل‌های صفحه، ماژول، CSS و تست بررسی شدند؛ علت لایه‌بندی و وابستگی‌های موجود ثبت شد. بک‌اند/API نیاز به تغییر نداشت.
 - تسک ۲ — پیاده‌سازی: `openPrintDesigner()` و ساختار پنل‌ها در `js/modules/project-detail.js` بازآرایی شدند؛ `.ppd-standalone` و workspace در `css/project-print-designer.css` اصلاح شدند؛ cache-busting در `index.html` و تست‌های رگرسیون به‌روز شدند. PR #143 ادغام شد.
 - تسک ۳ — پذیرش: آزمون‌های خودکار چهار جریان اصلی موفق شدند و کاربر نمایش پنل‌ها و عملکرد محیط طراحی را در برنامه واقعی آزمایش و تأیید کرد. فاز بسته شد.
+
+ 
+## 2026-11-04 — انتقال تصاویر اطلاعات مرکزی به پروژه تکراری
+
+### محدوده و نتیجه
+- مخزن: `Saeidesl/PRSPRO2`، شاخه `main`؛ بک‌اند مرتبط: `Saeidesl/PRSPRO2BACKEND`، شاخه `main`.
+- وضعیت: پیاده‌سازی بین‌مخزنی تکمیل شد و کاربر انتقال کامل اطلاعات را در محیط واقعی تأیید کرد.
+- هدف: انتقال تصویرهای اطلاعات مرکزی و تصویر نمایه از پروژه مرجع به پروژه تکراری به‌صورت فایل مستقل، بدون اشتراک AttachmentID یا وابستگی به فایل مبدأ.
+- مسیر موجود ایجاد پروژه و کپی مرجع حفظ شد؛ endpoint موازی ایجاد نشد.
+
+### نقشه Frontend و قرارداد API
+- `js/modules/projects.js`
+  - ایجاد پروژه از مسیر `POST /projects` و خواندن `ReferenceCopyPlan`.
+  - اجرای مرحله‌ای `POST /projects/:projectId/reference-copy/:typeId` برای آیتم‌های `PENDING/FAILED`.
+  - وضعیت قدیمی `SKIPPED_FILE` نیز برای بازیابی پروژه‌های کپی‌شده قبلی دوباره ارسال می‌شود.
+  - `renderReferenceCopyProgress(items)` پیشرفت هر نوع اطلاعات را نشان می‌دهد و پیام نهایی فایل‌های غیرتصویری خارج از محدوده را از تصاویر تفکیک می‌کند.
+- `index.html`: cache-busting ماژول پروژه پس از اصلاح retry به‌روز شد.
+- `tests/project-repeat-reference-sync.test.js`: آزمون رگرسیون برای retry آیتم‌های `SKIPPED_FILE` و متن پیام فایل‌های غیرتصویری افزوده شد.
+- API موجود: `POST /projects/:projectId/reference-copy/:typeId`.
+
+### Implementation Logs
+- کشف: مسیر Frontend و Backend و شیت‌های اطلاعات مرکزی/پیوست بررسی شد. مشخص شد فایل‌ها در Google Drive و metadata در `15_Attachments` نگهداری می‌شوند و مقدار مرکزی AttachmentID را در `30_ProjectInformation.ValueJSON` نگه می‌دارد.
+- اصلاح Backend: در `ProjectService.js`، انواع دارای ستون تصویر در برنامه کپی `PENDING` می‌شوند؛ فیلد فایل غیرتصویری در همان فرم مانع کپی تصویر نمی‌شود. تصویر نمایه با آیتم داخلی `__PROJECT_PROFILE_IMAGE__` از همان endpoint منتقل می‌شود.
+- کپی مستقل فایل: `GoogleDriveStorage.js:copyFile` از `File.makeCopy` برای ایجاد فایل مستقل استفاده می‌کند؛ `StorageRepository.js:copyFile` آن را در لایه storage ارائه می‌کند.
+- metadata و idempotency: `AttachmentService.js:copyProjectImage` تعلق مبدأ و مقصد به tenant و دسترسی پروژه را بررسی می‌کند، پیوست مستقل مقصد می‌سازد، Audit ثبت می‌کند و با `SourceAttachmentID` از ایجاد فایل تکراری هنگام retry جلوگیری می‌کند. ستون `SourceAttachmentID` در شیت `15_Attachments` تعریف/به‌صورت افزایشی ایجاد می‌شود.
+- نگاشت مقادیر: `ProjectService.js:_copyReferenceImageValue_` و `_copyReferenceInformationImages_` شناسه تصویر را در داده‌های تک‌مقداری و چندردیفی با AttachmentID مقصد جایگزین می‌کنند.
+- بازیابی خطای runtime: خطای `hasFileFields is not defined` در شرط کپی نوع اطلاعات ترکیبی رفع شد؛ بررسی نحوی `ProjectService.js` موفق بود.
+- اصلاح UX retry: `js/modules/projects.js` آیتم‌های قدیمی `SKIPPED_FILE` را دوباره به endpoint می‌فرستد و متن پیام موارد فایل غیرتصویری را از پیام خطای تصویر تفکیک می‌کند.
+- پذیرش: کاربر در 2026-11-04 اعلام کرد «کپی اطلاعات کامل و با موفقیت انجام شد»؛ فاز تأیید و بسته شد.
+
+### محدودیت اعتبارسنجی
+- بررسی نحوی فایل Backend پس از اصلاح خطای runtime موفق بود.
+- تست end-to-end مستقل در محیط توسعه اجرا نشد؛ پذیرش نهایی بر اساس تست واقعی کاربر در برنامه ثبت شده است.
