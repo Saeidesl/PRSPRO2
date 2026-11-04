@@ -1259,7 +1259,6 @@
               <label for="new-project-reference">پروژه اصلی / مرجع <span style="color:var(--color-danger);">*</span></label>
               <select id="new-project-reference" name="SourceProjectID" style="width:100%;box-sizing:border-box;"><option value="">انتخاب پروژه مرجع</option></select>
               <small style="display:block;margin-top:6px;color:var(--color-text-secondary);">اطلاعات مرجع بر اساس سیاست گردش‌کار تولید تکراری استفاده می‌شود؛ رویدادها و سوابق تولید مستقل می‌مانند.</small>
-              <div id="new-project-reference-policies" style="margin-top:12px;"></div>
             </div>
 
             <div class="filter-group form-group project-form-field" style="margin-bottom:20px;">
