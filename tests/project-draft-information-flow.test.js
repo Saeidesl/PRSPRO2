@@ -54,8 +54,8 @@ test('draft event controls and card projection are wired in the frontend', () =>
   const projects = read('js/modules/projects.js');
   const info = read('js/modules/information-types.js');
   assert.match(types, /AllowOnDraft/);
-  assert.match(events, /refreshDraftEventOptions/);
-  assert.match(events, /data-profile-image-toggle/);
+  assert.match(events, /refreshEventTypeOptions/);
+  assert.match(events, /dataset\.profileImageToggle/);
   assert.match(projects, /CardInformation/);
   assert.match(info, /ShowOnCard/);
 });
