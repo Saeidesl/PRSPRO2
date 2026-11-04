@@ -1769,29 +1769,8 @@
           const isRepeat = String(selectedWorkflow && (selectedWorkflow.WorkflowType || selectedWorkflow.workflowType) || '').toUpperCase() === 'REPEAT';
           if (referenceWrap) referenceWrap.hidden = !isRepeat;
           if (referenceSelect) referenceSelect.required = isRepeat;
-          const policyContainer = modal.querySelector('#new-project-reference-policies');
-          if (policyContainer && isRepeat) {
-            let workflowPolicies = {};
-            let savedPolicies = {};
-            try {
-              const rawWorkflowPolicies = selectedWorkflow && (selectedWorkflow.PublishedRepeatReferencePolicyJSON || selectedWorkflow.RepeatReferencePolicyJSON);
-              workflowPolicies = typeof rawWorkflowPolicies === 'string' ? JSON.parse(rawWorkflowPolicies || '{}') : (rawWorkflowPolicies || {});
-            } catch (workflowPolicyError) { workflowPolicies = {}; }
-            try {
-              savedPolicies = typeof project.ReferencePolicyJSON === 'string' ? JSON.parse(project.ReferencePolicyJSON || '{}') : (project.ReferencePolicyJSON || {});
-            } catch (savedPolicyError) { savedPolicies = {}; }
-            policyContainer.innerHTML = referenceTypes.map((type) => {
-              const typeId = String(type.ID || '');
-              const typeCode = String(type.Code || '');
-              const selected = String(savedPolicies[typeId] || workflowPolicies[typeId] || (typeCode && workflowPolicies[typeCode]) || 'INDEPENDENT').toUpperCase();
-              return '<label style="display:grid;grid-template-columns:minmax(0,1fr) minmax(145px,190px);gap:10px;align-items:center;margin-top:9px;font-size:13px;"><span>' + this.escape(type.Name || type.Code || type.ID) + '</span><select class="form-control" data-reference-override="' + this.escape(type.ID) + '">' +
-                '<option value="LIVE_SYNC"' + (selected === 'LIVE_SYNC' ? ' selected' : '') + '>همگام‌سازی زنده</option>' +
-                '<option value="INITIAL_COPY"' + (selected === 'INITIAL_COPY' ? ' selected' : '') + '>فقط کپی اولیه</option>' +
-                '<option value="INDEPENDENT"' + (selected === 'INDEPENDENT' ? ' selected' : '') + '>مستقل</option></select></label>';
-            }).join('');
-            policyContainer.dataset.rendered = 'true';
-          }
-          if (policyContainer) policyContainer.hidden = !isRepeat;
+          // انتقال اطلاعات فقط طبق سیاست تعریف‌شده در Workflow انجام می‌شود.
+
         };
         if (!workflowSelect.dataset.referencePolicyBound) { workflowSelect.dataset.referencePolicyBound = 'true'; workflowSelect.addEventListener('change', syncReferenceVisibility); }
         syncReferenceVisibility();
@@ -2194,7 +2173,6 @@
         Quantity: quantityInput.value.trim() === '' ? '' : Number(quantityInput.value),
         WorkflowID: workflowSelect.value,
         SourceProjectID: String((modal.querySelector('#new-project-reference') || {}).value || ''),
-        ReferencePolicyJSON: Array.from(modal.querySelectorAll('[data-reference-override]')).reduce((result, select) => { result[select.dataset.referenceOverride] = select.value; return result; }, {}),
         Description: descriptionInput.value.trim(),
         CreatedAt: String((modal.querySelector('#new-project-created-at') || {}).value || '').trim(),
         AvailableDepartmentIDs: selectedDepartments,
