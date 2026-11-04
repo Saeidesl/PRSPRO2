@@ -243,6 +243,8 @@
           showCreateStepModal(workflow);
         } else if (this.dataset.action === 'publish-workflow') {
           publishWorkflow(workflow);
+        } else if (this.dataset.action === 'edit-workflow') {
+          showCreateWorkflowModal(workflow);
         }
       });
     });
@@ -315,6 +317,10 @@
               + افزودن مرحله
             </button>
             <button type="button" class="btn btn-light btn-sm"
+                    data-action="edit-workflow" data-id="${escapeAttribute(id)}">
+              ویرایش
+            </button>
+            <button type="button" class="btn btn-light btn-sm"
                     data-action="publish-workflow" data-id="${escapeAttribute(id)}">
               انتشار نسخه
             </button>
@@ -328,12 +334,18 @@
   // ایجاد فرآیند
   // ------------------------------------------
 
-  function showCreateWorkflowModal() {
+  function showCreateWorkflowModal(existingWorkflow) {
+    const isEdit = !!existingWorkflow;
+    let existingPolicies = {};
+    try {
+      const raw = existingWorkflow && (existingWorkflow.PublishedRepeatReferencePolicyJSON || existingWorkflow.RepeatReferencePolicyJSON);
+      existingPolicies = typeof raw === 'string' ? JSON.parse(raw || '{}') : (raw || {});
+    } catch (error) { existingPolicies = {}; }
     openModal({
-      title: 'ایجاد فرآیند جدید',
+      title: isEdit ? 'ویرایش فرآیند' : 'ایجاد فرآیند جدید',
       content: `
         <div style="margin-bottom:18px;color:var(--color-text-muted);font-size:13px">
-          ابتدا مشخصات فرآیند را ثبت کن. سپس می‌توانی مراحل تولید را به ترتیب اضافه کنی.
+          ${isEdit ? 'مشخصات و سیاست انتقال اطلاعات مرجع این فرآیند را ویرایش کن.' : 'ابتدا مشخصات فرآیند را ثبت کن. سپس می‌توانی مراحل تولید را به ترتیب اضافه کنی.'}
         </div>
 
         <form id="workflow-create-form">
@@ -381,13 +393,18 @@
 
           <div class="modal-footer"
                style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-start">
-            <button type="submit" class="btn btn-primary">ثبت فرآیند</button>
+            <button type="submit" class="btn btn-primary">${isEdit ? 'ذخیره تغییرات' : 'ثبت فرآیند'}</button>
             <button type="button" class="btn btn-light" data-close-modal>انصراف</button>
           </div>
         </form>
       `,
       onReady: function (overlay) {
         const form = overlay.querySelector('#workflow-create-form');
+        if (isEdit) {
+          form.elements.Name.value = getName(existingWorkflow);
+          form.elements.Code.value = getCode(existingWorkflow) === '-' ? '' : getCode(existingWorkflow);
+          form.elements.WorkflowType.value = String(getValue(existingWorkflow, 'WorkflowType', 'workflowType') || 'INITIAL').toUpperCase();
+        }
         const workflowTypeSelect = form.elements.WorkflowType;
         const policyWrap = overlay.querySelector('#workflow-repeat-policy');
         const policyFields = overlay.querySelector('#workflow-repeat-policy-fields');
@@ -404,7 +421,9 @@
             return '<div class="form-group" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(150px,220px);gap:10px;align-items:center">' +
               '<label style="margin:0">' + escapeHtml(type.Name || type.Code || type.ID) + '</label>' +
               '<select class="form-control" data-reference-type="' + escapeAttribute(type.ID) + '">' +
-              '<option value="LIVE_SYNC">همگام‌سازی زنده</option><option value="INITIAL_COPY">فقط کپی اولیه</option><option value="INDEPENDENT" selected>مستقل</option></select></div>';
+              '<option value="LIVE_SYNC"' + (String(existingPolicies[String(type.ID)] || 'INDEPENDENT').toUpperCase() === 'LIVE_SYNC' ? ' selected' : '') + '>همگام‌سازی زنده</option>' +
+              '<option value="INITIAL_COPY"' + (String(existingPolicies[String(type.ID)] || 'INDEPENDENT').toUpperCase() === 'INITIAL_COPY' ? ' selected' : '') + '>فقط کپی اولیه</option>' +
+              '<option value="INDEPENDENT"' + (!existingPolicies[String(type.ID)] || String(existingPolicies[String(type.ID)]).toUpperCase() === 'INDEPENDENT' ? ' selected' : '') + '>مستقل</option></select></div>';
           }).join('');
           policyFields.dataset.rendered = 'true';
         }
@@ -433,20 +452,25 @@
           state.saving = true;
           const submit = form.querySelector('[type="submit"]');
           submit.disabled = true;
-          submit.textContent = 'در حال ثبت...';
+          submit.textContent = isEdit ? 'در حال ذخیره...' : 'در حال ثبت...';
 
           try {
-            await PMS.Api.post('/workflows', {
+            const payload = {
               Name: name,
               Code: code,
               WorkflowType: workflowType,
               RepeatReferencePolicyJSON: workflowType === 'REPEAT' ? Array.from(form.querySelectorAll('[data-reference-type]')).reduce(function(result, select) { result[select.dataset.referenceType] = select.value; return result; }, {}) : {}
-            });
+            };
+            if (isEdit) {
+              await PMS.Api.put('/workflows/' + encodeURIComponent(getId(existingWorkflow)), payload);
+            } else {
+              await PMS.Api.post('/workflows', payload);
+            }
 
             invalidateCache(CACHE_KEY);
             invalidateCache(BOOTSTRAP_CACHE_KEY);
             closeModal(overlay);
-            showMessage('فرآیند با موفقیت ثبت شد.', 'success');
+            showMessage(isEdit ? 'تنظیمات فرآیند به‌روزرسانی شد.' : 'فرآیند با موفقیت ثبت شد.', 'success');
             await loadWorkflows();
           } catch (error) {
             showFormMessage(
@@ -460,7 +484,7 @@
 
             if (submit.isConnected) {
               submit.disabled = false;
-              submit.textContent = 'ثبت فرآیند';
+              submit.textContent = isEdit ? 'ذخیره تغییرات' : 'ثبت فرآیند';
             }
           }
         });
