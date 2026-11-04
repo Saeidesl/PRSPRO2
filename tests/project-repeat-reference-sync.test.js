@@ -47,3 +47,13 @@ test('workflow management supports editing reference-copy policy on existing wor
   assert.match(workflows, /PMS\.Api\.put\('\/workflows\/'/);
   assert.match(workflows, /RepeatReferencePolicyJSON:/);
 });
+
+test('repeat project copy progress is real, per information type, and resumable', () => {
+  const projects = fs.readFileSync(path.join(root, 'js/modules/projects.js'), 'utf8');
+  assert.match(projects, /ReferenceCopyOperationID/);
+  assert.match(projects, /referenceCopyProjectId/);
+  assert.match(projects, /referenceCopyPlan/);
+  assert.match(projects, /reference-copy\\/['"] \+ encodeURIComponent\(item\.informationTypeId\)/);
+  assert.match(projects, /renderReferenceCopyProgress/);
+  assert.match(projects, /ادامه کپی اطلاعات/);
+});
