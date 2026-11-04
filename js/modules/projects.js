@@ -1259,7 +1259,6 @@
               <label for="new-project-reference">پروژه اصلی / مرجع <span style="color:var(--color-danger);">*</span></label>
               <select id="new-project-reference" name="SourceProjectID" style="width:100%;box-sizing:border-box;"><option value="">انتخاب پروژه مرجع</option></select>
               <small style="display:block;margin-top:6px;color:var(--color-text-secondary);">اطلاعات مرجع بر اساس سیاست گردش‌کار تولید تکراری استفاده می‌شود؛ رویدادها و سوابق تولید مستقل می‌مانند.</small>
-              <div id="new-project-reference-policies" style="margin-top:12px;"></div>
             </div>
 
             <div class="filter-group form-group project-form-field" style="margin-bottom:20px;">
@@ -1762,27 +1761,14 @@
         const referenceSelect = modal.querySelector('#new-project-reference');
         const referenceWrap = modal.querySelector('#new-project-reference-wrap');
         const referenceProjects = Array.isArray(lookupData.referenceProjects) ? lookupData.referenceProjects : [];
-        const referenceTypes = Array.isArray(lookupData.informationTypes) ? lookupData.informationTypes : [];
         if (referenceSelect) referenceSelect.innerHTML = '<option value="">انتخاب پروژه مرجع</option>' + referenceProjects.map((item) => '<option value="' + this.escape(item.ID) + '">' + this.escape([item.ProjectCode, item.Title].filter(Boolean).join(' — ')) + '</option>').join('');
         const syncReferenceVisibility = () => {
           const selectedWorkflow = workflows.find((item) => String(item.ID || item.Id || item.id) === String(workflowSelect.value));
           const isRepeat = String(selectedWorkflow && (selectedWorkflow.WorkflowType || selectedWorkflow.workflowType) || '').toUpperCase() === 'REPEAT';
           if (referenceWrap) referenceWrap.hidden = !isRepeat;
           if (referenceSelect) referenceSelect.required = isRepeat;
-          const policyContainer = modal.querySelector('#new-project-reference-policies');
-          if (policyContainer && isRepeat && !policyContainer.dataset.rendered) {
-            let savedPolicies = {};
-            try { savedPolicies = typeof project.ReferencePolicyJSON === 'string' ? JSON.parse(project.ReferencePolicyJSON || '{}') : (project.ReferencePolicyJSON || {}); } catch (policyError) {}
-            policyContainer.innerHTML = referenceTypes.map((type) => {
-              const selected = String(savedPolicies[type.ID] || 'INDEPENDENT').toUpperCase();
-              return '<label style="display:grid;grid-template-columns:minmax(0,1fr) minmax(145px,190px);gap:10px;align-items:center;margin-top:9px;font-size:13px;"><span>' + this.escape(type.Name || type.Code || type.ID) + '</span><select class="form-control" data-reference-override="' + this.escape(type.ID) + '">' +
-                '<option value="LIVE_SYNC"' + (selected === 'LIVE_SYNC' ? ' selected' : '') + '>همگام‌سازی زنده</option>' +
-                '<option value="INITIAL_COPY"' + (selected === 'INITIAL_COPY' ? ' selected' : '') + '>فقط کپی اولیه</option>' +
-                '<option value="INDEPENDENT"' + (selected === 'INDEPENDENT' ? ' selected' : '') + '>مستقل</option></select></label>';
-            }).join('');
-            policyContainer.dataset.rendered = 'true';
-          }
-          if (policyContainer) policyContainer.hidden = !isRepeat;
+          // انتقال اطلاعات فقط طبق سیاست تعریف‌شده در Workflow انجام می‌شود.
+
         };
         if (!workflowSelect.dataset.referencePolicyBound) { workflowSelect.dataset.referencePolicyBound = 'true'; workflowSelect.addEventListener('change', syncReferenceVisibility); }
         syncReferenceVisibility();
@@ -2167,11 +2153,33 @@
       const updateProgress = (message, state) => {
         if (!progressBox || !progressText) return;
         progressText.textContent = message;
-        if (state === 'error') {
-          progressBox.hidden = true;
-          return;
-        }
+        if (state === 'error') { progressBox.hidden = true; return; }
         progressBox.hidden = false;
+      };
+      const renderReferenceCopyProgress = (items) => {
+        if (!progressBox) return;
+        const card = progressBox.querySelector('.project-create-progress-card');
+        if (!card) return;
+        let list = card.querySelector('[data-reference-copy-progress]');
+        if (!list) {
+          list = document.createElement('div');
+          list.setAttribute('data-reference-copy-progress', 'true');
+          list.style.cssText = 'display:grid;gap:7px;margin-top:16px;text-align:right;max-height:210px;overflow:auto;';
+          card.insertBefore(list, card.querySelector('.project-create-progress-track'));
+        }
+        list.replaceChildren();
+        (items || []).forEach((item) => {
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;justify-content:space-between;gap:10px;font-size:12px;line-height:1.6;';
+          const name = document.createElement('span');
+          name.textContent = String(item.name || 'اطلاعات مرکزی');
+          const status = document.createElement('span');
+          const labels = { PENDING: 'در انتظار', FAILED: 'ناموفق', COPIED: 'کپی شد', INDEPENDENT: 'مستقل', EMPTY: 'بدون اطلاعات', SKIPPED_FILE: 'فایل منتقل نشد', PROCESSING: 'در حال پردازش' };
+          status.textContent = labels[item.status] || item.status || 'در انتظار';
+          status.style.cssText = 'white-space:nowrap;color:' + (item.status === 'FAILED' ? 'var(--color-danger)' : item.status === 'COPIED' ? 'var(--color-success)' : 'var(--color-text-secondary)');
+          row.append(name, status);
+          list.appendChild(row);
+        });
       };
       const routerForAttachments = window.PMS.Router;
       const canUploadProjectAttachment = !!(routerForAttachments &&
@@ -2185,7 +2193,6 @@
         Quantity: quantityInput.value.trim() === '' ? '' : Number(quantityInput.value),
         WorkflowID: workflowSelect.value,
         SourceProjectID: String((modal.querySelector('#new-project-reference') || {}).value || ''),
-        ReferencePolicyJSON: Array.from(modal.querySelectorAll('[data-reference-override]')).reduce((result, select) => { result[select.dataset.referenceOverride] = select.value; return result; }, {}),
         Description: descriptionInput.value.trim(),
         CreatedAt: String((modal.querySelector('#new-project-created-at') || {}).value || '').trim(),
         AvailableDepartmentIDs: selectedDepartments,
@@ -2278,6 +2285,17 @@
       }
       const buildProjectAttachmentName = (projectCode, originalFile) => String(originalFile && originalFile.name || 'project-file');
 
+      if (String(selectedWorkflow && (selectedWorkflow.WorkflowType || selectedWorkflow.workflowType) || '').toUpperCase() === 'REPEAT') {
+        let operationId = String(modal.dataset.referenceCopyOperationId || '');
+        if (!operationId) {
+          operationId = window.crypto && typeof window.crypto.randomUUID === 'function'
+            ? window.crypto.randomUUID()
+            : 'RPC_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+          modal.dataset.referenceCopyOperationId = operationId;
+        }
+        project.ReferenceCopyOperationID = operationId;
+      }
+
       this.isSaving = true;
       submitButton.disabled = true;
       submitButton.textContent = modal.dataset.editMode === 'true' ? 'در حال ذخیره...' : 'در حال ثبت...';
@@ -2324,19 +2342,54 @@
           return;
         }
 
-        const response = await window.PMS.Api.post('/projects', project);
-
-        const created = this.extractCreatedProject(response);
-
-        if (!created || !(created.ID || created.Id || created.id)) {
-          throw new Error(
-            this.getErrorMessage(response) ||
-            'پاسخ سرور برای ثبت پروژه معتبر نیست.'
-          );
+        let created = null;
+        let referenceCopyPlan = [];
+        const resumedProjectId = String(modal.dataset.referenceCopyProjectId || '');
+        if (resumedProjectId) {
+          created = { ID: resumedProjectId, SourceProjectID: project.SourceProjectID };
+          try { referenceCopyPlan = JSON.parse(modal.dataset.referenceCopyPlan || '[]'); } catch (planError) { referenceCopyPlan = []; }
+          updateProgress('ادامه کپی اطلاعات پروژه ثبت‌شده...', 'loading');
+        } else {
+          const response = await window.PMS.Api.post('/projects', project);
+          created = this.extractCreatedProject(response);
+          if (!created || !(created.ID || created.Id || created.id)) {
+            throw new Error(this.getErrorMessage(response) || 'پاسخ سرور برای ثبت پروژه معتبر نیست.');
+          }
+          const newId = String(created.ID || created.Id || created.id);
+          modal.dataset.referenceCopyProjectId = newId;
+          referenceCopyPlan = Array.isArray(created.ReferenceCopyPlan) ? created.ReferenceCopyPlan : [];
+          modal.dataset.referenceCopyPlan = JSON.stringify(referenceCopyPlan);
+          updateProgress('پروژه ثبت شد. در حال آماده‌سازی انتقال اطلاعات مرکزی...', 'loading');
         }
 
         const createdId = String(created.ID || created.Id || created.id);
-        updateProgress('پروژه ذخیره شد. در حال تکمیل اطلاعات وابسته...', 'loading');
+        if (created.SourceProjectID && referenceCopyPlan.length) {
+          renderReferenceCopyProgress(referenceCopyPlan);
+          for (let i = 0; i < referenceCopyPlan.length; i += 1) {
+            const item = referenceCopyPlan[i];
+            if (['PENDING', 'FAILED'].indexOf(String(item.status)) === -1) continue;
+            updateProgress('در حال کپی اطلاعات «' + item.name + '» (' + (i + 1) + ' از ' + referenceCopyPlan.length + ')...', 'loading');
+            try {
+              const copyResponse = await window.PMS.Api.post('/projects/' + encodeURIComponent(createdId) + '/reference-copy/' + encodeURIComponent(item.informationTypeId), {});
+              if (copyResponse && copyResponse.success === false) throw new Error(this.getErrorMessage(copyResponse) || 'کپی این بخش ناموفق بود.');
+              const copyData = copyResponse && copyResponse.data ? copyResponse.data : {};
+              if (Array.isArray(copyData.items)) referenceCopyPlan = copyData.items;
+              else item.status = copyData.item && copyData.item.status || 'COPIED';
+              modal.dataset.referenceCopyPlan = JSON.stringify(referenceCopyPlan);
+              renderReferenceCopyProgress(referenceCopyPlan);
+            } catch (copyError) {
+              modal.dataset.referenceCopyPlan = JSON.stringify(referenceCopyPlan);
+              throw new Error('پروژه ثبت شده است؛ کپی «' + item.name + '» کامل نشد. با زدن «ادامه کپی اطلاعات» دوباره تلاش کنید. ' + this.getErrorMessage(copyError));
+            }
+          }
+          const unfinished = referenceCopyPlan.filter((item) => ['PENDING', 'FAILED', 'PROCESSING'].indexOf(String(item.status)) !== -1);
+          if (unfinished.length) throw new Error('کپی اطلاعات هنوز کامل نشده است. برای ادامه دوباره ثبت را بزنید.');
+          created.ReferenceCopySummary = {
+            copied: referenceCopyPlan.filter((item) => item.status === 'COPIED'),
+            skippedFiles: referenceCopyPlan.filter((item) => item.status === 'SKIPPED_FILE'),
+            pending: unfinished.length
+          };
+        }
 
         let attachmentWarning = '';
         if (selectedFile) {
@@ -2383,7 +2436,14 @@
         }
         modal.remove();
 
-        alert('پروژه با موفقیت ثبت شد.' + attachmentWarning);
+        const referenceSummary = created.ReferenceCopySummary || {};
+        const copiedReferenceCount = Array.isArray(referenceSummary.copied) ? referenceSummary.copied.length : 0;
+        const skippedReferenceFiles = Array.isArray(referenceSummary.skippedFiles) ? referenceSummary.skippedFiles.length : 0;
+        const referenceCopyMessage = referenceSummary && created.SourceProjectID
+          ? ' اطلاعات مرکزی منتقل‌شده: ' + copiedReferenceCount + ' مورد.' +
+            (skippedReferenceFiles ? ' فایل/تصویر منتقل‌نشده: ' + skippedReferenceFiles + ' مورد؛ انتقال امن فایل هنوز پشتیبانی نمی‌شود.' : '')
+          : '';
+        alert('پروژه با موفقیت ثبت شد.' + referenceCopyMessage + attachmentWarning);
 
         // Refresh the list only when the user is allowed to view projects.
         const router = window.PMS.Router;
