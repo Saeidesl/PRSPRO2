@@ -1069,7 +1069,7 @@
           '" data-information-preview="' + (type === 'image' ? 'true' : 'false') + '">' +
           (type === 'image' ? 'پیش‌نمایش' : 'دریافت') + '</button></span>';
       }
-      return this.renderPrintDesignerValue(value, info.DataType || info.Type || field.DataType);
+      return this.renderPrintDesignerValue(value, dataType);
     },
 
     openInformationAttachment: async function (attachmentId, preview) {
