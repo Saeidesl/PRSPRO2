@@ -1770,11 +1770,20 @@
           if (referenceWrap) referenceWrap.hidden = !isRepeat;
           if (referenceSelect) referenceSelect.required = isRepeat;
           const policyContainer = modal.querySelector('#new-project-reference-policies');
-          if (policyContainer && isRepeat && !policyContainer.dataset.rendered) {
+          if (policyContainer && isRepeat) {
+            let workflowPolicies = {};
             let savedPolicies = {};
-            try { savedPolicies = typeof project.ReferencePolicyJSON === 'string' ? JSON.parse(project.ReferencePolicyJSON || '{}') : (project.ReferencePolicyJSON || {}); } catch (policyError) {}
+            try {
+              const rawWorkflowPolicies = selectedWorkflow && (selectedWorkflow.PublishedRepeatReferencePolicyJSON || selectedWorkflow.RepeatReferencePolicyJSON);
+              workflowPolicies = typeof rawWorkflowPolicies === 'string' ? JSON.parse(rawWorkflowPolicies || '{}') : (rawWorkflowPolicies || {});
+            } catch (workflowPolicyError) { workflowPolicies = {}; }
+            try {
+              savedPolicies = typeof project.ReferencePolicyJSON === 'string' ? JSON.parse(project.ReferencePolicyJSON || '{}') : (project.ReferencePolicyJSON || {});
+            } catch (savedPolicyError) { savedPolicies = {}; }
             policyContainer.innerHTML = referenceTypes.map((type) => {
-              const selected = String(savedPolicies[type.ID] || 'INDEPENDENT').toUpperCase();
+              const typeId = String(type.ID || '');
+              const typeCode = String(type.Code || '');
+              const selected = String(savedPolicies[typeId] || workflowPolicies[typeId] || (typeCode && workflowPolicies[typeCode]) || 'INDEPENDENT').toUpperCase();
               return '<label style="display:grid;grid-template-columns:minmax(0,1fr) minmax(145px,190px);gap:10px;align-items:center;margin-top:9px;font-size:13px;"><span>' + this.escape(type.Name || type.Code || type.ID) + '</span><select class="form-control" data-reference-override="' + this.escape(type.ID) + '">' +
                 '<option value="LIVE_SYNC"' + (selected === 'LIVE_SYNC' ? ' selected' : '') + '>همگام‌سازی زنده</option>' +
                 '<option value="INITIAL_COPY"' + (selected === 'INITIAL_COPY' ? ' selected' : '') + '>فقط کپی اولیه</option>' +
