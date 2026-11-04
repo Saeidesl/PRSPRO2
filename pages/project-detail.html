@@ -139,6 +139,21 @@
         </div>
       </div>
 
+      <div class="card project-information-card">
+        <div class="card-body">
+          <div class="page-header">
+            <div>
+              <h3>اطلاعات مرکزی پروژه <span class="project-information-count" id="project-information-count">۰</span></h3>
+              <p class="project-passport-intro">آخرین مقادیر ذخیره‌شده برای این پروژه، مستقل از فرم‌های ثبت‌شده در رویدادها</p>
+            </div>
+            <button type="button" class="btn btn-light btn-sm" id="project-information-retry" hidden>تلاش مجدد</button>
+          </div>
+          <div id="project-information-loading" class="loading-state" aria-live="polite">در حال دریافت اطلاعات مرکزی...</div>
+          <div id="project-information-error" class="alert alert-danger" role="alert" hidden></div>
+          <div id="project-information-list" aria-live="polite"></div>
+        </div>
+      </div>
+
       <div class="card project-forms-card">
         <div class="card-body">
           <div class="page-header">
