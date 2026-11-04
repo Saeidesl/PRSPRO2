@@ -1861,6 +1861,9 @@
           wrapper.dataset.formId = String(form.ID || mapping.FormID);
           wrapper.dataset.infoTypeId = typeId;
           wrapper.dataset.cardinality = cardinality;
+          const mappingRequired = mapping.IsRequired === true || String(mapping.IsRequired).toLowerCase() === 'true';
+          const hasRequiredColumns = columns.some(column => column.IsRequired === true || String(column.IsRequired).toLowerCase() === 'true');
+          wrapper.dataset.formRequired = String(required || mappingRequired || hasRequiredColumns);
           const visibilityRule = field.VisibilityRule || this.parseVisibilityRule(field.VisibilityRuleJSON);
           wrapper.dataset.visibilityRule = JSON.stringify(visibilityRule || {});
           if (columns.length) {
@@ -1901,8 +1904,8 @@
             if (cardinality === 'MULTIPLE') {
               const add = document.createElement('button');
               add.type = 'button';
-              add.className = 'event-modal-button';
-              add.textContent = 'افزودن ردیف';
+              add.className = 'event-modal-button event-form-row-add';
+              add.textContent = '＋ افزودن ردیف جدید';
               add.addEventListener('click', () => {
                 if (tbody.querySelectorAll('[data-form-row]').length >= 500) {
                   this.showFormError('حداکثر ۵۰۰ ردیف برای هر جدول مجاز است.');
@@ -1976,6 +1979,32 @@
       });
       container.oninput = () => this.applyConfiguredFormVisibility(container);
       container.onchange = () => this.applyConfiguredFormVisibility(container);
+      this.updateFormMode(this.formMode || 'quick');
+    },
+
+    updateFormMode: function (mode) {
+      const nextMode = mode === 'full' ? 'full' : 'quick';
+      this.formMode = nextMode;
+      const modal = document.getElementById('event-create-modal');
+      if (!modal) return;
+      modal.querySelectorAll('[data-form-mode]').forEach((button) => {
+        const active = button.dataset.formMode === nextMode;
+        button.classList.toggle('is-active', active);
+        button.setAttribute('aria-pressed', String(active));
+      });
+      const container = document.getElementById('event-configured-forms');
+      if (!container) return;
+      const wrappers = Array.from(container.querySelectorAll('.event-form-value-field'));
+      wrappers.forEach((wrapper) => {
+        wrapper.dataset.quickHidden = String(nextMode === 'quick' && wrapper.dataset.formRequired !== 'true');
+      });
+      const hiddenCount = wrappers.filter(wrapper => wrapper.dataset.quickHidden === 'true' && wrapper.dataset.visibilityHidden !== 'true').length;
+      const help = document.getElementById('event-form-mode-help');
+      if (help) {
+        help.textContent = nextMode === 'quick'
+          ? (hiddenCount ? hiddenCount + ' فیلد اختیاری جمع شده است؛ با انتخاب «ثبت کامل» همه فیلدها را ببینید. اطلاعات واردشده پاک نمی‌شود.' : 'همه فیلدهای این فرم ضروری هستند؛ اطلاعات واردشده حفظ می‌شود.')
+          : 'همه فیلدها نمایش داده می‌شوند؛ اطلاعات واردشده حفظ می‌شود.';
+      }
       this.applyConfiguredFormVisibility(container);
     },
 
@@ -2013,7 +2042,8 @@
           else if (operator === 'EQUALS') visible = !empty && String(value) === String(rule.value);
           else if (operator === 'NOT_EQUALS') visible = empty || String(value) !== String(rule.value);
         }
-        wrapper.hidden = !visible;
+        wrapper.dataset.visibilityHidden = String(!visible);
+        wrapper.hidden = !visible || wrapper.dataset.quickHidden === 'true';
         wrapper.querySelectorAll('[data-form-value]').forEach((input) => {
           input.required = visible && input.dataset.baseRequired === 'true';
         });
@@ -2029,6 +2059,7 @@
       row.dataset.formRow = 'true';
       columns.forEach((column) => {
         const cell = document.createElement('td');
+        cell.dataset.label = String(column.Name || column.Code || 'اطلاعات');
         const type = String(column.DataType || 'text').toLowerCase();
         let input;
         if (type === 'boolean') {
@@ -2065,10 +2096,11 @@
       });
       if (allowRemove) {
         const actionCell = document.createElement('td');
+        actionCell.dataset.label = 'عملیات';
         const remove = document.createElement('button');
         remove.type = 'button';
-        remove.className = 'event-modal-button';
-        remove.textContent = 'حذف';
+        remove.className = 'event-modal-button event-form-row-remove';
+        remove.textContent = 'حذف ردیف';
         remove.addEventListener('click', () => row.remove());
         actionCell.appendChild(remove);
         row.appendChild(actionCell);
@@ -2091,7 +2123,7 @@
           if (!typeId) continue;
           const required = field.IsRequired === true || String(field.IsRequired).toLowerCase() === 'true';
           const wrapper = Array.from(container.querySelectorAll('.event-form-value-field')).find(node => node.dataset.formId === formId && node.dataset.infoTypeId === typeId);
-          if (wrapper && wrapper.hidden) {
+          if (wrapper && wrapper.dataset.visibilityHidden === 'true') {
             const cardinality = String(info.Cardinality || 'SINGLE').toUpperCase();
             const hasColumns = Array.isArray(info.Columns) && info.Columns.some(column => String(column.Status || 'ACTIVE') === 'ACTIVE');
             values[typeId] = hasColumns ? (cardinality === 'MULTIPLE' ? [] : {}) : (cardinality === 'MULTIPLE' ? [] : '');
