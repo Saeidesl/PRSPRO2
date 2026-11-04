@@ -2023,7 +2023,7 @@
         if (rule.fieldId) {
           const source = wrappers.find((item) => item.dataset.infoTypeId === String(rule.fieldId));
           let value;
-          if (source && !source.hidden) {
+          if (source && source.dataset.visibilityHidden !== 'true') {
             const table = source.querySelector('[data-form-table]');
             if (table) {
               const rows = Array.from(table.querySelectorAll('[data-form-row]'));
