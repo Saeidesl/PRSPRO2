@@ -2367,7 +2367,7 @@
           renderReferenceCopyProgress(referenceCopyPlan);
           for (let i = 0; i < referenceCopyPlan.length; i += 1) {
             const item = referenceCopyPlan[i];
-            if (['PENDING', 'FAILED'].indexOf(String(item.status)) === -1) continue;
+            if (['PENDING', 'FAILED', 'SKIPPED_FILE'].indexOf(String(item.status)) === -1) continue;
             updateProgress('در حال کپی اطلاعات «' + item.name + '» (' + (i + 1) + ' از ' + referenceCopyPlan.length + ')...', 'loading');
             try {
               const copyResponse = await window.PMS.Api.post('/projects/' + encodeURIComponent(createdId) + '/reference-copy/' + encodeURIComponent(item.informationTypeId), {});
