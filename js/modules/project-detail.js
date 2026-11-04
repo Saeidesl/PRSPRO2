@@ -5,6 +5,7 @@
     projectId: null,
     project: null,
     projectInformation: [],
+    projectInformationLoadVersion: 0,
     projectForms: [],
     projectFormImageUrls: {},
     projectFormsLoading: false,
@@ -43,6 +44,7 @@
       this.bindProjectPassportImageEvents();
       this.ensureProjectPassportStyles();
       this.load();
+      this.loadProjectInformation(false);
       this.loadProjectPassportImages(false);
       this.loadAuditHistory(false);
     },
@@ -129,6 +131,14 @@
         formsRetry.dataset.bound = '1';
         formsRetry.addEventListener('click', function () {
           ProjectDetail.loadProjectForms(ProjectDetail.events, ProjectDetail.loadVersion, true);
+        });
+      }
+
+      const informationRetry = document.getElementById('project-information-retry');
+      if (informationRetry && !informationRetry.dataset.bound) {
+        informationRetry.dataset.bound = '1';
+        informationRetry.addEventListener('click', function () {
+          ProjectDetail.loadProjectInformation(true);
         });
       }
 
@@ -922,34 +932,45 @@
       const loading = document.getElementById('project-information-loading');
       const error = document.getElementById('project-information-error');
       const retry = document.getElementById('project-information-retry');
+      const requestVersion = ++this.projectInformationLoadVersion;
       if (!container || !this.projectId) return;
-      if (loading) loading.hidden = false;
+      if (loading) {
+        loading.textContent = 'در حال دریافت اطلاعات مرکزی...';
+        loading.hidden = false;
+      }
       if (error) error.hidden = true;
       if (retry) retry.hidden = true;
       try {
         const key = 'project_information_' + String(this.projectId);
         const response = forceRefresh
-          ? await window.PMS.Api.getFresh('/projects/' + encodeURIComponent(this.projectId) + '/information', key)
-          : await window.PMS.Api.getCached('/projects/' + encodeURIComponent(this.projectId) + '/information', key);
+          ? await window.PMS.Api.getFresh('/projects/' + encodeURIComponent(this.projectId) + '/information', key, { trackSync: false })
+          : await window.PMS.Api.getCached('/projects/' + encodeURIComponent(this.projectId) + '/information', key, { trackSync: false });
+        if (requestVersion !== this.projectInformationLoadVersion) return;
         const payload = response && response.data !== undefined ? response.data : response;
         this.projectInformation = this.normalizeArray(payload, ['items', 'Items']);
         this.renderProjectInformation();
       } catch (err) {
+        if (requestVersion !== this.projectInformationLoadVersion) return;
         if (error) {
-          error.textContent = err && err.message ? err.message : 'دریافت اطلاعات پرونده ناموفق بود.';
+          error.textContent = err && err.message ? err.message : 'دریافت اطلاعات مرکزی پروژه ناموفق بود.';
           error.hidden = false;
         }
         if (retry) retry.hidden = false;
+        if (container) container.innerHTML = '';
+        const count = document.getElementById('project-information-count');
+        if (count) count.textContent = '۰';
       } finally {
-        if (loading) loading.hidden = true;
+        if (requestVersion === this.projectInformationLoadVersion && loading) loading.hidden = true;
       }
     },
 
     renderProjectInformation: function () {
       const container = document.getElementById('project-information-list');
       if (!container) return;
+      const count = document.getElementById('project-information-count');
       const canEdit = this.canEditProjectInformation();
       const rows = this.projectInformation || [];
+      if (count) count.textContent = String(rows.length).replace(/[0-9]/g, digit => '۰۱۲۳۴۵۶۷۸۹'[Number(digit)]);
       if (!rows.length) {
         container.innerHTML = '<div class="table-empty">هنوز نوع اطلاعات فعالی برای این پرونده تعریف نشده است.</div>';
         return;
