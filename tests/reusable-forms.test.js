@@ -216,8 +216,10 @@ test('project detail replaces scattered information panel with event-backed reus
   const detail=read('js/modules/project-detail.js');
   const page=read('pages/project-detail.html');
   assert.match(page,/id="project-forms-list"/);
-  assert.doesNotMatch(page,/id="project-information-list"/);
-  assert.doesNotMatch(detail,/this\.loadProjectInformation\(false\)/);
+  assert.match(page,/id="project-information-list"/);
+  assert.match(page,/اطلاعات مرکزی پروژه/);
+  assert.match(detail,/this\.loadProjectInformation\(false\)/);
+  assert.match(detail,/renderProjectInformation: function/);
   assert.match(detail,/loadProjectForms: async function/);
   assert.match(detail,/\/events\/' \+ encodeURIComponent\(eventId\) \+ '\/forms/);
   assert.match(detail,/DefinitionSnapshot|record\.Definition/);
