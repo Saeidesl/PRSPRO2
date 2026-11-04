@@ -237,7 +237,9 @@ test('event form supports quick and full display modes without discarding option
   assert.match(events,/updateFormMode: function/);
   assert.match(events,/dataset\.quickHidden/);
   assert.match(events,/dataset\.visibilityHidden === 'true'/);
-  assert.match(events,/hasRequiredColumns/);
+  assert.match(events,/wrapper\.dataset\.formRequired = String\(required\)/);
+  assert.doesNotMatch(events,/wrapper\.dataset\.formRequired = String\(required \|\| mappingRequired \|\| hasRequiredColumns\)/);
+  assert.match(events,/تکمیل این فرم برای ثبت رویداد الزامی است/);
   assert.match(events,/اطلاعات واردشده پاک نمی‌شود/);
   assert.match(css,/content: attr\(data-label\)/);
   assert.match(css,/\.event-modal-table tr\[data-form-row\] td::before/);
