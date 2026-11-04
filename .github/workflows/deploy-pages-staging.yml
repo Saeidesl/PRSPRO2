@@ -1,9 +1,9 @@
-name: Publish staging frontend to GitHub Pages
+name: Publish frontend to GitHub Pages (MAIN)
 
 on:
   push:
     branches:
-      - feature/design-case-preproduction
+      - main
   workflow_dispatch:
 
 permissions:
@@ -12,7 +12,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: github-pages-staging
+  group: github-pages-production
   cancel-in-progress: true
 
 jobs:
@@ -22,31 +22,22 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout production site
+      - name: Checkout main frontend
         uses: actions/checkout@v4
         with:
           ref: main
-          path: _site
 
-      - name: Checkout current feature frontend into isolated staging path
-        uses: actions/checkout@v4
-        with:
-          ref: feature/design-case-preproduction
-          path: _site/staging
-
-      - name: Verify production and staging entry points
+      - name: Verify production entry points
         run: |
-          test -f _site/index.html
-          test -f _site/staging/index.html
-          test -f _site/staging/js/core/api.js
-          grep -q 'AKfycbw-o15vVNFbnfqhVYV6PtpDOTt4jURF5QKEahvnENkZp2hOPlek1Hj55T2tBnypfPCb' _site/staging/js/core/api.js
-          echo "Production root preserved; current feature frontend prepared under /staging/ with the test API endpoint."
+          test -f index.html
+          test -f js/core/api.js
+          echo "Main branch frontend is ready for GitHub Pages."
 
-      - name: Upload combined Pages artifact
+      - name: Upload production Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: _site
+          path: .
 
-      - name: Publish staging alongside production
+      - name: Publish main branch to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
