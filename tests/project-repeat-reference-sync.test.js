@@ -25,11 +25,13 @@ test('project detail module cache is refreshed for automatic reference synchroni
   assert.match(source, /project-detail\.js\?v=20261103-reference-sync-on-save-1/);
 });
 
-test('staging deployment publishes the current feature frontend without changing production root', () => {
+test('GitHub Pages production deployment publishes the main branch root', () => {
   const workflow = fs.readFileSync(path.join(root, '.github/workflows/deploy-pages-staging.yml'), 'utf8');
-  assert.match(workflow, /ref: feature\/design-case-preproduction[\s\S]{0,100}path: _site\/staging/);
-  assert.match(workflow, /path: _site$/m);
-  assert.match(workflow, /AKfycbw-o15vVNFbnfqhVYV6PtpDOTt4jURF5QKEahvnENkZp2hOPlek1Hj55T2tBnypfPCb/);
+  assert.match(workflow, /branches:[\s\S]*- main/);
+  assert.match(workflow, /ref: main/);
+  assert.match(workflow, /path: \./);
+  assert.match(workflow, /Publish main branch to GitHub Pages/);
+  assert.doesNotMatch(workflow, /feature\/design-case-preproduction/);
 });
 
 
