@@ -11,7 +11,12 @@
     projects: [],
     workflowProgress: null,
     workflowProgressRequestId: 0,
+    workflowProgressProjectId: '',
+    workflowProgressLoading: false,
+    workflowProgressError: false,
     eventTypes: [],
+    canCreateEvents: false,
+    canAccessProjectOptions: false,
     formDefinitions: [],
     formsReady: true,
     formsRequestId: 0,
@@ -34,18 +39,22 @@
     init: function () {
       this.bindEvents();
 
+      const permissions = PMS.Router && Array.isArray(PMS.Router.permissions)
+        ? PMS.Router.permissions : [];
+      const isAdmin = !!(PMS.Router && typeof PMS.Router.isAdmin === 'function' && PMS.Router.isAdmin());
+      this.canCreateEvents = isAdmin || permissions.indexOf('EVENT_CREATE') !== -1;
+      this.canAccessProjectOptions = isAdmin ||
+        permissions.indexOf('PROJECT_VIEW') !== -1 ||
+        permissions.indexOf('PROJECT_CREATE') !== -1;
+
       const createButton = document.getElementById('event-create-button');
-      if (createButton) {
-        const canCreateEvents = !!(
-          PMS.Router &&
-          (
-            (typeof PMS.Router.isAdmin === 'function' && PMS.Router.isAdmin()) ||
-            (Array.isArray(PMS.Router.permissions) &&
-              PMS.Router.permissions.indexOf('EVENT_CREATE') !== -1)
-          )
-        );
-        createButton.hidden = !canCreateEvents;
-      }
+      if (createButton) createButton.hidden = !this.canCreateEvents;
+      const entryGrid = document.querySelector('.event-entry-grid');
+      if (entryGrid) entryGrid.hidden = !this.canCreateEvents;
+      const projectEntry = document.querySelector('[data-event-entry="project"]');
+      const workEntry = document.querySelector('[data-event-entry="my-work"]');
+      if (projectEntry) projectEntry.hidden = !this.canAccessProjectOptions;
+      if (workEntry) workEntry.hidden = !this.canAccessProjectOptions;
 
       this.load().then(function () {
         if (Events.preselectedProjectId) {
@@ -705,7 +714,8 @@
           const status = project.CurrentStepStatus || project.Status || '';
           return '<article class="event-queue-project"><strong>' + Events.escape(code) + ' — ' + Events.escape(title) + '</strong>' +
             (status ? '<p>' + Events.escape(status) + '</p>' : '') +
-            '<button type="button" class="btn btn-secondary event-queue-register-button" data-project-id="' + Events.escape(id) + '">ثبت رویداد برای این پروژه</button></article>';
+            (Events.canCreateEvents ? '<button type="button" class="btn btn-secondary event-queue-register-button" data-project-id="' + Events.escape(id) + '">ثبت رویداد برای این پروژه</button>' : '') +
+            '</article>';
         }).join('');
       });
     },
@@ -1083,7 +1093,7 @@
     },
 
     openForm: async function () {
-      if (this.modalOpen || this.submitting) return;
+      if (!this.canCreateEvents || this.modalOpen || this.submitting) return;
       if (this.preselectedProjectId) this.entryMode = 'project';
 
       this.modalOpen = true;
@@ -1146,6 +1156,11 @@
       const projectSelect = document.getElementById('event-form-project');
       const typeSelect = document.getElementById('event-form-type');
       const dateInput = document.getElementById('event-form-date');
+      if (this.entryMode === 'independent') {
+        const projectField = projectSelect.closest('.event-field');
+        if (projectField) projectField.hidden = true;
+        projectSelect.required = false;
+      }
 
       this.projects.forEach(function (project) {
         const id = Events.idOf(project);
@@ -1170,31 +1185,7 @@
         this.preselectedProjectId = '';
       }
 
-      const router = PMS.Router;
-      const permissions = router && Array.isArray(router.permissions) ? router.permissions : [];
-      const canAccessProjectOptions = !!(router && typeof router.isAdmin === 'function' && router.isAdmin()) ||
-        permissions.indexOf('PROJECT_VIEW') !== -1 ||
-        permissions.indexOf('PROJECT_CREATE') !== -1;
-
-      this.eventTypes.forEach(function (type) {
-        const id = Events.idOf(type);
-        const isProjectEvent = String(type.ConnectionType || 'PROJECT').toUpperCase() !== 'INDEPENDENT';
-
-        if (!id ||
-            String(type.Status || 'ACTIVE').toUpperCase() !== 'ACTIVE' ||
-            (!canAccessProjectOptions && isProjectEvent) ||
-            (Events.entryMode === 'project' && !isProjectEvent) ||
-            (Events.entryMode === 'independent' && isProjectEvent)) {
-          return;
-        }
-
-        const option = document.createElement('option');
-        option.value = id;
-        option.textContent = type.Name || type.Code || id;
-        option.dataset.connectionType = isProjectEvent ? 'PROJECT' : 'INDEPENDENT';
-        option.dataset.allowOnDraft = String(type.AllowOnDraft === true || String(type.AllowOnDraft).toLowerCase() === 'true');
-        typeSelect.appendChild(option);
-      });
+      this.refreshEventTypeOptions();
 
       const now = new Date();
       now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
@@ -1206,27 +1197,9 @@
       document.getElementById('event-form-cancel')
         .addEventListener('click', () => this.closeForm());
 
-      const refreshDraftEventOptions = () => {
-        const selectedProject = this.findById(this.projects, projectSelect.value);
-        const isDraftProject = !!selectedProject && String(selectedProject.RecordState || '').toUpperCase() === 'DRAFT';
-        Array.from(typeSelect.options).forEach((option) => {
-          if (!option.value) return;
-          const blocked = isDraftProject && option.dataset.connectionType === 'PROJECT' && option.dataset.allowOnDraft !== 'true';
-          option.disabled = blocked;
-          // Keep all event types visible; explain which ones are unavailable on drafts.
-          // Hiding every non-draft-enabled type made the list look as if it had not loaded.
-          option.hidden = false;
-          if (!option.dataset.originalLabel) option.dataset.originalLabel = option.textContent;
-          option.textContent = blocked
-            ? option.dataset.originalLabel + ' (غیرمجاز برای پیش‌نویس)'
-            : option.dataset.originalLabel;
-        });
-        const selectedOption = typeSelect.options[typeSelect.selectedIndex];
-        if (selectedOption && selectedOption.disabled) {
-          typeSelect.value = '';
-          this.loadEventForms('');
-        }
-      };
+      // Event type availability is recalculated from the selected project and
+      // the authoritative workflow-progress response.
+
 
       typeSelect.addEventListener('change', () => {
         const selectedType = this.findById(this.eventTypes, typeSelect.value);
@@ -1244,7 +1217,12 @@
         const projectField = projectSelect.closest('.event-field');
         if (projectField) projectField.hidden = isIndependent;
         projectSelect.required = !isIndependent;
-        if (isIndependent) projectSelect.value = '';
+        if (isIndependent) {
+          projectSelect.value = '';
+          this.loadWorkflowProgress('');
+        } else {
+          this.refreshEventTypeOptions();
+        }
         this.updateSubmitAvailability();
         this.renderEventQuantityField();
         this.loadEventForms(typeSelect.value);
@@ -1253,7 +1231,6 @@
       projectSelect.addEventListener('change', () => {
         this.loadWorkflowProgress(projectSelect.value);
         if (this.amendmentMode) this.loadAmendmentSourceEvents(projectSelect.value);
-        refreshDraftEventOptions();
         this.updateSubmitAvailability();
         this.renderEventQuantityField();
       });
@@ -1278,7 +1255,7 @@
         }
       });
 
-      refreshDraftEventOptions();
+      this.refreshEventTypeOptions();
       this.loadWorkflowProgress(projectSelect.value);
       this.updateSubmitAvailability();
 
@@ -1286,13 +1263,137 @@
       if (firstInput) firstInput.focus();
     },
 
+    refreshEventTypeOptions: function () {
+      const typeSelect = document.getElementById('event-form-type');
+      const projectSelect = document.getElementById('event-form-project');
+      if (!typeSelect || !projectSelect) return;
+
+      const previousValue = String(typeSelect.value || '');
+      const project = this.findById(this.projects, projectSelect.value);
+      const projectId = String(projectSelect.value || '');
+      const isDraftProject = !!project &&
+        String(project.RecordState || 'ACTIVE').toUpperCase() === 'DRAFT';
+      const progress = this.workflowProgress && this.workflowProgressProjectId === projectId
+        ? this.workflowProgress : null;
+      const available = [];
+      const restricted = [];
+      const self = this;
+
+      function workflowRestriction(type) {
+        const isProjectEvent = String(type.ConnectionType || 'PROJECT').toUpperCase() !== 'INDEPENDENT';
+        if (!isProjectEvent) return '';
+        if (!projectId) return 'ابتدا پروژه را انتخاب کنید';
+        if (self.workflowProgressProjectId !== projectId || self.workflowProgressLoading) {
+          return 'در حال بررسی گردش‌کار';
+        }
+        if (self.workflowProgressError) return 'قواعد گردش‌کار دریافت نشد';
+        if (!progress || !progress.configured) return '';
+
+        const rules = Array.isArray(progress.rules) ? progress.rules : [];
+        const rule = rules.find(function(item) {
+          return String(item.eventTypeId || '') === Events.idOf(type);
+        });
+        if (!rule) return 'در مرحله فعلی تعریف نشده';
+        const mode = String(rule.requirementMode || 'REQUIRED').toUpperCase();
+        if (mode === 'REFERENCE') return 'از پروژه مرجع تأمین می‌شود';
+        if (mode === 'NOT_REQUIRED') return 'برای این مرحله قابل ثبت نیست';
+        if (rule.satisfied) return 'قبلاً در این مرحله ثبت شده است';
+
+        const requiredIncomplete = rules.filter(function(item) {
+          return String(item.requirementMode || 'REQUIRED').toUpperCase() === 'REQUIRED' &&
+            !item.satisfied;
+        });
+        const sequenceMode = String(rule.sequenceMode || 'STRICT').toUpperCase();
+        if (sequenceMode === 'STRICT' && requiredIncomplete.some(function(item) {
+          return Number(item.eventOrder || 0) < Number(rule.eventOrder || 0);
+        })) return 'ابتدا رویدادهای اجباری قبلی را ثبت کنید';
+        if (sequenceMode === 'GROUPED') {
+          const firstPendingGroup = requiredIncomplete.reduce(function(minimum, item) {
+            return Math.min(minimum, Number(item.groupOrder || 0));
+          }, Infinity);
+          if (isFinite(firstPendingGroup) && Number(rule.groupOrder || 0) > firstPendingGroup) {
+            return 'ابتدا گروه قبلی گردش‌کار را تکمیل کنید';
+          }
+        }
+        return '';
+      }
+
+      this.eventTypes.forEach(function(type) {
+        const id = Events.idOf(type);
+        if (!id || String(type.Status || 'ACTIVE').toUpperCase() !== 'ACTIVE') return;
+        const isProjectEvent = String(type.ConnectionType || 'PROJECT').toUpperCase() !== 'INDEPENDENT';
+        if (isProjectEvent && !self.canAccessProjectOptions) return;
+        if (self.entryMode === 'project' && !isProjectEvent) return;
+        if (self.entryMode === 'independent' && isProjectEvent) return;
+
+        let reason = '';
+        if (isProjectEvent && isDraftProject &&
+            !(type.AllowOnDraft === true || String(type.AllowOnDraft).toLowerCase() === 'true')) {
+          reason = 'غیرمجاز برای پیش‌نویس';
+        } else {
+          reason = workflowRestriction(type);
+        }
+
+        const option = document.createElement('option');
+        option.value = id;
+        option.dataset.connectionType = isProjectEvent ? 'PROJECT' : 'INDEPENDENT';
+        option.dataset.allowOnDraft = String(type.AllowOnDraft === true || String(type.AllowOnDraft).toLowerCase() === 'true');
+        option.textContent = (type.Name || type.Code || id) + (reason ? ' — ' + reason : '');
+        option.disabled = !!reason;
+        (reason ? restricted : available).push(option);
+      });
+
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = 'انتخاب نوع رویداد';
+      const groups = [];
+      if (available.length) {
+        const group = document.createElement('optgroup');
+        group.label = progress && progress.configured
+          ? 'قابل ثبت در مرحله فعلی'
+          : 'انواع مجاز برای شما';
+        available.forEach(function(option) { group.appendChild(option); });
+        groups.push(group);
+      }
+      if (restricted.length) {
+        const group = document.createElement('optgroup');
+        group.label = 'سایر انواع و موارد غیرقابل ثبت';
+        restricted.forEach(function(option) { group.appendChild(option); });
+        groups.push(group);
+      }
+      typeSelect.replaceChildren(placeholder);
+      groups.forEach(function(group) { typeSelect.appendChild(group); });
+
+      const selected = previousValue
+        ? Array.from(typeSelect.options).find(function(option) {
+            return option.value === previousValue && !option.disabled;
+          })
+        : null;
+      if (selected) {
+        typeSelect.value = previousValue;
+      } else {
+        typeSelect.value = '';
+        if (previousValue) {
+          this.setAmendmentMode(false, projectId);
+          this.loadEventForms('');
+          this.renderEventQuantityField();
+        }
+      }
+      this.updateSubmitAvailability();
+    },
+
     loadWorkflowProgress: async function (projectId) {
       const section = document.getElementById('event-workflow-progress-section');
       const container = document.getElementById('event-workflow-progress');
       const requestId = ++this.workflowProgressRequestId;
+      const selectedProjectId = String(projectId || '');
       this.workflowProgress = null;
+      this.workflowProgressProjectId = selectedProjectId;
+      this.workflowProgressLoading = !!selectedProjectId;
+      this.workflowProgressError = false;
+      this.refreshEventTypeOptions();
       if (!section || !container) return;
-      if (!projectId) {
+      if (!selectedProjectId) {
         section.hidden = true;
         container.replaceChildren();
         return;
@@ -1300,11 +1401,14 @@
       section.hidden = false;
       container.textContent = 'در حال بررسی قواعد و پیشرفت مرحله...';
       try {
-        const response = await PMS.Api.get('/projects/' + encodeURIComponent(projectId) + '/workflow-progress');
+        const response = await PMS.Api.get('/projects/' + encodeURIComponent(selectedProjectId) + '/workflow-progress');
         if (requestId !== this.workflowProgressRequestId ||
             !document.getElementById('event-create-modal')) return;
         const data = PMS.Api.extractData(response) || {};
         this.workflowProgress = data;
+        this.workflowProgressLoading = false;
+        this.workflowProgressError = false;
+        this.refreshEventTypeOptions();
         container.replaceChildren();
         if (!data.configured) {
           section.hidden = true;
@@ -1313,26 +1417,39 @@
         const summary = document.createElement('p');
         summary.textContent = (data.stepName ? 'مرحله: ' + data.stepName + ' — ' : '') +
           (data.stageComplete ? 'تمام الزامات این مرحله تکمیل شده است.' :
-            'رویدادهای اجباری باقی‌مانده: ' + (data.remaining || []).filter(item =>
-              item.requirementMode === 'REQUIRED' || item.requirementMode === 'REFERENCE'
-            ).length);
+            'رویدادهای اجباری باقی‌مانده: ' + (data.remaining || []).filter(function(item) {
+              return item.requirementMode === 'REQUIRED' || item.requirementMode === 'REFERENCE';
+            }).length);
         container.appendChild(summary);
         const list = document.createElement('ul');
         list.style.margin = '8px 0 0';
         list.style.paddingInlineStart = '20px';
         (data.rules || []).forEach(function(rule) {
           const item = document.createElement('li');
+          const type = self.findById(self.eventTypes, rule.eventTypeId);
           const status = rule.satisfied ? 'تکمیل‌شده' :
             rule.requirementMode === 'OPTIONAL' ? 'اختیاری' :
             rule.requirementMode === 'REFERENCE' ? 'در انتظار اطلاعات مرجع' :
             rule.requirementMode === 'NOT_REQUIRED' ? 'غیرضروری' : 'باقی‌مانده';
-          item.textContent = (rule.eventTypeName || rule.eventTypeId) + ' — ' + status;
+          item.textContent = ((type && (type.Name || type.Code)) || rule.eventTypeId) + ' — ' + status;
           list.appendChild(item);
         });
         container.appendChild(list);
       } catch (error) {
         if (requestId !== this.workflowProgressRequestId) return;
-        container.textContent = 'وضعیت گردش‌کار دریافت نشد؛ کنترل نهایی هنگام ثبت رویداد در سرور انجام می‌شود.';
+        this.workflowProgressLoading = false;
+        this.workflowProgressError = true;
+        this.refreshEventTypeOptions();
+        container.replaceChildren();
+        const message = document.createElement('p');
+        message.textContent = 'قواعد گردش‌کار دریافت نشد؛ برای جلوگیری از انتخاب اشتباه، ثبت رویداد پروژه‌ای تا دریافت اطلاعات متوقف است.';
+        const retry = document.createElement('button');
+        retry.type = 'button';
+        retry.className = 'btn btn-secondary';
+        retry.textContent = 'تلاش مجدد';
+        retry.addEventListener('click', () => this.loadWorkflowProgress(selectedProjectId));
+        container.appendChild(message);
+        container.appendChild(retry);
       }
     },
 
@@ -1565,8 +1682,10 @@
       const typeInput = document.getElementById('event-form-type');
       const dateInput = document.getElementById('event-form-date');
 
+      const selectedOption = typeInput && typeInput.options[typeInput.selectedIndex];
       const typeSelected = Boolean(
-        typeInput && String(typeInput.value || '').trim()
+        typeInput && String(typeInput.value || '').trim() &&
+        selectedOption && !selectedOption.disabled
       );
       const selectedType = typeInput
         ? this.findById(this.eventTypes, typeInput.value)
