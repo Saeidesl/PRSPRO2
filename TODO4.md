@@ -42,8 +42,9 @@
   - `publish(workflowId, params)`: ثبت snapshot سیاست در `PublishedRepeatReferencePolicyJSON`.
 - `ProjectService.js`
   - `projectFormLookups(params)`: ارائه Workflowها و انواع اطلاعات برای فرم پروژه.
-  - `create(project, params)`: ایجاد پروژه از مسیر واحد `POST /projects` و اجرای کپی بر اساس سیاست Workflow؛ هرگونه override ارسالی کلاینت باید نادیده گرفته یا رد شود.
-  - خروجی فعلی `ReferenceCopySummary` خلاصه نهایی کپی است؛ برای نمایش پیشرفت واقعی باید قرارداد اجرای مرحله‌ای/وضعیت عملیات طراحی شود.
+  - `create(project, params)`: ایجاد پروژه از مسیر واحد `POST /projects`، ساخت `ReferenceCopyPlan` و ذخیره وضعیت عملیات در `08_Projects.ReferenceCopyStatusJSON`؛ کلید `ReferenceCopyOperationID` برای idempotency.
+  - `copyReferenceInformationType(projectId, typeId, params)`: اجرای مستقل هر نوع اطلاعات با Lock، tenant/access checks، snapshot سیاست پروژه، ثبت History/SyncLog و وضعیت قابل retry.
+  - پاسخ ایجاد شامل `ReferenceCopyPlan` و `ReferenceCopySummary` است؛ کپی هر نوع اطلاعات با درخواست جداگانه `POST /projects/:projectId/reference-copy/:typeId` انجام می‌شود.
 - `ProjectInformationService.js`: `save`, `_syncLiveReference_` و منطق همگام‌سازی زنده و تعارض‌ها.
 - `Router.js`
   - `GET /workflow-management/bootstrap`
@@ -51,15 +52,20 @@
   - `POST /workflows`
   - `PUT /workflows/:id`
   - `POST /projects`
+  - `POST /projects/:projectId/reference-copy/:typeId` → `ProjectService.copyReferenceInformationType`; فقط در `Router.post` قرار دارد و مجوز `PROJECT_EDIT` یا برای سازنده پروژه، `PROJECT_CREATE` را کنترل می‌کند.
   - `GET /project-form/lookups`
   - حفظ همین مسیر واحد ایجاد پروژه؛ endpoint موازی برای ایجاد پروژه ممنوع.
+- `DatabaseSetup.js`: `setupDatabase()` پس از ایجاد شیت‌ها، `ensureProjectReferenceCopySchema_(ss)` را اجرا می‌کند و سه ستون `ReferenceCopyStatusJSON`, `ReferenceCopyCompletedAt`, `ReferenceCopyOperationID` را به‌صورت افزایشی به `08_Projects` اضافه می‌کند.
 - `WorkflowRepository.js`, `ProjectRepository.js`, `ProjectInformationRepository.js`, `InformationTypeRepository.js`: مخازن موجود برای Workflow، پروژه و اطلاعات مرکزی.
+- `tests/project-repeat-reference-copy.test.js`: آزمون برنامه کپی، کپی تک‌نوعی، idempotency، همگام‌سازی زنده، سیاست Workflow و قرارداد route کپی.
 - انتشار آزمایشی: `.github/workflows/deploy-pages-staging.yml` برای فرانت‌اند و `.github/workflows/sync-apps-script-staging.yml` برای بک‌اند.
 
 ### قرارداد نمایش پیشرفت
 - نوار/پنجره پیشرفت باید پس از کلیک ثبت، مرحله جاری را با متن روشن نشان دهد: اعتبارسنجی اطلاعات پروژه، ایجاد پروژه، بررسی سیاست Workflow، کپی هر نوع اطلاعات منتخب، ثبت تاریخچه/همگام‌سازی، و تکمیل.
 - برای هر نوع اطلاعات نام آن و وضعیت واقعی (در انتظار، در حال پردازش، کپی شد، مستقل/رد شد، فایل قابل انتقال نبود، خطا) نمایش داده شود.
 - صرفاً تغییر متن یا درصد ساختگی مجاز نیست. قرارداد API باید طوری طراحی شود که وضعیت هر مرحله/نوع اطلاعات از عملیات واقعی Backend قابل دریافت باشد. با توجه به غیرقابل‌stream بودن پاسخ معمول Apps Script، راهکار باید مبتنی بر اجرای مرحله‌ای یا شناسه عملیات و polling وضعیت باشد و از ایجاد پروژه/کپی نیمه‌کاره و تکراری جلوگیری کند.
+- وضعیت‌های هر نوع اطلاعات: `PENDING`, `FAILED`, `COPIED`, `INDEPENDENT`, `EMPTY`, `SKIPPED_FILE`, `PROCESSING`؛ retry فقط نوع‌های ناموفق/در انتظار را روی همان پروژه ادامه می‌دهد.
+- Frontend در `js/modules/projects.js` با `renderReferenceCopyProgress(items)` وضعیت واقعی هر نوع را نمایش می‌دهد و درخواست‌ها را ترتیبی از مسیر `PMS.Api.post` می‌فرستد؛ `ReferenceCopyOperationID` در درخواست ایجاد پروژه از ثبت تکراری جلوگیری می‌کند.
 - تمام endpointها tenant-scoped، permission-checked و idempotent باشند؛ خطا و امکان retry باید بدون ایجاد پروژه تکراری مدیریت شود.
 
 ## 📋 Macro-Task Queue & Implementation Log
