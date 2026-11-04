@@ -1,80 +1,54 @@
 ## 🎯 Current Objective
 
-یکپارچه‌سازی کامل سیاست کپی اطلاعات پروژه تکراری در سطح Workflow؛ حذف هرگونه انتخاب/تغییر سیاست در فرم ایجاد پروژه؛ نمایش روند واقعی و مرحله‌به‌مرحله کپی اطلاعات هنگام ثبت پروژه تکراری؛ و افزودن امکان ویرایش سیاست کپی در Workflowهای موجود، بدون بازنویسی اطلاعات پروژه‌های قبلی.
+افزودن بخش مستقل «اطلاعات مرکزی پروژه» به صفحه جزئیات پروژه تا مقادیر جاری ذخیره‌شده در اطلاعات مرکزی (از جمله موارد کپی‌شده از پروژه مرجع) در کنار اما جدا از «فرم‌های ثبت‌شده پروژه» نمایش داده شوند؛ با حفظ ویرایش، تاریخچه، پیوست‌ها و نمایش صحیح داده‌های تک‌مقداری و چندردیفی.
 
 ## 🗺️ Technical Spec & Architecture Map (DO NOT DELETE)
 
-### مخازن و شاخه مجاز
-- Frontend: `Saeidesl/PRSPRO2`، شاخه فعال `main`.
-- Backend: `Saeidesl/PRSPRO2BACKEND`، شاخه فعال `main`.
-- شاخه کاری فعال و مقصد انتشار: `main`؛ از این مرحله به بعد تغییرات فقط روی `main` ثبت شوند.
-- Workspace قبلی همین شاخه خوانده شد؛ Task 2 قبلی هنوز به تأیید کاربر نرسیده بود. کاربر در تست اعلام کرد کپی موفق نبوده و دامنه فعلی جایگزین برنامه قبلی شد.
+### مخازن و شاخه فعال
+- Frontend: `Saeidesl/PRSPRO2`، شاخه `main`.
+- Backend: `Saeidesl/PRSPRO2BACKEND`، شاخه `main`.
+- تغییرات این فاز فقط روی `main` انجام می‌شود.
 
-### مدل داده و سیاست مرجع
-- اطلاعات مرکزی در شیت‌های `28_InformationTypes`, `29_InformationTypeColumns`, `30_ProjectInformation`, `31_ProjectInformationHistory` نگهداری می‌شود.
-- سیاست Workflow در فیلدهای `RepeatReferencePolicyJSON` و نسخه منتشرشده `PublishedRepeatReferencePolicyJSON` ذخیره می‌شود.
-- مقادیر معتبر: `INITIAL_COPY`, `LIVE_SYNC`, `INDEPENDENT`.
-- تصمیم محصول جدید: سیاست فقط در تنظیمات خود Workflow تعیین می‌شود. فرم ایجاد پروژه تکراری نباید کنترل override داشته باشد و payload آن نباید `ReferencePolicyJSON` قابل انتخاب از کاربر ارسال کند.
-- Backend باید فقط سیاست معتبر نسخه Workflow را مبنای ایجاد و کپی قرار دهد؛ هر override ارسالی از کلاینت نباید سیاست Workflow را تغییر دهد.
-- تغییر سیاست Workflow از زمان ثبت نسخه جدید/ذخیره‌شده برای پروژه‌های تکراری بعدی اعمال می‌شود؛ داده پروژه‌های قبلی و سیاست ثبت‌شده آن‌ها نباید خودکار بازنویسی شود.
-- فایل/تصویر فقط در صورت انتقال امن خود فایل و اصلاح ارجاع‌ها کپی شود؛ در غیر این صورت در گزارش روند به‌عنوان مورد قابل‌انتقال‌نبودن نمایش داده شود.
+### مدل داده و API موجود
+- تعاریف اطلاعات مرکزی: شیت‌های `28_InformationTypes` و `29_InformationTypeColumns`.
+- مقادیر جاری هر پروژه: شیت `30_ProjectInformation`، فیلد `ValueJSON`.
+- تاریخچه تغییرات: شیت `31_ProjectInformationHistory`.
+- Backend در `ProjectInformationService.js`:
+  - `list(projectId, params)`: همه انواع اطلاعات فعال Tenant را همراه با مقدار جاری، تعریف نوع اطلاعات و ستون‌ها برمی‌گرداند؛ برای نوع بدون مقدار رکورد EMPTY برمی‌گرداند.
+  - `get(projectId, typeId, params)`, `save(...)`, `history(...)`, `deactivate(...)`: APIهای موجود برای مشاهده، ذخیره، تاریخچه و حذف منطقی.
+- `Router.js`: مسیر موجود `GET /projects/:projectId/information` با مجوز `PROJECT_VIEW` به `ProjectInformationService.list` متصل است؛ مسیرهای جزئیات، تاریخچه و ذخیره نیز موجودند. در این فاز مسیر موازی یا API تکراری ایجاد نشود.
 
-### Frontend — فایل‌ها و نقاط اتصال
-- `js/modules/workflows.js`
-  - `loadWorkflows()`: بارگذاری `/workflow-management/bootstrap` شامل Workflowها، انواع رویداد و انواع اطلاعات.
-  - `render()`: نمایش فهرست Workflowها.
-  - `showCreateWorkflowModal()`: فرم ایجاد Workflow و تنظیمات سیاست.
-  - باید مسیر ویرایش Workflow موجود به همان فرم/کامپوننت متصل شود و سیاست‌های هر نوع اطلاعات قابل تغییر و ذخیره باشند.
-  - API ذخیره: `POST /workflows` برای ایجاد و `PUT /workflows/:id` برای ویرایش.
-- `pages/workflows.html`: ساختار صفحه مدیریت Workflow و محل کنترل فهرست/فرم.
-- `js/modules/projects.js`
-  - `Projects.openCreateForm(project, options)`: فرم موجود ایجاد پروژه.
-  - بخش فعلی `[data-reference-override]` و هر UI انتخاب سیاست از فرم ایجاد/ویرایش پروژه باید حذف شود.
-  - `createProject(modal)`: مسیر موجود `POST /projects`؛ payload باید فقط شناسه Workflow و پروژه مرجع را بفرستد، نه سیاست انتخاب‌شده کاربر.
-  - پس از submit باید وضعیت پیشرفت واقعی و مرحله‌ای را به کاربر نمایش دهد، شامل نام هر نوع اطلاعاتی که طبق سیاست Workflow در حال کپی/رد شدن است.
-- `index.html`: cache-busting ماژول‌های تغییرکرده.
+### Frontend — صفحه جزئیات پروژه
+- `pages/project-detail.html`:
+  - بخش `project-forms-list` فقط پاسخ فرم‌های متصل به رویداد را نمایش می‌دهد.
+  - بخش `project-information-list` در HTML وجود ندارد؛ آزمون فعلی نیز صراحتاً نبود آن را assert می‌کند. این حذف علت قطعی نبود پنل اطلاعات مرکزی است.
+  - باید کارت مستقل «اطلاعات مرکزی پروژه» با شمارنده، حالت بارگذاری/خطا/خالی و دکمه تازه‌سازی اضافه شود؛ این کارت از کارت «فرم‌های ثبت‌شده پروژه» جدا بماند.
+- `js/modules/project-detail.js`:
+  - state موجود: `projectInformation`.
+  - `loadProjectInformation(forceRefresh)`: از API موجود `GET /projects/:id/information` داده‌ها را دریافت و `renderProjectInformation()` را اجرا می‌کند.
+  - `renderProjectInformation()`: رندر مقادیر scalar و جدول‌های SINGLE/MULTIPLE را پشتیبانی می‌کند.
+  - `openProjectInformationForm(record)`: ویرایش مقدار از API موجود `POST /projects/:id/information/:typeId`.
+  - `openProjectInformationHistory(record)`: تاریخچه از `GET /projects/:id/information/:typeId/history`.
+  - `renderInformationValue` و `openInformationAttachment`: نمایش و دریافت پیوست‌های اطلاعات مرکزی.
+  - مشکل فعلی: `loadProjectInformation()` در جریان `init/load` فراخوانی نمی‌شود و container مورد انتظار آن در صفحه وجود ندارد؛ بنابراین کد رندر قدیمی عملاً هیچ UI قابل‌نمایشی ندارد.
+  - `loadProjectForms()` و `renderProjectForms()` فقط پاسخ فرم‌های رویدادمحور را نمایش می‌دهند و جایگزین اطلاعات مرکزی نیستند.
+- `index.html`: پس از تغییر ماژول، cache-busting اسکریپت `project-detail.js` به‌روز شود.
+- CSS موجود صفحه/ماژول باید با جست‌وجوی کلاس‌های `project-information` و `project-forms` شناسایی و همان ساختار طراحی توسعه یابد؛ فایل CSS موازی غیرضروری ایجاد نشود.
 
-### Backend — فایل‌ها و APIها
-- `WorkflowService.js`
-  - `managementBootstrap(params)`: ارائه Workflowها و انواع اطلاعات برای صفحه مدیریت.
-  - `create(data, params)`: اعتبارسنجی و ذخیره سیاست در `RepeatReferencePolicyJSON`.
-  - `update(id, data, params)`: پشتیبانی از تغییر سیاست Workflow موجود؛ اعتبارسنجی باید علاوه بر enum، تعلق هر InformationType به Tenant و فعال‌بودن آن را کنترل کند.
-  - `publish(workflowId, params)`: ثبت snapshot سیاست در `PublishedRepeatReferencePolicyJSON`.
-- `ProjectService.js`
-  - `projectFormLookups(params)`: ارائه Workflowها و انواع اطلاعات برای فرم پروژه.
-  - `create(project, params)`: ایجاد پروژه از مسیر واحد `POST /projects`، ساخت `ReferenceCopyPlan` و ذخیره وضعیت عملیات در `08_Projects.ReferenceCopyStatusJSON`؛ کلید `ReferenceCopyOperationID` برای idempotency.
-  - `copyReferenceInformationType(projectId, typeId, params)`: اجرای مستقل هر نوع اطلاعات با Lock، tenant/access checks، snapshot سیاست پروژه، ثبت History/SyncLog و وضعیت قابل retry.
-  - پاسخ ایجاد شامل `ReferenceCopyPlan` و `ReferenceCopySummary` است؛ کپی هر نوع اطلاعات با درخواست جداگانه `POST /projects/:projectId/reference-copy/:typeId` انجام می‌شود.
-- `ProjectInformationService.js`: `save`, `_syncLiveReference_` و منطق همگام‌سازی زنده و تعارض‌ها.
-- `Router.js`
-  - `GET /workflow-management/bootstrap`
-  - `GET /workflows`
-  - `POST /workflows`
-  - `PUT /workflows/:id`
-  - `POST /projects`
-  - `POST /projects/:projectId/reference-copy/:typeId` → `ProjectService.copyReferenceInformationType`; فقط در `Router.post` قرار دارد و مجوز `PROJECT_EDIT` یا برای سازنده پروژه، `PROJECT_CREATE` را کنترل می‌کند.
-  - `GET /project-form/lookups`
-  - حفظ همین مسیر واحد ایجاد پروژه؛ endpoint موازی برای ایجاد پروژه ممنوع.
-- `DatabaseSetup.js`: `setupDatabase()` پس از ایجاد شیت‌ها، `ensureProjectReferenceCopySchema_(ss)` را اجرا می‌کند و سه ستون `ReferenceCopyStatusJSON`, `ReferenceCopyCompletedAt`, `ReferenceCopyOperationID` را به‌صورت افزایشی به `08_Projects` اضافه می‌کند.
-- `WorkflowRepository.js`, `ProjectRepository.js`, `ProjectInformationRepository.js`, `InformationTypeRepository.js`: مخازن موجود برای Workflow، پروژه و اطلاعات مرکزی.
-- `tests/project-repeat-reference-copy.test.js`: آزمون برنامه کپی، کپی تک‌نوعی، idempotency، همگام‌سازی زنده، سیاست Workflow و قرارداد route کپی.
-- انتشار آزمایشی: `.github/workflows/deploy-pages-staging.yml` برای فرانت‌اند و `.github/workflows/sync-apps-script-staging.yml` برای بک‌اند.
-
-### قرارداد نمایش پیشرفت
-- نوار/پنجره پیشرفت باید پس از کلیک ثبت، مرحله جاری را با متن روشن نشان دهد: اعتبارسنجی اطلاعات پروژه، ایجاد پروژه، بررسی سیاست Workflow، کپی هر نوع اطلاعات منتخب، ثبت تاریخچه/همگام‌سازی، و تکمیل.
-- برای هر نوع اطلاعات نام آن و وضعیت واقعی (در انتظار، در حال پردازش، کپی شد، مستقل/رد شد، فایل قابل انتقال نبود، خطا) نمایش داده شود.
-- صرفاً تغییر متن یا درصد ساختگی مجاز نیست. قرارداد API باید طوری طراحی شود که وضعیت هر مرحله/نوع اطلاعات از عملیات واقعی Backend قابل دریافت باشد. با توجه به غیرقابل‌stream بودن پاسخ معمول Apps Script، راهکار باید مبتنی بر اجرای مرحله‌ای یا شناسه عملیات و polling وضعیت باشد و از ایجاد پروژه/کپی نیمه‌کاره و تکراری جلوگیری کند.
-- وضعیت‌های هر نوع اطلاعات: `PENDING`, `FAILED`, `COPIED`, `INDEPENDENT`, `EMPTY`, `SKIPPED_FILE`, `PROCESSING`؛ retry فقط نوع‌های ناموفق/در انتظار را روی همان پروژه ادامه می‌دهد.
-- Frontend در `js/modules/projects.js` با `renderReferenceCopyProgress(items)` وضعیت واقعی هر نوع را نمایش می‌دهد و درخواست‌ها را ترتیبی از مسیر `PMS.Api.post` می‌فرستد؛ `ReferenceCopyOperationID` در درخواست ایجاد پروژه از ثبت تکراری جلوگیری می‌کند.
-- تمام endpointها tenant-scoped، permission-checked و idempotent باشند؛ خطا و امکان retry باید بدون ایجاد پروژه تکراری مدیریت شود.
+### آزمون‌ها و قواعد محصول
+- `tests/project-information-dossier.test.js` اکنون اشتباهاً نبود `project-information-list` را الزام می‌کند؛ آزمون باید به قرارداد جدید دو بخش مستقل تغییر کند.
+- آزمون‌ها باید وجود کارت اطلاعات مرکزی، اتصال آن به `loadProjectInformation`، استفاده از API موجود، نمایش مقادیر کپی‌شده، ردیف‌های چندمقداری، حالت خالی/خطا، و حفظ فرم‌های ثبت‌شده را پوشش دهند.
+- اطلاعات مرکزی و پاسخ فرم‌های رویدادمحور دو مجموعه داده متفاوت‌اند؛ هیچ‌کدام نباید از دیگری استخراج یا جایگزین شود.
+- پروژه‌های تکراری باید مقادیر کپی‌شده را از `30_ProjectInformation` مقصد نمایش دهند؛ UI نباید برای نمایش آن‌ها به فرم/رویداد جدید وابسته باشد.
+- دسترسی‌ها و کنترل Tenant سمت Backend حفظ شوند؛ ویرایش فقط با مجوز `PROJECT_EDIT` و پیوست فقط با مجوزهای موجود.
 
 ## 📋 Macro-Task Queue & Implementation Log
 
-- [x] **تسک ۱ — کشف وضعیت موجود و طراحی دامنه اصلاح**
-  - *Log:* ابتدا `TODO4.md` قبلی خوانده شد؛ Task 2 قبلی هنوز منتظر تست کاربر بود. سپس `ARCHITECTURE.md`، `js/modules/workflows.js`، `js/modules/projects.js`، `pages/workflows.html` (ساختار در مرحله پیاده‌سازی تکمیل می‌شود)، `ProjectService.js`، `WorkflowService.js` و `Router.js` در شاخه مجاز بررسی شدند. مشخص شد فرم پروژه هنوز `ReferencePolicyJSON` را از کنترل‌های `[data-reference-override]` ارسال می‌کند و Backend آن را روی سیاست Workflow merge می‌کند؛ در نتیجه دو منبع تصمیم وجود دارد. Backend از قبل `WorkflowService.update` و `PUT /workflows/:id` را برای ذخیره سیاست پشتیبانی می‌کند، اما رابط ویرایش در صفحه Workflow باید به آن متصل شود. مسیر کپی در `ProjectService.create` یک درخواست هم‌زمان است و پاسخ معمول Apps Script امکان گزارش زنده میان مراحل را ندارد؛ بنابراین برای نمایش واقعی و جزءبه‌جزء باید قرارداد عملیات مرحله‌ای/وضعیت عملیات طراحی و با کنترل idempotency اجرا شود. هیچ کد اجرایی در این مرحله تغییر نکرده است.
-- [ ] **تسک ۲ — تک‌منبعی‌کردن سیاست کپی و افزودن ویرایش Workflow (IN PROGRESS)**
-  - حذف overrideهای سیاست از فرم پروژه و payload؛ enforce کردن سیاست Workflow در Backend؛ تکمیل ویرایش Workflowهای موجود با کنترل سیاست هر نوع اطلاعات؛ اعتبارسنجی Tenant/نوع اطلاعات و حفظ نسخه‌بندی/انتشار.
-- [ ] **تسک ۳ — نمایش پیشرفت واقعی و جزئیات کپی پروژه تکراری**
-  - طراحی و پیاده‌سازی عملیات قابل‌پیگیری و idempotent برای ایجاد/کپی؛ نمایش مرحله و نوع اطلاعات در حال پردازش و نتیجه هر مورد در فرم پروژه؛ مدیریت خطا و retry بدون رکورد تکراری.
-- [ ] **تسک ۴ — آزمون یکپارچه، انتشار staging و تحویل**
-  - تست Workflowهای موجود/جدید، تغییر سیاست، سیاست منتشرشده، INITIAL_COPY/LIVE_SYNC/INDEPENDENT، داده‌های چندردیفی، خطا/تلاش مجدد، عدم تغییر پروژه‌های قبلی؛ اجرای تست‌ها و انتشار هر دو مخزن فقط در staging.
+- [x] **تسک ۱ — کشف علت و نقشه اتصال اطلاعات مرکزی در صفحه پروژه**
+  - *Log:* هر دو `TODO4.md` و `ARCHITECTURE.md` خوانده شدند. در Frontend مشخص شد `pages/project-detail.html` فقط کارت «فرم‌های ثبت‌شده پروژه» را دارد و container با شناسه `project-information-list` کاملاً حذف شده است؛ آزمون `tests/project-information-dossier.test.js` نیز همین حذف را به‌اشتباه الزام می‌کند. در `js/modules/project-detail.js` توابع `loadProjectInformation`, `renderProjectInformation`, `openProjectInformationForm` و `openProjectInformationHistory` هنوز وجود دارند اما container ندارند و `loadProjectInformation` در چرخه بارگذاری صفحه فراخوانی نمی‌شود. Backend از قبل `GET /projects/:projectId/information` را در `Router.js` و `ProjectInformationService.list` پیاده‌سازی کرده و مقدار جاری، تعریف نوع اطلاعات و ستون‌ها را برمی‌گرداند؛ بنابراین علت اصلی در UI و اتصال Frontend است، نه در عملیات کپی یا ذخیره‌سازی. تصمیم: کارت مستقل اطلاعات مرکزی بازگردانده/ساخته شود و کارت فرم‌های رویدادمحور دست‌نخورده باقی بماند؛ API جدید یا مسیر موازی لازم نیست.
+- [ ] **تسک ۲ — ساخت و اتصال پنل مستقل اطلاعات مرکزی (IN PROGRESS)**
+  - افزودن کارت و container اطلاعات مرکزی در صفحه جزئیات؛ فراخوانی امن و هم‌زمان `loadProjectInformation` با بارگذاری پروژه؛ اتصال تازه‌سازی، حالت‌های بارگذاری/خطا/خالی؛ حفظ نمایش مقادیر scalar، جدول‌های چندردیفی، پیوست‌ها، ویرایش و تاریخچه.
+- [ ] **تسک ۳ — اصلاح آزمون‌ها و تثبیت تجربه نمایش**
+  - بازنویسی قرارداد قدیمی حذف پنل در `tests/project-information-dossier.test.js`؛ افزودن تست‌های تفکیک دو بخش، بارگذاری اطلاعات مرکزی مستقل از رویداد، داده‌های کپی‌شده و چندردیفی؛ اصلاح cache-busting و بررسی ریسپانسیو/تم‌ها.
+- [ ] **تسک ۴ — اعتبارسنجی نهایی و انتشار**
+  - اجرای تست‌های فرانت‌اند و QA بین‌مخزنی، بررسی CI و انتشار روی main؛ سپس تحویل برای تست کاربر در صفحه جزئیات پروژه.
