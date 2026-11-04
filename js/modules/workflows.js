@@ -338,8 +338,12 @@
     const isEdit = !!existingWorkflow;
     let existingPolicies = {};
     try {
-      const raw = existingWorkflow && (existingWorkflow.PublishedRepeatReferencePolicyJSON || existingWorkflow.RepeatReferencePolicyJSON);
+      let raw = existingWorkflow && existingWorkflow.RepeatReferencePolicyJSON;
       existingPolicies = typeof raw === 'string' ? JSON.parse(raw || '{}') : (raw || {});
+      if (!Object.keys(existingPolicies).length) {
+        raw = existingWorkflow && existingWorkflow.PublishedRepeatReferencePolicyJSON;
+        existingPolicies = typeof raw === 'string' ? JSON.parse(raw || '{}') : (raw || {});
+      }
     } catch (error) { existingPolicies = {}; }
     openModal({
       title: isEdit ? 'ویرایش فرآیند' : 'ایجاد فرآیند جدید',
