@@ -63,3 +63,12 @@ test('central information loading supports retry and ignores stale responses', (
   assert.match(moduleSource, /requestVersion !== this\.projectInformationLoadVersion/);
   assert.match(moduleSource, /project-information-count/);
 });
+
+test('central information value renderer uses the supplied data type without undefined references', () => {
+  const moduleSource = fs.readFileSync(path.join(root, 'js/modules/project-detail.js'), 'utf8');
+  const start = moduleSource.indexOf('renderInformationValue: function');
+  const end = moduleSource.indexOf('openInformationAttachment: async function', start);
+  const renderer = moduleSource.slice(start, end);
+  assert.match(renderer, /renderPrintDesignerValue\\(value, dataType\\)/);
+  assert.doesNotMatch(renderer, /info\\.DataType|field\\.DataType/);
+});
