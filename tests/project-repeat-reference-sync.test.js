@@ -65,4 +65,6 @@ test('repeat project copy progress is real, per information type, and resumable'
 test('reference copy retries items previously marked SKIPPED_FILE', () => {
   const projects = fs.readFileSync(path.join(root, 'js/modules/projects.js'), 'utf8');
   assert.ok(projects.includes("['PENDING', 'FAILED', 'SKIPPED_FILE']"));
+  assert.ok(projects.includes('موارد فایل غیرتصویری خارج از محدوده انتقال'));
+  assert.ok(!projects.includes('انتقال امن فایل هنوز پشتیبانی نمی‌شود'));
 });
