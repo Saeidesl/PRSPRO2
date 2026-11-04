@@ -18,6 +18,7 @@
     canCreateEvents: false,
     canAccessProjectOptions: false,
     formDefinitions: [],
+    formMode: 'quick',
     formsReady: true,
     formsRequestId: 0,
     modalOpen: false,
@@ -1098,6 +1099,7 @@
 
       this.modalOpen = true;
       this.formDefinitions = [];
+      this.formMode = 'quick';
       this.formsReady = true;
       this.formsRequestId++;
       this.eventFormsLoading = false;
@@ -1140,7 +1142,10 @@
         '<div hidden aria-hidden="true"><select id="event-amendment-source-event"></select><select id="event-amendment-source-form"></select></div></section>' +
         '<section class="event-form-section" id="event-quantity-section" hidden><h4 class="event-section-title">مقدار تولید/تحویل</h4>' +
         '<div id="event-quantity-field" class="event-dynamic-grid"></div></section>' +
-        '<section class="event-form-section" id="event-configured-forms-section" hidden><h4 class="event-section-title">فرم‌های اطلاعات تکمیلی</h4>' +
+        '<section class="event-form-section" id="event-configured-forms-section" hidden><div class="event-configured-forms-heading"><h4 class="event-section-title">فرم‌های اطلاعات تکمیلی</h4>' +
+        '<div class="event-form-mode" role="group" aria-label="حالت نمایش فرم"><button type="button" class="event-form-mode-button is-active" data-form-mode="quick" aria-pressed="true">ثبت سریع</button>' +
+        '<button type="button" class="event-form-mode-button" data-form-mode="full" aria-pressed="false">ثبت کامل</button></div></div>' +
+        '<p id="event-form-mode-help" class="event-form-mode-help">فیلدهای ضروری نمایش داده می‌شوند؛ اطلاعات فیلدهای اختیاری حفظ می‌شود.</p>' +
         '<div id="event-configured-forms" class="event-dynamic-grid" aria-live="polite"></div></section>' +
         '<div id="event-submit-progress" class="event-submit-progress" hidden role="status" aria-live="polite">' +
         '<span class="event-spinner" aria-hidden="true"></span><div><strong>در حال ثبت رویداد</strong>' +
@@ -1152,6 +1157,11 @@
         '</div></form></div>';
 
       document.body.appendChild(modal);
+      modal.addEventListener('click', (event) => {
+        const modeButton = event.target.closest('[data-form-mode]');
+        if (!modeButton || !modal.contains(modeButton)) return;
+        this.updateFormMode(modeButton.dataset.formMode);
+      });
 
       const projectSelect = document.getElementById('event-form-project');
       const typeSelect = document.getElementById('event-form-type');
