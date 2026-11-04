@@ -33,9 +33,17 @@ test('staging deployment publishes the current feature frontend without changing
 });
 
 
-test('repeat project form applies workflow reference policies as defaults and allows project overrides', () => {
+test('repeat project form does not expose or submit project-level reference policy overrides', () => {
   const projects = fs.readFileSync(path.join(root, 'js/modules/projects.js'), 'utf8');
-  assert.match(projects, /selectedWorkflow\.PublishedRepeatReferencePolicyJSON \|\| selectedWorkflow\.RepeatReferencePolicyJSON/);
-  assert.match(projects, /savedPolicies\[typeId\] \|\| workflowPolicies\[typeId\]/);
-  assert.match(projects, /workflowSelect\.addEventListener\('change', syncReferenceVisibility\)/);
+  assert.doesNotMatch(projects, /data-reference-override/);
+  assert.doesNotMatch(projects, /ReferencePolicyJSON:\s*Array\.from/);
+  assert.match(projects, /انتقال اطلاعات فقط طبق سیاست تعریف‌شده در Workflow انجام می‌شود/);
+});
+
+test('workflow management supports editing reference-copy policy on existing workflows', () => {
+  const workflows = fs.readFileSync(path.join(root, 'js/modules/workflows.js'), 'utf8');
+  assert.match(workflows, /data-action="edit-workflow"/);
+  assert.match(workflows, /showCreateWorkflowModal\(workflow\)/);
+  assert.match(workflows, /PMS\.Api\.put\('\/workflows\/'/);
+  assert.match(workflows, /RepeatReferencePolicyJSON:/);
 });
