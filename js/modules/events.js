@@ -1343,6 +1343,26 @@
         (reason ? restricted : available).push(option);
       });
 
+      if (progress && progress.configured) {
+        const rules = Array.isArray(progress.rules) ? progress.rules : [];
+        const ruleFor = function(option) {
+          return rules.find(function(rule) {
+            return String(rule.eventTypeId || '') === String(option.value || '');
+          }) || {};
+        };
+        available.sort(function(a, b) {
+          const ruleA = ruleFor(a);
+          const ruleB = ruleFor(b);
+          const grouped = String(ruleA.sequenceMode || 'STRICT').toUpperCase() === 'GROUPED' ||
+            String(ruleB.sequenceMode || 'STRICT').toUpperCase() === 'GROUPED';
+          if (grouped) {
+            const groupDifference = Number(ruleA.groupOrder || 0) - Number(ruleB.groupOrder || 0);
+            if (groupDifference) return groupDifference;
+          }
+          return Number(ruleA.eventOrder || 0) - Number(ruleB.eventOrder || 0);
+        });
+      }
+
       const placeholder = document.createElement('option');
       placeholder.value = '';
       placeholder.textContent = 'انتخاب نوع رویداد';
@@ -1426,7 +1446,7 @@
         list.style.paddingInlineStart = '20px';
         (data.rules || []).forEach(function(rule) {
           const item = document.createElement('li');
-          const type = self.findById(self.eventTypes, rule.eventTypeId);
+          const type = Events.findById(Events.eventTypes, rule.eventTypeId);
           const status = rule.satisfied ? 'تکمیل‌شده' :
             rule.requirementMode === 'OPTIONAL' ? 'اختیاری' :
             rule.requirementMode === 'REFERENCE' ? 'در انتظار اطلاعات مرجع' :
