@@ -362,7 +362,7 @@
     sanitizeImportedHtml: function (html) {
       const parser = new DOMParser();
       const documentNode = parser.parseFromString(String(html || ''), 'text/html');
-      const allowed = new Set(['P','DIV','SECTION','ARTICLE','BR','STRONG','B','EM','I','U','S','SPAN','H1','H2','H3','H4','UL','OL','LI','TABLE','THEAD','TBODY','TFOOT','TR','TH','TD','IMG','BLOCKQUOTE']);
+      const allowed = new Set(['P','DIV','SECTION','ARTICLE','BR','STRONG','B','EM','I','U','S','SPAN','H1','H2','H3','H4','UL','OL','LI','TABLE','COLGROUP','COL','THEAD','TBODY','TFOOT','TR','TH','TD','IMG','BLOCKQUOTE']);
       const styleProperties = new Set(['color','background-color','font-family','font-size','font-weight','font-style','text-decoration','text-align','direction','width','height','min-width','max-width','min-height','border','border-top','border-right','border-bottom','border-left','border-color','border-style','border-width','border-collapse','padding','padding-left','padding-right','padding-top','padding-bottom','vertical-align','margin','margin-left','margin-right','margin-top','margin-bottom','line-height','text-indent','white-space','display','box-sizing','list-style-type','table-layout']);
       Array.from(documentNode.body.querySelectorAll('*')).forEach(node => {
         if (!allowed.has(node.tagName)) { node.replaceWith(...Array.from(node.childNodes)); return; }
@@ -382,7 +382,7 @@
             if (classes.length) node.setAttribute('class', classes.join(' ')); else node.removeAttribute('class');
           } else if (node.tagName === 'IMG' && name === 'src') {
             if (!/^data:image\\/(png|jpe?g|gif|webp);base64,[a-z0-9+/=]+$/i.test(attribute.value)) node.removeAttribute(name);
-          } else if (!((node.tagName === 'IMG' && name === 'alt') || ((node.tagName === 'TH' || node.tagName === 'TD') && ['colspan','rowspan','width'].includes(name)))) node.removeAttribute(name);
+          } else if (!((node.tagName === 'IMG' && name === 'alt') || ((node.tagName === 'TH' || node.tagName === 'TD') && ['colspan','rowspan','width','span'].includes(name)))) node.removeAttribute(name);
         });
       });
       return documentNode.body.innerHTML;
@@ -411,7 +411,7 @@
       const host = document.createElement('div'), styleHost = document.createElement('div');
       await window.docx.renderAsync(await file.arrayBuffer(), host, styleHost, {
         className: 'docx', inWrapper: true, ignoreWidth: false, ignoreHeight: false,
-        ignoreFonts: false, breakPages: true, renderHeaders: true, renderFooters: true,
+        ignoreFonts: false, breakPages: true, ignoreLastRenderedPageBreak: false, renderHeaders: true, renderFooters: true,
         renderFootnotes: true, renderEndnotes: true, useBase64URL: true
       });
       const html = this.sanitizeImportedHtml(host.innerHTML);
