@@ -209,7 +209,7 @@
     getRichTextEditor: function () {
       const item = this.getSelectedOrById(this.selectedElementId);
       if (!item || item.type !== 'richtext') return null;
-      return document.querySelector('[data-pt-richtext="' + CSS.escape(String(item.id)) + '"]');
+      return Array.from(document.querySelectorAll('[data-pt-richtext]')).find(editor => editor.dataset.ptRichtext === String(item.id)) || null;
     },
     formatSelectedText: function (command) {
       const editor = this.getRichTextEditor();
@@ -385,7 +385,7 @@
             (item.columns || []).map(col => '<th>' + this.esc(col) + '</th>').join('') + '</tr></thead><tbody>' +
             (item.rows || []).map(row => '<tr>' + row.map(cell => '<td>' + this.esc(cell) + '</td>').join('') + '</tr>').join('') +
             '</tbody></table>' : this.esc(item.text || '')))));
-        return '<div class="pt-canvas-element/ pt-element-' + this.esc(item.type) + selected + '" data-pt-element="' + this.esc(item.id) +
+        return '<div class="pt-canvas-element pt-element-' + this.esc(item.type) + selected + '" data-pt-element="' + this.esc(item.id) +
           '" style="' + style + '"><div class="pt-element-content">' + label + '</div>' +
           (selected ? '<button type="button" data-pt-resize aria-label="تغییر اندازه"></button>' : '') + '</div>';
       }).join('') : '<div class="pt-canvas-empty">برای شروع، از نوار ابزار یک المان اضافه کن.</div>';
