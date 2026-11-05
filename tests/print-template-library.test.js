@@ -166,7 +166,7 @@ test('print output hides image helper copy and uses exact page size without forc
 test('print output assets use refreshed cache keys for the current print fixes',()=>{
  const index=read('index.html');
  assert.match(index,/css\/print-template-library\.css\?v=20261105-print-data-init-2/);
- assert.match(index,/js\/modules\/print-designer\.js\?v=20261105-print-data-init-2/);
+ assert.match(index,/js\/modules\/print-designer\.js\?v=20261105-word-jszip-dependency-1/);
 });
 
 
