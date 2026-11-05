@@ -196,3 +196,14 @@ test('central designer source loader accepts normalized and legacy API field cas
  assert.match(module,/form\.Fields \|\| form\.fields/);
  assert.match(module,/source\.field \|\| source\.Field \|\| source\.Code/);
 });
+
+test('central template loader normalizes nested API data and isolates library/source rendering failures',()=>{
+ const module=read('js/modules/print-designer.js');
+ assert.match(module,/for \(let depth = 0; depth < 3; depth \+= 1\)/);
+ assert.match(module,/Object\.prototype\.hasOwnProperty\.call\(value, 'data'\)/);
+ assert.match(module,/await this\.loadLibrary\(\)/);
+ assert.match(module,/Promise\.allSettled/);
+ assert.match(module,/Print template bindings render failed/);
+ assert.match(module,/Print template inspector render failed/);
+ assert.match(module,/this\.sourceError = error\.message/);
+});
