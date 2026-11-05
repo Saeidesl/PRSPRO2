@@ -1302,6 +1302,7 @@
 
       this.refreshEventTypeOptions();
       this.loadWorkflowProgress(projectSelect.value);
+      this.loadEventContext(projectSelect.value, typeSelect.value);
       this.updateSubmitAvailability();
 
       const firstInput = document.getElementById('event-form-project');
@@ -1360,12 +1361,12 @@
           html += relevant.map((row) => {
             const info = row.InformationType || {};
             const id = String(row.InformationTypeID || info.ID || '');
-            const value = row.Value !== undefined ? row.Value : this.safeJsonParse(row.ValueJSON, null);
+            const value = row.Value !== undefined ? row.Value : (function () { try { return JSON.parse(String(row.ValueJSON || 'null')); } catch (error) { return null; } })();
             const source = row.SourceEventID ? 'رویداد ' + row.SourceEventID : 'ثبت مستقیم';
             return '<article class="event-context-info-card"><div class="event-context-info-title">' +
               this.escape(info.Name || info.Code || 'اطلاعات') + '</div><div class="event-context-info-value">' +
               this.escape(this.displayValue(value)) + '</div><div class="event-context-meta">' +
-              this.escape(source) + (row.UpdatedAt ? ' · ' + this.escape(this.formatDate(row.UpdatedAt)) : '') +
+              this.escape(source) + (row.UpdatedBy ? ' · ثبت‌کننده ' + this.escape(row.UpdatedBy) : '') + (row.UpdatedAt ? ' · ' + this.escape(this.formatDate(row.UpdatedAt)) : '') +
               '</div><button type="button" class="event-context-history-button" data-context-history="' +
               this.escape(id) + '">مشاهده تاریخچه</button><div class="event-context-history" data-context-history-content="' +
               this.escape(id) + '" hidden></div></article>';
@@ -1388,9 +1389,6 @@
         }
         html += '</section><p class="event-context-footnote">اطلاعات این پنل فقط برای مراجعه است؛ تغییرات از مسیرهای اصلی ثبت انجام می‌شود.</p>';
         content.innerHTML = html;
-        content.querySelectorAll('[data-context-event-id]').forEach((button) => {
-          button.addEventListener('click', () => this.openDetails(button.dataset.contextEventId));
-        });
       } catch (error) {
         if (requestId !== this.eventContextRequestId) return;
         content.innerHTML = '<div class="event-context-error" role="alert">دریافت اطلاعات مرتبط ناموفق بود: ' +
@@ -1401,7 +1399,7 @@
     },
 
     toggleEventContextHistory: async function (typeId, button) {
-      const content = document.querySelector('[data-context-history-content="' + CSS.escape(String(typeId || '')) + '"]');
+      const content = Array.from(document.querySelectorAll('[data-context-history-content]')).find(function (node) { return String(node.dataset.contextHistoryContent || '') === String(typeId || ''); });
       if (!content) return;
       if (!content.hidden) { content.hidden = true; button.textContent = 'مشاهده تاریخچه'; return; }
       content.hidden = false;
@@ -1417,8 +1415,10 @@
         content.innerHTML = rows.length ? rows.slice().reverse().map((row) =>
           '<div class="event-context-history-row"><strong>نسخه ' + this.escape(row.Revision || '-') +
           ' · ' + this.escape(row.Action || 'تغییر') + '</strong><span>' +
-          this.escape(this.formatDate(row.CreatedAt)) + '</span><small>' +
-          this.escape(row.Reason || (row.SourceEventID ? 'رویداد ' + row.SourceEventID : 'بدون توضیح')) +
+          this.escape(this.formatDate(row.CreatedAt)) + (row.ActorUserID ? ' · کاربر ' + this.escape(row.ActorUserID) : '') +
+          '</span><small>' + this.escape(row.Reason || (row.SourceEventID ? 'رویداد ' + row.SourceEventID : 'بدون توضیح')) +
+          '</small><small>مقدار قبلی: ' + this.escape(this.displayValue(row.OldValue)) +
+          '</small><small>مقدار جدید: ' + this.escape(this.displayValue(row.NewValue)) +
           '</small></div>').join('') : '<p class="event-muted">تاریخچه‌ای ثبت نشده است.</p>';
         content.dataset.loaded = 'true';
       } catch (error) {
