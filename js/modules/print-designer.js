@@ -432,7 +432,7 @@
       const form = document.getElementById('pt-template-form');
       if (form) form.addEventListener('submit', (event) => { event.preventDefault(); this.saveTemplate(); });
       const reset = document.getElementById('pt-template-reset');
-      if (reset) reset.addEventListener('click', () => this.resetForm());
+      if (reset && reset.dataset.ptBound !== '1') { reset.dataset.ptBound = '1'; reset.addEventListener('click', (event) => { event.preventDefault(); event.stopPropagation(); this.resetForm(); const formNode = document.getElementById('pt-template-form'); if (formNode) formNode.scrollIntoView({ behavior: 'smooth', block: 'start' }); }); }
       const resetSecondary = document.getElementById('pt-template-reset-secondary');
       if (resetSecondary) resetSecondary.addEventListener('click', () => this.resetForm());
       this.bindEditor();
@@ -614,8 +614,9 @@
       try {
         const response = await PMS.Api.get('/print-templates/' + encodeURIComponent(id));
         const item = this.extract(response);
-        this.editingId = item.ID;
-        this.definition = item.Definition || this.blankDefinition();
+        if (!item || !(item.ID || item.id)) throw new Error('اطلاعات قالب از سرور دریافت نشد یا ساختار پاسخ معتبر نیست.');
+        this.editingId = item.ID || item.id;
+        this.definition = item.Definition || item.definition || this.blankDefinition();
         this.history = []; this.historyIndex = -1; this.selectedElementId = '';
         document.getElementById('pt-template-code').value = item.Code || '';
         document.getElementById('pt-template-code').disabled = true;
