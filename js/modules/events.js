@@ -1319,10 +1319,16 @@
       this.eventContextInformation = [];
       this.eventContextHistoryRequests = {};
       if (!projectKey) {
+        panel.hidden = true;
+        const trigger = document.getElementById('event-context-mobile-trigger');
+        if (trigger) trigger.hidden = true;
         content.innerHTML = '<p class="event-muted">برای رویداد مستقل، اطلاعات پروژه نمایش داده نمی‌شود.</p>';
         panel.classList.remove('has-project-context');
         return;
       }
+      panel.hidden = false;
+      const contextTrigger = document.getElementById('event-context-mobile-trigger');
+      if (contextTrigger) contextTrigger.hidden = false;
       panel.classList.add('has-project-context');
       content.innerHTML = '<div class="event-context-loading"><span class="event-spinner" aria-hidden="true"></span><span>در حال دریافت اطلاعات مرتبط...</span></div>';
       try {
