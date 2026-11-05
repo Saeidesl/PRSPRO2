@@ -69,6 +69,6 @@ test('central information value renderer uses the supplied data type without und
   const start = moduleSource.indexOf('renderInformationValue: function');
   const end = moduleSource.indexOf('openInformationAttachment: async function', start);
   const renderer = moduleSource.slice(start, end);
-  assert.match(renderer, /renderPrintDesignerValue\\(value, dataType\\)/);
-  assert.doesNotMatch(renderer, /info\\.DataType|field\\.DataType/);
+  assert.match(renderer, /renderPrintDesignerValue\\(value, dataType\)/);
+  assert.doesNotMatch(renderer, /info\.DataType|field\.DataType/);
 });
