@@ -13,7 +13,6 @@
     dragState: null,
     previewMode: false,
     outputPageSpec: { width: 210, height: 297 },
-    wordLibraryPromise: null,
     init: function () {
       // صفحه به‌صورت HTML پویا بارگذاری می‌شود؛ تشخیص بر اساس DOM از وابستگی
       // به نام/شکل hash جلوگیری می‌کند و مانع اجرای initializer اشتباه می‌شود.
@@ -166,6 +165,21 @@
         button.dataset.ptBound = '1';
         button.addEventListener('click', () => this.handleEditorAction(button.dataset.ptAction));
       });
+      document.querySelectorAll('[data-pt-ribbon-tab]').forEach(tab => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('[data-pt-ribbon-tab]').forEach(item => { const active = item === tab; item.classList.toggle('is-active', active); item.setAttribute('aria-selected', String(active)); });
+          document.querySelectorAll('[data-pt-ribbon-panel]').forEach(panel => { panel.hidden = panel.dataset.ptRibbonPanel !== tab.dataset.ptRibbonTab; });
+        });
+      });
+      document.querySelectorAll('[data-pt-format]').forEach(button => button.addEventListener('click', () => this.formatSelectedText(button.dataset.ptFormat)));
+      ['pt-text-font','pt-text-size','pt-text-color'].forEach(id => {
+        const control = document.getElementById(id);
+        if (control) control.addEventListener('change', () => this.applyTextStyle(id, control.value));
+      });
+      const zoom = document.getElementById('pt-editor-zoom');
+      if (zoom) zoom.addEventListener('input', () => this.applyZoom());
+      const zoomValue = document.getElementById('pt-editor-zoom-value');
+      if (zoomValue && zoom) zoomValue.textContent = zoom.value + '٪';
       ['pt-prop-text','pt-prop-binding','pt-prop-selection','pt-prop-x','pt-prop-y','pt-prop-width','pt-prop-height','pt-prop-font','pt-prop-align','pt-prop-columns','pt-prop-rows','pt-prop-color','pt-prop-background'].forEach(id => {
         const input = document.getElementById(id);
         if (!input || input.dataset.bound === '1') return;
@@ -183,6 +197,42 @@
           this.renderCanvas(); this.commitHistory();
         });
       });
+    },
+    applyZoom: function () {
+      const zoom = document.getElementById('pt-editor-zoom');
+      const canvas = document.getElementById('pt-design-canvas');
+      const value = Math.max(50, Math.min(150, Number(zoom && zoom.value || 100)));
+      if (canvas) { canvas.style.setProperty('--pt-zoom', String(value / 100)); canvas.style.transform = 'scale(' + (value / 100) + ')'; canvas.style.transformOrigin = 'top center'; }
+      const output = document.getElementById('pt-editor-zoom-value');
+      if (output) output.textContent = value + '٪';
+    },
+    getRichTextEditor: function () {
+      const item = this.getSelectedOrById(this.selectedElementId);
+      if (!item || item.type !== 'richtext') return null;
+      return Array.from(document.querySelectorAll('[data-pt-richtext]')).find(editor => editor.dataset.ptRichtext === String(item.id)) || null;
+    },
+    formatSelectedText: function (command) {
+      const editor = this.getRichTextEditor();
+      if (!editor) { this.setStatus('pt-editor-status', 'برای قالب‌بندی مستقیم، ابتدا یک عنصر «متن قابل ویرایش» انتخاب کن.', true); return; }
+      editor.focus();
+      document.execCommand(command, false, null);
+      const item = this.getSelectedOrById(this.selectedElementId);
+      if (item) item.html = this.sanitizeRichTextHtml(editor.innerHTML);
+      this.commitHistory();
+    },
+    applyTextStyle: function (id, value) {
+      const editor = this.getRichTextEditor();
+      if (!editor) { this.setStatus('pt-editor-status', 'ابتدا متن قابل ویرایش را انتخاب کن.', true); return; }
+      editor.focus();
+      if (id === 'pt-text-font') document.execCommand('fontName', false, value);
+      if (id === 'pt-text-size') {
+        const sizes = {10:'2',11:'2',12:'3',14:'4',16:'4',18:'5',24:'6',32:'7'};
+        document.execCommand('fontSize', false, sizes[value] || '3');
+      }
+      if (id === 'pt-text-color') document.execCommand('foreColor', false, value);
+      const item = this.getSelectedOrById(this.selectedElementId);
+      if (item) item.html = this.sanitizeRichTextHtml(editor.innerHTML);
+      this.commitHistory();
     },
     getSelectedOrById: function (id) {
       const elements = this.definition && Array.isArray(this.definition.elements) ? this.definition.elements : [];
@@ -208,6 +258,12 @@
     handleEditorAction: function (action) {
       const selected = this.getSelectedOrById(this.selectedElementId);
       if (action === 'add-text') return this.createElement('text');
+      if (action === 'add-richtext') return this.createElement('richtext', { html: '<p>متن خود را اینجا وارد کن…</p>' });
+      if (action === 'zoom-in' || action === 'zoom-out') {
+        const zoom = document.getElementById('pt-editor-zoom');
+        if (zoom) { zoom.value = String(Math.max(50, Math.min(150, Number(zoom.value || 100) + (action === 'zoom-in' ? 10 : -10)))); this.applyZoom(); }
+        return;
+      }
       if (action === 'add-field') {
         const binding = this.definition && this.definition.bindings && this.definition.bindings[0];
         return this.createElement('field', { text: binding ? (binding.label || binding.id) : 'فیلد داده', bindingId: binding ? binding.id : '' });
@@ -316,26 +372,12 @@
       canvas.style.minHeight = dimensions.height + 'mm';
       canvas.style.aspectRatio = dimensions.width + ' / ' + dimensions.height;
       const elements = this.definition.elements || [];
-      const wordDocument = elements.find(item => item.type === 'worddocument');
-      if (wordDocument) {
-        canvas.classList.add('pt-word-document-canvas');
-        canvas.style.width = 'auto'; canvas.style.minHeight = '0'; canvas.style.aspectRatio = 'auto';
-        canvas.innerHTML = '<style>' + (wordDocument.css || '') + '</style><div class="pt-word-document" data-pt-element="' + this.esc(wordDocument.id) + '" contenteditable="true" spellcheck="true">' + this.sanitizeImportedHtml(wordDocument.html || '') + '</div>';
-        const editor = canvas.querySelector('.pt-word-document[contenteditable="true"]');
-        if (editor && editor.dataset.bound !== '1') {
-          editor.dataset.bound = '1';
-          editor.addEventListener('input', () => { wordDocument.html = this.sanitizeImportedHtml(editor.innerHTML); });
-          editor.addEventListener('blur', () => { wordDocument.html = this.sanitizeImportedHtml(editor.innerHTML); this.commitHistory(); });
-        }
-        return;
-      }
-      canvas.classList.remove('pt-word-document-canvas');
       canvas.innerHTML = elements.length ? elements.map(item => {
         const style = 'left:' + Number(item.x || 0) + 'mm;top:' + Number(item.y || 0) + 'mm;width:' + Number(item.width || 30) +
           'mm;height:' + Number(item.height || 15) + 'mm;font-size:' + Number(item.fontSize || 12) + 'pt;text-align:' + this.esc(item.align || 'right') + ';color:' + this.esc(item.color || 'black') + ';background:' + this.esc(item.background || 'transparent');
         const selected = String(item.id) === String(this.selectedElementId) ? ' is-selected' : '';
         const label = item.type === 'richtext'
-          ? '<div class="pt-richtext-editor" contenteditable="true" spellcheck="true" data-pt-richtext="' + this.esc(item.id) + '">' + this.sanitizeImportedHtml(item.html || '') + '</div>'
+          ? '<div class="pt-richtext-editor" contenteditable="true" spellcheck="true" data-pt-richtext="' + this.esc(item.id) + '">' + this.sanitizeRichTextHtml(item.html || '') + '</div>'
           : (item.type === 'line' || item.type === 'divider' ? '<span class="pt-shape-line" aria-hidden="true"></span>' :
           (item.type === 'rectangle' || item.type === 'ellipse' ? '<span class="pt-shape-outline" aria-hidden="true"></span>' :
           (item.type === 'image' ? '<span class="pt-image-placeholder">▧ تصویر</span>' :
@@ -343,7 +385,7 @@
             (item.columns || []).map(col => '<th>' + this.esc(col) + '</th>').join('') + '</tr></thead><tbody>' +
             (item.rows || []).map(row => '<tr>' + row.map(cell => '<td>' + this.esc(cell) + '</td>').join('') + '</tr>').join('') +
             '</tbody></table>' : this.esc(item.text || '')))));
-        return '<div class="pt-canvas-element/ pt-element-' + this.esc(item.type) + selected + '" data-pt-element="' + this.esc(item.id) +
+        return '<div class="pt-canvas-element pt-element-' + this.esc(item.type) + selected + '" data-pt-element="' + this.esc(item.id) +
           '" style="' + style + '"><div class="pt-element-content">' + label + '</div>' +
           (selected ? '<button type="button" data-pt-resize aria-label="تغییر اندازه"></button>' : '') + '</div>';
       }).join('') : '<div class="pt-canvas-empty">برای شروع، از نوار ابزار یک المان اضافه کن.</div>';
@@ -352,7 +394,7 @@
         editor.dataset.bound = '1';
         editor.addEventListener('input', () => {
           const item = this.getSelectedOrById(editor.dataset.ptRichtext);
-          if (item) item.html = this.sanitizeImportedHtml(editor.innerHTML);
+          if (item) item.html = this.sanitizeRichTextHtml(editor.innerHTML);
         });
         editor.addEventListener('blur', () => {
           const item = this.getSelectedOrById(editor.dataset.ptRichtext);
@@ -391,7 +433,7 @@
     },
     undo: function () { this.restoreHistory(this.historyIndex - 1); },
     redo: function () { this.restoreHistory(this.historyIndex + 1); },
-    sanitizeImportedHtml: function (html) {
+    sanitizeRichTextHtml: function (html) {
       const parser = new DOMParser();
       const documentNode = parser.parseFromString(String(html || ''), 'text/html');
       const allowed = new Set(['P','DIV','SECTION','ARTICLE','BR','STRONG','B','EM','I','U','S','SPAN','H1','H2','H3','H4','UL','OL','LI','TABLE','COLGROUP','COL','THEAD','TBODY','TFOOT','TR','TH','TD','IMG','BLOCKQUOTE']);
@@ -419,89 +461,6 @@
       });
       return documentNode.body.innerHTML;
     },
-    sanitizeWordCss: function (css) {
-      const allowed = new Set(['color','background-color','font-family','font-size','font-weight','font-style','text-decoration','text-align','direction','width','height','min-width','max-width','min-height','border','border-top','border-right','border-bottom','border-left','border-color','border-style','border-width','border-collapse','padding','padding-left','padding-right','padding-top','padding-bottom','vertical-align','margin','margin-left','margin-right','margin-top','margin-bottom','line-height','text-indent','white-space','display','box-sizing','list-style-type','table-layout']);
-      return String(css || '').replace(/<\/?style[^>]*>/gi,'').split('}').map(rule => {
-        const parts = rule.split('{');
-        if (parts.length !== 2 || parts[0].length > 500 || /[@<>]|url\s*\(|expression|javascript:/i.test(parts[0])) return '';
-        const selectors = parts[0].split(',').map(selector => selector.trim()).filter(selector => /^[.#a-zA-Z0-9_ >+~:-]+$/.test(selector));
-        const declarations = parts[1].split(';').map(entry => {
-          const pair = entry.split(':'); if (pair.length < 2) return '';
-          const property = pair.shift().trim().toLowerCase(), value = pair.join(':').trim();
-          return allowed.has(property) && value.length < 160 && !/[{}<>]|url\s*\(|expression|javascript:/i.test(value) ? property + ':' + value : '';
-        }).filter(Boolean);
-        return selectors.length && declarations.length ? '.pt-word-document ' + selectors.join(', .pt-word-document ') + '{' + declarations.join(';') + '}' : '';
-      }).filter(Boolean).join('\n');
-    },
-    loadWordScript: function (url, globalName, validator) {
-      return new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = url;
-        script.async = true;
-        script.onload = () => {
-          const value = window[globalName];
-          if (validator(value)) resolve(value);
-          else reject(new Error('کتابخانه ' + globalName + ' بارگذاری شد اما API موردنیاز آن در دسترس نیست.'));
-        };
-        script.onerror = () => reject(new Error('دریافت کتابخانه ' + globalName + ' از سرور ناموفق بود.'));
-        document.head.appendChild(script);
-      });
-    },
-    ensureWordLibraries: function () {
-      if (this.wordLibraryPromise) return this.wordLibraryPromise;
-      this.wordLibraryPromise = (async () => {
-        const validZip = value => !!value && typeof value.loadAsync === 'function';
-        const validDocx = value => !!value && typeof value.renderAsync === 'function';
-        if (!validZip(window.JSZip)) {
-          try {
-            await this.loadWordScript('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js', 'JSZip', validZip);
-          } catch (primaryError) {
-            await this.loadWordScript('https://unpkg.com/jszip@3.10.1/dist/jszip.min.js', 'JSZip', validZip);
-          }
-        }
-        if (!validZip(window.JSZip)) throw new Error('کتابخانه بازکردن فایل DOCX (JSZip) در دسترس نیست.');
-        if (!validDocx(window.docx)) {
-          try {
-            await this.loadWordScript('https://cdn.jsdelivr.net/npm/docx-preview@0.3.6/dist/docx-preview.min.js', 'docx', validDocx);
-          } catch (primaryError) {
-            await this.loadWordScript('https://unpkg.com/docx-preview@0.3.6/dist/docx-preview.min.js', 'docx', validDocx);
-          }
-        }
-        if (!validDocx(window.docx)) throw new Error('موتور نمایش Word بارگذاری نشد.');
-        return true;
-      })().catch(error => {
-        this.wordLibraryPromise = null;
-        throw error;
-      });
-      return this.wordLibraryPromise;
-    },
-    importWordDocument: async function (file) {
-      if (!file || !/\.docx$/i.test(file.name || '')) throw new Error('فقط فایل Word با پسوند DOCX قابل واردسازی است.');
-      if (file.size > 5 * 1024 * 1024) throw new Error('حجم فایل Word نباید بیشتر از ۵ مگابایت باشد.');
-      await this.ensureWordLibraries();
-      const next = this.definition || this.blankDefinition();
-      if (next.elements.length && !window.confirm('محتوای فعلی بوم با سند Word جایگزین شود؟')) return;
-      this.setStatus('pt-editor-status', 'در حال بازسازی صفحات و جدول‌های فایل Word…');
-      const host = document.createElement('div'), styleHost = document.createElement('div');
-      await window.docx.renderAsync(await file.arrayBuffer(), host, styleHost, {
-        className: 'docx', inWrapper: true, ignoreWidth: false, ignoreHeight: false,
-        ignoreFonts: false, breakPages: true, ignoreLastRenderedPageBreak: false, renderHeaders: true, renderFooters: true,
-        renderFootnotes: true, renderEndnotes: true, useBase64URL: true
-      });
-      const html = this.sanitizeImportedHtml(host.innerHTML);
-      const css = this.sanitizeWordCss(styleHost.innerHTML);
-      const pageNodes = host.querySelectorAll('.docx-wrapper > .docx, .docx-wrapper section.docx, section.docx, .docx');
-      const pageCount = Math.max(1, pageNodes.length);
-      if (!html || !html.replace(/<[^>]*>/g, '').trim()) throw new Error('محتوای قابل نمایش در فایل Word پیدا نشد.');
-      const imported = { id: 'word_' + Date.now().toString(36), type: 'worddocument',
-        text: file.name.replace(/\.docx$/i, ''), html: html, css: css, pageCount: pageCount, sourceName: file.name, bindingId: '' };
-      const candidate = Object.assign({}, next, { elements: [imported] });
-      if (JSON.stringify(candidate).length > 42000) throw new Error('حجم ساختار تبدیل‌شده از ظرفیت ذخیره قالب بیشتر است. لطفاً فایل Word را سبک‌تر و تصاویر آن را کم‌حجم کن.');
-      this.definition = candidate; this.selectedElementId = imported.id;
-      this.history = []; this.historyIndex = -1;
-      this.renderEditor(); this.renderBindings(); this.commitHistory();
-      this.setStatus('pt-editor-status', 'سند Word به ' + pageCount + ' صفحه تبدیل شد؛ متن‌ها در صفحات قابل ویرایش‌اند.');
-    },
     initLibrary: async function () {
       const form = document.getElementById('pt-template-form');
       if (form) form.addEventListener('submit', (event) => { event.preventDefault(); this.saveTemplate(); });
@@ -513,29 +472,6 @@
         resetSecondary.addEventListener('click', () => this.resetForm());
       }
       this.bindEditor();
-      const wordInput = document.getElementById('pt-word-import-file');
-      const wordButton = document.getElementById('pt-word-import');
-      if (wordButton && wordInput && wordButton.dataset.ptBound !== '1') {
-        wordButton.dataset.ptBound = '1';
-        wordButton.addEventListener('click', (event) => {
-        event.preventDefault();
-        try {
-          if (typeof wordInput.showPicker === 'function') wordInput.showPicker();
-          else wordInput.click();
-        } catch (pickerError) {
-          wordInput.click();
-        }
-        });
-      }
-      if (wordInput && wordInput.dataset.ptBound !== '1') {
-        wordInput.dataset.ptBound = '1';
-        wordInput.addEventListener('change', async () => {
-        const file = wordInput.files && wordInput.files[0];
-        try { await this.importWordDocument(file); }
-        catch (error) { this.setStatus('pt-editor-status', error.message || 'واردسازی Word ناموفق بود.', true); }
-        finally { wordInput.value = ''; }
-        });
-      }
       this.syncPageControls();
       this.renderEditor();
       await this.loadLibrary();
@@ -879,9 +815,6 @@
         const isImage = item.type === 'image' || !!imageAttachment;
         const value = binding ? this.formatOutputValue(raw) : (item.text || '');
         const style = 'left:'+Number(item.x||0)+'mm;top:'+Number(item.y||0)+'mm;width:'+Number(item.width||30)+'mm;min-height:'+Number(item.height||15)+'mm;font-size:'+Number(item.fontSize||12)+'pt;text-align:'+this.esc(item.align||'right')+';color:'+this.esc(item.color||'#1f2937')+';background:'+this.esc(item.background||'transparent')+';';
-        if (item.type === 'worddocument') {
-          return '<style>' + (item.css || '') + '</style><div class="pt-word-document pt-output-word-document">' + this.sanitizeImportedHtml(item.html || '') + '</div>';
-        }
         if (item.type === 'richtext') {
           return '<div class="pt-output-element pt-output-richtext" style="'+style+'">' + this.sanitizeImportedHtml(item.html || '') + '</div>';
         }
@@ -912,8 +845,6 @@
         if (item.type === 'rectangle' || item.type === 'ellipse') return '<div class="pt-output-element pt-output-shape pt-output-'+item.type+'" style="'+style+'" aria-hidden="true"></div>';
         return '<div class="pt-output-element" style="'+style+'">'+this.esc(value)+'</div>';
       }));
-      const importedWord = (definition.elements || []).find(item => item.type === 'worddocument');
-      if (importedWord) return '<div class="pt-word-document pt-output-word-document"><style>' + (importedWord.css || '') + '</style>' + this.sanitizeImportedHtml(importedWord.html || '') + '</div>';
       return '<article class="pt-print-page" style="width:'+width+'mm;height:'+height+'mm" dir="rtl">'+elements.join('')+'</article>';
     },
     printOutput: function () {

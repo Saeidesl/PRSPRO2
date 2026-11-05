@@ -173,22 +173,15 @@ test('print designer keeps A4 print dimensions and read-only output styles',()=>
  assert.match(css,/\.ppd-output-mode \.ppd-properties\{display:none!important/);
 });
 
-test('central template designer imports DOCX into editable page-preserving document layout',()=>{
+test('central native editor uses ribbon and has no Word import runtime',()=>{
  const page=read('pages/print-designer.html');
  const module=read('js/modules/print-designer.js');
- const index=read('index.html');
- const css=read('css/print-template-library.css');
- assert.match(page,/pt-word-import-file/);
- assert.match(page,/واردسازی از Word/);
- assert.ok(module.includes('https://cdn.jsdelivr.net/npm/docx-preview@0.3.6/dist/docx-preview.min.js'));
- assert.match(module,/importWordDocument: async function/);
- assert.match(module,/sanitizeImportedHtml: function/);
- assert.match(module,/type: 'worddocument'/);
- assert.match(module,/pt-word-document/);
- assert.match(module,/pt-output-word-document/);
- assert.match(css,/pt-richtext-editor/);
+ assert.match(page,/data-pt-ribbon-tab="home"/);
+ assert.match(page,/id="pt-editor-zoom"/);
+ assert.match(module,/formatSelectedText: function/);
+ assert.doesNotMatch(page,/pt-word-import|واردسازی از Word/i);
+ assert.doesNotMatch(module,/importWordDocument|ensureWordLibraries|loadWordScript|worddocument|docx-preview|JSZip/i);
 });
-
 
 test('central designer source loader accepts normalized and legacy API field casing',()=>{
  const module=read('js/modules/print-designer.js');
@@ -206,4 +199,14 @@ test('central template loader normalizes nested API data and isolates library/so
  assert.match(module,/Print template bindings render failed/);
  assert.match(module,/Print template inspector render failed/);
  assert.match(module,/this\.sourceError = error\.message/);
+});
+
+
+test('project print designer has no Word import controls or runtime',()=>{
+ const page=read('pages/print-designer.html');
+ const module=read('js/modules/print-designer.js');
+ const index=read('index.html');
+ assert.doesNotMatch(page,/pt-word-import|واردسازی از Word/i);
+ assert.doesNotMatch(module,/importWordDocument|ensureWordLibraries|loadWordScript|worddocument|docx-preview|JSZip/i);
+ assert.doesNotMatch(index,/jszip|docx-preview/i);
 });

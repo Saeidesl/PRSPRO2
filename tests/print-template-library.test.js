@@ -166,7 +166,7 @@ test('print output hides image helper copy and uses exact page size without forc
 test('print output assets use refreshed cache keys for the current print fixes',()=>{
  const index=read('index.html');
  assert.match(index,/css\/print-template-library\.css\?v=20261105-print-data-init-2/);
- assert.match(index,/js\/modules\/print-designer\.js\?v=20261105-word-jszip-dependency-1/);
+ assert.match(index,/js\/modules\/print-designer\.js\?v=20261105-editor-cleanup-1/);
 });
 
 
@@ -176,19 +176,6 @@ test('final print document omits the entire automatic form and project header',(
  assert.ok(module.includes("dir=\"rtl\">'+elements.join('')"), 'final document is rendered RTL from configured elements');
 });
 
-test('Word import renders original page structure with editable content',()=>{
- const module=read('js/modules/print-designer.js');
- const index=read('index.html');
- const css=read('css/print-template-library.css');
- assert.ok(index.includes('docx-preview@0.3.6/dist/docx-preview.min.js'));
- assert.ok(index.includes('docx-preview@0.3.6/dist/docx-preview.min.css'));
- assert.ok(module.includes('window.docx.renderAsync'));
- assert.match(module,/breakPages: true/);
- assert.match(module,/type: 'worddocument'/);
- assert.match(module,/sanitizeWordCss/);
- assert.match(module,/pt-output-word-document/);
- assert.match(css,/pt-word-document-canvas/);
-});
 
 
 test('template library renders immediately and loads its data without blocking the editor',()=>{
@@ -199,13 +186,6 @@ test('template library renders immediately and loads its data without blocking t
  assert.match(module,/pt-source-count/);
 });
 
-test('Word import uses a user-gesture file picker fallback and preserves imported page settings',()=>{
- const module=read('js/modules/print-designer.js');
- assert.match(module,/wordInput\.showPicker\(\)/);
- assert.match(module,/catch \(pickerError\)/);
- assert.doesNotMatch(module,/page: \{ size: 'A4', orientation: 'portrait' \}, elements: \[imported\]/);
- assert.match(module,/docx-wrapper > \.docx/);
-});
 
 
 test('print designer initializes from the loaded page DOM and output lists fail independently',()=>{
@@ -218,23 +198,32 @@ test('print designer initializes from the loaded page DOM and output lists fail 
 });
 
 
-test('print designer module remains parseable after Word CSS and HTML sanitization',()=>{
+
+
+
+
+test('Word import code and external dependencies are completely removed',()=>{
  const module=read('js/modules/print-designer.js');
- assert.doesNotThrow(()=>new vm.Script(module,{filename:'print-designer.js'}));
- assert.match(module,/!\/\(url\\s\*\\\(/);
- assert.match(module,/split\(\/\\s\+\//);
+ const page=read('pages/print-designer.html');
+ const index=read('index.html');
+ const css=read('css/print-template-library.css');
+ assert.doesNotMatch(module,/importWordDocument|ensureWordLibraries|loadWordScript|sanitizeWordCss|worddocument|JSZip|docx-preview/i);
+ assert.doesNotMatch(page,/pt-word-import|واردسازی از Word/i);
+ assert.doesNotMatch(index,/jszip|docx-preview/i);
+ assert.doesNotMatch(css,/pt-word-document|docx-preview/i);
 });
 
-
-test('Word importer validates JSZip and loads docx-preview sequentially at runtime',()=>{
- const index=read('index.html');
+test('native editor ribbon and page controls are present',()=>{
+ const page=read('pages/print-designer.html');
  const module=read('js/modules/print-designer.js');
- assert.ok(!index.includes('jszip@3.10.1/dist/jszip.min.js'));
- assert.ok(!index.includes('docx-preview@0.3.6/dist/docx-preview.min.js'));
- assert.ok(module.includes("typeof value.loadAsync === 'function'"));
- assert.ok(module.includes('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js'));
- assert.ok(module.includes('https://unpkg.com/jszip@3.10.1/dist/jszip.min.js'));
- assert.ok(module.includes('await this.ensureWordLibraries()'));
- assert.ok(module.includes('https://cdn.jsdelivr.net/npm/docx-preview@0.3.6/dist/docx-preview.min.js'));
- assert.ok(index.includes('print-designer.js?v=20261105-word-runtime-dependency-2'));
+ const css=read('css/print-template-library.css');
+ for(const tab of ['home','insert','layout','tools']) assert.ok(page.includes('data-pt-ribbon-tab="'+tab+'"'));
+ for(const action of ['add-richtext','add-text','add-field','add-table','add-image']) assert.ok(page.includes('data-pt-action="'+action+'"'));
+ for(const command of ['bold','italic','underline','justifyRight','justifyCenter','justifyLeft','insertUnorderedList','insertOrderedList']) assert.ok(page.includes('data-pt-format="'+command+'"'));
+ assert.ok(page.includes('id="pt-editor-zoom"'));
+ assert.ok(module.includes('formatSelectedText: function'));
+ assert.ok(module.includes('applyTextStyle: function'));
+ assert.ok(module.includes('applyZoom: function'));
+ assert.match(css,/\.pt-ribbon-tabs/);
+ assert.match(css,/\.pt-ruler-horizontal/);
 });

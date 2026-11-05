@@ -1,62 +1,78 @@
 ## 🎯 Current Objective
 
-رفع ایرادهای دریافت اطلاعات در صفحه طراحی قالب و آماده‌سازی کامل مسیر واردسازی DOCX؛ سپس اجرای آزمون‌های ساختاری و تحویل برای تست واقعی واردسازی Word.
+بازطراحی محیط داخلی قالب‌ساز به یک ویرایشگر حرفه‌ای، ساده و فارسی شبیه Word؛ با حفظ قالب‌های فعلی، منابع اطلاعاتی، ذخیره‌سازی موجود و خروجی دقیق چاپ A4. واردسازی Word به‌طور کامل لغو شده و دیگر بخشی از محصول نیست.
 
 ## 🗺️ Technical Spec & Architecture Map (DO NOT DELETE)
 
-### Frontend — مخزن `Saeidesl/PRSPRO2`، شاخه `main`
+### Frontend — مخزن `Saeidesl/PRSPRO2`، شاخه `feature/wordless-word-like-form-designer`
+
 - `pages/print-designer.html`
-  - کنترل واردسازی: `#pt-word-import` و `#pt-word-import-file`.
-  - نمایش وضعیت: `#pt-library-status` و `#pt-editor-status`.
-  - فهرست منابع: `#pt-source-list` و `#pt-editor-source-list`.
-  - بوم: `#pt-design-canvas`.
+  - صفحه اصلی قالب‌ساز؛ ریشه `.pt-page`.
+  - فهرست قالب‌ها: `#pt-template-list`؛ شروع قالب جدید: `#pt-template-reset`.
+  - فضای ویرایش: `#pt-editor-workspace` و `#pt-design-canvas`.
+  - نوار ابزار فعلی از `[data-pt-action]` استفاده می‌کند؛ اقدامات موجود شامل undo/redo/preview و افزودن متن، فیلد داده، جدول، تصویر، خط، جداکننده، مستطیل و بیضی است.
+  - تنظیمات صفحه: `#pt-page-size` و `#pt-page-orientation`.
+  - پنل خصوصیات: `#pt-inspector-fields` و کنترل‌های `#pt-prop-*`.
+  - منابع داده: `#pt-editor-source-list`، `#pt-source-list` و `#pt-binding-list`.
+  - لایه‌ها: `#pt-layer-list`.
+  - ذخیره قالب: `#pt-template-form`، `#pt-template-code`، `#pt-template-name` و `#pt-template-description`.
+  - کنترل و ورودی واردسازی Word قبلاً حذف شده‌اند و نباید دوباره اضافه شوند.
 - `js/modules/print-designer.js`
-  - `init()`: انتخاب مسیر طراحی/خروجی.
-  - `initLibrary()`: اتصال کنترل‌ها و شروع بارگذاری داده‌ها.
-  - `loadLibrary()`: دریافت هم‌زمان قالب‌ها و منابع.
-  - `renderSources()`: نمایش فیلدهای پروژه، اطلاعات مرکزی و فیلدهای فرم.
-  - `extract()` و `list()`: استخراج پاسخ API.
-  - `importWordDocument(file)`: تبدیل DOCX با `window.docx.renderAsync`.
-  - `sanitizeImportedHtml()` و `sanitizeWordCss()`: پاک‌سازی خروجی Word.
-  - `renderCanvas()` و `renderOutputDocument()`: نمایش و چاپ.
-  - `saveTemplate()` و `editTemplate()`: ذخیره و بازیابی قالب.
-- `js/core/api.js`
-  - `PMS.Api.get()` و `PMS.Api.extractData()`: درخواست و استخراج پاسخ استاندارد `{success:true,data:...}`.
-- `js/core/router.js`
-  - مسیرهای `print-design` و `print-designer` به `PrintDesigner`؛ مجوز صفحه `SYSTEM_SETTINGS`.
-- `index.html`
-  - CSS مربوط به `docx-preview@0.3.6`؛ کتابخانه‌های JSZip و docx-preview هنگام نیاز در `print-designer.js` و به ترتیب کنترل‌شده بارگذاری می‌شوند؛ cache-busting فایل‌های قالب‌ساز.
+  - ماژول `PMS.Modules.PrintDesigner`؛ راه‌اندازی با `init()`، `initLibrary()` و `initOutput()`.
+  - ساختار و صفحه: `blankDefinition()`، `pageDimensions()`، `syncPageControls()`، `createElement()`.
+  - تعامل: `bindEditor()`، `handleEditorAction()`، `selectElement()`، `applyInspectorChange()`.
+  - تاریخچه: `commitHistory()`، `undo()`، `redo()`.
+  - رندر: `renderEditor()`، `renderCanvas()`، `renderInspector()`، `renderLayers()`، `renderSources()`.
+  - ذخیره و کتابخانه: `loadLibrary()`، `saveTemplate()`، `editTemplate()`، `extract()`، `list()`.
+  - خروجی: `renderOutputDocument()` و `resolveOutput()`.
 - `css/print-template-library.css`
-  - استایل بوم، منابع، صفحات Word و خروجی چاپ.
-- تست‌ها: `tests/print-template-library.test.js` و `tests/project-print-designer.test.js`.
+  - استایل صفحه قالب‌ساز، بوم، عناصر، پنل خصوصیات، خروجی/چاپ و breakpointهای واکنش‌گرا؛ توسعه ظاهر Ribbon و ویرایشگر صفحه‌محور در همین فایل انجام شود.
+- `index.html`
+  - بارگذاری ماژول قالب‌ساز و stylesheet با cache-busting.
+  - وابستگی‌های اختصاصی واردسازی Word قبلاً حذف شده‌اند.
+- تست‌های موجود:
+  - `tests/print-template-library.test.js`
+  - `tests/project-print-designer.test.js`
+  - تست‌های مرتبط باید با رفتار جدید و حذف کامل Word import همگام بمانند.
 
-### Backend — مخزن `Saeidesl/PRSPRO2BACKEND`، شاخه `main`
-- `Router.js`: مسیرهای `GET /print-templates` و `GET /print-templates/sources`؛ مسیر منابع در حال حاضر مجوز `SYSTEM_SETTINGS` دارد.
-- `PrintTemplateService.js`
-  - `list(params)`: قالب‌های فعال tenant.
-  - `sources(params)`: `projectFields`، `informationTypes` و `forms` همراه `Fields`.
-  - پاسخ منابع: `Response.success({projectFields, informationTypes, forms})`.
-- `PrintTemplateRepository.js`: خواندن و نوشتن شیت `36_PrintTemplates`.
-- `PrintTemplateValidator.js`: اعتبارسنجی Definition؛ سقف ۴۵۰۰۰ نویسه.
-- APIهای CRUD و resolve فعلی حفظ می‌شوند؛ هیچ مسیر ذخیره‌سازی موازی ایجاد نشود.
+### Backend — مخزن `Saeidesl/PRSPRO2BACKEND`، شاخه `main` (بدون تغییر مگر ضرورت اثبات‌شده)
 
-### یافته‌های کشف
-- علت ریشه‌ای توقف هر دو صفحه شناسایی شد: سه عبارت منظم در `js/modules/print-designer.js` با escape اضافی نوشته شده بودند و کل فایل در مرورگر SyntaxError می‌داد؛ بنابراین `PMS.Modules.PrintDesigner` اصلاً ثبت نمی‌شد و نه بارگذاری اطلاعات و نه دکمه «قالب جدید» اجرا نمی‌شد. اصلاح نحو انجام شد و آزمون parse برای جلوگیری از بازگشت اضافه شد. همچنین تشخیص initializer بر اساس عناصر واقعی صفحه و بارگذاری مستقل قالب‌ها/پروژه‌ها اعمال شد.
-- مسیر دریافت منابع در فرانت‌اند و بک‌اند وجود دارد و نام کلیدهای اصلی در حالت عادی هم‌خوان است؛ خطای هر درخواست باید مستقل، واضح و قابل تشخیص نمایش داده شود و پاسخ‌های خالی با خطا اشتباه نشوند.
-- مسیر منابع بک‌اند فقط `SYSTEM_SETTINGS` می‌پذیرد؛ مجوز صفحه نیز همین است. این قرارداد باید یکپارچه و قابل مشاهده باقی بماند.
-- ورودی فایل مخفی است و دکمه فقط `input.click()` را اجرا می‌کند؛ برای سازگاری موبایل/مرورگر باید انتخاب فایل با تعامل مستقیم کاربر و fallback امن انجام شود.
-- در `index.html` خط متصل‌کننده CSS قالب‌ساز شامل نویسه‌های لفظی `\\n` است؛ باید به newline واقعی تبدیل شود.
-- واردسازی فعلی به A4 عمودی به‌صورت پیش‌فرض محدود شده و تشخیص تعداد صفحه/حفظ مشخصات بخش‌ها باید از ساختار واقعی خروجی DOCX استخراج شود؛ ابعاد و جهت سند نباید بدون دلیل بازنویسی شوند.
-- علت خطای `Cannot read properties of undefined (reading 'loadAsync')` در اصلاح قبلی به‌طور قطعی پوشش داده نشده بود: وجود تگ JSZip تضمین نمی‌کرد CDN کتابخانه را تحویل داده و global معتبر `window.JSZip` پیش از ارزیابی docx-preview ساخته شده باشد. وابستگی‌ها اکنون هنگام واردسازی و به‌شکل ترتیبی بارگذاری می‌شوند؛ ابتدا JSZip و اعتبارسنجی `loadAsync`، سپس docx-preview و اعتبارسنجی `renderAsync`، با fallback از jsDelivr به unpkg. خطای بارگذاری نیز مستقیماً نمایش داده می‌شود.
-- محدودیت واقعی حفظ Word تابع امکانات `docx-preview` است؛ تست واقعی مرورگر و فایل DOCX همچنان معیار نهایی است.
+- `Router.js`: مسیرهای موجود قالب‌ساز و resolve.
+- `PrintTemplateService.js`: عملیات فهرست، منابع، CRUD و resolve.
+- `PrintTemplateRepository.js`: شیت `36_PrintTemplates`.
+- `PrintTemplateValidator.js`: اعتبارسنجی Definition؛ سقف فعلی ۴۵۰۰۰ نویسه.
+- APIهای موجود:
+  - `GET /print-templates`
+  - `GET /print-templates/sources`
+  - `POST /print-templates`
+  - مسیرهای فعلی ویرایش، حذف و resolve قالب.
+- منابع پاسخ API شامل `projectFields`، `informationTypes` و `forms` است.
+- جریان داده: انتخاب منابع ← ثبت binding در Definition ← ذخیره از API فعلی ← انتخاب پروژه و resolve ← تولید سند و چاپ.
+- هر تغییر احتمالی Backend باید با دلیل فنی و آزمون ثبت شود؛ ایجاد API، شیت یا ذخیره‌سازی موازی ممنوع است.
+
+### نقشه داده و تصمیم‌های معماری
+
+- ساختار Definition فعلی شامل `schemaVersion`، `page`، `elements` و `bindings` است؛ این ساختار و شناسه‌های binding تا حد امکان حفظ شوند.
+- قالب‌های ذخیره‌شده فعلی باید باز شوند و قابل ویرایش باقی بمانند.
+- `renderOutputDocument()` و `resolveOutput()` مرجع خروجی نهایی‌اند؛ بوم و خروجی چاپ باید از یک Definition مشترک استفاده کنند.
+- تجربه هدف مطابق طرح مفهومی تأییدشده است: نوار ابزار تب‌بندی‌شده شبیه Word، صفحه A4 با خط‌کش و بزرگ‌نمایی، پنل درج عناصر، تنظیمات زمینه‌ای، ابزارهای متن/پاراگراف، جدول، تصویر و اشکال.
+- عملیات رایج باید ساده و یک‌مرحله‌ای باشند؛ تنظیمات پیشرفته هنگام انتخاب عنصر نمایش داده شوند و مزاحم کار روزمره نباشند.
+- رابط فارسی و RTL، واکنش‌گرا و سازگار با تم روشن/تیره باشد.
+- واردسازی Word و وابستگی‌های آن از محدوده محصول خارج شده‌اند؛ قابلیت طراحی بومی داخل برنامه تنها مسیر ایجاد و ویرایش قالب است.
 
 ## 📋 Macro-Task Queue & Implementation Log
 
-- [x] **تسک ۱ — کشف مسیر دریافت اطلاعات و واردسازی Word**
-  - *Log:* `TODO.md`، `ARCHITECTURE.md`، `pages/print-designer.html`، `js/modules/print-designer.js`، `js/core/api.js`، `js/core/router.js`، `index.html`، `css/print-template-library.css` و تست‌های فرانت‌اند بررسی شدند. مسیرهای بک‌اند در `Router.js` و `PrintTemplateService.js` و قرارداد پاسخ `Response.success` تأیید شد. نقاط نیازمند اصلاح: گزارش خطای مستقل و نرمال‌سازی داده منابع، انتخاب فایل در موبایل، پاک‌سازی نویسه‌های لفظی newline و حفظ تنظیمات صفحه Word.
-- [ ] **تسک ۲ — رفع دریافت اطلاعات و پایدارسازی واردسازی DOCX (IN PROGRESS)**
-  - محدوده: اصلاح چرخه بارگذاری و استخراج پاسخ؛ نمایش وضعیت مستقل قالب‌ها و منابع؛ حفظ خطای واقعی مجوز/سرور؛ سازگاری شکل پاسخ و فهرست فیلدها؛ فعال‌سازی مطمئن انتخاب فایل؛ حفظ ابعاد/جهت/تعداد صفحات و CSS مجاز سند؛ به‌روزرسانی cache-busting؛ عدم تغییر API و ساختار ذخیره‌سازی مرکزی.
-  - معیار پذیرش: صفحه منابع را با وضعیت درست نمایش دهد؛ خطای یک endpoint باعث پنهان شدن نتیجه endpoint دیگر نشود؛ دکمه Word پنجره انتخاب فایل را باز کند؛ DOCX معتبر به بوم منتقل شود و متن/جدول‌ها قابل مشاهده و ویرایش باشند.
-- [ ] **تسک ۳ — آزمون رگرسیون و تحویل برای تست واقعی Word**
-  - محدوده: اجرای تست‌های Node موجود، افزودن تست‌های لازم برای دریافت منابع و کنترل انتخاب فایل، بررسی syntax و سازگاری route/asset؛ کنترل diff و commit روی `main`.
-  - معیار پذیرش: تست‌های خودکار مرتبط موفق باشند و کاربر بتواند یک فایل DOCX واقعی را وارد کند، پیش‌نمایش بگیرد و نتیجه را گزارش کند.
+- [x] **تسک ۱ — کشف معماری، پاک‌سازی Word Import و تثبیت طرح محصول**
+  - *Log:* معماری قالب‌ساز، Definition، منابع داده، APIهای ذخیره/resolve و خروجی چاپ در Frontend و Backend بررسی شد. شاخه مستقل `feature/wordless-word-like-form-designer` ایجاد شد و `ARCHITECTURE.md` مطالعه شد. مسیر واردسازی Word از `js/modules/print-designer.js` حذف شد؛ کنترل و ورودی آن از `pages/print-designer.html`، وابستگی docx-preview از `index.html` و استایل اختصاصی آن از `css/print-template-library.css` پاک شد؛ تست‌های واردسازی در `tests/print-template-library.test.js` و `tests/project-print-designer.test.js` با آزمون عدم وجود مسیر جایگزین شدند. این پاک‌سازی commit شده است؛ اجرای کامل تست‌ها هنوز ثبت نشده است. طرح بصری ویرایشگر شبیه Word به کاربر ارائه شد و با درخواست ایجاد تسک‌ها، وارد برنامه اجرایی شد.
+
+- [ ] **تسک ۲ — ساخت پوسته ویرایشگر Word-like و ابزارهای متن و صفحه (IN PROGRESS)**
+  - محدوده: تبدیل ابزارهای پراکنده به Ribbon تب‌بندی‌شده (خانه، درج، جدول، صفحه و چیدمان، قالب‌بندی و ابزارها)؛ ساخت ناحیه سند صفحه‌محور با خط‌کش، حاشیه‌ها، اندازه و جهت صفحه، zoom و پیمایش صفحه؛ پیاده‌سازی ابزارهای متن و پاراگراف شامل فونت، اندازه، ضخیم/مورب/زیرخط، رنگ، تراز، فاصله خطوط و فهرست‌ها؛ طراحی نوار وضعیت و پنل‌های قابل جمع‌شدن؛ حفظ undo/redo و تعاملات فعلی.
+  - معیار پذیرش: کاربر بتواند یک سند را در محیطی منظم و آشنا باز کند، متن را مستقیم ویرایش و قالب‌بندی کند، اندازه/جهت صفحه را تغییر دهد و بدون کار با مختصات، صفحه را مدیریت کند.
+
+- [ ] **تسک ۳ — تکمیل ابزارهای جدول، تصویر، اشکال و تنظیمات زمینه‌ای**
+  - محدوده: جدول‌ساز با افزودن/حذف ردیف و ستون، تنظیم عرض ستون‌ها، خطوط و زمینه سلول و ادغام سلول در صورت پشتیبانی مدل؛ درج تصویر و تنظیم اندازه/موقعیت/تناسب/حاشیه؛ درج خطوط، کادرها و اشکال؛ انتخاب، جابه‌جایی، تغییر اندازه، ترتیب لایه‌ها، تکثیر و حذف عناصر؛ نمایش تنظیمات متناسب با عنصر انتخاب‌شده؛ کنترل‌های مناسب موبایل.
+  - معیار پذیرش: کاربر بتواند فرم‌های چندبخشی شامل جدول، تصویر و شکل بسازد و عناصر را با کنترل‌های دیداری تنظیم کند؛ عملیات پایه در دسکتاپ و موبایل قابل استفاده باشند.
+
+- [ ] **تسک ۴ — یکپارچه‌سازی داده، ذخیره و بازیابی، چاپ و آزمون رگرسیون**
+  - محدوده: اتصال تمام ابزارهای جدید به Definition و APIهای موجود؛ حفظ bindingهای اطلاعات پروژه، اطلاعات مرکزی و فرم‌ها؛ بازکردن و ویرایش قالب‌های قدیمی؛ همسان‌سازی خروجی با بوم؛ رفع صفحه خالی/اضافی و اطمینان از نمایش تصاویر در چاپ A4 چندصفحه‌ای؛ اصلاح cache-busting؛ اجرای تست‌های اختصاصی و رگرسیون و بررسی syntax/diff در هر دو مخزن.
+  - معیار پذیرش: قالب جدید و قدیمی ذخیره و بازیابی شوند؛ داده‌های پویا برای پروژه انتخاب‌شده درست resolve شوند؛ پیش‌نمایش و چاپ با طراحی بوم مطابقت داشته باشند؛ هیچ وابستگی Word import باقی نماند و تست‌های مرتبط موفق باشند.
