@@ -224,3 +224,13 @@ test('print designer module remains parseable after Word CSS and HTML sanitizati
  assert.match(module,/!\/\(url\\s\*\\\(/);
  assert.match(module,/split\(\/\\s\+\//);
 });
+
+
+test('Word importer loads JSZip before docx-preview so DOCX ZIP parsing is available',()=>{
+ const index=read('index.html');
+ const zip=index.indexOf('jszip@3.10.1/dist/jszip.min.js');
+ const docx=index.indexOf('docx-preview@0.3.6/dist/docx-preview.min.js');
+ assert.ok(zip >= 0, 'JSZip browser bundle is included');
+ assert.ok(docx > zip, 'JSZip loads before docx-preview');
+ assert.match(index,/print-designer\.js\?v=20261105-word-jszip-dependency-1/);
+});
