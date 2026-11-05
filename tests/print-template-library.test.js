@@ -189,3 +189,20 @@ test('Word import renders original page structure with editable content',()=>{
  assert.match(module,/pt-output-word-document/);
  assert.match(css,/pt-word-document-canvas/);
 });
+
+
+test('template library renders immediately and loads its data without blocking the editor',()=>{
+ const module=read('js/modules/print-designer.js');
+ const init=module.slice(module.indexOf('initLibrary: async function'),module.indexOf('loadLibrary: async function'));
+ assert.match(init,/this\.renderEditor\(\);\s*this\.loadLibrary\(\);/);
+ assert.match(module,/Promise\.allSettled/);
+ assert.match(module,/pt-source-count/);
+});
+
+test('Word import uses a user-gesture file picker fallback and preserves imported page settings',()=>{
+ const module=read('js/modules/print-designer.js');
+ assert.match(module,/wordInput\.showPicker\(\)/);
+ assert.match(module,/catch \(pickerError\)/);
+ assert.doesNotMatch(module,/page: \{ size: 'A4', orientation: 'portrait' \}, elements: \[imported\]/);
+ assert.match(module,/docx-wrapper > \.docx/);
+});
