@@ -226,11 +226,15 @@ test('print designer module remains parseable after Word CSS and HTML sanitizati
 });
 
 
-test('Word importer loads JSZip before docx-preview so DOCX ZIP parsing is available',()=>{
+test('Word importer validates JSZip and loads docx-preview sequentially at runtime',()=>{
  const index=read('index.html');
- const zip=index.indexOf('jszip@3.10.1/dist/jszip.min.js');
- const docx=index.indexOf('docx-preview@0.3.6/dist/docx-preview.min.js');
- assert.ok(zip >= 0, 'JSZip browser bundle is included');
- assert.ok(docx > zip, 'JSZip loads before docx-preview');
- assert.match(index,/print-designer\.js\?v=20261105-word-jszip-dependency-1/);
+ const module=read('js/modules/print-designer.js');
+ assert.doesNotMatch(index,/jszip@3\\.10\\.1/);
+ assert.doesNotMatch(index,/docx-preview@0\\.3\\.6\\/dist\\/docx-preview\\.min\\.js/);
+ assert.match(module,/validZip = value => !!value && typeof value\\.loadAsync === 'function'/);
+ assert.ok(module.includes('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js'));
+ assert.ok(module.includes('https://unpkg.com/jszip@3.10.1/dist/jszip.min.js'));
+ assert.match(module,/await this\\.ensureWordLibraries\\(\\)/);
+ assert.ok(module.includes('https://cdn.jsdelivr.net/npm/docx-preview@0.3.6/dist/docx-preview.min.js'));
+ assert.match(index,/print-designer\\.js\\?v=20261105-word-runtime-dependency-2/);
 });
