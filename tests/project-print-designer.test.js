@@ -172,3 +172,18 @@ test('print designer keeps A4 print dimensions and read-only output styles',()=>
  assert.match(css,/\.ppd-standalone \.ppd-paper\{width:210mm!important/);
  assert.match(css,/\.ppd-output-mode \.ppd-properties\{display:none!important/);
 });
+
+test('central template designer imports DOCX into editable and printable rich text',()=>{
+ const page=read('pages/print-designer.html');
+ const module=read('js/modules/print-designer.js');
+ const index=read('index.html');
+ const css=read('css/print-template-library.css');
+ assert.match(page,/pt-word-import-file/);
+ assert.match(page,/واردسازی از Word/);
+ assert.match(index,/mammoth@1\.8\.0\/mammoth\.browser\.min\.js/);
+ assert.match(module,/importWordDocument: async function/);
+ assert.match(module,/sanitizeImportedHtml: function/);
+ assert.match(module,/data-pt-richtext/);
+ assert.match(module,/pt-output-richtext/);
+ assert.match(css,/pt-richtext-editor/);
+});
