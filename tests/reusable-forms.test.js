@@ -244,3 +244,21 @@ test('event form supports quick and full display modes without discarding option
   assert.match(css,/content: attr\(data-label\)/);
   assert.match(css,/\.event-modal-table tr\[data-form-row\] td::before/);
 });
+
+
+test('event registration context panel uses existing project information, history and event form APIs',()=>{
+  const events=read('js/modules/events.js');
+  const page=read('pages/events.html');
+  const css=read('css/event-context.css');
+  assert.match(events,/event-context-panel/);
+  assert.match(events,/loadEventContext: async function/);
+  assert.match(events,/\/projects\/' \+ encodeURIComponent\(projectKey\) \+ '\/information'/);
+  assert.match(events,/\/information\/' \+ encodeURIComponent\(typeId\) \+ '\/history'/);
+  assert.match(events,/\/events\/' \+ encodeURIComponent\(item\.ID\) \+ '\/forms'/);
+  assert.match(events,/relatedFormResponses/);
+  assert.match(events,/eventContextRequestId/);
+  assert.match(events,/data-context-history/);
+  assert.match(css,/@media\(max-width:820px\)/);
+  assert.match(css,/event-context-panel\.is-open/);
+  assert.match(page,/ثبت از طریق پروژه/);
+});
