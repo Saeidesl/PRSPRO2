@@ -182,7 +182,7 @@ test('Word import renders original page structure with editable content',()=>{
  const css=read('css/print-template-library.css');
  assert.ok(index.includes('docx-preview@0.3.6/dist/docx-preview.min.js'));
  assert.ok(index.includes('docx-preview@0.3.6/dist/docx-preview.min.css'));
- assert.match(module,/window\\.docx\\.renderAsync/);
+ assert.ok(module.includes('window.docx.renderAsync'));
  assert.match(module,/breakPages: true/);
  assert.match(module,/type: 'worddocument'/);
  assert.match(module,/sanitizeWordCss/);
