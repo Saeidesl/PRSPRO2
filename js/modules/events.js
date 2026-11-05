@@ -2663,12 +2663,11 @@
           this.showRefreshNotice();
         }
 
-        if (String(procurementIntegration.status || '').toUpperCase() === 'FAILED') {
-          const savedEventId = eventResult.event && (eventResult.event.ID || eventResult.event.Id);
-          this.showProcurementRetryNotice(savedEventId, 'رویداد ثبت شد، اما محاسبه نیاز ملزومات کامل نشد. می‌توانید اتصال را دوباره اجرا کنید. جزئیات: ' + String(procurementIntegration.message || 'خطای نامشخص'));
-        } else {
-          this.showSuccessNotice('رویداد با موفقیت ثبت شد.');
-        }
+        this.showEventSubmissionResult(eventResult, {
+          projectId: isIndependent ? '' : projectId,
+          formResponseCount: this.amendmentMode ? 0 : formResponses.length,
+          isIndependent: isIndependent
+        });
       } catch (error) {
         this.showFormError(
           'ثبت رویداد ناموفق بود: ' + this.errorMessage(error)
@@ -2741,6 +2740,124 @@
       box.textContent = message;
       box.hidden = false;
       box.focus();
+    },
+
+    showEventSubmissionResult: function (result, context) {
+      context = context || {};
+      const event = result && (result.event || result.Event) || {};
+      const eventId = String(event.ID || event.Id || result.eventId || result.EventID || '');
+      const formState = result.formPersistence || {};
+      const centralState = result.centralInformation || {};
+      const procurement = result.procurementIntegration || {};
+      const statusText = function (status) {
+        const value = String(status || '').toUpperCase();
+        if (['SUCCEEDED', 'SUCCESS', 'COMPLETED'].indexOf(value) !== -1) return 'موفق';
+        if (['FAILED', 'ERROR'].indexOf(value) !== -1) return 'نیازمند پیگیری';
+        if (['NOT_APPLICABLE', 'NOT_CONFIGURED', 'NONE'].indexOf(value) !== -1) return 'نیازی نبود';
+        if (['ALREADY_PROCESSED', 'ALREADY_APPLIED'].indexOf(value) !== -1) return 'قبلاً انجام شده';
+        if (value === 'NO_CHANGE') return 'بدون تغییر مرحله';
+        return status || 'نامشخص';
+      };
+      const panel = document.createElement('section');
+      panel.className = 'event-result-panel';
+      panel.setAttribute('role', 'status');
+      panel.setAttribute('aria-live', 'polite');
+      const heading = document.createElement('div');
+      heading.className = 'event-result-heading';
+      const title = document.createElement('strong');
+      title.textContent = 'نتیجه ثبت رویداد';
+      const close = document.createElement('button');
+      close.type = 'button';
+      close.className = 'event-result-close';
+      close.textContent = 'بستن';
+      close.setAttribute('aria-label', 'بستن نتیجه ثبت');
+      close.addEventListener('click', function () { panel.remove(); });
+      heading.appendChild(title);
+      heading.appendChild(close);
+      panel.appendChild(heading);
+
+      const description = document.createElement('p');
+      description.className = 'event-result-description';
+      description.textContent = result.idempotentReplay
+        ? 'این درخواست قبلاً ثبت شده بود؛ از ایجاد رویداد تکراری جلوگیری شد.'
+        : (eventId ? 'رویداد با شناسه ' + eventId + ' ذخیره شد.' : 'درخواست ثبت با موفقیت انجام شد.');
+      panel.appendChild(description);
+
+      const rows = document.createElement('div');
+      rows.className = 'event-result-rows';
+      const addRow = function (label, status, detail, tone) {
+        const row = document.createElement('div');
+        row.className = 'event-result-row' + (tone ? ' is-' + tone : '');
+        const copy = document.createElement('div');
+        copy.className = 'event-result-row-copy';
+        const name = document.createElement('strong');
+        name.textContent = label;
+        const note = document.createElement('small');
+        note.textContent = detail || '';
+        copy.appendChild(name);
+        if (detail) copy.appendChild(note);
+        const state = document.createElement('span');
+        state.className = 'event-result-state';
+        state.textContent = statusText(status);
+        row.appendChild(copy);
+        row.appendChild(state);
+        rows.appendChild(row);
+        return { row: row, state: state };
+      };
+
+      addRow('ذخیره رویداد', 'SUCCEEDED', eventId ? 'شناسه: ' + eventId : '');
+      const formStatus = formState.status || (context.formResponseCount ? 'SUCCEEDED' : 'NOT_APPLICABLE');
+      addRow('پاسخ فرم', formStatus, Number(formState.responseCount || context.formResponseCount || 0)
+        ? Number(formState.responseCount || context.formResponseCount || 0) + ' فرم ذخیره شد' : 'فرمی برای ذخیره وجود نداشت',
+        String(formStatus).toUpperCase() === 'FAILED' ? 'warning' : '');
+      const centralStatus = centralState.status ||
+        (context.projectId && context.formResponseCount ? 'SUCCEEDED' : 'NOT_APPLICABLE');
+      addRow('اطلاعات مرکزی پروژه', centralStatus,
+        Number(centralState.updatedCount || 0) ? Number(centralState.updatedCount) + ' مقدار به‌روزرسانی شد' :
+          (centralStatus === 'NOT_APPLICABLE' ? 'به‌روزرسانی اطلاعات مرکزی لازم نبود' : 'به‌روزرسانی همراه با پاسخ فرم انجام شد'),
+        String(centralStatus).toUpperCase() === 'FAILED' ? 'warning' : '');
+      const workflowStatus = context.isIndependent ? 'NOT_APPLICABLE' :
+        (result.idempotentReplay ? 'ALREADY_PROCESSED' : (result.workflowMoved ? 'SUCCEEDED' : 'NO_CHANGE'));
+      addRow('گردش کار پروژه', workflowStatus,
+        context.isIndependent ? 'رویداد مستقل است' :
+          (result.currentStepID ? 'مرحله فعلی: ' + result.currentStepID : 'مرحله پروژه تغییر نکرد'));
+      const procurementStatus = procurement.status || 'NOT_CONFIGURED';
+      const procurementRow = addRow('محاسبه ملزومات', procurementStatus,
+        procurement.message || (procurementStatus === 'NOT_CONFIGURED' ? 'اتصال تأمین برای این نوع رویداد تعریف نشده است' : ''),
+        String(procurementStatus).toUpperCase() === 'FAILED' ? 'warning' : '');
+      if (String(procurementStatus).toUpperCase() === 'FAILED' && eventId) {
+        const retry = document.createElement('button');
+        retry.type = 'button';
+        retry.className = 'btn btn-sm btn-secondary event-result-retry';
+        retry.textContent = 'تلاش مجدد برای محاسبه ملزومات';
+        retry.addEventListener('click', async () => {
+          if (retry.disabled) return;
+          retry.disabled = true;
+          retry.textContent = 'در حال تلاش مجدد...';
+          try {
+            const response = await PMS.Api.post('/events/' + encodeURIComponent(eventId) + '/procurement-retry', {});
+            const retryResult = PMS.Api.extractData(response) || {};
+            procurementRow.state.textContent = statusText(retryResult.status || 'SUCCEEDED');
+            procurementRow.row.classList.remove('is-warning');
+            procurementRow.row.classList.add('is-success');
+            const detail = procurementRow.row.querySelector('small');
+            if (detail) detail.textContent = 'محاسبه نیاز ملزومات با موفقیت مجدداً اجرا شد';
+            retry.remove();
+            PMS.Api.invalidateMany([CACHE_KEY, PROJECTS_CACHE_KEY, PMS.Cache.keys.DASHBOARD]);
+            if (typeof this.reloadEvents === 'function') {
+              try { await this.reloadEvents(); } catch (refreshError) {}
+            }
+          } catch (error) {
+            retry.disabled = false;
+            retry.textContent = 'تلاش مجدد';
+            const detail = procurementRow.row.querySelector('small');
+            if (detail) detail.textContent = 'تلاش مجدد ناموفق بود: ' + this.errorMessage(error);
+          }
+        });
+        panel.appendChild(retry);
+      }
+      panel.appendChild(rows);
+      document.body.appendChild(panel);
     },
 
     showSuccessNotice: function (message) {
