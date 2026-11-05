@@ -157,14 +157,3 @@
 .pt-output-richtext th,.pt-output-richtext td{border:1px solid #9ca3af;padding:1.5mm;vertical-align:top}
 .pt-output-richtext img{max-width:100%;height:auto;object-fit:contain}
 
-/* Word imports retain physical page boundaries and page geometry. */
-.pt-design-canvas.pt-word-document-canvas{display:block;width:max-content!important;min-width:0!important;max-width:none!important;min-height:0!important;aspect-ratio:auto!important;overflow:visible!important;background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important}
-.pt-word-document{display:block;direction:ltr;text-align:left;content-visibility:visible}
-.pt-word-document .docx-wrapper{background:transparent!important;padding:0!important}
-.pt-word-document .docx{margin:0 auto 8mm!important;box-shadow:0 2px 12px rgba(0,0,0,.16)!important}
-.pt-word-document[contenteditable="true"]{outline:0}
-.pt-output-word-document{width:fit-content;max-width:100%;margin:0 auto}
-.pt-output-word-document .docx-wrapper{background:transparent!important;padding:0!important}
-.pt-output-word-document .docx{margin:0 auto!important;box-shadow:none!important;break-after:page;page-break-after:always}
-.pt-output-word-document .docx:last-child{break-after:auto;page-break-after:auto}
-@media print{body.pt-printing .pt-output-word-document{width:100%!important;max-width:none!important}body.pt-printing .pt-output-word-document .docx{margin:0!important;box-shadow:none!important;break-after:page;page-break-after:always}body.pt-printing .pt-output-word-document .docx:last-child{break-after:auto;page-break-after:auto}}
