@@ -14,6 +14,9 @@
     workflowProgressProjectId: '',
     workflowProgressLoading: false,
     workflowProgressError: false,
+    eventContextRequestId: 0,
+    eventContextInformation: [],
+    eventContextHistoryRequests: {},
     eventTypes: [],
     canCreateEvents: false,
     canAccessProjectOptions: false,
@@ -172,6 +175,13 @@
           event.preventDefault();
           Events.preselectedProjectId = String(queueAction.dataset.projectId || '');
           Events.openForm();
+          return;
+        }
+
+        const contextEventButton = target.closest('[data-context-event-id]');
+        if (contextEventButton) {
+          event.preventDefault();
+          Events.openDetails(contextEventButton.dataset.contextEventId);
           return;
         }
 
@@ -1118,7 +1128,7 @@
       modal.setAttribute('aria-labelledby', 'event-form-title');
 
       modal.innerHTML =
-        '<div class="event-modal-panel">' +
+        '<div class="event-modal-panel event-form-workspace">' +
         '<div class="event-modal-heading"><div><span class="event-modal-kicker">مدیریت تولید</span>' +
         '<h3 id="event-form-title">ثبت رویداد جدید</h3>' +
         '<p class="event-modal-subtitle">اطلاعات فعالیت انجام‌شده را وارد کنید.</p></div>' +
@@ -1154,10 +1164,34 @@
         '<button type="submit" id="event-form-submit" class="event-modal-button event-modal-button-primary" disabled aria-disabled="true">' +
         '<span class="event-submit-button-text">ثبت رویداد</span><span class="event-button-spinner" aria-hidden="true" hidden></span></button>' +
         '<button type="button" id="event-form-cancel" class="event-modal-button">انصراف</button>' +
-        '</div></form></div>';
+        '</div></form>' +
+        '<button type="button" class="event-context-mobile-trigger" id="event-context-mobile-trigger" aria-expanded="false" aria-controls="event-context-panel">اطلاعات مرتبط پروژه</button>' +
+        '<aside id="event-context-panel" class="event-context-panel" aria-label="اطلاعات مرتبط پروژه">' +
+        '<div class="event-context-heading"><div><span class="event-modal-kicker">اطلاعات کمکی</span><h4>اطلاعات مرتبط</h4></div>' +
+        '<button type="button" id="event-context-close" class="event-context-close" aria-label="بستن پنل">×</button></div>' +
+        '<div id="event-context-content" class="event-context-content"><p class="event-muted">برای مشاهده اطلاعات مرتبط، پروژه و نوع رویداد را انتخاب کنید.</p></div></aside></div>';
 
       document.body.appendChild(modal);
       modal.addEventListener('click', (event) => {
+        const contextTrigger = event.target.closest('#event-context-mobile-trigger');
+        if (contextTrigger) {
+          const panel = document.getElementById('event-context-panel');
+          if (panel) panel.classList.add('is-open');
+          contextTrigger.setAttribute('aria-expanded', 'true');
+          return;
+        }
+        if (event.target.closest('#event-context-close')) {
+          const panel = document.getElementById('event-context-panel');
+          const trigger = document.getElementById('event-context-mobile-trigger');
+          if (panel) panel.classList.remove('is-open');
+          if (trigger) trigger.setAttribute('aria-expanded', 'false');
+          return;
+        }
+        const historyButton = event.target.closest('[data-context-history]');
+        if (historyButton) {
+          this.toggleEventContextHistory(historyButton.dataset.contextHistory, historyButton);
+          return;
+        }
         const modeButton = event.target.closest('[data-form-mode]');
         if (!modeButton || !modal.contains(modeButton)) return;
         this.updateFormMode(modeButton.dataset.formMode);
@@ -1235,7 +1269,7 @@
         }
         this.updateSubmitAvailability();
         this.renderEventQuantityField();
-        this.loadEventForms(typeSelect.value);
+        this.loadEventForms(typeSelect.value).then(() => this.loadEventContext(projectSelect.value, typeSelect.value));
       });
 
       projectSelect.addEventListener('change', () => {
@@ -1243,6 +1277,7 @@
         if (this.amendmentMode) this.loadAmendmentSourceEvents(projectSelect.value);
         this.updateSubmitAvailability();
         this.renderEventQuantityField();
+        this.loadEventContext(projectSelect.value, typeSelect.value);
       });
 
       dateInput.addEventListener('input', () => {
@@ -1271,6 +1306,124 @@
 
       const firstInput = document.getElementById('event-form-project');
       if (firstInput) firstInput.focus();
+    },
+
+    loadEventContext: async function (projectId, eventTypeId) {
+      const content = document.getElementById('event-context-content');
+      const panel = document.getElementById('event-context-panel');
+      if (!content || !panel) return;
+      const requestId = ++this.eventContextRequestId;
+      const projectKey = String(projectId || '');
+      const typeKey = String(eventTypeId || '');
+      this.eventContextInformation = [];
+      this.eventContextHistoryRequests = {};
+      if (!projectKey) {
+        content.innerHTML = '<p class="event-muted">برای رویداد مستقل، اطلاعات پروژه نمایش داده نمی‌شود.</p>';
+        panel.classList.remove('has-project-context');
+        return;
+      }
+      panel.classList.add('has-project-context');
+      content.innerHTML = '<div class="event-context-loading"><span class="event-spinner" aria-hidden="true"></span><span>در حال دریافت اطلاعات مرتبط...</span></div>';
+      try {
+        const response = await PMS.Api.get('/projects/' + encodeURIComponent(projectKey) + '/information');
+        if (requestId !== this.eventContextRequestId || !document.getElementById('event-context-panel')) return;
+        const rows = this.normalize(PMS.Api.extractData(response));
+        const definitions = (this.formDefinitions || []).reduce(function (all, item) {
+          const form = item.Form || item.Definition || {};
+          (form.Fields || []).forEach(function (field) {
+            const info = field.InformationType || {};
+            const id = String(field.InformationTypeID || info.ID || '');
+            if (id) all[id] = true;
+          });
+          return all;
+        }, Object.create(null));
+        const hasMappedFields = Object.keys(definitions).length > 0;
+        const relevant = rows.filter(function (row) {
+          const info = row.InformationType || {};
+          const id = String(row.InformationTypeID || info.ID || '');
+          const value = row.Value !== undefined ? row.Value : row.ValueJSON;
+          const active = String(row.Status || 'ACTIVE').toUpperCase() === 'ACTIVE';
+          const hasValue = value !== '' && value !== null && value !== undefined &&
+            !(Array.isArray(value) && !value.length);
+          return active && hasValue && (!hasMappedFields || definitions[id]);
+        });
+        this.eventContextInformation = relevant;
+        const relatedEvents = this.events.filter(function (item) {
+          return String(item.ProjectID || '') === projectKey &&
+            (!typeKey || String(item.EventTypeID || '') === typeKey) &&
+            String(item.Status || 'ACTIVE').toUpperCase() !== 'VOID';
+        }).sort(function (a, b) {
+          return String(b.OccurredAt || b.CreatedAt || '').localeCompare(String(a.OccurredAt || a.CreatedAt || ''));
+        }).slice(0, 4);
+        let html = '<section class="event-context-section"><h5>اطلاعات مرکزی جاری <span>' + relevant.length + '</span></h5>';
+        if (relevant.length) {
+          html += relevant.map((row) => {
+            const info = row.InformationType || {};
+            const id = String(row.InformationTypeID || info.ID || '');
+            const value = row.Value !== undefined ? row.Value : this.safeJsonParse(row.ValueJSON, null);
+            const source = row.SourceEventID ? 'رویداد ' + row.SourceEventID : 'ثبت مستقیم';
+            return '<article class="event-context-info-card"><div class="event-context-info-title">' +
+              this.escape(info.Name || info.Code || 'اطلاعات') + '</div><div class="event-context-info-value">' +
+              this.escape(this.displayValue(value)) + '</div><div class="event-context-meta">' +
+              this.escape(source) + (row.UpdatedAt ? ' · ' + this.escape(this.formatDate(row.UpdatedAt)) : '') +
+              '</div><button type="button" class="event-context-history-button" data-context-history="' +
+              this.escape(id) + '">مشاهده تاریخچه</button><div class="event-context-history" data-context-history-content="' +
+              this.escape(id) + '" hidden></div></article>';
+          }).join('');
+        } else {
+          html += '<p class="event-muted">اطلاعات مرکزی مرتبطی برای این نوع رویداد ثبت نشده است.</p>';
+        }
+        html += '</section><section class="event-context-section"><h5>رویدادهای مرتبط اخیر <span>' + relatedEvents.length + '</span></h5>';
+        if (relatedEvents.length) {
+          html += relatedEvents.map((item) => {
+            const type = this.findById(this.eventTypes, item.EventTypeID);
+            return '<article class="event-context-event-card"><strong>' +
+              this.escape(type && (type.Name || type.Code) || 'رویداد') + '</strong><span>' +
+              this.escape(this.formatDate(item.OccurredAt || item.CreatedAt)) + '</span><small>' +
+              this.escape(item.Description || 'بدون شرح') + '</small><button type="button" class="event-context-event-open" data-context-event-id="' +
+              this.escape(item.ID || '') + '">مشاهده جزئیات</button></article>';
+          }).join('');
+        } else {
+          html += '<p class="event-muted">هنوز رویداد مرتبطی برای این پروژه ثبت نشده است.</p>';
+        }
+        html += '</section><p class="event-context-footnote">اطلاعات این پنل فقط برای مراجعه است؛ تغییرات از مسیرهای اصلی ثبت انجام می‌شود.</p>';
+        content.innerHTML = html;
+        content.querySelectorAll('[data-context-event-id]').forEach((button) => {
+          button.addEventListener('click', () => this.openDetails(button.dataset.contextEventId));
+        });
+      } catch (error) {
+        if (requestId !== this.eventContextRequestId) return;
+        content.innerHTML = '<div class="event-context-error" role="alert">دریافت اطلاعات مرتبط ناموفق بود: ' +
+          this.escape(this.errorMessage(error)) + '<button type="button" id="event-context-retry">تلاش مجدد</button></div>';
+        const retry = document.getElementById('event-context-retry');
+        if (retry) retry.addEventListener('click', () => this.loadEventContext(projectKey, typeKey));
+      }
+    },
+
+    toggleEventContextHistory: async function (typeId, button) {
+      const content = document.querySelector('[data-context-history-content="' + CSS.escape(String(typeId || '')) + '"]');
+      if (!content) return;
+      if (!content.hidden) { content.hidden = true; button.textContent = 'مشاهده تاریخچه'; return; }
+      content.hidden = false;
+      button.textContent = 'بستن تاریخچه';
+      if (content.dataset.loaded === 'true') return;
+      content.innerHTML = '<p class="event-muted">در حال دریافت تاریخچه...</p>';
+      const project = document.getElementById('event-form-project');
+      if (!project || !project.value) return;
+      try {
+        const response = await PMS.Api.get('/projects/' + encodeURIComponent(project.value) +
+          '/information/' + encodeURIComponent(typeId) + '/history');
+        const rows = this.normalize(PMS.Api.extractData(response));
+        content.innerHTML = rows.length ? rows.slice().reverse().map((row) =>
+          '<div class="event-context-history-row"><strong>نسخه ' + this.escape(row.Revision || '-') +
+          ' · ' + this.escape(row.Action || 'تغییر') + '</strong><span>' +
+          this.escape(this.formatDate(row.CreatedAt)) + '</span><small>' +
+          this.escape(row.Reason || (row.SourceEventID ? 'رویداد ' + row.SourceEventID : 'بدون توضیح')) +
+          '</small></div>').join('') : '<p class="event-muted">تاریخچه‌ای ثبت نشده است.</p>';
+        content.dataset.loaded = 'true';
+      } catch (error) {
+        content.innerHTML = '<p class="event-context-error">دریافت تاریخچه ناموفق بود: ' + this.escape(this.errorMessage(error)) + '</p>';
+      }
     },
 
     refreshEventTypeOptions: function () {
