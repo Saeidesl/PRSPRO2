@@ -965,3 +965,8 @@
 @media (prefers-reduced-motion: reduce) {
   .events-page .event-queue-tab, .events-page .event-queue-project { transition: none; }
 }
+
+/* Ensure the workflow progress panel stays hidden even when section styles override the browser default. */
+#event-create-modal #event-workflow-progress-section[hidden] {
+  display: none !important;
+}
