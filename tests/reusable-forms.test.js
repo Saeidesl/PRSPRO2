@@ -262,3 +262,31 @@ test('event registration context panel uses existing project information, histor
   assert.match(css,/event-context-panel\.is-open/);
   assert.match(page,/ثبت از طریق پروژه/);
 });
+
+
+test('event submission reports event, form snapshot and central information outcomes separately',()=>{
+  const events=read('js/modules/events.js');
+  const service=read('EventService.js');
+  const forms=read('FormService.js');
+  assert.match(events,/showEventSubmissionResult/);
+  assert.match(events,/\/events\/' \+ encodeURIComponent\(eventId\) \+ '\/procurement-retry/);
+  assert.match(events,/formPersistence/);
+  assert.match(events,/centralInformation/);
+  assert.match(service,/formPersistence: formPersistence/);
+  assert.match(service,/centralInformation: centralInformation/);
+  assert.match(forms,/centralInformationCount/);
+  assert.match(forms,/projectCodeUpdated/);
+});
+
+test('event submission prevents duplicate clicks and preserves the form and idempotency key on errors',()=>{
+  const events=read('js/modules/events.js');
+  const start=events.indexOf('submitForm: async function');
+  const end=events.indexOf('reloadEvents: async function',start);
+  const submit=events.slice(start,end);
+  assert.match(submit,/if \(this\.submitting\) return/);
+  assert.match(submit,/payload\.IdempotencyKey = this\.pendingIdempotencyKey/);
+  assert.match(submit,/catch \(error\)/);
+  assert.match(submit,/this\.showFormError/);
+  assert.match(submit,/this\.closeForm\(true\)/);
+  assert.match(events,/pendingIdempotencyFingerprint !== requestFingerprint/);
+});
