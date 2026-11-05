@@ -1,0 +1,28 @@
+/* Contextual project information in event registration */
+#event-create-modal .event-form-workspace{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;width:min(1180px,calc(100vw - 32px));max-width:1180px;max-height:92vh;overflow:hidden}
+#event-create-modal .event-form-workspace>form{min-width:0;max-height:85vh;overflow:auto}
+#event-create-modal .event-context-panel{position:sticky;top:0;max-height:85vh;overflow:auto;padding:14px;border:1px solid var(--color-border);border-radius:12px;background:var(--color-surface-alt)}
+#event-create-modal .event-context-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#event-create-modal .event-context-heading h4{margin:3px 0 0;font-size:14px;color:var(--color-text)}
+#event-create-modal .event-context-close{display:none}
+#event-create-modal .event-context-content{display:grid;gap:12px;padding-top:12px}
+#event-create-modal .event-context-section{display:grid;gap:8px}
+#event-create-modal .event-context-section h5{display:flex;justify-content:space-between;margin:0;color:var(--color-text);font-size:12px}
+#event-create-modal .event-context-info-card,#event-create-modal .event-context-event-card{display:grid;gap:5px;padding:10px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-surface)}
+#event-create-modal .event-context-info-title,#event-create-modal .event-context-event-card strong{color:var(--color-text);font-size:12px;font-weight:750}
+#event-create-modal .event-context-info-value{color:var(--color-text);font-size:13px;line-height:1.8;overflow-wrap:anywhere;white-space:pre-wrap}
+#event-create-modal .event-context-meta,#event-create-modal .event-context-event-card span,#event-create-modal .event-context-event-card small{color:var(--color-text-muted);font-size:10px;line-height:1.7;overflow-wrap:anywhere}
+#event-create-modal .event-context-history-button,#event-create-modal .event-context-event-open{justify-self:start;min-height:30px;padding:4px 7px;border:0;border-radius:7px;background:var(--color-surface-alt);color:var(--color-primary);font:inherit;font-size:11px;cursor:pointer}
+#event-create-modal .event-context-history{display:grid;gap:7px;padding-top:5px}
+#event-create-modal .event-context-history-row{display:grid;gap:3px;padding:7px;border-right:2px solid var(--color-primary);background:var(--color-surface-alt)}
+#event-create-modal .event-context-history-row strong{font-size:10px;color:var(--color-text)}
+#event-create-modal .event-context-history-row span,#event-create-modal .event-context-history-row small,#event-create-modal .event-context-footnote{color:var(--color-text-muted);font-size:10px;line-height:1.7}
+#event-create-modal .event-context-mobile-trigger{display:none}
+@media(max-width:820px){
+#event-create-modal .event-form-workspace{display:block;width:calc(100vw - 20px);max-height:94vh;overflow:auto;padding:14px}
+#event-create-modal .event-form-workspace>form{max-height:none;overflow:visible}
+#event-create-modal .event-context-mobile-trigger{display:block;width:100%;min-height:42px;padding:10px;margin-bottom:10px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-surface-alt);color:var(--color-primary);font:inherit}
+#event-create-modal .event-context-panel{display:none;position:fixed;inset:0 0 0 auto;width:min(88vw,390px);max-height:100vh;overflow:auto;z-index:20;padding:16px;background:var(--color-surface);box-shadow:var(--shadow-lg)}
+#event-create-modal .event-context-panel.is-open{display:block}
+#event-create-modal .event-context-close{display:block}
+}
