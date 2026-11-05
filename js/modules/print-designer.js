@@ -165,6 +165,21 @@
         button.dataset.ptBound = '1';
         button.addEventListener('click', () => this.handleEditorAction(button.dataset.ptAction));
       });
+      document.querySelectorAll('[data-pt-ribbon-tab]').forEach(tab => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('[data-pt-ribbon-tab]').forEach(item => { const active = item === tab; item.classList.toggle('is-active', active); item.setAttribute('aria-selected', String(active)); });
+          document.querySelectorAll('[data-pt-ribbon-panel]').forEach(panel => { panel.hidden = panel.dataset.ptRibbonPanel !== tab.dataset.ptRibbonTab; });
+        });
+      });
+      document.querySelectorAll('[data-pt-format]').forEach(button => button.addEventListener('click', () => this.formatSelectedText(button.dataset.ptFormat)));
+      ['pt-text-font','pt-text-size','pt-text-color'].forEach(id => {
+        const control = document.getElementById(id);
+        if (control) control.addEventListener('change', () => this.applyTextStyle(id, control.value));
+      });
+      const zoom = document.getElementById('pt-editor-zoom');
+      if (zoom) zoom.addEventListener('input', () => this.applyZoom());
+      const zoomValue = document.getElementById('pt-editor-zoom-value');
+      if (zoomValue && zoom) zoomValue.textContent = zoom.value + '٪';
       ['pt-prop-text','pt-prop-binding','pt-prop-selection','pt-prop-x','pt-prop-y','pt-prop-width','pt-prop-height','pt-prop-font','pt-prop-align','pt-prop-columns','pt-prop-rows','pt-prop-color','pt-prop-background'].forEach(id => {
         const input = document.getElementById(id);
         if (!input || input.dataset.bound === '1') return;
@@ -182,6 +197,42 @@
           this.renderCanvas(); this.commitHistory();
         });
       });
+    },
+    applyZoom: function () {
+      const zoom = document.getElementById('pt-editor-zoom');
+      const canvas = document.getElementById('pt-design-canvas');
+      const value = Math.max(50, Math.min(150, Number(zoom && zoom.value || 100)));
+      if (canvas) { canvas.style.setProperty('--pt-zoom', String(value / 100)); canvas.style.transform = 'scale(' + (value / 100) + ')'; canvas.style.transformOrigin = 'top center'; }
+      const output = document.getElementById('pt-editor-zoom-value');
+      if (output) output.textContent = value + '٪';
+    },
+    getRichTextEditor: function () {
+      const item = this.getSelectedOrById(this.selectedElementId);
+      if (!item || item.type !== 'richtext') return null;
+      return document.querySelector('[data-pt-richtext="' + CSS.escape(String(item.id)) + '"]');
+    },
+    formatSelectedText: function (command) {
+      const editor = this.getRichTextEditor();
+      if (!editor) { this.setStatus('pt-editor-status', 'برای قالب‌بندی مستقیم، ابتدا یک عنصر «متن قابل ویرایش» انتخاب کن.', true); return; }
+      editor.focus();
+      document.execCommand(command, false, null);
+      const item = this.getSelectedOrById(this.selectedElementId);
+      if (item) item.html = this.sanitizeRichTextHtml(editor.innerHTML);
+      this.commitHistory();
+    },
+    applyTextStyle: function (id, value) {
+      const editor = this.getRichTextEditor();
+      if (!editor) { this.setStatus('pt-editor-status', 'ابتدا متن قابل ویرایش را انتخاب کن.', true); return; }
+      editor.focus();
+      if (id === 'pt-text-font') document.execCommand('fontName', false, value);
+      if (id === 'pt-text-size') {
+        const sizes = {10:'2',11:'2',12:'3',14:'4',16:'4',18:'5',24:'6',32:'7'};
+        document.execCommand('fontSize', false, sizes[value] || '3');
+      }
+      if (id === 'pt-text-color') document.execCommand('foreColor', false, value);
+      const item = this.getSelectedOrById(this.selectedElementId);
+      if (item) item.html = this.sanitizeRichTextHtml(editor.innerHTML);
+      this.commitHistory();
     },
     getSelectedOrById: function (id) {
       const elements = this.definition && Array.isArray(this.definition.elements) ? this.definition.elements : [];
@@ -207,6 +258,12 @@
     handleEditorAction: function (action) {
       const selected = this.getSelectedOrById(this.selectedElementId);
       if (action === 'add-text') return this.createElement('text');
+      if (action === 'add-richtext') return this.createElement('richtext', { html: '<p>متن خود را اینجا وارد کن…</p>' });
+      if (action === 'zoom-in' || action === 'zoom-out') {
+        const zoom = document.getElementById('pt-editor-zoom');
+        if (zoom) { zoom.value = String(Math.max(50, Math.min(150, Number(zoom.value || 100) + (action === 'zoom-in' ? 10 : -10)))); this.applyZoom(); }
+        return;
+      }
       if (action === 'add-field') {
         const binding = this.definition && this.definition.bindings && this.definition.bindings[0];
         return this.createElement('field', { text: binding ? (binding.label || binding.id) : 'فیلد داده', bindingId: binding ? binding.id : '' });
@@ -320,7 +377,7 @@
           'mm;height:' + Number(item.height || 15) + 'mm;font-size:' + Number(item.fontSize || 12) + 'pt;text-align:' + this.esc(item.align || 'right') + ';color:' + this.esc(item.color || 'black') + ';background:' + this.esc(item.background || 'transparent');
         const selected = String(item.id) === String(this.selectedElementId) ? ' is-selected' : '';
         const label = item.type === 'richtext'
-          ? '<div class="pt-richtext-editor" contenteditable="true" spellcheck="true" data-pt-richtext="' + this.esc(item.id) + '">' + this.sanitizeImportedHtml(item.html || '') + '</div>'
+          ? '<div class="pt-richtext-editor" contenteditable="true" spellcheck="true" data-pt-richtext="' + this.esc(item.id) + '">' + this.sanitizeRichTextHtml(item.html || '') + '</div>'
           : (item.type === 'line' || item.type === 'divider' ? '<span class="pt-shape-line" aria-hidden="true"></span>' :
           (item.type === 'rectangle' || item.type === 'ellipse' ? '<span class="pt-shape-outline" aria-hidden="true"></span>' :
           (item.type === 'image' ? '<span class="pt-image-placeholder">▧ تصویر</span>' :
@@ -337,7 +394,7 @@
         editor.dataset.bound = '1';
         editor.addEventListener('input', () => {
           const item = this.getSelectedOrById(editor.dataset.ptRichtext);
-          if (item) item.html = this.sanitizeImportedHtml(editor.innerHTML);
+          if (item) item.html = this.sanitizeRichTextHtml(editor.innerHTML);
         });
         editor.addEventListener('blur', () => {
           const item = this.getSelectedOrById(editor.dataset.ptRichtext);
