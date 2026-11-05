@@ -25,7 +25,7 @@
 - `js/core/router.js`
   - مسیرهای `print-design` و `print-designer` به `PrintDesigner`؛ مجوز صفحه `SYSTEM_SETTINGS`.
 - `index.html`
-  - بارگذاری `docx-preview@0.3.6` و CSS آن؛ cache-busting فایل‌های قالب‌ساز.
+  - CSS مربوط به `docx-preview@0.3.6`؛ کتابخانه‌های JSZip و docx-preview هنگام نیاز در `print-designer.js` و به ترتیب کنترل‌شده بارگذاری می‌شوند؛ cache-busting فایل‌های قالب‌ساز.
 - `css/print-template-library.css`
   - استایل بوم، منابع، صفحات Word و خروجی چاپ.
 - تست‌ها: `tests/print-template-library.test.js` و `tests/project-print-designer.test.js`.
@@ -47,7 +47,7 @@
 - ورودی فایل مخفی است و دکمه فقط `input.click()` را اجرا می‌کند؛ برای سازگاری موبایل/مرورگر باید انتخاب فایل با تعامل مستقیم کاربر و fallback امن انجام شود.
 - در `index.html` خط متصل‌کننده CSS قالب‌ساز شامل نویسه‌های لفظی `\\n` است؛ باید به newline واقعی تبدیل شود.
 - واردسازی فعلی به A4 عمودی به‌صورت پیش‌فرض محدود شده و تشخیص تعداد صفحه/حفظ مشخصات بخش‌ها باید از ساختار واقعی خروجی DOCX استخراج شود؛ ابعاد و جهت سند نباید بدون دلیل بازنویسی شوند.
-- علت خطای واردسازی `Cannot read properties of undefined (reading 'loadAsync')` مشخص شد: `docx-preview` برای بازکردن فایل DOCX به JSZip نیاز دارد اما فایل `jszip.min.js` در صفحه بارگذاری نشده بود. JSZip نسخه 3.10.1 پیش از `docx-preview` به `index.html` اضافه شد و آزمون ترتیب بارگذاری وابستگی ثبت شد.
+- علت خطای `Cannot read properties of undefined (reading 'loadAsync')` در اصلاح قبلی به‌طور قطعی پوشش داده نشده بود: وجود تگ JSZip تضمین نمی‌کرد CDN کتابخانه را تحویل داده و global معتبر `window.JSZip` پیش از ارزیابی docx-preview ساخته شده باشد. وابستگی‌ها اکنون هنگام واردسازی و به‌شکل ترتیبی بارگذاری می‌شوند؛ ابتدا JSZip و اعتبارسنجی `loadAsync`، سپس docx-preview و اعتبارسنجی `renderAsync`، با fallback از jsDelivr به unpkg. خطای بارگذاری نیز مستقیماً نمایش داده می‌شود.
 - محدودیت واقعی حفظ Word تابع امکانات `docx-preview` است؛ تست واقعی مرورگر و فایل DOCX همچنان معیار نهایی است.
 
 ## 📋 Macro-Task Queue & Implementation Log
