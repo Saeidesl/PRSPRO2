@@ -738,6 +738,8 @@
         if (item.type === 'rectangle' || item.type === 'ellipse') return '<div class="pt-output-element pt-output-shape pt-output-'+item.type+'" style="'+style+'" aria-hidden="true"></div>';
         return '<div class="pt-output-element" style="'+style+'">'+this.esc(value)+'</div>';
       }));
+      const importedWord = (definition.elements || []).find(item => item.type === 'worddocument');
+      if (importedWord) return '<div class="pt-word-document pt-output-word-document"><style>' + (importedWord.css || '') + '</style>' + this.sanitizeImportedHtml(importedWord.html || '') + '</div>';
       return '<article class="pt-print-page" style="width:'+width+'mm;height:'+height+'mm" dir="rtl">'+elements.join('')+'</article>';
     },
     printOutput: function () {
