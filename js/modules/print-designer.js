@@ -284,6 +284,20 @@
       canvas.style.minHeight = dimensions.height + 'mm';
       canvas.style.aspectRatio = dimensions.width + ' / ' + dimensions.height;
       const elements = this.definition.elements || [];
+      const wordDocument = elements.find(item => item.type === 'worddocument');
+      if (wordDocument) {
+        canvas.classList.add('pt-word-document-canvas');
+        canvas.style.width = 'auto'; canvas.style.minHeight = '0'; canvas.style.aspectRatio = 'auto';
+        canvas.innerHTML = '<style>' + (wordDocument.css || '') + '</style><div class="pt-word-document" data-pt-element="' + this.esc(wordDocument.id) + '" contenteditable="true" spellcheck="true">' + this.sanitizeImportedHtml(wordDocument.html || '') + '</div>';
+        const editor = canvas.querySelector('.pt-word-document[contenteditable="true"]');
+        if (editor && editor.dataset.bound !== '1') {
+          editor.dataset.bound = '1';
+          editor.addEventListener('input', () => { wordDocument.html = this.sanitizeImportedHtml(editor.innerHTML); });
+          editor.addEventListener('blur', () => { wordDocument.html = this.sanitizeImportedHtml(editor.innerHTML); this.commitHistory(); });
+        }
+        return;
+      }
+      canvas.classList.remove('pt-word-document-canvas');
       canvas.innerHTML = elements.length ? elements.map(item => {
         const style = 'left:' + Number(item.x || 0) + 'mm;top:' + Number(item.y || 0) + 'mm;width:' + Number(item.width || 30) +
           'mm;height:' + Number(item.height || 15) + 'mm;font-size:' + Number(item.fontSize || 12) + 'pt;text-align:' + this.esc(item.align || 'right') + ';color:' + this.esc(item.color || 'black') + ';background:' + this.esc(item.background || 'transparent');
@@ -348,73 +362,70 @@
     sanitizeImportedHtml: function (html) {
       const parser = new DOMParser();
       const documentNode = parser.parseFromString(String(html || ''), 'text/html');
-      const allowed = new Set(['P','DIV','BR','STRONG','B','EM','I','U','S','SPAN','H1','H2','H3','H4','UL','OL','LI','TABLE','THEAD','TBODY','TFOOT','TR','TH','TD','IMG','BLOCKQUOTE']);
-      const styleProperties = new Set(['color','background-color','font-family','font-size','font-weight','font-style','text-decoration','text-align','direction','width','height','border','border-collapse','padding','padding-left','padding-right','padding-top','padding-bottom','vertical-align','margin-left','margin-right','margin-top','margin-bottom']);
+      const allowed = new Set(['P','DIV','SECTION','ARTICLE','BR','STRONG','B','EM','I','U','S','SPAN','H1','H2','H3','H4','UL','OL','LI','TABLE','THEAD','TBODY','TFOOT','TR','TH','TD','IMG','BLOCKQUOTE']);
+      const styleProperties = new Set(['color','background-color','font-family','font-size','font-weight','font-style','text-decoration','text-align','direction','width','height','min-width','max-width','min-height','border','border-top','border-right','border-bottom','border-left','border-color','border-style','border-width','border-collapse','padding','padding-left','padding-right','padding-top','padding-bottom','vertical-align','margin','margin-left','margin-right','margin-top','margin-bottom','line-height','text-indent','white-space','display','box-sizing','list-style-type','table-layout']);
       Array.from(documentNode.body.querySelectorAll('*')).forEach(node => {
-        if (!allowed.has(node.tagName)) {
-          node.replaceWith(...Array.from(node.childNodes));
-          return;
-        }
+        if (!allowed.has(node.tagName)) { node.replaceWith(...Array.from(node.childNodes)); return; }
         Array.from(node.attributes).forEach(attribute => {
           const name = attribute.name.toLowerCase();
           if (name === 'style') {
             const safe = [];
             attribute.value.split(';').forEach(rule => {
-              const separator = rule.indexOf(':');
-              if (separator < 1) return;
+              const separator = rule.indexOf(':'); if (separator < 1) return;
               const property = rule.slice(0, separator).trim().toLowerCase();
               const value = rule.slice(separator + 1).trim();
-              if (styleProperties.has(property) && value.length < 160 &&
-                  !/(url\s*\(|expression\s*\(|javascript:|[{}])/i.test(value)) safe.push(property + ':' + value);
+              if (styleProperties.has(property) && value.length < 160 && !/(url\\s*\\(|expression\\s*\\(|javascript:|[{}])/i.test(value)) safe.push(property + ':' + value);
             });
-            if (safe.length) node.setAttribute('style', safe.join(';'));
-            else node.removeAttribute('style');
+            if (safe.length) node.setAttribute('style', safe.join(';')); else node.removeAttribute('style');
+          } else if (name === 'class') {
+            const classes = attribute.value.split(/\\s+/).filter(token => /^[a-zA-Z_][a-zA-Z0-9_-]{0,60}$/.test(token));
+            if (classes.length) node.setAttribute('class', classes.join(' ')); else node.removeAttribute('class');
           } else if (node.tagName === 'IMG' && name === 'src') {
-            if (!/^data:image\/(png|jpe?g|gif|webp);base64,[a-z0-9+/=]+$/i.test(attribute.value)) node.removeAttribute(name);
-          } else if (!((node.tagName === 'IMG' && name === 'alt') ||
-                       ((node.tagName === 'TH' || node.tagName === 'TD') && ['colspan','rowspan'].includes(name)))) {
-            node.removeAttribute(name);
-          }
+            if (!/^data:image\\/(png|jpe?g|gif|webp);base64,[a-z0-9+/=]+$/i.test(attribute.value)) node.removeAttribute(name);
+          } else if (!((node.tagName === 'IMG' && name === 'alt') || ((node.tagName === 'TH' || node.tagName === 'TD') && ['colspan','rowspan','width'].includes(name)))) node.removeAttribute(name);
         });
       });
       return documentNode.body.innerHTML;
     },
+    sanitizeWordCss: function (css) {
+      const allowed = new Set(['color','background-color','font-family','font-size','font-weight','font-style','text-decoration','text-align','direction','width','height','min-width','max-width','min-height','border','border-top','border-right','border-bottom','border-left','border-color','border-style','border-width','border-collapse','padding','padding-left','padding-right','padding-top','padding-bottom','vertical-align','margin','margin-left','margin-right','margin-top','margin-bottom','line-height','text-indent','white-space','display','box-sizing','list-style-type','table-layout']);
+      return String(css || '').replace(/<\\/?style[^>]*>/gi,'').split('}').map(rule => {
+        const parts = rule.split('{');
+        if (parts.length !== 2 || parts[0].length > 500 || /[@<>]|url\\s*\\(|expression|javascript:/i.test(parts[0])) return '';
+        const selectors = parts[0].split(',').map(selector => selector.trim()).filter(selector => /^[.#a-zA-Z0-9_ >+~:\\-]+$/.test(selector));
+        const declarations = parts[1].split(';').map(entry => {
+          const pair = entry.split(':'); if (pair.length < 2) return '';
+          const property = pair.shift().trim().toLowerCase(), value = pair.join(':').trim();
+          return allowed.has(property) && value.length < 160 && !/[{}<>]|url\\s*\\(|expression|javascript:/i.test(value) ? property + ':' + value : '';
+        }).filter(Boolean);
+        return selectors.length && declarations.length ? '.pt-word-document ' + selectors.join(', .pt-word-document ') + '{' + declarations.join(';') + '}' : '';
+      }).filter(Boolean).join('\\n');
+    },
     importWordDocument: async function (file) {
-      if (!file || !/\.docx$/i.test(file.name || '')) throw new Error('فقط فایل Word با پسوند DOCX قابل واردسازی است.');
+      if (!file || !/\\.docx$/i.test(file.name || '')) throw new Error('فقط فایل Word با پسوند DOCX قابل واردسازی است.');
       if (file.size > 5 * 1024 * 1024) throw new Error('حجم فایل Word نباید بیشتر از ۵ مگابایت باشد.');
-      if (!window.mammoth || typeof window.mammoth.convertToHtml !== 'function') {
-        throw new Error('ابزار واردسازی Word بارگذاری نشده است؛ صفحه را تازه‌سازی و دوباره تلاش کن.');
-      }
-      this.setStatus('pt-editor-status', 'در حال خواندن و تبدیل فایل Word…');
-      const buffer = await file.arrayBuffer();
-      const result = await window.mammoth.convertToHtml({ arrayBuffer: buffer });
-      const html = this.sanitizeImportedHtml(result.value || '');
-      if (!html || !html.replace(/<[^>]*>/g, '').trim()) throw new Error('محتوای قابل واردسازی در فایل Word پیدا نشد.');
+      if (!window.docx || typeof window.docx.renderAsync !== 'function') throw new Error('موتور نمایش صفحه‌ای Word بارگذاری نشده است؛ صفحه را تازه‌سازی کن.');
       const next = this.definition || this.blankDefinition();
       if (next.elements.length && !window.confirm('محتوای فعلی بوم با سند Word جایگزین شود؟')) return;
-      const imported = {
-        id: 'word_' + Date.now().toString(36),
-        type: 'richtext',
-        text: file.name.replace(/\.docx$/i, ''),
-        html: html,
-        x: 15, y: 15, width: 180, height: 260,
-        fontSize: 11, align: 'right', color: '#1f2937', background: 'transparent',
-        bindingId: ''
-      };
-      const candidate = Object.assign({}, next, {
-        page: next.page || { size: 'A4', orientation: 'portrait' },
-        elements: [imported]
+      this.setStatus('pt-editor-status', 'در حال بازسازی صفحات و جدول‌های فایل Word…');
+      const host = document.createElement('div'), styleHost = document.createElement('div');
+      await window.docx.renderAsync(await file.arrayBuffer(), host, styleHost, {
+        className: 'docx', inWrapper: true, ignoreWidth: false, ignoreHeight: false,
+        ignoreFonts: false, breakPages: true, renderHeaders: true, renderFooters: true,
+        renderFootnotes: true, renderEndnotes: true, useBase64URL: true
       });
-      if (JSON.stringify(candidate).length > 42000) {
-        throw new Error('حجم متن و تصاویر استخراج‌شده برای ذخیره در قالب فعلی زیاد است. در مرحله بعد، ذخیره مستقل تصاویر و فایل‌های حجیم اضافه می‌شود؛ لطفاً فعلاً فایل سبک‌تری وارد کن.');
-      }
-      this.definition = candidate;
-      this.selectedElementId = imported.id;
+      const html = this.sanitizeImportedHtml(host.innerHTML);
+      const css = this.sanitizeWordCss(styleHost.innerHTML);
+      const pageCount = host.querySelectorAll('.docx').length || host.querySelectorAll('section').length || 1;
+      if (!html || !html.replace(/<[^>]*>/g, '').trim()) throw new Error('محتوای قابل نمایش در فایل Word پیدا نشد.');
+      const imported = { id: 'word_' + Date.now().toString(36), type: 'worddocument',
+        text: file.name.replace(/\\.docx$/i, ''), html: html, css: css, pageCount: pageCount, sourceName: file.name, bindingId: '' };
+      const candidate = Object.assign({}, next, { page: { size: 'A4', orientation: 'portrait' }, elements: [imported] });
+      if (JSON.stringify(candidate).length > 42000) throw new Error('حجم ساختار تبدیل‌شده از ظرفیت ذخیره قالب بیشتر است. لطفاً فایل Word را سبک‌تر و تصاویر آن را کم‌حجم کن.');
+      this.definition = candidate; this.selectedElementId = imported.id;
       this.history = []; this.historyIndex = -1;
       this.renderEditor(); this.renderBindings(); this.commitHistory();
-      const warningCount = Array.isArray(result.messages) ? result.messages.length : 0;
-      this.setStatus('pt-editor-status', 'فایل Word وارد شد و اکنون در بوم قابل ویرایش است.' +
-        (warningCount ? ' برخی ویژگی‌های پیچیده Word ممکن است دقیقاً منتقل نشده باشند (' + warningCount + ' مورد).' : ''));
+      this.setStatus('pt-editor-status', 'سند Word به ' + pageCount + ' صفحه تبدیل شد؛ متن‌ها در صفحات قابل ویرایش‌اند.');
     },
     initLibrary: async function () {
       const form = document.getElementById('pt-template-form');
@@ -694,6 +705,9 @@
         const isImage = item.type === 'image' || !!imageAttachment;
         const value = binding ? this.formatOutputValue(raw) : (item.text || '');
         const style = 'left:'+Number(item.x||0)+'mm;top:'+Number(item.y||0)+'mm;width:'+Number(item.width||30)+'mm;min-height:'+Number(item.height||15)+'mm;font-size:'+Number(item.fontSize||12)+'pt;text-align:'+this.esc(item.align||'right')+';color:'+this.esc(item.color||'#1f2937')+';background:'+this.esc(item.background||'transparent')+';';
+        if (item.type === 'worddocument') {
+          return '<style>' + (item.css || '') + '</style><div class="pt-word-document pt-output-word-document">' + this.sanitizeImportedHtml(item.html || '') + '</div>';
+        }
         if (item.type === 'richtext') {
           return '<div class="pt-output-element pt-output-richtext" style="'+style+'">' + this.sanitizeImportedHtml(item.html || '') + '</div>';
         }
