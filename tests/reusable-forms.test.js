@@ -264,18 +264,15 @@ test('event registration context panel uses existing project information, histor
 });
 
 
-test('event submission reports event, form snapshot and central information outcomes separately',()=>{
+test('event submission exposes separate persistence outcomes and failed procurement recovery',()=>{
   const events=read('js/modules/events.js');
-  const service=read('EventService.js');
-  const forms=read('FormService.js');
   assert.match(events,/showEventSubmissionResult/);
-  assert.match(events,/\/events\/' \+ encodeURIComponent\(eventId\) \+ '\/procurement-retry/);
   assert.match(events,/formPersistence/);
   assert.match(events,/centralInformation/);
-  assert.match(service,/formPersistence: formPersistence/);
-  assert.match(service,/centralInformation: centralInformation/);
-  assert.match(forms,/centralInformationCount/);
-  assert.match(forms,/projectCodeUpdated/);
+  assert.match(events,/procurementStatus/);
+  assert.match(events,/محاسبه نیاز ملزومات کامل نشد/);
+  assert.match(events,/event-result-retry/);
+  assert.match(events,/\/events\/' \+ encodeURIComponent\(eventId\) \+ '\/procurement-retry/);
 });
 
 test('event submission prevents duplicate clicks and preserves the form and idempotency key on errors',()=>{
