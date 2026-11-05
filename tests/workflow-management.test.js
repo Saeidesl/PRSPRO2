@@ -49,5 +49,5 @@ test('event registration displays current workflow step requirements', () => {
 
 test('event module cache version is refreshed for workflow progress', () => {
   const html = read('index.html');
-  assert.match(html, /js\/modules\/events\.js\?v=20261105-event-context-panel-1/);
+  assert.match(html, /js\/modules\/events\.js\?v=20261105-event-submit-result-1/);
 });
