@@ -9,21 +9,45 @@
   </div></details>
   <section class="card pt-editor-workspace" id="pt-editor-workspace">
     <div class="card-body">
-      <div class="pt-editor-toolbar">
-        <div><h3 class="pt-section-title">مرحله ۱: طراحی صفحه</h3><p class="text-muted">یک ابزار را انتخاب کن؛ سپس آن را روی صفحه جابه‌جا یا بزرگ و کوچک کن.</p></div>
-        <div class="pt-toolbar-actions">
-          <button type="button" class="btn btn-secondary btn-sm" data-pt-action="undo">واگرد</button>
-          <button type="button" class="btn btn-secondary btn-sm" data-pt-action="redo">ازنو</button>
-          <button type="button" class="btn btn-secondary btn-sm" data-pt-action="preview">پیش‌نمایش</button>
-          <button type="button" class="btn btn-secondary btn-sm" data-pt-action="add-text">افزودن متن</button>
-          <button type="button" class="btn btn-secondary btn-sm" data-pt-action="add-field">افزودن فیلد داده</button>
-          <button type="button" class="btn btn-secondary btn-sm" data-pt-action="add-table">افزودن جدول</button>
-          <button type="button" class="btn btn-secondary btn-sm" data-pt-action="add-image">جایگاه تصویر</button>
-          <span class="pt-toolbar-divider" aria-hidden="true"></span>
-          <button type="button" class="btn btn-secondary btn-sm" data-pt-action="add-line">خط</button>
-          <button type="button" class="btn btn-secondary btn-sm" data-pt-action="add-divider">خط جداکننده</button>
-          <button type="button" class="btn btn-secondary btn-sm" data-pt-action="add-rectangle">مستطیل</button>
-          <button type="button" class="btn btn-secondary btn-sm" data-pt-action="add-ellipse">بیضی</button>
+      <div class="pt-ribbon" aria-label="نوار ابزار ویرایشگر">
+        <div class="pt-ribbon-tabs" role="tablist" aria-label="دسته ابزارها">
+          <button type="button" class="is-active" role="tab" aria-selected="true" data-pt-ribbon-tab="home">خانه</button>
+          <button type="button" role="tab" aria-selected="false" data-pt-ribbon-tab="insert">درج</button>
+          <button type="button" role="tab" aria-selected="false" data-pt-ribbon-tab="layout">صفحه و چیدمان</button>
+          <button type="button" role="tab" aria-selected="false" data-pt-ribbon-tab="tools">ابزارها</button>
+        </div>
+        <div class="pt-ribbon-panel" data-pt-ribbon-panel="home">
+          <div class="pt-ribbon-group"><span>تاریخچه</span><div>
+            <button type="button" class="btn btn-secondary btn-sm" data-pt-action="undo">واگرد</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-pt-action="redo">ازنو</button>
+          </div></div>
+          <div class="pt-ribbon-group"><span>قلم</span><div>
+            <select id="pt-text-font" aria-label="نوع قلم"><option value="IRANSans, sans-serif">ایران‌سنس</option><option value="Arial, sans-serif">Arial</option><option value="Tahoma, sans-serif">Tahoma</option></select>
+            <select id="pt-text-size" aria-label="اندازه قلم"><option>10</option><option>11</option><option selected>12</option><option>14</option><option>16</option><option>18</option><option>24</option><option>32</option></select>
+            <button type="button" data-pt-format="bold" title="ضخیم"><b>ض</b></button><button type="button" data-pt-format="italic" title="مورب"><i>م</i></button><button type="button" data-pt-format="underline" title="زیرخط"><u>ز</u></button>
+            <label class="pt-ribbon-color" title="رنگ متن">رنگ <input id="pt-text-color" type="color" value="#1f2937"></label>
+          </div></div>
+          <div class="pt-ribbon-group"><span>پاراگراف</span><div>
+            <button type="button" data-pt-format="justifyRight">راست</button><button type="button" data-pt-format="justifyCenter">وسط</button><button type="button" data-pt-format="justifyLeft">چپ</button><button type="button" data-pt-format="insertUnorderedList">• فهرست</button><button type="button" data-pt-format="insertOrderedList">۱. فهرست</button>
+          </div></div>
+        </div>
+        <div class="pt-ribbon-panel" data-pt-ribbon-panel="insert" hidden>
+          <div class="pt-ribbon-group"><span>عناصر سند</span><div>
+            <button type="button" data-pt-action="add-richtext">متن قابل ویرایش</button><button type="button" data-pt-action="add-text">کادر متن</button><button type="button" data-pt-action="add-field">فیلد داده</button><button type="button" data-pt-action="add-table">جدول</button><button type="button" data-pt-action="add-image">تصویر</button>
+          </div></div>
+          <div class="pt-ribbon-group"><span>اشکال</span><div>
+            <button type="button" data-pt-action="add-line">خط</button><button type="button" data-pt-action="add-divider">جداکننده</button><button type="button" data-pt-action="add-rectangle">مستطیل</button><button type="button" data-pt-action="add-ellipse">بیضی</button>
+          </div></div>
+        </div>
+        <div class="pt-ribbon-panel" data-pt-ribbon-panel="layout" hidden>
+          <div class="pt-ribbon-group"><span>صفحه</span><div class="pt-editor-settings">
+            <label>اندازه <select id="pt-page-size"><option value="A4">A4</option><option value="A5">A5</option><option value="LETTER">Letter</option></select></label>
+            <label>جهت <select id="pt-page-orientation"><option value="portrait">عمودی</option><option value="landscape">افقی</option></select></label>
+          </div></div>
+          <div class="pt-ribbon-group"><span>بزرگ‌نمایی</span><div><button type="button" data-pt-action="zoom-out">−</button><input id="pt-editor-zoom" type="range" min="50" max="150" step="10" value="100" aria-label="بزرگ‌نمایی صفحه"><output id="pt-editor-zoom-value">۱۰۰٪</output><button type="button" data-pt-action="zoom-in">+</button></div></div>
+        </div>
+        <div class="pt-ribbon-panel" data-pt-ribbon-panel="tools" hidden>
+          <div class="pt-ribbon-group"><span>نمایش و مدیریت</span><div><button type="button" data-pt-action="preview">پیش‌نمایش</button><button type="button" data-pt-action="duplicate">تکثیر</button><button type="button" data-pt-action="remove">حذف انتخاب‌شده</button></div></div>
         </div>
       </div>
       <div class="pt-editor-settings" aria-label="تنظیمات صفحه">
@@ -65,7 +89,7 @@
             </div></details>
           <details class="pt-layer-details"><summary>لایه‌های صفحه</summary><div id="pt-layer-list" class="pt-layer-list"></div></details>
         </aside>
-        <div class="pt-canvas-scroll"><div id="pt-design-canvas" class="pt-design-canvas" aria-label="بوم طراحی قالب"><div class="pt-canvas-empty">برای شروع، از نوار ابزار یک المان اضافه کن.</div></div></div>
+        <div class="pt-canvas-scroll"><div class="pt-ruler pt-ruler-horizontal" aria-hidden="true"></div><div class="pt-ruler pt-ruler-vertical" aria-hidden="true"></div><div id="pt-design-canvas" class="pt-design-canvas" aria-label="بوم طراحی قالب"><div class="pt-canvas-empty">برای شروع، از نوار ابزار یک المان اضافه کن.</div></div></div>
       </div>
       <p id="pt-editor-status" class="pt-status" aria-live="polite">تغییرات چیدمان همراه قالب ذخیره می‌شوند.</p>
     </div>
