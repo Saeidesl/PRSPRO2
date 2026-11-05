@@ -1356,6 +1356,15 @@
         }).sort(function (a, b) {
           return String(b.OccurredAt || b.CreatedAt || '').localeCompare(String(a.OccurredAt || a.CreatedAt || ''));
         }).slice(0, 4);
+        const relatedFormResponses = await Promise.all(relatedEvents.slice(0, 3).map(async (item) => {
+          try {
+            const response = await PMS.Api.get('/events/' + encodeURIComponent(item.ID) + '/forms');
+            return { event: item, forms: this.normalize(PMS.Api.extractData(response)) };
+          } catch (error) {
+            return { event: item, forms: [] };
+          }
+        }));
+        if (requestId !== this.eventContextRequestId || !document.getElementById('event-context-panel')) return;
         let html = '<section class="event-context-section"><h5>اطلاعات مرکزی جاری <span>' + relevant.length + '</span></h5>';
         if (relevant.length) {
           html += relevant.map((row) => {
@@ -1386,6 +1395,33 @@
           }).join('');
         } else {
           html += '<p class="event-muted">هنوز رویداد مرتبطی برای این پروژه ثبت نشده است.</p>';
+        }
+        html += '</section><section class="event-context-section"><h5>پاسخ فرم‌های قبلی</h5>';
+        const previousForms = relatedFormResponses.reduce(function (all, item) {
+          item.forms.forEach(function (form) { all.push({ event: item.event, form: form }); });
+          return all;
+        }, []);
+        if (previousForms.length) {
+          html += previousForms.map((item) => {
+            const definition = item.form.Definition || {};
+            const fields = Array.isArray(definition.Fields) ? definition.Fields : [];
+            const values = item.form.Values || {};
+            const entries = fields.map((field) => {
+              const info = field.InformationType || {};
+              const key = String(field.InformationTypeID || info.ID || '');
+              const value = values[key];
+              if (value === undefined || value === null || value === '') return '';
+              return '<div class="event-context-form-value"><strong>' +
+                this.escape(field.LabelOverride || info.Name || info.Code || 'فیلد') +
+                '</strong><span>' + this.escape(this.displayValue(value)) + '</span></div>';
+            }).filter(Boolean).slice(0, 5).join('');
+            return '<article class="event-context-event-card"><strong>' +
+              this.escape(definition.Name || definition.Code || 'فرم ثبت‌شده') +
+              '</strong><span>' + this.escape(this.formatDate(item.event.OccurredAt || item.event.CreatedAt)) +
+              '</span>' + (entries || '<small>پاسخ قابل نمایش ندارد.</small>') + '</article>';
+          }).join('');
+        } else {
+          html += '<p class="event-muted">پاسخ فرم مرتبط قبلی پیدا نشد.</p>';
         }
         html += '</section><p class="event-context-footnote">اطلاعات این پنل فقط برای مراجعه است؛ تغییرات از مسیرهای اصلی ثبت انجام می‌شود.</p>';
         content.innerHTML = html;
