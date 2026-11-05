@@ -1179,7 +1179,14 @@
       document.getElementById('event-create-form')
         .addEventListener('submit', (event) => {
           event.preventDefault();
-          this.submitForm();
+          // Surface async preflight failures instead of leaving submission silently stuck.
+          this.submitForm().catch((error) => {
+            this.submitting = false;
+            this.showFormError(
+              'آماده‌سازی یا ثبت رویداد با مشکل مواجه شد: ' + this.errorMessage(error)
+            );
+            this.setSubmitState(false);
+          });
         });
 
       modal.addEventListener('click', (event) => {
@@ -1240,6 +1247,10 @@
           list.appendChild(item);
         });
         container.appendChild(list);
+        // Keep the workflow result available to the form, but close its
+        // temporary progress panel after a successful check.
+        section.hidden = true;
+        container.replaceChildren();
       } catch (error) {
         if (requestId !== this.workflowProgressRequestId) return;
         container.textContent = 'وضعیت گردش‌کار دریافت نشد؛ کنترل نهایی هنگام ثبت رویداد در سرور انجام می‌شود.';
