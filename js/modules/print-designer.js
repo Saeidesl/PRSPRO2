@@ -391,12 +391,12 @@
       const allowed = new Set(['color','background-color','font-family','font-size','font-weight','font-style','text-decoration','text-align','direction','width','height','min-width','max-width','min-height','border','border-top','border-right','border-bottom','border-left','border-color','border-style','border-width','border-collapse','padding','padding-left','padding-right','padding-top','padding-bottom','vertical-align','margin','margin-left','margin-right','margin-top','margin-bottom','line-height','text-indent','white-space','display','box-sizing','list-style-type','table-layout']);
       return String(css || '').replace(/<\/?style[^>]*>/gi,'').split('}').map(rule => {
         const parts = rule.split('{');
-        if (parts.length !== 2 || parts[0].length > 500 || /[@<>]|url\s*\\(|expression|javascript:/i.test(parts[0])) return '';
+        if (parts.length !== 2 || parts[0].length > 500 || /[@<>]|url\s*\(|expression|javascript:/i.test(parts[0])) return '';
         const selectors = parts[0].split(',').map(selector => selector.trim()).filter(selector => /^[.#a-zA-Z0-9_ >+~:-]+$/.test(selector));
         const declarations = parts[1].split(';').map(entry => {
           const pair = entry.split(':'); if (pair.length < 2) return '';
           const property = pair.shift().trim().toLowerCase(), value = pair.join(':').trim();
-          return allowed.has(property) && value.length < 160 && !/[{}<>]|url\s*\\(|expression|javascript:/i.test(value) ? property + ':' + value : '';
+          return allowed.has(property) && value.length < 160 && !/[{}<>]|url\s*\(|expression|javascript:/i.test(value) ? property + ':' + value : '';
         }).filter(Boolean);
         return selectors.length && declarations.length ? '.pt-word-document ' + selectors.join(', .pt-word-document ') + '{' + declarations.join(';') + '}' : '';
       }).filter(Boolean).join('\n');
