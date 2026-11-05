@@ -1135,6 +1135,7 @@
         '<button type="button" id="event-form-close" class="event-modal-close" aria-label="بستن">×</button></div>' +
         '<div id="event-form-error" class="event-modal-error" role="alert" hidden></div>' +
         '<form id="event-create-form" novalidate>' +
+        '<button type="button" class="event-context-mobile-trigger" id="event-context-mobile-trigger" aria-expanded="false" aria-controls="event-context-panel">اطلاعات مرتبط پروژه</button>' +
         '<section class="event-form-section"><h4 class="event-section-title">اطلاعات اصلی</h4>' +
         '<div class="event-dynamic-grid">' +
         '<div class="event-field"><label for="event-form-project">پروژه <span class="event-required">*</span></label>' +
@@ -1165,7 +1166,6 @@
         '<span class="event-submit-button-text">ثبت رویداد</span><span class="event-button-spinner" aria-hidden="true" hidden></span></button>' +
         '<button type="button" id="event-form-cancel" class="event-modal-button">انصراف</button>' +
         '</div></form>' +
-        '<button type="button" class="event-context-mobile-trigger" id="event-context-mobile-trigger" aria-expanded="false" aria-controls="event-context-panel">اطلاعات مرتبط پروژه</button>' +
         '<aside id="event-context-panel" class="event-context-panel" aria-label="اطلاعات مرتبط پروژه">' +
         '<div class="event-context-heading"><div><span class="event-modal-kicker">اطلاعات کمکی</span><h4>اطلاعات مرتبط</h4></div>' +
         '<button type="button" id="event-context-close" class="event-context-close" aria-label="بستن پنل">×</button></div>' +
@@ -1346,7 +1346,7 @@
           const active = String(row.Status || 'ACTIVE').toUpperCase() === 'ACTIVE';
           const hasValue = value !== '' && value !== null && value !== undefined &&
             !(Array.isArray(value) && !value.length);
-          return active && hasValue && (!hasMappedFields || definitions[id]);
+          return active && hasValue && hasMappedFields && definitions[id];
         });
         this.eventContextInformation = relevant;
         const relatedEvents = this.events.filter(function (item) {
