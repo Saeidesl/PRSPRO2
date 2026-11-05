@@ -165,8 +165,8 @@ test('print output hides image helper copy and uses exact page size without forc
 
 test('print output assets use refreshed cache keys for the current print fixes',()=>{
  const index=read('index.html');
- assert.match(index,/css\/print-template-library\.css\?v=20261102-remove-print-header-1/);
- assert.match(index,/js\/modules\/print-designer\.js\?v=20261102-remove-print-header-1/);
+ assert.match(index,/css\/print-template-library\.css\?v=20261105-print-data-init-2/);
+ assert.match(index,/js\/modules\/print-designer\.js\?v=20261105-print-data-init-2/);
 });
 
 
@@ -205,4 +205,14 @@ test('Word import uses a user-gesture file picker fallback and preserves importe
  assert.match(module,/catch \(pickerError\)/);
  assert.doesNotMatch(module,/page: \{ size: 'A4', orientation: 'portrait' \}, elements: \[imported\]/);
  assert.match(module,/docx-wrapper > \.docx/);
+});
+
+
+test('print designer initializes from the loaded page DOM and output lists fail independently',()=>{
+ const module=read('js/modules/print-designer.js');
+ assert.match(module,/getElementById\('pt-output-template'\)[\s\S]*?return this\.initOutput\(\)/);
+ assert.match(module,/getElementById\('pt-template-reset'\)[\s\S]*?return this\.initLibrary\(\)/);
+ assert.match(module,/Promise\.allSettled\(\[[\s\S]*?PMS\.Api\.get\('\/print-templates'\)[\s\S]*?PMS\.Api\.get\('\/projects'\)/);
+ assert.match(module,/قالب‌ها: /);
+ assert.match(module,/پروژه‌ها: /);
 });
