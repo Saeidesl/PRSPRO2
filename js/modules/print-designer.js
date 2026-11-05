@@ -14,9 +14,17 @@
     previewMode: false,
     outputPageSpec: { width: 210, height: 297 },
     init: function () {
-      const route = String(window.location.hash || '').replace(/^#/, '').split('/')[0];
-      if (route === 'print-output') this.initOutput();
-      else this.initLibrary();
+      // صفحه به‌صورت HTML پویا بارگذاری می‌شود؛ تشخیص بر اساس DOM از وابستگی
+      // به نام/شکل hash جلوگیری می‌کند و مانع اجرای initializer اشتباه می‌شود.
+      if (document.getElementById('pt-output-template') &&
+          document.getElementById('pt-output-project')) {
+        return this.initOutput();
+      }
+      if (document.getElementById('pt-template-reset') &&
+          document.getElementById('pt-template-form')) {
+        return this.initLibrary();
+      }
+      console.warn('PrintDesigner: عناصر صفحه قالب‌ساز یا چاپ اسناد پیدا نشدند.');
     },
     extract: function (response) {
       let value = PMS.Api && typeof PMS.Api.extractData === 'function'
@@ -41,8 +49,14 @@
     list: function (value, keys) {
       const data = this.extract(value);
       if (Array.isArray(data)) return data;
-      for (const key of (keys || ['items','Items','data','Data'])) {
+      const candidates = (keys || ['items','Items','templates','Templates','projects','Projects','rows','Rows','records','Records']);
+      for (const key of candidates) {
         if (data && Array.isArray(data[key])) return data[key];
+      }
+      if (data && typeof data === 'object') {
+        const match = Object.keys(data).find(key =>
+          /^(items|templates|projects|rows|records)$/i.test(key) && Array.isArray(data[key]));
+        if (match) return data[match];
       }
       return [];
     },
@@ -451,11 +465,16 @@
       const reset = document.getElementById('pt-template-reset');
       if (reset && reset.dataset.ptBound !== '1') { reset.dataset.ptBound = '1'; reset.addEventListener('click', (event) => { event.preventDefault(); event.stopPropagation(); this.resetForm(); const formNode = document.getElementById('pt-template-form'); if (formNode) formNode.scrollIntoView({ behavior: 'smooth', block: 'start' }); }); }
       const resetSecondary = document.getElementById('pt-template-reset-secondary');
-      if (resetSecondary) resetSecondary.addEventListener('click', () => this.resetForm());
+      if (resetSecondary && resetSecondary.dataset.ptBound !== '1') {
+        resetSecondary.dataset.ptBound = '1';
+        resetSecondary.addEventListener('click', () => this.resetForm());
+      }
       this.bindEditor();
       const wordInput = document.getElementById('pt-word-import-file');
       const wordButton = document.getElementById('pt-word-import');
-      if (wordButton && wordInput) wordButton.addEventListener('click', (event) => {
+      if (wordButton && wordInput && wordButton.dataset.ptBound !== '1') {
+        wordButton.dataset.ptBound = '1';
+        wordButton.addEventListener('click', (event) => {
         event.preventDefault();
         try {
           if (typeof wordInput.showPicker === 'function') wordInput.showPicker();
@@ -463,13 +482,17 @@
         } catch (pickerError) {
           wordInput.click();
         }
-      });
-      if (wordInput) wordInput.addEventListener('change', async () => {
+        });
+      }
+      if (wordInput && wordInput.dataset.ptBound !== '1') {
+        wordInput.dataset.ptBound = '1';
+        wordInput.addEventListener('change', async () => {
         const file = wordInput.files && wordInput.files[0];
         try { await this.importWordDocument(file); }
         catch (error) { this.setStatus('pt-editor-status', error.message || 'واردسازی Word ناموفق بود.', true); }
         finally { wordInput.value = ''; }
-      });
+        });
+      }
       this.syncPageControls();
       this.renderEditor();
       await this.loadLibrary();
@@ -698,30 +721,67 @@
     initOutput: async function () {
       const button = document.getElementById('pt-output-resolve');
       const printButton = document.getElementById('pt-output-print');
-      if (button) button.addEventListener('click', () => this.resolveOutput());
-      if (printButton) printButton.addEventListener('click', () => this.printOutput());
-      await this.loadOutputOptions();
+      if (button && button.dataset.ptBound !== '1') {
+        button.dataset.ptBound = '1';
+        button.addEventListener('click', () => this.resolveOutput());
+      }
+      if (printButton && printButton.dataset.ptBound !== '1') {
+        printButton.dataset.ptBound = '1';
+        printButton.addEventListener('click', () => this.printOutput());
+      }
+      return this.loadOutputOptions();
     },
     loadOutputOptions: async function () {
       this.setStatus('pt-output-status', 'در حال دریافت قالب‌ها و پروژه‌ها…');
-      try {
-        const results = await Promise.all([PMS.Api.get('/print-templates'), PMS.Api.get('/projects')]);
-        const templates = this.list(results[0]);
-        const projects = this.list(results[1], ['items','Items','projects','Projects']);
-        this.outputTemplates = templates;
-        const templateSelect = document.getElementById('pt-output-template');
-        const projectSelect = document.getElementById('pt-output-project');
-        if (templateSelect) templateSelect.innerHTML = '<option value="">انتخاب قالب</option>' + templates.map(item =>
-          '<option value="' + this.esc(item.ID) + '">' + this.esc(item.Name) + ' · نسخه ' + this.esc(item.Version || 1) + '</option>'
-        ).join('');
-        if (projectSelect) projectSelect.innerHTML = '<option value="">انتخاب پروژه</option>' + projects.map(item =>
-          '<option value="' + this.esc(item.ID) + '">' + this.esc(item.ProjectCode || item.Code || 'بدون کد') + ' — ' +
-          this.esc(item.Title || item.Name || item.ID) + '</option>'
-        ).join('');
-        this.setStatus('pt-output-status', 'قالب و پروژه را انتخاب کن؛ سپس پیش‌نمایش سند را بساز.');
-      } catch (error) {
-        this.setStatus('pt-output-status', error.message || 'دریافت فهرست‌ها ناموفق بود.', true);
+      const templateSelect = document.getElementById('pt-output-template');
+      const projectSelect = document.getElementById('pt-output-project');
+      if (templateSelect) templateSelect.innerHTML = '<option value="">در حال دریافت قالب‌ها…</option>';
+      if (projectSelect) projectSelect.innerHTML = '<option value="">در حال دریافت پروژه‌ها…</option>';
+      const results = await Promise.allSettled([
+        PMS.Api.get('/print-templates'),
+        PMS.Api.get('/projects')
+      ]);
+      const errors = [];
+      if (results[0].status === 'fulfilled') {
+        try {
+          const templates = this.list(results[0].value, ['items','Items','templates','Templates','rows','Rows']);
+          this.outputTemplates = templates;
+          if (templateSelect) templateSelect.innerHTML = '<option value="">انتخاب قالب</option>' + templates.map(item =>
+            '<option value="' + this.esc(item.ID || item.Id || item.id) + '">' +
+            this.esc(item.Name || item.name || item.Title || item.ID) + ' · نسخه ' +
+            this.esc(item.Version || item.version || 1) + '</option>'
+          ).join('');
+          if (!templates.length) errors.push('قالب فعالی ثبت نشده است.');
+        } catch (error) {
+          this.outputTemplates = [];
+          if (templateSelect) templateSelect.innerHTML = '<option value="">دریافت قالب‌ها ناموفق بود</option>';
+          errors.push('قالب‌ها: ' + (error.message || 'ساختار پاسخ نامعتبر است.'));
+        }
+      } else {
+        this.outputTemplates = [];
+        if (templateSelect) templateSelect.innerHTML = '<option value="">دریافت قالب‌ها ناموفق بود</option>';
+        errors.push('قالب‌ها: ' + ((results[0].reason && results[0].reason.message) || 'خطای ارتباط با سرور'));
       }
+      if (results[1].status === 'fulfilled') {
+        try {
+          const projects = this.list(results[1].value, ['items','Items','projects','Projects','rows','Rows']);
+          if (projectSelect) projectSelect.innerHTML = '<option value="">انتخاب پروژه</option>' + projects.map(item =>
+            '<option value="' + this.esc(item.ID || item.Id || item.id) + '">' +
+            this.esc(item.ProjectCode || item.projectCode || item.Code || item.code || 'بدون کد') + ' — ' +
+            this.esc(item.Title || item.title || item.Name || item.name || item.ID) + '</option>'
+          ).join('');
+          if (!projects.length) errors.push('پروژه فعالی برای نمایش دریافت نشد.');
+        } catch (error) {
+          if (projectSelect) projectSelect.innerHTML = '<option value="">دریافت پروژه‌ها ناموفق بود</option>';
+          errors.push('پروژه‌ها: ' + (error.message || 'ساختار پاسخ نامعتبر است.'));
+        }
+      } else {
+        if (projectSelect) projectSelect.innerHTML = '<option value="">دریافت پروژه‌ها ناموفق بود</option>';
+        errors.push('پروژه‌ها: ' + ((results[1].reason && results[1].reason.message) || 'خطای ارتباط با سرور'));
+      }
+      this.setStatus('pt-output-status', errors.length
+        ? errors.join(' | ')
+        : 'قالب و پروژه را انتخاب کن؛ سپس پیش‌نمایش سند را بساز.', errors.some(message => /ناموفق|خطا/.test(message)));
     },
     formatOutputValue: function (value) {
       if (value === null || value === undefined || value === '') return '';
