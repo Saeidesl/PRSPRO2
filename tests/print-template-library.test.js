@@ -216,3 +216,11 @@ test('print designer initializes from the loaded page DOM and output lists fail 
  assert.match(module,/قالب‌ها: /);
  assert.match(module,/پروژه‌ها: /);
 });
+
+
+test('print designer module remains parseable after Word CSS and HTML sanitization',()=>{
+ const module=read('js/modules/print-designer.js');
+ assert.doesNotThrow(()=>new vm.Script(module,{filename:'print-designer.js'}));
+ assert.match(module,/!\/\(url\\s\*\\\(/);
+ assert.match(module,/split\(\/\\s\+\//);
+});
