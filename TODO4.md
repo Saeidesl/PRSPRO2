@@ -142,7 +142,8 @@
   - نمایش تفکیک‌شده نتیجه ثبت رویداد، پاسخ فرم، اطلاعات مرکزی، Workflow و عملیات تأمین.
   - مدیریت خطاهای جزئی بدون اعلام موفقیت کامل؛ اتصال retry تأمین به مسیر موجود.
   - جلوگیری از ارسال تکراری، کلیک چندباره و از دست رفتن اطلاعات فرم هنگام خطا.
-- [ ] **Task 7 — بهینه‌سازی عملکرد، واکنش‌گرایی و آزمون پذیرش (IN PROGRESS)**
+- [x] **Task 7 — بهینه‌سازی عملکرد، واکنش‌گرایی و آزمون پذیرش**
+  - *Log:* کاربر تست نهایی را تأیید کرد. Frontend: `js/modules/events.js` صف پروژه‌ها را با تجمیع یک‌مرحله‌ای رویدادها (Map) بهینه کرد؛ جستجوی پروژه و نوع رویداد در رندر سوابق با Mapهای از پیش ساخته‌شده انجام می‌شود؛ پیمایش صفحه‌کلید برای تب‌های صف با ArrowLeft/ArrowRight/Home/End اضافه شد. پیام شکست عملیات تأمین در پنل نتیجه روشن‌تر شد و retry از API موجود حفظ شد. `tests/reusable-forms.test.js` و `tests/project-draft-information-flow.test.js`، `tests/project-information-dossier.test.js`، `tests/project-print-designer.test.js`، `tests/project-repeat-reference-sync.test.js` و `tests/workflow-management.test.js` با قراردادها و نسخه واقعی asset هماهنگ شدند. `index.html` برای cache-busting به‌روزرسانی شد. اعتبارسنجی syntax فایل‌های JS و توازن CSS موفق بود. CI: Frontend Checks، Frontend Agent Suite، Cross-repository QA و GitHub Pages deployment موفق شدند؛ گزارش Browser Performance Audit در زمان ثبت این Log هنوز نهایی نشده بود. کاربر پذیرش دستی Task 7 را صریحاً تأیید کرد.
   - بهینه‌سازی بارگذاری، کش داده مشترک، درخواست‌های تکراری و پاسخ‌های دیررس.
   - تکمیل UI موبایل، RTL، تم روشن/تیره، دسترس‌پذیری و حالت‌های loading/empty/error.
   - اجرای تست‌های فرانت‌اند و بک‌اند، بررسی قرارداد API و رگرسیون مسیرهای موجود.
