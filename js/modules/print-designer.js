@@ -13,6 +13,7 @@
     dragState: null,
     previewMode: false,
     outputPageSpec: { width: 210, height: 297 },
+    wordLibraryPromise: null,
     init: function () {
       // صفحه به‌صورت HTML پویا بارگذاری می‌شود؛ تشخیص بر اساس DOM از وابستگی
       // به نام/شکل hash جلوگیری می‌کند و مانع اجرای initializer اشتباه می‌شود.
@@ -432,10 +433,52 @@
         return selectors.length && declarations.length ? '.pt-word-document ' + selectors.join(', .pt-word-document ') + '{' + declarations.join(';') + '}' : '';
       }).filter(Boolean).join('\n');
     },
+    loadWordScript: function (url, globalName, validator) {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = url;
+        script.async = true;
+        script.onload = () => {
+          const value = window[globalName];
+          if (validator(value)) resolve(value);
+          else reject(new Error('کتابخانه ' + globalName + ' بارگذاری شد اما API موردنیاز آن در دسترس نیست.'));
+        };
+        script.onerror = () => reject(new Error('دریافت کتابخانه ' + globalName + ' از سرور ناموفق بود.'));
+        document.head.appendChild(script);
+      });
+    },
+    ensureWordLibraries: function () {
+      if (this.wordLibraryPromise) return this.wordLibraryPromise;
+      this.wordLibraryPromise = (async () => {
+        const validZip = value => !!value && typeof value.loadAsync === 'function';
+        const validDocx = value => !!value && typeof value.renderAsync === 'function';
+        if (!validZip(window.JSZip)) {
+          try {
+            await this.loadWordScript('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js', 'JSZip', validZip);
+          } catch (primaryError) {
+            await this.loadWordScript('https://unpkg.com/jszip@3.10.1/dist/jszip.min.js', 'JSZip', validZip);
+          }
+        }
+        if (!validZip(window.JSZip)) throw new Error('کتابخانه بازکردن فایل DOCX (JSZip) در دسترس نیست.');
+        if (!validDocx(window.docx)) {
+          try {
+            await this.loadWordScript('https://cdn.jsdelivr.net/npm/docx-preview@0.3.6/dist/docx-preview.min.js', 'docx', validDocx);
+          } catch (primaryError) {
+            await this.loadWordScript('https://unpkg.com/docx-preview@0.3.6/dist/docx-preview.min.js', 'docx', validDocx);
+          }
+        }
+        if (!validDocx(window.docx)) throw new Error('موتور نمایش Word بارگذاری نشد.');
+        return true;
+      })().catch(error => {
+        this.wordLibraryPromise = null;
+        throw error;
+      });
+      return this.wordLibraryPromise;
+    },
     importWordDocument: async function (file) {
       if (!file || !/\.docx$/i.test(file.name || '')) throw new Error('فقط فایل Word با پسوند DOCX قابل واردسازی است.');
       if (file.size > 5 * 1024 * 1024) throw new Error('حجم فایل Word نباید بیشتر از ۵ مگابایت باشد.');
-      if (!window.docx || typeof window.docx.renderAsync !== 'function') throw new Error('موتور نمایش صفحه‌ای Word بارگذاری نشده است؛ صفحه را تازه‌سازی کن.');
+      await this.ensureWordLibraries();
       const next = this.definition || this.blankDefinition();
       if (next.elements.length && !window.confirm('محتوای فعلی بوم با سند Word جایگزین شود؟')) return;
       this.setStatus('pt-editor-status', 'در حال بازسازی صفحات و جدول‌های فایل Word…');
