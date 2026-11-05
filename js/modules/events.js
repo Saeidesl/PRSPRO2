@@ -192,6 +192,26 @@
         }
       });
 
+      // Complete the ARIA tab interaction for keyboard and assistive-technology users.
+      document.addEventListener('keydown', function (event) {
+        const current = event.target && event.target.closest
+          ? event.target.closest('.event-queue-tab') : null;
+        if (!current) return;
+        const tabs = Array.from(document.querySelectorAll('.event-queue-tab:not([disabled])'));
+        const index = tabs.indexOf(current);
+        if (index < 0) return;
+        let nextIndex = index;
+        if (event.key === 'ArrowLeft') nextIndex = (index + 1) % tabs.length;
+        else if (event.key === 'ArrowRight') nextIndex = (index - 1 + tabs.length) % tabs.length;
+        else if (event.key === 'Home') nextIndex = 0;
+        else if (event.key === 'End') nextIndex = tabs.length - 1;
+        else return;
+        event.preventDefault();
+        const next = tabs[nextIndex];
+        Events.activateQueue(next.dataset.queue);
+        next.focus();
+      });
+
       [
         'event-project-filter',
         'event-type-filter',
@@ -679,29 +699,51 @@
       const user = PMS.Router && typeof PMS.Router.getUser === 'function' ? PMS.Router.getUser() || {} : {};
       const userId = String(user.ID || user.Id || user.id || '');
       const departmentId = String(user.DepartmentID || user.departmentId || '');
-      const activeEvents = this.events.filter(function (event) {
-        return String(event.Status || 'ACTIVE').toUpperCase() !== 'VOID' && String(event.ProjectID || '').trim() !== '';
-      });
       const typeMap = new Map();
       this.eventTypes.forEach(function (type) { typeMap.set(Events.idOf(type), type); });
+
+      // Aggregate relevant events once. The former project-by-project filter
+      // scanned the full event list for every project (O(projects × events)).
+      const activityByProject = new Map();
+      this.events.forEach(function (event) {
+        if (String(event.Status || 'ACTIVE').toUpperCase() === 'VOID') return;
+        const projectId = String(event.ProjectID || '').trim();
+        if (!projectId) return;
+        const belongsToUser = !!userId && (
+          String(event.PerformedBy || '') === userId ||
+          String(event.CreatedBy || '') === userId
+        );
+        const belongsToDepartment = !!departmentId &&
+          String(event.DepartmentID || '') === departmentId;
+        const related = departmentId
+          ? belongsToDepartment || belongsToUser
+          : belongsToUser;
+        if (!related) return;
+
+        let activity = activityByProject.get(projectId);
+        if (!activity) {
+          activity = { hasRelated: false, completed: false };
+          activityByProject.set(projectId, activity);
+        }
+        activity.hasRelated = true;
+        const type = typeMap.get(String(event.EventTypeID || ''));
+        if (event.IsWorkCompletion === true ||
+            String(event.IsWorkCompletion).toLowerCase() === 'true' ||
+            String(event.IsWorkCompletion) === '1' ||
+            (!!type && (type.IsWorkCompletion === true ||
+              String(type.IsWorkCompletion).toLowerCase() === 'true' ||
+              String(type.IsWorkCompletion) === '1'))) {
+          activity.completed = true;
+        }
+      });
+
       const queues = { pending: [], progress: [], completed: [] };
       this.projects.forEach(function (project) {
         const projectId = Events.idOf(project);
         if (!projectId) return;
-        const related = activeEvents.filter(function (event) {
-          if (String(event.ProjectID || '') !== projectId) return false;
-          if (departmentId) return String(event.DepartmentID || '') === departmentId ||
-            String(event.PerformedBy || '') === userId || String(event.CreatedBy || '') === userId;
-          return !!userId && (String(event.PerformedBy || '') === userId || String(event.CreatedBy || '') === userId);
-        });
-        const completed = related.some(function (event) {
-          const type = typeMap.get(String(event.EventTypeID || ''));
-          return event.IsWorkCompletion === true ||
-            String(event.IsWorkCompletion).toLowerCase() === 'true' || String(event.IsWorkCompletion) === '1' ||
-            (!!type && (type.IsWorkCompletion === true ||
-              String(type.IsWorkCompletion).toLowerCase() === 'true' || String(type.IsWorkCompletion) === '1'));
-        });
-        queues[completed ? 'completed' : related.length ? 'progress' : 'pending'].push(project);
+        const activity = activityByProject.get(projectId);
+        queues[activity && activity.completed ? 'completed' :
+          activity && activity.hasRelated ? 'progress' : 'pending'].push(project);
       });
       const definitions = [
         { key: 'pending', id: 'event-queue-pending', countId: 'event-queue-pending-count', empty: 'پروژه‌ای در انتظار اقدام نیست.' },
@@ -753,10 +795,14 @@
         '<th>واحد</th><th>وضعیت</th><th>جزئیات</th></tr></thead><tbody>';
 
       let mobileHtml = '<div class="events-mobile-view">';
+      const projectMap = new Map();
+      const typeMap = new Map();
+      this.projects.forEach(function (project) { projectMap.set(Events.idOf(project), project); });
+      this.eventTypes.forEach(function (type) { typeMap.set(Events.idOf(type), type); });
 
       events.forEach(function (event) {
-        const project = Events.findById(Events.projects, event.ProjectID);
-        const type = Events.findById(Events.eventTypes, event.EventTypeID);
+        const project = projectMap.get(String(event.ProjectID || '')) || null;
+        const type = typeMap.get(String(event.EventTypeID || '')) || null;
 
         const projectName =
           event.ProjectCode ||
