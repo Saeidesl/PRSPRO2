@@ -290,3 +290,7 @@ test('event submission prevents duplicate clicks and preserves the form and idem
   assert.match(submit,/this\.closeForm\(true\)/);
   assert.match(events,/pendingIdempotencyFingerprint !== requestFingerprint/);
 });
+
+
+test('event queues aggregate activity in one pass',()=>{const s=read('js/modules/events.js');const a=s.indexOf('renderProjectQueues: function');const b=s.indexOf('render: function (events)',a);const q=s.slice(a,b);assert.match(q,/activityByProject = new Map/);assert.match(q,/this\.events\.forEach/);assert.doesNotMatch(q,/activeEvents\.filter/);});
+test('event tabs support keyboard navigation',()=>{const s=read('js/modules/events.js');assert.match(s,/ArrowLeft/);assert.match(s,/ArrowRight/);assert.match(s,/Events\.activateQueue\(next\.dataset\.queue\)/);});
