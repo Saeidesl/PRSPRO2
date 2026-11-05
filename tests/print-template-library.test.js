@@ -175,3 +175,17 @@ test('final print document omits the entire automatic form and project header',(
  assert.doesNotMatch(module,/pt-print-heading/);
  assert.ok(module.includes("dir=\"rtl\">'+elements.join('')"), 'final document is rendered RTL from configured elements');
 });
+
+test('Word import renders original page structure with editable content',()=>{
+ const module=read('js/modules/print-designer.js');
+ const index=read('index.html');
+ const css=read('css/print-template-library.css');
+ assert.ok(index.includes('docx-preview@0.3.6/dist/docx-preview.min.js'));
+ assert.ok(index.includes('docx-preview@0.3.6/dist/docx-preview.min.css'));
+ assert.match(module,/window\\.docx\\.renderAsync/);
+ assert.match(module,/breakPages: true/);
+ assert.match(module,/type: 'worddocument'/);
+ assert.match(module,/sanitizeWordCss/);
+ assert.match(module,/pt-output-word-document/);
+ assert.match(css,/pt-word-document-canvas/);
+});
