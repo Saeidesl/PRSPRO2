@@ -180,7 +180,7 @@ test('central template designer imports DOCX into editable page-preserving docum
  const css=read('css/print-template-library.css');
  assert.match(page,/pt-word-import-file/);
  assert.match(page,/واردسازی از Word/);
- assert.ok(index.includes('docx-preview@0.3.6/dist/docx-preview.min.js'));
+ assert.ok(module.includes('https://cdn.jsdelivr.net/npm/docx-preview@0.3.6/dist/docx-preview.min.js'));
  assert.match(module,/importWordDocument: async function/);
  assert.match(module,/sanitizeImportedHtml: function/);
  assert.match(module,/type: 'worddocument'/);
