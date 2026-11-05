@@ -2665,7 +2665,7 @@
 
         this.showEventSubmissionResult(eventResult, {
           projectId: isIndependent ? '' : projectId,
-          formResponseCount: this.amendmentMode ? 0 : formResponses.length,
+          formResponseCount: formResponses.length,
           isIndependent: isIndependent
         });
       } catch (error) {
@@ -2787,7 +2787,8 @@
       rows.className = 'event-result-rows';
       const addRow = function (label, status, detail, tone) {
         const row = document.createElement('div');
-        row.className = 'event-result-row' + (tone ? ' is-' + tone : '');
+        const statusValue = String(status || '').toUpperCase();
+        row.className = 'event-result-row' + (tone ? ' is-' + tone : (['SUCCEEDED', 'SUCCESS', 'COMPLETED'].indexOf(statusValue) !== -1 ? ' is-success' : ''));
         const copy = document.createElement('div');
         copy.className = 'event-result-row-copy';
         const name = document.createElement('strong');
@@ -2854,9 +2855,11 @@
             if (detail) detail.textContent = 'تلاش مجدد ناموفق بود: ' + this.errorMessage(error);
           }
         });
+        panel.appendChild(rows);
         panel.appendChild(retry);
+      } else {
+        panel.appendChild(rows);
       }
-      panel.appendChild(rows);
       document.body.appendChild(panel);
     },
 
