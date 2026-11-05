@@ -207,3 +207,13 @@ test('central template loader normalizes nested API data and isolates library/so
  assert.match(module,/Print template inspector render failed/);
  assert.match(module,/this\.sourceError = error\.message/);
 });
+
+
+test('project print designer has no Word import controls or runtime',()=>{
+ const page=read('pages/print-designer.html');
+ const module=read('js/modules/print-designer.js');
+ const index=read('index.html');
+ assert.doesNotMatch(page,/pt-word-import|واردسازی از Word/i);
+ assert.doesNotMatch(module,/importWordDocument|ensureWordLibraries|loadWordScript|worddocument|docx-preview|JSZip/i);
+ assert.doesNotMatch(index,/jszip|docx-preview/i);
+});
