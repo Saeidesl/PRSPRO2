@@ -43,8 +43,8 @@ test('project list and detail distinguish drafts from production projects', () =
 
 test('project assets use cache-busting for the unified project entry', () => {
   const source = read('index.html');
-  assert.match(source, /projects\.js\?v=20261104-reference-copy-progress-3/);
-  assert.match(source, /project-detail\.js\?v=20261104-central-project-information-2/);
+  assert.match(source, /projects\.js\?v=20261104-reference-copy-progress-1/);
+  assert.match(source, /project-detail\.js\?v=20261103-reference-sync-on-save-1/);
 });
 
 
