@@ -142,3 +142,17 @@
   body.pt-printing .pt-print-page{box-sizing:border-box!important;min-height:0!important;margin:0!important;padding:14mm 12mm!important;box-shadow:none!important;break-after:auto!important;page-break-after:auto!important;break-inside:avoid!important;page-break-inside:avoid!important}
   body.pt-printing .pt-output-image-empty{border:0!important;background:transparent!important}
 }
+
+/* Editable content imported from Word */
+.pt-canvas-element.pt-element-richtext{overflow:auto!important;padding:2mm!important;background:#fff!important;color:#1f2937!important;cursor:text!important}
+.pt-richtext-editor{width:100%;min-height:100%;outline:0;direction:rtl;text-align:right;overflow-wrap:anywhere;white-space:normal;line-height:1.55}
+.pt-richtext-editor p{margin:0 0 2.5mm}
+.pt-richtext-editor h1,.pt-richtext-editor h2,.pt-richtext-editor h3,.pt-richtext-editor h4{margin:2mm 0;font-weight:700}
+.pt-richtext-editor table{width:100%;border-collapse:collapse;table-layout:auto;margin:2mm 0}
+.pt-richtext-editor th,.pt-richtext-editor td{border:1px solid #9ca3af;padding:1.5mm;vertical-align:top}
+.pt-richtext-editor img{max-width:100%;height:auto;object-fit:contain}
+.pt-output-richtext{white-space:normal;overflow:visible;direction:rtl;text-align:right;line-height:1.5}
+.pt-output-richtext p{margin:0 0 2.5mm}
+.pt-output-richtext table{width:100%;border-collapse:collapse;table-layout:auto;margin:2mm 0}
+.pt-output-richtext th,.pt-output-richtext td{border:1px solid #9ca3af;padding:1.5mm;vertical-align:top}
+.pt-output-richtext img{max-width:100%;height:auto;object-fit:contain}
