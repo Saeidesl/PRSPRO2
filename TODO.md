@@ -1,54 +1,60 @@
 ## 🎯 Current Objective
 
-اصلاح واردسازی فایل Word در قالب‌ساز مرکزی به‌گونه‌ای که صفحه‌بندی، اندازه صفحه، جدول‌بندی، عرض ستون‌ها، ارتفاع ردیف‌ها، حاشیه‌ها و جایگاه اجزای سند تا حد ممکن مطابق فایل اصلی حفظ شود و محتوای متنی پس از ورود همچنان در PMS قابل ویرایش باشد.
+رفع ایرادهای دریافت اطلاعات در صفحه طراحی قالب و آماده‌سازی کامل مسیر واردسازی DOCX؛ سپس اجرای آزمون‌های ساختاری و تحویل برای تست واقعی واردسازی Word.
 
 ## 🗺️ Technical Spec & Architecture Map (DO NOT DELETE)
 
-### Frontend
-- Repository: `Saeidesl/PRSPRO2`, target branch: `main` (طبق درخواست صریح کاربر).
+### Frontend — مخزن `Saeidesl/PRSPRO2`، شاخه `main`
 - `pages/print-designer.html`
   - کنترل واردسازی: `#pt-word-import` و `#pt-word-import-file`.
+  - نمایش وضعیت: `#pt-library-status` و `#pt-editor-status`.
+  - فهرست منابع: `#pt-source-list` و `#pt-editor-source-list`.
   - بوم: `#pt-design-canvas`.
 - `js/modules/print-designer.js`
-  - `initLibrary()`: اتصال ورودی فایل Word.
-  - `importWordDocument(file)`: واردسازی DOCX با `docx-preview.renderAsync`؛ صفحه‌های Word را با شکست صفحه، هدر/فوتر و استایل‌های مجاز به یک المان `worddocument` تبدیل می‌کند.
-  - `sanitizeImportedHtml(html)`: پاک‌سازی HTML و محدودکردن تگ‌ها/استایل‌ها؛ در وضعیت فعلی بخش زیادی از ساختار صفحه و CSS مخصوص Word را حذف می‌کند.
-  - `renderCanvas()`: نمایش المان richtext در بوم.
-  - `renderOutputDocument()`: تولید محتوای خروجی چاپ.
-  - `saveTemplate()` و `editTemplate()`: ذخیره/بازیابی Definition قالب از API مرکزی.
-- `css/print-template-library.css`
-  - استایل‌های `.pt-element-richtext`, `.pt-richtext-editor`, `.pt-output-richtext`.
+  - `init()`: انتخاب مسیر طراحی/خروجی.
+  - `initLibrary()`: اتصال کنترل‌ها و شروع بارگذاری داده‌ها.
+  - `loadLibrary()`: دریافت هم‌زمان قالب‌ها و منابع.
+  - `renderSources()`: نمایش فیلدهای پروژه، اطلاعات مرکزی و فیلدهای فرم.
+  - `extract()` و `list()`: استخراج پاسخ API.
+  - `importWordDocument(file)`: تبدیل DOCX با `window.docx.renderAsync`.
+  - `sanitizeImportedHtml()` و `sanitizeWordCss()`: پاک‌سازی خروجی Word.
+  - `renderCanvas()` و `renderOutputDocument()`: نمایش و چاپ.
+  - `saveTemplate()` و `editTemplate()`: ذخیره و بازیابی قالب.
+- `js/core/api.js`
+  - `PMS.Api.get()` و `PMS.Api.extractData()`: درخواست و استخراج پاسخ استاندارد `{success:true,data:...}`.
+- `js/core/router.js`
+  - مسیرهای `print-design` و `print-designer` به `PrintDesigner`؛ مجوز صفحه `SYSTEM_SETTINGS`.
 - `index.html`
-  - کتابخانه `docx-preview@0.3.6` و stylesheet رسمی آن از CDN بارگذاری می‌شوند؛ وابستگی قبلی Mammoth حذف شده است.
-- `tests/project-print-designer.test.js` و `tests/print-template-library.test.js`: محل تست‌های رگرسیون واردسازی، ویرایش، ذخیره و چاپ.
+  - بارگذاری `docx-preview@0.3.6` و CSS آن؛ cache-busting فایل‌های قالب‌ساز.
+- `css/print-template-library.css`
+  - استایل بوم، منابع، صفحات Word و خروجی چاپ.
+- تست‌ها: `tests/print-template-library.test.js` و `tests/project-print-designer.test.js`.
 
-### Backend / APIs
-- قالب‌ها در مخزن `Saeidesl/PRSPRO2BACKEND` با سرویس `PrintTemplateService.js` و Repository `PrintTemplateRepository.js` نگهداری می‌شوند.
-- APIهای موجود و بدون مسیر موازی:
-  - `GET /print-templates`
-  - `GET /print-templates/:templateId`
-  - `POST /print-templates`
-  - `PUT /print-templates/:templateId`
-  - `POST /print-templates/:templateId/resolve` با payload فعلی `{ ProjectID }`.
-- شیت `36_PrintTemplates` و ستون `DefinitionJSON`؛ اعتبارسنجی فعلی در `PrintTemplateValidator.js` سقف ۴۵۰۰۰ نویسه دارد.
-- هر تغییر در ذخیره‌سازی فایل/رسانه باید با الگوی Repository/Service/Validator/Router، tenant isolation و مسیر فایل امن انجام شود؛ هیچ فایل Word حجیمی داخل سلول Sheets ذخیره نشود.
+### Backend — مخزن `Saeidesl/PRSPRO2BACKEND`، شاخه `main`
+- `Router.js`: مسیرهای `GET /print-templates` و `GET /print-templates/sources`؛ مسیر منابع در حال حاضر مجوز `SYSTEM_SETTINGS` دارد.
+- `PrintTemplateService.js`
+  - `list(params)`: قالب‌های فعال tenant.
+  - `sources(params)`: `projectFields`، `informationTypes` و `forms` همراه `Fields`.
+  - پاسخ منابع: `Response.success({projectFields, informationTypes, forms})`.
+- `PrintTemplateRepository.js`: خواندن و نوشتن شیت `36_PrintTemplates`.
+- `PrintTemplateValidator.js`: اعتبارسنجی Definition؛ سقف ۴۵۰۰۰ نویسه.
+- APIهای CRUD و resolve فعلی حفظ می‌شوند؛ هیچ مسیر ذخیره‌سازی موازی ایجاد نشود.
 
-### یافته فنی کلیدی
-- موتور `docx-preview` ساختار صفحات DOCX را به HTML صفحه‌محور تبدیل می‌کند؛ حفظ کامل رفتار Microsoft Word تضمین نمی‌شود و شکست صفحه به نشانه‌های ذخیره‌شده/صفحه‌بندی موجود در سند وابسته است.
-- تصاویر کاربر نشان می‌دهند محتوا در بالای بوم فشرده/محدود شده و فضای خالی بزرگ باقی مانده است؛ این مشکل صرفاً با CSS جزئی قابل رفع نیست.
-- هدف فنی: renderer مبتنی بر ساختار صفحه Word (به‌جای تبدیل معنایی Mammoth)، با حفظ ابعاد/بخش‌ها/جدول‌ها و امکان ویرایش متن در خود PMS. محدودیت‌های پشتیبانی‌شده باید شفاف و با نمونه‌های Word واقعی آزموده شوند؛ ادعای تطابق کامل با Microsoft Word بدون تست مجاز نیست.
-- محتوای واردشده باید پس از ذخیره و بازگشایی همان چیدمان را نگه دارد و موتور چاپ فعلی نیز همان چیدمان را مصرف کند.
+### یافته‌های کشف
+- مسیر دریافت منابع در فرانت‌اند و بک‌اند وجود دارد و نام کلیدهای اصلی در حالت عادی هم‌خوان است؛ با این حال خطای هر درخواست باید مستقل، واضح و قابل تشخیص نمایش داده شود و پاسخ‌های خالی با خطا اشتباه نشوند.
+- مسیر منابع بک‌اند فقط `SYSTEM_SETTINGS` می‌پذیرد؛ مجوز صفحه نیز همین است. این قرارداد باید یکپارچه و قابل مشاهده باقی بماند.
+- ورودی فایل مخفی است و دکمه فقط `input.click()` را اجرا می‌کند؛ برای سازگاری موبایل/مرورگر باید انتخاب فایل با تعامل مستقیم کاربر و fallback امن انجام شود.
+- در `index.html` خط متصل‌کننده CSS قالب‌ساز شامل نویسه‌های لفظی `\\n` است؛ باید به newline واقعی تبدیل شود.
+- واردسازی فعلی به A4 عمودی به‌صورت پیش‌فرض محدود شده و تشخیص تعداد صفحه/حفظ مشخصات بخش‌ها باید از ساختار واقعی خروجی DOCX استخراج شود؛ ابعاد و جهت سند نباید بدون دلیل بازنویسی شوند.
+- محدودیت واقعی حفظ Word تابع امکانات `docx-preview` است؛ تست واقعی مرورگر و فایل DOCX همچنان معیار نهایی است.
 
 ## 📋 Macro-Task Queue & Implementation Log
 
-- [x] **تسک ۱ — کشف علت به‌هم‌ریختگی و نقشه‌برداری مسیر Word Import**
-  - *Log:* فایل‌های `TODO.md` و `ARCHITECTURE.md`، صفحه `pages/print-designer.html`، ماژول `js/modules/print-designer.js`، استایل `css/print-template-library.css`، بارگذاری وابستگی در `index.html` و تست‌های قالب‌ساز بررسی شدند. مشخص شد `importWordDocument()` از `mammoth.convertToHtml()` استفاده می‌کند و کل سند را به یک المان `richtext` با مختصات/ابعاد ثابت تبدیل می‌کند؛ `sanitizeImportedHtml()` نیز بسیاری از ویژگی‌های layout را حذف می‌کند. این روش ذاتاً صفحه‌آرایی Word را حفظ نمی‌کند و با تصاویر ارسالی کاربر هم‌خوان است.
-- [ ] **تسک ۲ — جایگزینی موتور واردسازی با واردسازی صفحه‌محور و حفظ چیدمان**
-  - **(IN PROGRESS)**
-  - *Log:* در `js/modules/print-designer.js` موتور تک‌بلوک Mammoth با `docx-preview.renderAsync` جایگزین شد؛ خروجی Word به‌صورت صفحه‌های مستقل با ابعاد اصلی، شکست صفحه‌های ذخیره‌شده، هدر/فوتر، جدول‌ها و ستون‌ها ساخته می‌شود. `sanitizeImportedHtml()` برای حفظ کلاس‌ها، هندسه و ساختار جدول توسعه یافت و `sanitizeWordCss()` برای نگهداری امن استایل‌های مجاز اضافه شد. المان `worddocument` در `renderCanvas()` به‌صورت سند چندصفحه‌ای و قابل ویرایش نمایش داده می‌شود و `renderOutputDocument()` همان صفحه‌ها را برای چاپ استفاده می‌کند. `index.html` وابستگی JS/CSS موتور صفحه‌ای را بارگذاری می‌کند؛ `css/print-template-library.css` ظاهر صفحات در ویرایش/چاپ را تنظیم می‌کند. تست‌های `tests/print-template-library.test.js` و `tests/project-print-designer.test.js` با موتور جدید هماهنگ شدند. ذخیره‌سازی همچنان از API و شیت فعلی قالب‌ها استفاده می‌کند و برای Definition بیش از ۴۲هزار نویسه هشدار می‌دهد. تست مرورگر واقعی و تطابق نمونه Word هنوز انجام نشده است.
-  - محدوده: جایگزینی تبدیل معنایی تک‌بلوک با renderer صفحه‌محور؛ حفظ A4/A5، جهت، حاشیه‌ها، ابعاد و مرز جدول‌ها، عرض ستون‌ها، ارتفاع ردیف‌ها و جایگاه متن/تصویر؛ حفظ امکان ویرایش متن در PMS؛ پاک‌سازی امن HTML/CSS؛ جلوگیری از تغییر چیدمان پس از ذخیره و بازگشایی؛ عدم ذخیره فایل حجیم در Sheets.
-  - معیار پذیرش: فایل نمونه شناسنامه برش پارچه در بوم به‌صورت صفحه A4 کامل و بدون فشردگی/فضای خالی غیرمنتظره نمایش داده شود؛ متن و خانه‌های جدول قابل ویرایش باشند؛ پس از ذخیره و بازگشایی و در پیش‌نمایش چاپ، چیدمان حفظ شود.
-- [ ] **تسک ۳ — آزمون رگرسیون و تأیید خروجی Word در مرورگر و چاپ**
-  - *Log:* پس از اجرای تسک ۲ تکمیل می‌شود.
-  - محدوده: تست ساختاری/اجرایی برای DOCXهای نمونه، ویرایش متن، ذخیره/بازگشایی، اندازه A4، چاپ/PDF و کنترل خطا برای فایل‌های پیچیده/بزرگ؛ اصلاح cache-busting و ثبت محدودیت‌های واقعی پشتیبانی.
-  - معیار پذیرش: نمونه کاربر بدون به‌هم‌ریختگی در موبایل و دسکتاپ نمایش داده شود؛ چاپ یک صفحه A4 صحیح باشد؛ تست‌های مرتبط موفق باشند و کاربر خروجی را تأیید کند.
+- [x] **تسک ۱ — کشف مسیر دریافت اطلاعات و واردسازی Word**
+  - *Log:* `TODO.md`، `ARCHITECTURE.md`، `pages/print-designer.html`، `js/modules/print-designer.js`، `js/core/api.js`، `js/core/router.js`، `index.html`، `css/print-template-library.css` و تست‌های فرانت‌اند بررسی شدند. مسیرهای بک‌اند در `Router.js` و `PrintTemplateService.js` و قرارداد پاسخ `Response.success` تأیید شد. نقاط نیازمند اصلاح: گزارش خطای مستقل و نرمال‌سازی داده منابع، انتخاب فایل در موبایل، پاک‌سازی نویسه‌های لفظی newline و حفظ تنظیمات صفحه Word.
+- [ ] **تسک ۲ — رفع دریافت اطلاعات و پایدارسازی واردسازی DOCX (IN PROGRESS)**
+  - محدوده: اصلاح چرخه بارگذاری و استخراج پاسخ؛ نمایش وضعیت مستقل قالب‌ها و منابع؛ حفظ خطای واقعی مجوز/سرور؛ سازگاری شکل پاسخ و فهرست فیلدها؛ فعال‌سازی مطمئن انتخاب فایل؛ حفظ ابعاد/جهت/تعداد صفحات و CSS مجاز سند؛ به‌روزرسانی cache-busting؛ عدم تغییر API و ساختار ذخیره‌سازی مرکزی.
+  - معیار پذیرش: صفحه منابع را با وضعیت درست نمایش دهد؛ خطای یک endpoint باعث پنهان شدن نتیجه endpoint دیگر نشود؛ دکمه Word پنجره انتخاب فایل را باز کند؛ DOCX معتبر به بوم منتقل شود و متن/جدول‌ها قابل مشاهده و ویرایش باشند.
+- [ ] **تسک ۳ — آزمون رگرسیون و تحویل برای تست واقعی Word**
+  - محدوده: اجرای تست‌های Node موجود، افزودن تست‌های لازم برای دریافت منابع و کنترل انتخاب فایل، بررسی syntax و سازگاری route/asset؛ کنترل diff و commit روی `main`.
+  - معیار پذیرش: تست‌های خودکار مرتبط موفق باشند و کاربر بتواند یک فایل DOCX واقعی را وارد کند، پیش‌نمایش بگیرد و نتیجه را گزارش کند.
