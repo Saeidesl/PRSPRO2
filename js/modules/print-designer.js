@@ -416,11 +416,12 @@
       });
       const html = this.sanitizeImportedHtml(host.innerHTML);
       const css = this.sanitizeWordCss(styleHost.innerHTML);
-      const pageCount = host.querySelectorAll('.docx').length || host.querySelectorAll('section').length || 1;
+      const pageNodes = host.querySelectorAll('.docx-wrapper > .docx, .docx-wrapper section.docx, section.docx, .docx');
+      const pageCount = Math.max(1, pageNodes.length);
       if (!html || !html.replace(/<[^>]*>/g, '').trim()) throw new Error('محتوای قابل نمایش در فایل Word پیدا نشد.');
       const imported = { id: 'word_' + Date.now().toString(36), type: 'worddocument',
         text: file.name.replace(/\.docx$/i, ''), html: html, css: css, pageCount: pageCount, sourceName: file.name, bindingId: '' };
-      const candidate = Object.assign({}, next, { page: { size: 'A4', orientation: 'portrait' }, elements: [imported] });
+      const candidate = Object.assign({}, next, { elements: [imported] });
       if (JSON.stringify(candidate).length > 42000) throw new Error('حجم ساختار تبدیل‌شده از ظرفیت ذخیره قالب بیشتر است. لطفاً فایل Word را سبک‌تر و تصاویر آن را کم‌حجم کن.');
       this.definition = candidate; this.selectedElementId = imported.id;
       this.history = []; this.historyIndex = -1;
@@ -437,45 +438,66 @@
       this.bindEditor();
       const wordInput = document.getElementById('pt-word-import-file');
       const wordButton = document.getElementById('pt-word-import');
-      if (wordButton && wordInput) wordButton.addEventListener('click', () => wordInput.click());
+      if (wordButton && wordInput) wordButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        try {
+          if (typeof wordInput.showPicker === 'function') wordInput.showPicker();
+          else wordInput.click();
+        } catch (pickerError) {
+          wordInput.click();
+        }
+      });
       if (wordInput) wordInput.addEventListener('change', async () => {
         const file = wordInput.files && wordInput.files[0];
         try { await this.importWordDocument(file); }
         catch (error) { this.setStatus('pt-editor-status', error.message || 'واردسازی Word ناموفق بود.', true); }
         finally { wordInput.value = ''; }
       });
-      await this.loadLibrary();
       this.syncPageControls();
       this.renderEditor();
+      this.loadLibrary();
     },
     loadLibrary: async function () {
-      this.setStatus('pt-library-status', 'در حال دریافت کتابخانه قالب‌ها و منابع داده…');
+      this.templates = Array.isArray(this.templates) ? this.templates : [];
+      this.sources = this.sources || { projectFields: [], informationTypes: [], forms: [] };
+      this.setStatus('pt-library-status', 'در حال دریافت کتابخانه قالب‌ها…');
+      this.setStatus('pt-source-count', 'در حال دریافت منابع…');
       const results = await Promise.allSettled([
         PMS.Api.get('/print-templates'),
         PMS.Api.get('/print-templates/sources')
       ]);
       if (results[0].status === 'fulfilled') {
-        this.templates = this.list(results[0].value);
+        this.templates = this.list(results[0].value, ['items', 'Items', 'templates', 'Templates']);
         this.renderLibrary();
         this.setStatus('pt-library-status', this.templates.length ? this.templates.length + ' قالب در کتابخانه وجود دارد.' : 'هنوز قالبی ساخته نشده است.');
       } else {
         this.templates = [];
         this.renderLibrary();
-        this.setStatus('pt-library-status', results[0].reason && results[0].reason.message || 'دریافت کتابخانه قالب‌ها ناموفق بود.', true);
+        this.setStatus('pt-library-status', (results[0].reason && results[0].reason.message) || 'دریافت کتابخانه قالب‌ها ناموفق بود.', true);
       }
       if (results[1].status === 'fulfilled') {
         const sources = this.extract(results[1].value) || {};
+        const pick = function (lower, upper) {
+          const value = sources[lower] !== undefined ? sources[lower] : sources[upper];
+          return Array.isArray(value) ? value : [];
+        };
         this.sources = {
-          projectFields: Array.isArray(sources.projectFields) ? sources.projectFields : [],
-          informationTypes: Array.isArray(sources.informationTypes) ? sources.informationTypes : [],
-          forms: Array.isArray(sources.forms) ? sources.forms : []
+          projectFields: pick('projectFields', 'ProjectFields'),
+          informationTypes: pick('informationTypes', 'InformationTypes'),
+          forms: pick('forms', 'Forms')
         };
         this.sourceError = '';
+        this.renderSources();
+        const sourceTotal = this.sources.projectFields.length + this.sources.informationTypes.length +
+          this.sources.forms.reduce((count, form) => count + (Array.isArray(form.Fields) ? form.Fields.length :
+            (Array.isArray(form.fields) ? form.fields.length : 0)), 0);
+        this.setStatus('pt-source-count', sourceTotal + ' منبع قابل اتصال');
       } else {
         this.sources = { projectFields: [], informationTypes: [], forms: [] };
-        this.sourceError = results[1].reason && results[1].reason.message || 'دریافت منابع داده ناموفق بود.';
+        this.sourceError = (results[1].reason && results[1].reason.message) || 'دریافت منابع داده ناموفق بود.';
+        this.renderSources();
+        this.setStatus('pt-source-count', this.sourceError, true);
       }
-      this.renderSources();
       this.renderBindings();
       this.renderInspector();
     },
@@ -500,20 +522,32 @@
       const roots = ['pt-source-list','pt-editor-source-list'].map(id => document.getElementById(id)).filter(Boolean);
       if (!roots.length) return;
       const groups = [];
-      (this.sources.projectFields || []).forEach(source => groups.push({
-        key: 'project|' + source.field, label: source.label, detail: 'اطلاعات پایه پروژه',
-        binding: { id: 'project_' + source.field, sourceType: 'PROJECT_FIELD', field: source.field }
-      }));
-      (this.sources.informationTypes || []).forEach(source => groups.push({
-        key: 'info|' + source.ID, label: source.Name, detail: 'اطلاعات مرکزی · ' + source.Code,
-        binding: { id: 'info_' + source.ID, sourceType: 'PROJECT_INFORMATION', informationTypeId: source.ID }
-      }));
-      (this.sources.forms || []).forEach(form => (form.Fields || []).forEach(field => groups.push({
-        key: 'form|' + form.ID + '|' + field.ID, label: field.Name,
-        detail: 'فرم ' + form.Name + ' · ' + field.Code,
-        binding: { id: 'form_' + form.ID + '_' + field.ID, sourceType: 'EVENT_FORM_FIELD',
-          formId: form.ID, fieldId: field.ID, informationTypeId: field.InformationTypeID, selection: 'LATEST' }
-      })));
+      (this.sources.projectFields || []).forEach(source => {
+        const field = source.field || source.Field || source.Code;
+        if (!field) return;
+        groups.push({
+          key: 'project|' + field, label: source.label || source.Label || field, detail: 'اطلاعات پایه پروژه',
+          binding: { id: 'project_' + field, sourceType: 'PROJECT_FIELD', field: field }
+        });
+      });
+      (this.sources.informationTypes || []).forEach(source => {
+        const id = source.ID || source.Id || source.id;
+        if (!id) return;
+        groups.push({
+          key: 'info|' + id, label: source.Name || source.name || source.Code || id,
+          detail: 'اطلاعات مرکزی · ' + (source.Code || source.code || ''),
+          binding: { id: 'info_' + id, sourceType: 'PROJECT_INFORMATION', informationTypeId: id }
+        });
+      });
+      (this.sources.forms || []).forEach(form => ((form.Fields || form.fields || [])).forEach(field => groups.push({
+        key: 'form|' + (form.ID || form.Id || form.id) + '|' + (field.ID || field.Id || field.id),
+        label: field.Name || field.name || field.Label || field.Code || 'فیلد فرم',
+        detail: 'فرم ' + (form.Name || form.name || '') + ' · ' + (field.Code || field.code || ''),
+        binding: { id: 'form_' + (form.ID || form.Id || form.id) + '_' + (field.ID || field.Id || field.id),
+          sourceType: 'EVENT_FORM_FIELD', formId: form.ID || form.Id || form.id,
+          fieldId: field.ID || field.Id || field.id,
+          informationTypeId: field.InformationTypeID || field.informationTypeId, selection: 'LATEST' }
+      })).filter(item => item.binding.formId && item.binding.fieldId));
       const markup = this.sourceError
         ? '<p class="pt-empty-state is-error">' + this.esc(this.sourceError) + '</p>'
         : (groups.length ? groups.map((item, index) =>
