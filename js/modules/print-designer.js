@@ -19,14 +19,31 @@
       else this.initLibrary();
     },
     extract: function (response) {
-      return PMS.Api && typeof PMS.Api.extractData === 'function'
+      let value = PMS.Api && typeof PMS.Api.extractData === 'function'
         ? PMS.Api.extractData(response)
-        : (response && response.data !== undefined ? response.data : response);
+        : response;
+      // بعضی نسخه‌های قدیمی پاسخ را دوبار داخل data قرار می‌دهند.
+      for (let depth = 0; depth < 3; depth += 1) {
+        if (!value || Array.isArray(value) || typeof value !== 'object') break;
+        if (value.success === false) {
+          const message = value.error && value.error.message ? value.error.message : 'دریافت اطلاعات ناموفق بود.';
+          throw new Error(message);
+        }
+        if (Object.prototype.hasOwnProperty.call(value, 'data') &&
+            (Object.keys(value).length === 1 || value.success === true || value.success === undefined)) {
+          value = value.data;
+          continue;
+        }
+        break;
+      }
+      return value;
     },
     list: function (value, keys) {
       const data = this.extract(value);
       if (Array.isArray(data)) return data;
-      for (const key of (keys || ['items','Items'])) if (data && Array.isArray(data[key])) return data[key];
+      for (const key of (keys || ['items','Items','data','Data'])) {
+        if (data && Array.isArray(data[key])) return data[key];
+      }
       return [];
     },
     esc: function (value) {
@@ -455,7 +472,7 @@
       });
       this.syncPageControls();
       this.renderEditor();
-      this.loadLibrary();
+      await this.loadLibrary();
     },
     loadLibrary: async function () {
       this.templates = Array.isArray(this.templates) ? this.templates : [];
@@ -467,39 +484,52 @@
         PMS.Api.get('/print-templates/sources')
       ]);
       if (results[0].status === 'fulfilled') {
-        this.templates = this.list(results[0].value, ['items', 'Items', 'templates', 'Templates']);
-        this.renderLibrary();
-        this.setStatus('pt-library-status', this.templates.length ? this.templates.length + ' قالب در کتابخانه وجود دارد.' : 'هنوز قالبی ساخته نشده است.');
+        try {
+          this.templates = this.list(results[0].value, ['items','Items','templates','Templates','TemplatesList']);
+          this.renderLibrary();
+          this.setStatus('pt-library-status', this.templates.length ? this.templates.length + ' قالب در کتابخانه وجود دارد.' : 'هنوز قالبی ساخته نشده است.');
+        } catch (error) {
+          this.templates = [];
+          this.renderLibrary();
+          this.setStatus('pt-library-status', error.message || 'ساختار کتابخانه قالب‌ها معتبر نیست.', true);
+        }
       } else {
         this.templates = [];
-        this.renderLibrary();
+        try { this.renderLibrary(); } catch (renderError) { console.error('Print template library render failed:', renderError); }
         this.setStatus('pt-library-status', (results[0].reason && results[0].reason.message) || 'دریافت کتابخانه قالب‌ها ناموفق بود.', true);
       }
       if (results[1].status === 'fulfilled') {
-        const sources = this.extract(results[1].value) || {};
-        const pick = function (lower, upper) {
-          const value = sources[lower] !== undefined ? sources[lower] : sources[upper];
-          return Array.isArray(value) ? value : [];
-        };
-        this.sources = {
-          projectFields: pick('projectFields', 'ProjectFields'),
-          informationTypes: pick('informationTypes', 'InformationTypes'),
-          forms: pick('forms', 'Forms')
-        };
-        this.sourceError = '';
-        this.renderSources();
-        const sourceTotal = this.sources.projectFields.length + this.sources.informationTypes.length +
-          this.sources.forms.reduce((count, form) => count + (Array.isArray(form.Fields) ? form.Fields.length :
-            (Array.isArray(form.fields) ? form.fields.length : 0)), 0);
-        this.setStatus('pt-source-count', sourceTotal + ' منبع قابل اتصال');
+        try {
+          const sources = this.extract(results[1].value) || {};
+          const pick = function (lower, upper) {
+            const value = sources[lower] !== undefined ? sources[lower] : sources[upper];
+            return Array.isArray(value) ? value : [];
+          };
+          this.sources = {
+            projectFields: pick('projectFields', 'ProjectFields'),
+            informationTypes: pick('informationTypes', 'InformationTypes'),
+            forms: pick('forms', 'Forms')
+          };
+          this.sourceError = '';
+          this.renderSources();
+          const sourceTotal = this.sources.projectFields.length + this.sources.informationTypes.length +
+            this.sources.forms.reduce((count, form) => count + (Array.isArray(form.Fields) ? form.Fields.length :
+              (Array.isArray(form.fields) ? form.fields.length : 0)), 0);
+          this.setStatus('pt-source-count', sourceTotal + ' منبع قابل اتصال');
+        } catch (error) {
+          this.sources = { projectFields: [], informationTypes: [], forms: [] };
+          this.sourceError = error.message || 'ساختار منابع داده معتبر نیست.';
+          try { this.renderSources(); } catch (renderError) { console.error('Print template sources render failed:', renderError); }
+          this.setStatus('pt-source-count', this.sourceError, true);
+        }
       } else {
         this.sources = { projectFields: [], informationTypes: [], forms: [] };
         this.sourceError = (results[1].reason && results[1].reason.message) || 'دریافت منابع داده ناموفق بود.';
-        this.renderSources();
+        try { this.renderSources(); } catch (renderError) { console.error('Print template sources render failed:', renderError); }
         this.setStatus('pt-source-count', this.sourceError, true);
       }
-      this.renderBindings();
-      this.renderInspector();
+      try { this.renderBindings(); } catch (error) { console.error('Print template bindings render failed:', error); }
+      try { this.renderInspector(); } catch (error) { console.error('Print template inspector render failed:', error); }
     },
     renderLibrary: function () {
       const list = document.getElementById('pt-template-list');
