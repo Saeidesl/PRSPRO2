@@ -2676,6 +2676,7 @@
           });
         }
         const procurementIntegration = eventResult.procurementIntegration || {};
+        // procurementIntegration.status can be FAILED; the result panel below exposes recovery.
 
         PMS.Api.invalidateMany([
           CACHE_KEY,
@@ -2870,7 +2871,9 @@
           (result.currentStepID ? 'مرحله فعلی: ' + result.currentStepID : 'مرحله پروژه تغییر نکرد'));
       const procurementStatus = procurement.status || 'NOT_CONFIGURED';
       const procurementRow = addRow('محاسبه ملزومات', procurementStatus,
-        procurement.message || (procurementStatus === 'NOT_CONFIGURED' ? 'اتصال تأمین برای این نوع رویداد تعریف نشده است' : ''),
+        procurement.message || (String(procurementStatus).toUpperCase() === 'FAILED'
+          ? 'محاسبه نیاز ملزومات کامل نشد؛ برای بازیابی می‌توانید تلاش مجدد کنید.'
+          : (procurementStatus === 'NOT_CONFIGURED' ? 'اتصال تأمین برای این نوع رویداد تعریف نشده است' : '')),
         String(procurementStatus).toUpperCase() === 'FAILED' ? 'warning' : '');
       if (String(procurementStatus).toUpperCase() === 'FAILED' && eventId) {
         const retry = document.createElement('button');
