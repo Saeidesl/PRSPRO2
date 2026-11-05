@@ -212,3 +212,18 @@ test('Word import code and external dependencies are completely removed',()=>{
  assert.doesNotMatch(index,/jszip|docx-preview/i);
  assert.doesNotMatch(css,/pt-word-document|docx-preview/i);
 });
+
+test('native editor ribbon and page controls are present',()=>{
+ const page=read('pages/print-designer.html');
+ const module=read('js/modules/print-designer.js');
+ const css=read('css/print-template-library.css');
+ for(const tab of ['home','insert','layout','tools']) assert.ok(page.includes('data-pt-ribbon-tab="'+tab+'"'));
+ for(const action of ['add-richtext','add-text','add-field','add-table','add-image']) assert.ok(page.includes('data-pt-action="'+action+'"'));
+ for(const command of ['bold','italic','underline','justifyRight','justifyCenter','justifyLeft','insertUnorderedList','insertOrderedList']) assert.ok(page.includes('data-pt-format="'+command+'"'));
+ assert.ok(page.includes('id="pt-editor-zoom"'));
+ assert.ok(module.includes('formatSelectedText: function'));
+ assert.ok(module.includes('applyTextStyle: function'));
+ assert.ok(module.includes('applyZoom: function'));
+ assert.match(css,/\.pt-ribbon-tabs/);
+ assert.match(css,/\.pt-ruler-horizontal/);
+});
