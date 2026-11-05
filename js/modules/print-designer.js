@@ -65,10 +65,16 @@
       canvas.dataset.bound = '1';
       canvas.addEventListener('click', (event) => {
         const node = event.target.closest('[data-pt-element]');
-        if (node) this.selectElement(node.dataset.ptElement);
-        else { this.selectedElementId = ''; this.renderEditor(); }
+        if (node) {
+          if (event.target.closest('[contenteditable="true"]')) {
+            this.selectElement(node.dataset.ptElement, false);
+            return;
+          }
+          this.selectElement(node.dataset.ptElement);
+        } else { this.selectedElementId = ''; this.renderEditor(); }
       });
       canvas.addEventListener('pointerdown', (event) => {
+        if (event.target.closest('[contenteditable="true"]')) return;
         const node = event.target.closest('[data-pt-element]');
         if (!node || event.target.closest('[data-pt-resize]')) return;
         const item = this.getSelectedOrById(node.dataset.ptElement);
@@ -395,14 +401,14 @@
         fontSize: 11, align: 'right', color: '#1f2937', background: 'transparent',
         bindingId: ''
       };
-      next.elements = [imported];
-      next.page = next.page || { size: 'A4', orientation: 'portrait' };
-      this.definition = next;
-      const serializedLength = JSON.stringify(this.definition).length;
-      if (serializedLength > 42000) {
-        this.definition.elements = [];
+      const candidate = Object.assign({}, next, {
+        page: next.page || { size: 'A4', orientation: 'portrait' },
+        elements: [imported]
+      });
+      if (JSON.stringify(candidate).length > 42000) {
         throw new Error('حجم متن و تصاویر استخراج‌شده برای ذخیره در قالب فعلی زیاد است. در مرحله بعد، ذخیره مستقل تصاویر و فایل‌های حجیم اضافه می‌شود؛ لطفاً فعلاً فایل سبک‌تری وارد کن.');
       }
+      this.definition = candidate;
       this.selectedElementId = imported.id;
       this.history = []; this.historyIndex = -1;
       this.renderEditor(); this.renderBindings(); this.commitHistory();
