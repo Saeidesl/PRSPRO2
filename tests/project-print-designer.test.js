@@ -46,7 +46,7 @@ test('print designer supports visual ordering, element styling, saved templates 
 test('print designer assets are cache-busted and loaded by the application',()=>{
   const index=read('index.html');
   assert.match(index,/print-template-library\.css\?v=/);
-  assert.match(index,/project-detail\.js\?v=20261104-central-project-information-2/);
+  assert.match(index,/project-detail\.js\?v=20261103-reference-sync-on-save-1/);
 });
 
 
@@ -171,4 +171,19 @@ test('print designer keeps A4 print dimensions and read-only output styles',()=>
  assert.match(css,/@page\{size:A4 portrait/);
  assert.match(css,/\.ppd-standalone \.ppd-paper\{width:210mm!important/);
  assert.match(css,/\.ppd-output-mode \.ppd-properties\{display:none!important/);
+});
+
+test('central template designer imports DOCX into editable and printable rich text',()=>{
+ const page=read('pages/print-designer.html');
+ const module=read('js/modules/print-designer.js');
+ const index=read('index.html');
+ const css=read('css/print-template-library.css');
+ assert.match(page,/pt-word-import-file/);
+ assert.match(page,/واردسازی از Word/);
+ assert.match(index,/mammoth@1\.8\.0\/mammoth\.browser\.min\.js/);
+ assert.match(module,/importWordDocument: async function/);
+ assert.match(module,/sanitizeImportedHtml: function/);
+ assert.match(module,/data-pt-richtext/);
+ assert.match(module,/pt-output-richtext/);
+ assert.match(css,/pt-richtext-editor/);
 });
