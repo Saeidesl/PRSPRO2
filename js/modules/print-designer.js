@@ -405,14 +405,14 @@
               const separator = rule.indexOf(':'); if (separator < 1) return;
               const property = rule.slice(0, separator).trim().toLowerCase();
               const value = rule.slice(separator + 1).trim();
-              if (styleProperties.has(property) && value.length < 160 && !/(url\\s*\\(|expression\\s*\\(|javascript:|[{}])/i.test(value)) safe.push(property + ':' + value);
+              if (styleProperties.has(property) && value.length < 160 && !/(url\s*\(|expression\s*\(|javascript:|[{}])/i.test(value)) safe.push(property + ':' + value);
             });
             if (safe.length) node.setAttribute('style', safe.join(';')); else node.removeAttribute('style');
           } else if (name === 'class') {
-            const classes = attribute.value.split(/\\s+/).filter(token => /^[a-zA-Z_][a-zA-Z0-9_-]{0,60}$/.test(token));
+            const classes = attribute.value.split(/\s+/).filter(token => /^[a-zA-Z_][a-zA-Z0-9_-]{0,60}$/.test(token));
             if (classes.length) node.setAttribute('class', classes.join(' ')); else node.removeAttribute('class');
           } else if (node.tagName === 'IMG' && name === 'src') {
-            if (!/^data:image\\/(png|jpe?g|gif|webp);base64,[a-z0-9+/=]+$/i.test(attribute.value)) node.removeAttribute(name);
+            if (!/^data:image\/(png|jpe?g|gif|webp);base64,[a-z0-9+/=]+$/i.test(attribute.value)) node.removeAttribute(name);
           } else if (!((node.tagName === 'IMG' && name === 'alt') || ((node.tagName === 'TH' || node.tagName === 'TD') && ['colspan','rowspan','width','span'].includes(name)))) node.removeAttribute(name);
         });
       });
