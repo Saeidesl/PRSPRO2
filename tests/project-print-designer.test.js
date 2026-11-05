@@ -188,3 +188,11 @@ test('central template designer imports DOCX into editable page-preserving docum
  assert.match(module,/pt-output-word-document/);
  assert.match(css,/pt-richtext-editor/);
 });
+
+
+test('central designer source loader accepts normalized and legacy API field casing',()=>{
+ const module=read('js/modules/print-designer.js');
+ assert.match(module,/pick\('projectFields', 'ProjectFields'\)/);
+ assert.match(module,/form\.Fields \|\| form\.fields/);
+ assert.match(module,/source\.field \|\| source\.Field \|\| source\.Code/);
+});
