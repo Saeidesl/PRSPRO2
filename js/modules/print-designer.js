@@ -539,15 +539,21 @@
           binding: { id: 'info_' + id, sourceType: 'PROJECT_INFORMATION', informationTypeId: id }
         });
       });
-      (this.sources.forms || []).forEach(form => ((form.Fields || form.fields || [])).forEach(field => groups.push({
-        key: 'form|' + (form.ID || form.Id || form.id) + '|' + (field.ID || field.Id || field.id),
-        label: field.Name || field.name || field.Label || field.Code || 'فیلد فرم',
-        detail: 'فرم ' + (form.Name || form.name || '') + ' · ' + (field.Code || field.code || ''),
-        binding: { id: 'form_' + (form.ID || form.Id || form.id) + '_' + (field.ID || field.Id || field.id),
-          sourceType: 'EVENT_FORM_FIELD', formId: form.ID || form.Id || form.id,
-          fieldId: field.ID || field.Id || field.id,
-          informationTypeId: field.InformationTypeID || field.informationTypeId, selection: 'LATEST' }
-      })).filter(item => item.binding.formId && item.binding.fieldId));
+      (this.sources.forms || []).forEach(form => {
+        const formId = form.ID || form.Id || form.id;
+        (form.Fields || form.fields || []).forEach(field => {
+          const fieldId = field.ID || field.Id || field.id;
+          if (!formId || !fieldId) return;
+          groups.push({
+            key: 'form|' + formId + '|' + fieldId,
+            label: field.Name || field.name || field.Label || field.Code || 'فیلد فرم',
+            detail: 'فرم ' + (form.Name || form.name || '') + ' · ' + (field.Code || field.code || ''),
+            binding: { id: 'form_' + formId + '_' + fieldId, sourceType: 'EVENT_FORM_FIELD',
+              formId: formId, fieldId: fieldId,
+              informationTypeId: field.InformationTypeID || field.informationTypeId, selection: 'LATEST' }
+          });
+        });
+      });
       const markup = this.sourceError
         ? '<p class="pt-empty-state is-error">' + this.esc(this.sourceError) + '</p>'
         : (groups.length ? groups.map((item, index) =>
